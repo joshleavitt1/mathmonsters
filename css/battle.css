@@ -1,0 +1,370 @@
+body {
+  margin: 0;
+  font-family: "Arial Rounded MT Bold", Arial, sans-serif;
+  background: #bddcff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-image: url("../images/bg.png");
+  background-size: cover;
+  background-position: center;
+}
+
+#battle {
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 1;
+  position: relative;
+  animation: battleFadeIn 0.6s ease;
+}
+
+.battlefield {
+  .battlefield {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    color: white;
+    background: transparent; /* 👈 makes sure it stays clear */
+  }
+}
+
+.creature {
+  position: absolute;
+  text-align: center;
+  font-size: 18px;
+  transition: transform 0.3s ease;
+}
+
+#player {
+  bottom: 15px;
+  left: 20px;
+  animation: slideInLeft 1s ease-out forwards;
+}
+
+#enemy {
+  top: 15px;
+  right: 20px;
+  animation: slideInRight 1s ease-out forwards;
+}
+
+.name-hp-box {
+  color: #ffffff;
+  padding: 16px 16px;
+  text-align: left;
+  font-size: 16px;
+  line-height: 1.8em;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.2);
+  margin-bottom: 8px;
+}
+
+.stats {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.hp-bar {
+  height: 8px;
+  width: 100%;
+  border: 1px solid #fff;
+  border-radius: 8px;
+  margin: 4px auto 0;
+  overflow: hidden;
+}
+
+.hp-fill {
+  background-image: linear-gradient(90deg, orange, yellow);
+  height: 100%;
+  width: 100%;
+  transition: width 0.5s ease;
+  border-radius: 8px;
+}
+
+img.fish-sprite {
+  width: 220px;
+  height: auto;
+  transition:
+    transform 0.5s,
+    filter 0.5s;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.intro-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  pointer-events: none;
+  animation: fadeOut 4s ease forwards;
+}
+
+.intro-overlay h1 {
+  color: #ffffff;
+  font-size: 48px;
+  text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.2);
+  padding: 16px 32px;
+  display: inline-block;
+}
+
+.winner-banner {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ffffff;
+  text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideInLeft {
+  0% {
+    transform: translateX(-300px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(300px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+#modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 50, 0.6);
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+#modal.show {
+  display: flex;
+  opacity: 1;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 32px;
+  width: 350px;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1.5;
+  border-radius: 8px;
+  transform: scale(0.8);
+  opacity: 0;
+  transition:
+    transform 0.35s ease,
+    opacity 0.35s ease;
+}
+
+#modal.show .modal-content {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.modal-content button {
+  display: block;
+  border: none;
+  outline: none;
+  width: 100%;
+  margin: 16px 0 0 0;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  background: rgba(237, 241, 246, 0.8);
+  border-radius: 8px;
+  transition:
+    background 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+  backdrop-filter: blur(6px);
+}
+
+.modal-content button:hover {
+  transform: translateY(-2px);
+}
+
+.modal-content button:active {
+  transform: translateY(1px);
+}
+
+.modal-content button.correct {
+  background: rgba(214, 243, 214, 0.8);
+  border: 2px solid #00b600;
+  color: #004d00;
+}
+
+.modal-content button.wrong {
+  border: 2px solid #b60000;
+  color: #b60000;
+}
+
+.modal-content button:disabled {
+  opacity: 1;
+}
+
+.correct {
+  color: green;
+  font-weight: bold;
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+.wrong {
+  color: red;
+  font-weight: bold;
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+.winner-banner {
+  font-size: 2em;
+  font-weight: bold;
+  color: gold;
+  text-shadow: 2px 2px 4px #000;
+}
+
+/* battle.css */
+.creature,
+.fish-sprite {
+  will-change: transform;
+}
+
+@keyframes battleFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.end-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  border-radius: 8px;
+  text-align: center;
+  backdrop-filter: blur(4px);
+  pointer-events: auto;
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+}
+
+.end-screen.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.end-banner {
+  font-size: 48px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.2);
+  margin: 0;
+  line-height: 1.1;
+  transform: translateY(-6px);
+  opacity: 0;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+
+.end-screen.show .end-banner {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sprite-wrapper {
+  line-height: 0;
+  margin: 20px 0;
+}
+
+.end-screen .sprite-wrapper {
+  transform: scale(0);
+  opacity: 0;
+}
+
+.end-screen.show .sprite-wrapper {
+  animation: end-grow 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes end-grow {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.end-sprite {
+  display: block;
+  width: 260px;
+  max-width: 100%;
+  height: auto;
+}
+
+.end-button {
+  width: 260px;
+  display: block;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #00a6ff, #006aff);
+  border: none;
+  border-radius: 8px;
+  padding: 16px 0;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+}
