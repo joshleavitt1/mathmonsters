@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Reef Rangers Walkthrough</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+    body {
+      position: relative;
+      background: url('images/background.png') no-repeat center/cover;
+      font-family: 'Arial Rounded MT Bold', 'Arial Rounded MT', Arial, sans-serif;
+    }
+    #hero {
+      position: absolute;
+      top: 50%;
+      left: 100%;
+      width: 200px;
+      transform: translate(0, -50%);
+      animation: swim 2s forwards;
+    }
+    @keyframes swim {
+      from { left: 100%; transform: translate(0, -50%); }
+      to   { left: 50%; transform: translate(-50%, -50%); }
+    }
+    #message {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 40px);
+      max-width: 375px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 16px 16px 0;
+      box-sizing: border-box;
+    }
+    #message.show {
+      display: flex;
+      flex-direction: column;
+    }
+    #message h1 {
+      font-size: 14px;
+      color: #858585;
+      margin: 0 0 8px 0;
+      font-weight: normal;
+    }
+    #message p {
+      font-size: 24px;
+      color: #272B34;
+      margin: 0 0 16px 0;
+      line-height: 1.3;
+    }
+    #message button {
+      width: 100%;
+      height: 56px;
+      background: #006AFF;
+      color: #ffffff;
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <img id="hero" src="images/shellfin.png" alt="Shellfin">
+  <div id="message">
+    <h1>Intro</h1>
+    <p>Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help to win it back!</p>
+    <button>Continue</button>
+  </div>
+  <script>
+    const hero = document.getElementById('hero');
+    const message = document.getElementById('message');
+    hero.addEventListener('animationend', () => {
+      message.classList.add('show');
+    });
+  </script>
+</body>
+</html>
