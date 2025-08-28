@@ -47,11 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
     monster.style.animation = '';
   }
 
-  monster.addEventListener('animationend', () => {
-    messageText.textContent = "Monster spotted! It’s battle time. My attacks are powered by learning. The more you know, the tougher I become!";
-    overlay.classList.add('show');
-    message.classList.add('show');
-    button.onclick = goToBattle;
+  monster.addEventListener('animationend', (e) => {
+    if (e.animationName === 'swim') {
+      messageText.textContent = "Monster spotted! It’s battle time. My attacks are powered by learning. The more you know, the tougher I become!";
+      overlay.classList.add('show');
+      message.classList.add('show');
+      button.onclick = goToBattle;
+    }
   });
 
   function goToBattle() {
