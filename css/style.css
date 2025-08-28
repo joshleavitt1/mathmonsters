@@ -13,8 +13,7 @@ html, body {
   position: absolute;
   left: 50%;
   bottom: 30%;
-  width: 40%;
-  max-width: 300px;
+  width: 300px;
   transform: translateX(100vw);
   animation: swim 2s forwards;
 }
