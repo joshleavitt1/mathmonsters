@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.animationName === 'swim') {
       message.classList.add('show');
     }
+  shellfin.addEventListener('animationend', () => {
+    message.classList.add('show');
   });
 
   function startBattle() {
@@ -39,6 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
     shellfin.style.animation = '';
     enemy.style.animation = '';
   }
+    setTimeout(() => {
+      shellfin.style.display = 'none';
+      enemy.style.display = 'block';
+    }, 500);
+  }
+
+  button.addEventListener('click', startBattle);
 
   enemy.addEventListener('animationend', () => {
     messageText.textContent = "Monster spotted! It’s battle time. My attacks are powered by learning. The more you know, the tougher I become!";
