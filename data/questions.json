@@ -1,15 +1,38 @@
 {
-  "Walkthrough": [
-    {
-      "name": "Question 1",
-      "number": 1,
-      "question": "Coral is a close relative of the sea anemone. Is coral a plant, a rock, or an animal?",
-      "choices": [
-        { "image": "", "name": "plant" },
-        { "image": "", "name": "rock" },
-        { "image": "", "name": "animal" }
-      ]
-    }
-  ]
+  "Walkthrough": {
+    "total": 3,
+    "questions": [
+      {
+        "name": "Question 1",
+        "number": 1,
+        "question": "Coral is a close relative of the sea anemone. Is coral a plant, a rock, or an animal?",
+        "choices": [
+          { "image": "", "name": "plant" },
+          { "image": "", "name": "rock" },
+          { "image": "", "name": "animal" }
+        ]
+      },
+      {
+        "name": "Question 2",
+        "number": 2,
+        "question": "What do fish use to breathe underwater?",
+        "choices": [
+          { "image": "", "name": "gills" },
+          { "image": "", "name": "lungs" },
+          { "image": "", "name": "skin" }
+        ]
+      },
+      {
+        "name": "Question 3",
+        "number": 3,
+        "question": "Which of these is a mammal?",
+        "choices": [
+          { "image": "", "name": "dolphin" },
+          { "image": "", "name": "shark" },
+          { "image": "", "name": "octopus" }
+        ]
+      }
+    ]
+  }
 }
 
