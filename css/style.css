@@ -23,6 +23,10 @@
   animation: bubble-pop 0.5s forwards;
 }
 
+#monster.pop {
+  animation: bubble-pop 0.5s forwards;
+}
+
 #monster {
   display: none;
 }
