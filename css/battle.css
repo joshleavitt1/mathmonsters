@@ -35,18 +35,6 @@ html, body {
 }
 
 @keyframes monster-slide {
-  from { transform: translateX(0); }
-  to { transform: translateX(-66%); }
-}
-
-@keyframes shellfin-slide {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(-33%); }
-  left: -300px;
-  animation: shellfin-slide 3s linear forwards;
-}
-
-@keyframes monster-slide {
   from { left: 100%; }
   to { left: -300px; }
 }

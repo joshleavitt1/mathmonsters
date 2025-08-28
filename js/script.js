@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const shellfin = document.getElementById('shellfin');
-  const enemy = document.getElementById('enemy');
+  const monster = document.getElementById('monster');
   const message = document.getElementById('message');
   const messageText = message.querySelector('p');
   const button = message.querySelector('button');
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     shellfin.addEventListener('animationend', function handlePop(e) {
       if (e.animationName === 'bubble-pop') {
         shellfin.style.display = 'none';
-        enemy.style.display = 'block';
+        monster.style.display = 'block';
         shellfin.removeEventListener('animationend', handlePop);
       }
     });
@@ -26,20 +26,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function resetScene() {
     shellfin.style.display = 'block';
-    enemy.style.display = 'none';
+    monster.style.display = 'none';
     shellfin.classList.remove('pop');
     message.classList.remove('show');
     messageText.textContent = "Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help!";
     button.onclick = startBattle;
     shellfin.style.animation = 'none';
-    enemy.style.animation = 'none';
+    monster.style.animation = 'none';
     void shellfin.offsetWidth;
-    void enemy.offsetWidth;
+    void monster.offsetWidth;
     shellfin.style.animation = '';
-    enemy.style.animation = '';
+    monster.style.animation = '';
   }
 
-  enemy.addEventListener('animationend', () => {
+  monster.addEventListener('animationend', () => {
     messageText.textContent = "Monster spotted! It’s battle time. My attacks are powered by learning. The more you know, the tougher I become!";
     message.classList.add('show');
     button.onclick = () => {
