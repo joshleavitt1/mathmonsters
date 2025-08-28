@@ -4,15 +4,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const message = document.getElementById('message');
   const messageText = message.querySelector('p');
   const button = message.querySelector('button');
+  const overlay = document.getElementById('overlay');
 
   shellfin.addEventListener('animationend', (e) => {
     if (e.animationName === 'swim') {
+      overlay.classList.add('show');
       message.classList.add('show');
     }
   });
 
   function startBattle() {
     message.classList.remove('show');
+    overlay.classList.remove('show');
     button.onclick = null;
     shellfin.classList.add('pop');
     shellfin.addEventListener('animationend', function handlePop(e) {
@@ -31,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     shellfin.classList.remove('pop');
     monster.classList.remove('pop');
     message.classList.remove('show');
+    overlay.classList.remove('show');
     messageText.textContent = "Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help!";
     button.onclick = startBattle;
     shellfin.style.animation = 'none';
@@ -43,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   monster.addEventListener('animationend', () => {
     messageText.textContent = "Monster spotted! It’s battle time. My attacks are powered by learning. The more you know, the tougher I become!";
+    overlay.classList.add('show');
     message.classList.add('show');
     button.onclick = goToBattle;
   });
@@ -71,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     message.addEventListener('transitionend', handleSlide);
     message.classList.remove('show');
+    overlay.classList.remove('show');
   }
 
   resetScene();
