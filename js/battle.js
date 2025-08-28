@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const choices = questionBox.querySelector('.choices');
   const progressFill = questionBox.querySelector('.progress-fill');
   let questions = [];
+  let totalQuestions = 0;
 
   fetch('../data/characters.json')
     .then((res) => res.json())
@@ -23,14 +24,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const foe = data.monsters.octomurk;
       shellfinName.textContent = hero.name;
       monsterName.textContent = foe.name;
-      shellfinHpFill.style.width = hero.health + '%';
-      monsterHpFill.style.width = foe.health + '%';
+      const heroHpPercent = ((hero.health - hero.damage) / hero.health) * 100;
+      const monsterHpPercent = ((foe.health - foe.damage) / foe.health) * 100;
+      shellfinHpFill.style.width = heroHpPercent + '%';
+      monsterHpFill.style.width = monsterHpPercent + '%';
     });
 
   fetch('../data/questions.json')
     .then((res) => res.json())
     .then((data) => {
-      questions = data.Walkthrough;
+      const walkthrough = data.Walkthrough;
+      questions = walkthrough.questions;
+      totalQuestions = walkthrough.total;
     });
 
   function showQuestion() {
@@ -46,7 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
           btn.textContent = choice.name;
           choices.appendChild(btn);
         });
-        progressFill.style.width = '100%';
+        const percent = (q.number / totalQuestions) * 100;
+        progressFill.style.width = percent + '%';
         questionBox.classList.add('show');
       }
     }
