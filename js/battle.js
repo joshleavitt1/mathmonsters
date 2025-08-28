@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const message = document.getElementById('message');
+  const overlay = document.getElementById('overlay');
   const monster = document.getElementById('battle-monster');
   const shellfin = document.getElementById('battle-shellfin');
   const monsterStats = document.getElementById('monster-stats');
@@ -24,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleEnd() {
     done++;
     if (done === 2) {
+      overlay.classList.add('show');
       message.classList.add('show');
     }
   }
