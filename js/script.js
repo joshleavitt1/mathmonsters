@@ -24,10 +24,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  button.addEventListener('click', startBattle);
+  function resetScene() {
+    shellfin.style.display = 'block';
+    enemy.style.display = 'none';
+    shellfin.classList.remove('pop');
+    message.classList.remove('show');
+    messageText.textContent = "Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help!";
+    button.removeEventListener('click', startBattle);
+    button.addEventListener('click', startBattle);
+    shellfin.style.animation = 'none';
+    enemy.style.animation = 'none';
+    void shellfin.offsetWidth;
+    void enemy.offsetWidth;
+    shellfin.style.animation = '';
+    enemy.style.animation = '';
+  }
 
   enemy.addEventListener('animationend', () => {
     messageText.textContent = "Monster spotted! It’s battle time. My attacks are powered by learning. The more you know, the tougher I become!";
     message.classList.add('show');
   });
+
+  resetScene();
+  window.addEventListener('pageshow', resetScene);
 });

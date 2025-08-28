@@ -4,11 +4,13 @@ html, body {
     margin: 0;
     background: url('../images/background.png') no-repeat center/cover;
  }
-#shellfin {
+#shellfin,
+#enemy {
   position: absolute;
   left: 50%;
   bottom: 30%;
   width: 300px;
+  max-width: 80vw;
   transform: translateX(100vw);
   animation: swim 2s forwards;
 }
@@ -18,12 +20,6 @@ html, body {
 }
 
 #enemy {
-  position: absolute;
-  left: 50%;
-  bottom: 30%;
-  width: 300px;
-  transform: translateX(100vw);
-  animation: swim 2s forwards;
   display: none;
 }
 @keyframes swim {
