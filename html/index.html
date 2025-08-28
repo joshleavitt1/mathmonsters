@@ -14,16 +14,24 @@
   <div id="game">
      <img id="shellfin" src="../images/shellfin.png" alt="Shellfin" />
      <img id="monster" src="../images/monster_battle.png" alt="monster" />
-     <div id="overlay"></div>
   </div>
   <div id="battle" style="display: none;">
     <img id="battle-monster" src="../images/monster_battle.png" alt="Monster" />
     <img id="battle-shellfin" src="../images/shellfin_battle.png" alt="Shellfin" />
+    <div id="monster-stats" class="stat-box">
+      <div class="name"></div>
+      <div class="hp-bar"><div class="hp-fill"></div></div>
+    </div>
+    <div id="shellfin-stats" class="stat-box">
+      <div class="name"></div>
+      <div class="hp-bar"><div class="hp-fill"></div></div>
+    </div>
   </div>
+  <div id="overlay"></div>
   <div id="message">
     <img src="../images/shellfin_message.png" alt="Shellfin avatar" />
     <p>Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help!</p>
-    <button>Continue</button>
+    <button type="button">Continue</button>
   </div>
     <script src="../js/script.js"></script>
     <script src="../js/battle.js"></script>

@@ -1,0 +1,16 @@
+{
+  "heroes": {
+    "shellfin": {
+      "name": "Shellfin",
+      "attack": 10,
+      "health": 100
+    }
+  },
+  "monsters": {
+    "octomurk": {
+      "name": "Octomurk",
+      "attack": 12,
+      "health": 100
+    }
+  }
+}
