@@ -2,6 +2,7 @@
      width: 100%;
      height: 100%;
      margin: 0;
+     overflow: hidden;
      background: url('../images/background.png') no-repeat center/cover;
   }
   
@@ -13,9 +14,6 @@
   width: 300px;
   max-width: 80vw;
   transform: translateX(100vw);
-}
-
-#shellfin {
   animation: swim 2s forwards;
 }
 
@@ -23,29 +21,8 @@
   animation: bubble-pop 0.5s forwards;
 }
 
-#monster.pop {
-  animation: bubble-pop 0.5s forwards;
-}
-
 #monster {
   display: none;
-}
-
-#overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.25);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s;
-}
-
-#overlay.show {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 @keyframes swim {
@@ -99,7 +76,7 @@
  #message img {
    width: 64px;
  }
- 
+
   #message button {
     width: 100%;
     height: 56px;
