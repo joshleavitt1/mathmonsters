@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.animationName === 'bubble-pop') {
         shellfin.style.display = 'none';
         monster.style.display = 'block';
+        monster.style.animation = 'swim 2s forwards';
         shellfin.removeEventListener('animationend', handlePop);
       }
     });
