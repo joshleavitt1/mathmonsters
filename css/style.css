@@ -12,6 +12,16 @@ html, body {
    transform: translateX(100vw);
    animation: swim 2s forwards;
  }
+
+#enemy {
+  position: absolute;
+  left: 50%;
+  bottom: 30%;
+  width: 300px;
+  transform: translateX(100vw);
+  animation: swim 2s forwards;
+  display: none;
+}
  @keyframes swim {
    to { transform: translateX(-50%); }
  }
