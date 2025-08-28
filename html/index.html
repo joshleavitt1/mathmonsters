@@ -8,18 +8,24 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Shellfin Intro</title>
     <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/battle.css" />
   </head>
   <body>
   <div id="game">
      <img id="shellfin" src="../images/shellfin.png" alt="Shellfin" />
      <img id="monster" src="../images/monster_battle.png" alt="monster" />
      <div id="overlay"></div>
-     <div id="message">
-         <img src="../images/shellfin_message.png" alt="Shellfin avatar" />
-         <p>Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help!</p>
-         <button>Continue</button>
-       </div>
-      </div>
+  </div>
+  <div id="battle" style="display: none;">
+    <img id="battle-monster" src="../images/monster_battle.png" alt="Monster" />
+    <img id="battle-shellfin" src="../images/shellfin_battle.png" alt="Shellfin" />
+  </div>
+  <div id="message">
+    <img src="../images/shellfin_message.png" alt="Shellfin avatar" />
+    <p>Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help!</p>
+    <button>Continue</button>
+  </div>
     <script src="../js/script.js"></script>
+    <script src="../js/battle.js"></script>
   </body>
   </html>
