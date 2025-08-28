@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.animationName === 'swim') {
       message.classList.add('show');
     }
+  shellfin.addEventListener('animationend', () => {
+    message.classList.add('show');
   });
 
   function startBattle() {
@@ -22,6 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
         shellfin.removeEventListener('animationend', handlePop);
       }
     });
+    setTimeout(() => {
+      shellfin.style.display = 'none';
+      enemy.style.display = 'block';
+    }, 500);
   }
 
   button.addEventListener('click', startBattle);
