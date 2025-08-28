@@ -19,27 +19,26 @@ html, body {
   max-width: 80vw;
 }
 
+/* Monster slides from right to middle-right */
 #battle-monster {
   top: 10%;
-  left: 100%;
-  transform: translateX(0);
+  left: 100%; /* start fully offscreen right */
   animation: monster-slide 3s ease-out forwards;
-  animation: monster-slide 3s linear forwards;
-}
-
-#battle-shellfin {
-  bottom: 10%;
-  left: 0;
-  transform: translateX(-100%);
-  animation: shellfin-slide 3s ease-out forwards;
 }
 
 @keyframes monster-slide {
   from { left: 100%; }
-  to { left: -300px; }
+  to   { left: 55%; } /* stops slightly right of center */
+}
+
+/* Shellfin slides from left to middle-left */
+#battle-shellfin {
+  bottom: 10%;
+  right: 100%; /* start fully offscreen left */
+  animation: shellfin-slide 3s ease-out forwards;
 }
 
 @keyframes shellfin-slide {
-  from { left: -300px; }
-  to { left: 100%; }
+  from { right: 100%; }
+  to   { right: 55%; } /* stops slightly left of center */
 }
