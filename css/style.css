@@ -6,13 +6,16 @@
   }
   
 #shellfin,
-#enemy {
+#monster {
   position: absolute;
   left: 50%;
   bottom: 30%;
   width: 300px;
   max-width: 80vw;
   transform: translateX(100vw);
+}
+
+#shellfin {
   animation: swim 2s forwards;
 }
 
@@ -20,7 +23,7 @@
   animation: bubble-pop 0.5s forwards;
 }
 
-#enemy {
+#monster {
   display: none;
 }
 
