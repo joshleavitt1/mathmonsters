@@ -34,3 +34,46 @@
   from { right: 100%; }
   to   { right: 55%; } /* stops slightly left of center */
 }
+
+.stat-box {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+#monster-stats {
+  top: 5%;
+  left: 35%;
+}
+
+#shellfin-stats {
+  bottom: 5%;
+  right: 35%;
+}
+
+.stat-box .name {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 18px;
+  color: #fff;
+}
+
+.hp-bar {
+  width: 100px;
+  height: 12px;
+  border: 1px solid #fff;
+  border-radius: 6px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.hp-fill {
+  background: #FFBB00;
+  height: 100%;
+  width: 100%;
+}
