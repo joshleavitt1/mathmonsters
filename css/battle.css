@@ -24,6 +24,7 @@ html, body {
   left: 100%;
   transform: translateX(0);
   animation: monster-slide 3s ease-out forwards;
+  animation: monster-slide 3s linear forwards;
 }
 
 #battle-shellfin {
@@ -41,4 +42,16 @@ html, body {
 @keyframes shellfin-slide {
   from { transform: translateX(-100%); }
   to { transform: translateX(-33%); }
+  left: -300px;
+  animation: shellfin-slide 3s linear forwards;
+}
+
+@keyframes monster-slide {
+  from { left: 100%; }
+  to { left: -300px; }
+}
+
+@keyframes shellfin-slide {
+  from { left: -300px; }
+  to { left: 100%; }
 }
