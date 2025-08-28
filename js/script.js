@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function startBattle() {
     message.classList.remove('show');
-    button.removeEventListener('click', startBattle);
+    button.onclick = null;
     shellfin.classList.add('pop');
     shellfin.addEventListener('animationend', function handlePop(e) {
       if (e.animationName === 'bubble-pop') {
@@ -30,8 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     shellfin.classList.remove('pop');
     message.classList.remove('show');
     messageText.textContent = "Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help!";
-    button.removeEventListener('click', startBattle);
-    button.addEventListener('click', startBattle);
+    button.onclick = startBattle;
     shellfin.style.animation = 'none';
     enemy.style.animation = 'none';
     void shellfin.offsetWidth;
@@ -43,8 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
   enemy.addEventListener('animationend', () => {
     messageText.textContent = "Monster spotted! It’s battle time. My attacks are powered by learning. The more you know, the tougher I become!";
     message.classList.add('show');
+    button.onclick = () => {
+      window.location.href = 'battle.html';
+    };
   });
 
   resetScene();
   window.addEventListener('pageshow', resetScene);
- });
+});
