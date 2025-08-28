@@ -22,11 +22,26 @@ html, body {
 #battle-monster {
   top: 10%;
   left: 100%;
+  transform: translateX(0);
+  animation: monster-slide 3s ease-out forwards;
   animation: monster-slide 3s linear forwards;
 }
 
 #battle-shellfin {
   bottom: 10%;
+  left: 0;
+  transform: translateX(-100%);
+  animation: shellfin-slide 3s ease-out forwards;
+}
+
+@keyframes monster-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-66%); }
+}
+
+@keyframes shellfin-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(-33%); }
   left: -300px;
   animation: shellfin-slide 3s linear forwards;
 }
