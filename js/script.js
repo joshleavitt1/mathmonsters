@@ -48,15 +48,29 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function goToBattle() {
-    message.classList.remove('show');
     button.onclick = null;
-    monster.classList.add('pop');
-    monster.addEventListener('animationend', function handlePop(e) {
+
+    function handlePop(e) {
       if (e.animationName === 'bubble-pop') {
         window.location.href = 'battle.html';
         monster.removeEventListener('animationend', handlePop);
       }
-    });
+    }
+
+    function handleSlide(e) {
+      if (e.propertyName === 'transform') {
+        message.removeEventListener('transitionend', handleSlide);
+        // Clear the inline swim animation so the pop animation can run
+        monster.style.animation = 'none';
+        void monster.offsetWidth; // trigger reflow
+        monster.style.animation = '';
+        monster.classList.add('pop');
+        monster.addEventListener('animationend', handlePop);
+      }
+    }
+
+    message.addEventListener('transitionend', handleSlide);
+    message.classList.remove('show');
   }
 
   resetScene();
