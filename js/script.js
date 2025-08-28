@@ -1,3 +1,6 @@
 document.getElementById('shellfin').addEventListener('animationend', function() {
-  document.getElementById('message').style.display = 'block';
+  const message = document.getElementById('message');
+  requestAnimationFrame(() => {
+    message.classList.add('show');
+  });
 });
