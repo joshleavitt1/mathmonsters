@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const messageText = message.querySelector('p');
   const button = message.querySelector('button');
   const overlay = document.getElementById('overlay');
+  const battle = document.getElementById('battle');
 
   shellfin.addEventListener('animationend', (e) => {
     if (e.animationName === 'swim') {
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function resetScene() {
     shellfin.style.display = 'block';
     monster.style.display = 'none';
+    battle.style.display = 'none';
     shellfin.classList.remove('pop');
     monster.classList.remove('pop');
     message.classList.remove('show');
@@ -57,8 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handlePop(e) {
       if (e.animationName === 'bubble-pop') {
-        window.location.href = 'battle.html';
         monster.removeEventListener('animationend', handlePop);
+        document.getElementById('game').style.display = 'none';
+        battle.style.display = 'block';
+        messageText.textContent = "Each battle is a series of questions – answer right to attack, but answer wrong and take damage.";
       }
     }
 
