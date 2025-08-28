@@ -40,6 +40,29 @@ html, body {
   opacity: 1;
   pointer-events: auto;
 }
+
+ #message {
+   display: none;
+   position: absolute;
+   left: 50%;
+   bottom: 0;
+   transform: translate(-50%, 100%);
+   width: 100%;
+   max-width: 500px;
+   background: #fff;
+   box-sizing: border-box;
+   padding: 24px;
+   border-radius: 16px 16px 0 0;
+   text-align: left;
+   transition: transform 0.3s ease-out;
+ }
+
+#message.show {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transform: translate(-50%, 0);
+}
  #message p {
    font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
    font-size: 24px;
@@ -48,6 +71,7 @@ html, body {
  }
 #message img {
   width: 72px;
+  width: 64px;
 }
  #message button {
    width: 100%;
