@@ -66,7 +66,8 @@ html, body {
   }
 }
 
- #message {
+ #message,
+ #question {
     position: absolute;
     left: 50%;
     bottom: 0;
@@ -84,12 +85,14 @@ html, body {
     align-items: flex-start;
     z-index: 20;
   }
- 
- #message.show {
+
+ #message.show,
+ #question.show {
    transform: translate(-50%, 0);
  }
 
-  #message p {
+  #message p,
+  #question p {
     font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
     font-size: 24px;
     line-height: 1.4;
@@ -100,7 +103,8 @@ html, body {
    width: 64px;
  }
 
-  #message button {
+  #message button,
+  #question button {
     width: 100%;
     height: 56px;
     background: #006AFF;
@@ -109,4 +113,27 @@ html, body {
     border-radius: 8px;
     font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
     font-size: 18px;
+  }
+
+  #question .progress-bar {
+    width: 100%;
+    height: 16px;
+    background: #F6F6F6;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  #question .progress-fill {
+    width: 100%;
+    height: 100%;
+    background: #006AFF;
+  }
+
+  #question .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    margin-top: 16px;
   }
