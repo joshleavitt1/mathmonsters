@@ -23,7 +23,7 @@ html, body {
 #battle-monster {
   top: 10%;
   left: 100%; /* start fully offscreen right */
-  animation: monster-slide 3s ease-out forwards;
+  animation: monster-slide 1s ease-out forwards;
 }
 
 @keyframes monster-slide {
@@ -35,7 +35,7 @@ html, body {
 #battle-shellfin {
   bottom: 10%;
   right: 100%; /* start fully offscreen left */
-  animation: shellfin-slide 3s ease-out forwards;
+  animation: shellfin-slide 1s ease-out forwards;
 }
 
 @keyframes shellfin-slide {
