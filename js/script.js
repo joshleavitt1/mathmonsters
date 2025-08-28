@@ -1,7 +1,3 @@
-document.getElementById('shellfin').addEventListener('animationend', function() {
-  const message = document.getElementById('message');
-  message.style.display = 'flex';
-  requestAnimationFrame(() => {
-    message.classList.add('show');
-  });
+document.getElementById('shellfin').addEventListener('animationend', () => {
+  document.getElementById('message').classList.add('show');
 });
