@@ -2,15 +2,15 @@
   "heroes": {
     "shellfin": {
       "name": "Shellfin",
-      "attack": 10,
-      "health": 100
+      "attack": 1,
+      "health": 3
     }
   },
   "monsters": {
     "octomurk": {
       "name": "Octomurk",
-      "attack": 12,
-      "health": 100
+      "attack": 1,
+      "health": 3
     }
   }
 }
