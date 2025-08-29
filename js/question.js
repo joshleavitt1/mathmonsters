@@ -22,7 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const isCorrect = choice.dataset.correct === 'true';
 
     button.classList.add('result', isCorrect ? 'correct' : 'incorrect');
-    button.textContent = isCorrect ? '✓ Correct' : '✕ Incorrect';
+    button.innerHTML = isCorrect
+      ? '<img src="" alt="Correct icon" /> Correct'
+      : '<img src="" alt="Incorrect icon" /> Incorrect';
 
     setTimeout(() => {
       function handleSlide(e) {
