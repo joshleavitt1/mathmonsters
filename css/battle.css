@@ -77,3 +77,23 @@
   height: 100%;
   width: 100%;
 }
+
+#battle-shellfin.attack {
+  animation: hero-attack 0.5s;
+}
+
+#battle-monster.attack {
+  animation: monster-attack 0.5s;
+}
+
+@keyframes hero-attack {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(50px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes monster-attack {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-50px); }
+  100% { transform: translateX(0); }
+}
