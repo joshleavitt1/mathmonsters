@@ -19,6 +19,26 @@ html, body {
   z-index: 10;
 }
 
+#loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 24px;
+  z-index: 100;
+}
+
+#loading.hide {
+  display: none;
+}
+
 #overlay.show {
   opacity: 1;
   pointer-events: auto;

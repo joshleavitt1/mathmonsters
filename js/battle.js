@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentQuestion = 0;
   let hero;
   let foe;
+  let feedbackShown = { correct: false, incorrect: false };
 
   const ATTACK_DELAY_MS = 1200;
 
@@ -92,11 +93,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.detail.correct) {
       heroAttack(true);
     } else {
-      monsterAttack(() => heroAttack(false, () => showFeedback(false)));
+      monsterAttack(() => heroAttack(false, () => showFeedback(false)), 300);
     }
   });
 
   function showFeedback(correct) {
+    const key = correct ? 'correct' : 'incorrect';
+    if (feedbackShown[key]) {
+      nextTurn();
+      return;
+    }
+    feedbackShown[key] = true;
     const text = correct
       ? 'Awesome job! Only two more hits needed to take Octomurk down. Let’s do it!'
       : 'Ouch, that hurt! Don’t worry though, you still do damage when you get the question wrong.';
@@ -106,6 +113,13 @@ document.addEventListener('DOMContentLoaded', () => {
     button.onclick = () => {
       nextTurn();
     };
+  }
+
+  function endBattle(result) {
+    message.querySelector('p').textContent = result === 'win' ? 'win' : 'lose';
+    overlay.classList.add('show');
+    message.classList.add('show');
+    button.onclick = null;
   }
 
   function heroAttack(correct, after) {
@@ -121,6 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
           function afterBar(ev) {
             if (ev.propertyName === 'width') {
               monsterHpFill.removeEventListener('transitionend', afterBar);
+              if (foe.damage >= foe.health) {
+                endBattle('win');
+                return;
+              }
               setTimeout(() => {
                 if (after) {
                   after();
@@ -137,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, ATTACK_DELAY_MS);
   }
 
-  function monsterAttack(after) {
+  function monsterAttack(after, postDelay = 1200) {
     setTimeout(() => {
       monster.classList.add('attack');
       function handleMonster(e) {
@@ -150,13 +168,17 @@ document.addEventListener('DOMContentLoaded', () => {
           function afterBar(ev) {
             if (ev.propertyName === 'width') {
               shellfinHpFill.removeEventListener('transitionend', afterBar);
+              if (hero.damage >= hero.health) {
+                endBattle('lose');
+                return;
+              }
               setTimeout(() => {
                 if (after) {
                   after();
                 } else {
                   showFeedback(false);
                 }
-              }, 1200);
+              }, postDelay);
             }
           }
           shellfinHpFill.addEventListener('transitionend', afterBar);
