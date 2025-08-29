@@ -107,14 +107,10 @@
 }
 
 #question button.result {
-  width: 56px;
-  margin: 16px auto 0;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: scale(1.2);
-  transition: background 0.3s, width 0.3s, transform 0.3s;
+  transition: background 0.3s;
 }
 
 #question button.correct {

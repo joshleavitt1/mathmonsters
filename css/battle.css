@@ -79,11 +79,11 @@
 }
 
 #battle-shellfin.attack {
-  animation: hero-attack 0.5s;
+  animation: hero-attack 0.5s ease-in-out;
 }
 
 #battle-monster.attack {
-  animation: monster-attack 0.5s;
+  animation: monster-attack 0.5s ease-in-out;
 }
 
 @keyframes hero-attack {
