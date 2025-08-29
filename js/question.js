@@ -38,6 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       questionBox.addEventListener('transitionend', handleSlide);
       questionBox.classList.remove('show');
-    }, 500);
+    }, 1000);
   });
 });
