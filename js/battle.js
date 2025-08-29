@@ -13,8 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionHeading = questionBox.querySelector('h1');
   const questionText = questionBox.querySelector('p');
-  const choices = questionBox.querySelector('.choices');
-  const progressFill = questionBox.querySelector('.progress-fill');
+    const choices = questionBox.querySelector('.choices');
+    const progressFill = questionBox.querySelector('.progress-fill');
+    const questionButton = questionBox.querySelector('button');
   let questions = [];
   let totalQuestions = 0;
 
@@ -44,18 +45,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleSlide(e) {
       if (e.propertyName === 'transform') {
         message.removeEventListener('transitionend', handleSlide);
-        const q = questions[0];
-        questionHeading.textContent = `Question ${q.number} of ${totalQuestions}`;
-        questionText.textContent = q.question;
-        choices.innerHTML = '';
-        q.choices.forEach((choice) => {
-          const div = document.createElement('div');
-          div.classList.add('choice');
-          const p = document.createElement('p');
-          p.textContent = choice.name;
-          div.appendChild(p);
-          choices.appendChild(div);
-        });
+          const q = questions[0];
+          questionHeading.textContent = `Question ${q.number} of ${totalQuestions}`;
+          questionText.textContent = q.question;
+          choices.innerHTML = '';
+          questionButton.disabled = true;
+          q.choices.forEach((choice) => {
+            const div = document.createElement('div');
+            div.classList.add('choice');
+            if (choice.image) {
+              const img = document.createElement('img');
+              img.src = `../images/questions/${choice.image}`;
+              img.alt = choice.name;
+              div.appendChild(img);
+            }
+            const p = document.createElement('p');
+            p.textContent = choice.name;
+            div.appendChild(p);
+            choices.appendChild(div);
+          });
         const percent = (q.number / totalQuestions) * 100;
         progressFill.style.width = percent + '%';
         questionBox.classList.add('show');
