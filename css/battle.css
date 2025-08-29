@@ -11,28 +11,28 @@
   max-width: 80vw;
 }
 
-/* Monster slides from right to middle-right */
+/* Monster slides in from the right */
 #battle-monster {
   top: 10%;
-  left: 100%; /* start fully offscreen right */
+  left: 55%;
   animation: monster-slide 1s ease-out forwards;
 }
 
 @keyframes monster-slide {
-  from { left: 100%; }
-  to   { left: 55%; } /* stops slightly right of center */
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
 }
 
-/* Shellfin slides from left to middle-left */
+/* Shellfin slides in from the left */
 #battle-shellfin {
   bottom: 10%;
-  right: 100%; /* start fully offscreen left */
+  right: 55%;
   animation: shellfin-slide 1s ease-out forwards;
 }
 
 @keyframes shellfin-slide {
-  from { right: 100%; }
-  to   { right: 55%; } /* stops slightly left of center */
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
 }
 
 .stat-box {
@@ -76,6 +76,7 @@
   background: #FFBB00;
   height: 100%;
   width: 100%;
+  transition: width 0.5s ease-in-out;
 }
 
 #battle-shellfin.attack {
@@ -87,13 +88,11 @@
 }
 
 @keyframes hero-attack {
-  0% { transform: translateX(0); }
   50% { transform: translateX(50px); }
   100% { transform: translateX(0); }
 }
 
 @keyframes monster-attack {
-  0% { transform: translateX(0); }
   50% { transform: translateX(-50px); }
   100% { transform: translateX(0); }
 }
