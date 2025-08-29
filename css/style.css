@@ -87,8 +87,16 @@ html, body {
   }
 
  #message.show,
- #question.show {
-   transform: translate(-50%, 0);
+#question.show {
+  transform: translate(-50%, 0);
+}
+
+ #message h1,
+ #question h1 {
+   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+   font-size: 14px;
+   color: #858585;
+   margin: 0 0 8px;
  }
 
   #message p,
@@ -131,9 +139,28 @@ html, body {
   }
 
   #question .choices {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 16px;
     width: 100%;
+    margin-top: 16px;
+  }
+
+  #question .choice {
+    background: #F6F6F6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+
+  #question .choice p {
+    margin: 0;
+    text-align: center;
+  }
+
+  #question button {
     margin-top: 16px;
   }
