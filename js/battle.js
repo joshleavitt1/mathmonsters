@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
   function showQuestion() {
+    overlay.classList.remove('show');
     function setupQuestion() {
       const q = questions[currentQuestion];
       questionHeading.textContent = `Question ${q.number} of ${totalQuestions}`;
