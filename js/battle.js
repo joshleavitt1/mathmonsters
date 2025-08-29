@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let hero;
   let foe;
 
+  const ATTACK_DELAY_MS = 1200 * 1000;
+
   fetch('../data/characters.json')
     .then((res) => res.json())
     .then((data) => {
@@ -103,53 +105,57 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function heroAttack(correct) {
-    shellfin.classList.add('attack');
-    function handleHero(e) {
-      if (e.animationName === 'hero-attack') {
-        shellfin.classList.remove('attack');
-        shellfin.removeEventListener('animationend', handleHero);
-        foe.damage += hero.attack;
-        const percent = ((foe.health - foe.damage) / foe.health) * 100;
-        monsterHpFill.style.width = percent + '%';
-        function afterBar(ev) {
-          if (ev.propertyName === 'width') {
-            monsterHpFill.removeEventListener('transitionend', afterBar);
-            setTimeout(() => {
-              if (!correct) {
-                monsterAttack();
-              } else {
-                showFeedback(true);
-              }
-            }, 1200);
+    setTimeout(() => {
+      shellfin.classList.add('attack');
+      function handleHero(e) {
+        if (e.animationName === 'hero-attack') {
+          shellfin.classList.remove('attack');
+          shellfin.removeEventListener('animationend', handleHero);
+          foe.damage += hero.attack;
+          const percent = ((foe.health - foe.damage) / foe.health) * 100;
+          monsterHpFill.style.width = percent + '%';
+          function afterBar(ev) {
+            if (ev.propertyName === 'width') {
+              monsterHpFill.removeEventListener('transitionend', afterBar);
+              setTimeout(() => {
+                if (!correct) {
+                  monsterAttack();
+                } else {
+                  showFeedback(true);
+                }
+              }, 1200);
+            }
           }
+          monsterHpFill.addEventListener('transitionend', afterBar);
         }
-        monsterHpFill.addEventListener('transitionend', afterBar);
       }
-    }
-    shellfin.addEventListener('animationend', handleHero);
+      shellfin.addEventListener('animationend', handleHero);
+    }, ATTACK_DELAY_MS);
   }
 
   function monsterAttack() {
-    monster.classList.add('attack');
-    function handleMonster(e) {
-      if (e.animationName === 'monster-attack') {
-        monster.classList.remove('attack');
-        monster.removeEventListener('animationend', handleMonster);
-        hero.damage += foe.attack;
-        const percent = ((hero.health - hero.damage) / hero.health) * 100;
-        shellfinHpFill.style.width = percent + '%';
-        function afterBar(ev) {
-          if (ev.propertyName === 'width') {
-            shellfinHpFill.removeEventListener('transitionend', afterBar);
-            setTimeout(() => {
-              showFeedback(false);
-            }, 1200);
+    setTimeout(() => {
+      monster.classList.add('attack');
+      function handleMonster(e) {
+        if (e.animationName === 'monster-attack') {
+          monster.classList.remove('attack');
+          monster.removeEventListener('animationend', handleMonster);
+          hero.damage += foe.attack;
+          const percent = ((hero.health - hero.damage) / hero.health) * 100;
+          shellfinHpFill.style.width = percent + '%';
+          function afterBar(ev) {
+            if (ev.propertyName === 'width') {
+              shellfinHpFill.removeEventListener('transitionend', afterBar);
+              setTimeout(() => {
+                showFeedback(false);
+              }, 1200);
+            }
           }
+          shellfinHpFill.addEventListener('transitionend', afterBar);
         }
-        shellfinHpFill.addEventListener('transitionend', afterBar);
       }
-    }
-    monster.addEventListener('animationend', handleMonster);
+      monster.addEventListener('animationend', handleMonster);
+    }, ATTACK_DELAY_MS);
   }
 
   function nextTurn() {
