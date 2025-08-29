@@ -89,7 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('answer-submitted', (e) => {
     overlay.classList.remove('show');
-    heroAttack(e.detail.correct);
+    if (e.detail.correct) {
+      heroAttack(true);
+    } else {
+      monsterAttack(() => heroAttack(false, () => showFeedback(false)));
+    }
   });
 
   function showFeedback(correct) {
@@ -104,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  function heroAttack(correct) {
+  function heroAttack(correct, after) {
     setTimeout(() => {
       shellfin.classList.add('attack');
       function handleHero(e) {
@@ -118,10 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (ev.propertyName === 'width') {
               monsterHpFill.removeEventListener('transitionend', afterBar);
               setTimeout(() => {
-                if (!correct) {
-                  monsterAttack();
+                if (after) {
+                  after();
                 } else {
-                  showFeedback(true);
+                  showFeedback(correct);
                 }
               }, 1200);
             }
@@ -133,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, ATTACK_DELAY_MS);
   }
 
-  function monsterAttack() {
+  function monsterAttack(after) {
     setTimeout(() => {
       monster.classList.add('attack');
       function handleMonster(e) {
@@ -147,7 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (ev.propertyName === 'width') {
               shellfinHpFill.removeEventListener('transitionend', afterBar);
               setTimeout(() => {
-                showFeedback(false);
+                if (after) {
+                  after();
+                } else {
+                  showFeedback(false);
+                }
               }, 1200);
             }
           }
@@ -178,9 +186,11 @@ document.addEventListener('DOMContentLoaded', () => {
           if (statsDone === 2) {
             shellfinStats.removeEventListener('transitionend', statsHandler);
             monsterStats.removeEventListener('transitionend', statsHandler);
-            overlay.classList.add('show');
-            message.classList.add('show');
-            button.onclick = showQuestion;
+            setTimeout(() => {
+              overlay.classList.add('show');
+              message.classList.add('show');
+              button.onclick = showQuestion;
+            }, 600);
           }
         }
       }
