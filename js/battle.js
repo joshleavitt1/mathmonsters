@@ -88,6 +88,18 @@ document.addEventListener('DOMContentLoaded', () => {
     heroAttack(e.detail.correct);
   });
 
+  function showFeedback(correct) {
+    const text = correct
+      ? 'Awesome job! Only two more hits needed to take Octomurk down. Let’s do it!'
+      : 'Ouch, that hurt! Don’t worry though, you still do damage when you get the question wrong.';
+    message.querySelector('p').textContent = text;
+    overlay.classList.add('show');
+    message.classList.add('show');
+    button.onclick = () => {
+      nextTurn();
+    };
+  }
+
   function heroAttack(correct) {
     shellfin.classList.add('attack');
     foe.damage += hero.attack;
@@ -100,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!correct) {
           monsterAttack();
         } else {
-          nextTurn();
+          showFeedback(true);
         }
       }
     }
@@ -116,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.animationName === 'monster-attack') {
         monster.classList.remove('attack');
         monster.removeEventListener('animationend', handleMonster);
-        nextTurn();
+        showFeedback(false);
       }
     }
     monster.addEventListener('animationend', handleMonster);
