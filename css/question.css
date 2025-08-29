@@ -83,7 +83,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 1 / 1;
   border: 3px solid transparent;
   cursor: pointer;
 }
@@ -94,7 +94,7 @@
 }
 
 #question .choice img {
-  width: 100%;
+  width: 50%;
   height: auto;
   flex-grow: 1;
   object-fit: contain;
