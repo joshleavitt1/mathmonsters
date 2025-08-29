@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const shellfinHpFill = shellfinStats.querySelector('.hp-fill');
   const button = message.querySelector('button');
   const questionBox = document.getElementById('question');
+  const questionHeading = questionBox.querySelector('h1');
   const questionText = questionBox.querySelector('p');
   const choices = questionBox.querySelector('.choices');
   const progressFill = questionBox.querySelector('.progress-fill');
@@ -44,12 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.propertyName === 'transform') {
         message.removeEventListener('transitionend', handleSlide);
         const q = questions[0];
+        questionHeading.textContent = `Question ${q.number} of ${totalQuestions}`;
         questionText.textContent = q.question;
         choices.innerHTML = '';
         q.choices.forEach((choice) => {
-          const btn = document.createElement('button');
-          btn.textContent = choice.name;
-          choices.appendChild(btn);
+          const div = document.createElement('div');
+          div.classList.add('choice');
+          const p = document.createElement('p');
+          p.textContent = choice.name;
+          div.appendChild(p);
+          choices.appendChild(div);
         });
         const percent = (q.number / totalQuestions) * 100;
         progressFill.style.width = percent + '%';
