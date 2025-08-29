@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
   function showQuestion() {
-    overlay.classList.remove('show');
+    overlay.classList.add('show');
     function setupQuestion() {
       const q = questions[currentQuestion];
       questionHeading.textContent = `Question ${q.number} of ${totalQuestions}`;
@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.addEventListener('answer-submitted', (e) => {
+    overlay.classList.remove('show');
     heroAttack(e.detail.correct);
   });
 
