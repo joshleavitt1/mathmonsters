@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let hero;
   let foe;
 
-  const ATTACK_DELAY_MS = 1200 * 1000;
+  const ATTACK_DELAY_MS = 1200;
 
   fetch('../data/characters.json')
     .then((res) => res.json())
