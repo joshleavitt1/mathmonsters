@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const button = message.querySelector('button');
   const overlay = document.getElementById('overlay');
   const battle = document.getElementById('battle');
+  const skipButton = document.getElementById('skip-button');
 
   shellfin.addEventListener('animationend', (e) => {
     if (e.animationName === 'swim') {
@@ -85,6 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.classList.remove('show');
   }
 
+  function skipToBattle() {
+    document.getElementById('game').style.display = 'none';
+    battle.style.display = 'block';
+    message.classList.remove('show');
+    overlay.classList.remove('show');
+  }
+
   resetScene();
   window.addEventListener('pageshow', resetScene);
+  skipButton.addEventListener('click', skipToBattle);
 });
