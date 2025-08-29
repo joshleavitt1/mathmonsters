@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
               } else {
                 showFeedback(true);
               }
-            }, 300);
+            }, 600);
           }
         }
         monsterHpFill.addEventListener('transitionend', afterBar);
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             shellfinHpFill.removeEventListener('transitionend', afterBar);
             setTimeout(() => {
               showFeedback(false);
-            }, 300);
+            }, 600);
           }
         }
         shellfinHpFill.addEventListener('transitionend', afterBar);
