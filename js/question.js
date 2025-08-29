@@ -23,8 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     button.classList.add('result', isCorrect ? 'correct' : 'incorrect');
     button.innerHTML = isCorrect
-      ? '<img src="images/questions/button/correct.svg" alt="Correct icon" /> Correct'
-      : '<img src="images/questions/button/incorrect.svg" alt="Incorrect icon" /> Incorrect';
+      ? '<img src="../images/questions/button/correct.svg" alt="Correct icon" /> Correct'
+      : '<img src="../images/questions/button/incorrect.svg" alt="Incorrect icon" /> Incorrect';
 
     setTimeout(() => {
       function handleSlide(e) {
