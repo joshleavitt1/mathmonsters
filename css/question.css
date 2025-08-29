@@ -114,6 +114,10 @@
   transition: background 0.3s;
 }
 
+#question button.result img {
+  margin-right: 8px;
+}
+
 #question button.correct {
   background: #00BF00;
 }
