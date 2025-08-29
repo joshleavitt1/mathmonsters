@@ -102,18 +102,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function heroAttack(correct) {
     shellfin.classList.add('attack');
-    foe.damage += hero.attack;
-    const percent = ((foe.health - foe.damage) / foe.health) * 100;
-    monsterHpFill.style.width = percent + '%';
     function handleHero(e) {
       if (e.animationName === 'hero-attack') {
         shellfin.classList.remove('attack');
         shellfin.removeEventListener('animationend', handleHero);
-        if (!correct) {
-          monsterAttack();
-        } else {
-          showFeedback(true);
+        foe.damage += hero.attack;
+        const percent = ((foe.health - foe.damage) / foe.health) * 100;
+        monsterHpFill.style.width = percent + '%';
+        function afterBar(ev) {
+          if (ev.propertyName === 'width') {
+            monsterHpFill.removeEventListener('transitionend', afterBar);
+            setTimeout(() => {
+              if (!correct) {
+                monsterAttack();
+              } else {
+                showFeedback(true);
+              }
+            }, 300);
+          }
         }
+        monsterHpFill.addEventListener('transitionend', afterBar);
       }
     }
     shellfin.addEventListener('animationend', handleHero);
@@ -121,14 +129,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function monsterAttack() {
     monster.classList.add('attack');
-    hero.damage += foe.attack;
-    const percent = ((hero.health - hero.damage) / hero.health) * 100;
-    shellfinHpFill.style.width = percent + '%';
     function handleMonster(e) {
       if (e.animationName === 'monster-attack') {
         monster.classList.remove('attack');
         monster.removeEventListener('animationend', handleMonster);
-        showFeedback(false);
+        hero.damage += foe.attack;
+        const percent = ((hero.health - hero.damage) / hero.health) * 100;
+        shellfinHpFill.style.width = percent + '%';
+        function afterBar(ev) {
+          if (ev.propertyName === 'width') {
+            shellfinHpFill.removeEventListener('transitionend', afterBar);
+            setTimeout(() => {
+              showFeedback(false);
+            }, 300);
+          }
+        }
+        shellfinHpFill.addEventListener('transitionend', afterBar);
       }
     }
     monster.addEventListener('animationend', handleMonster);
@@ -142,12 +158,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   let done = 0;
-  function handleEnd() {
+  function handleEnd(e) {
+    e.target.classList.remove('enter');
+    e.target.removeEventListener('animationend', handleEnd);
     done++;
     if (done === 2) {
-      overlay.classList.add('show');
-      message.classList.add('show');
-      button.onclick = showQuestion;
+      let statsDone = 0;
+      function statsHandler(ev) {
+        if (ev.propertyName === 'transform') {
+          statsDone++;
+          if (statsDone === 2) {
+            shellfinStats.removeEventListener('transitionend', statsHandler);
+            monsterStats.removeEventListener('transitionend', statsHandler);
+            overlay.classList.add('show');
+            message.classList.add('show');
+            button.onclick = showQuestion;
+          }
+        }
+      }
+      shellfinStats.addEventListener('transitionend', statsHandler);
+      monsterStats.addEventListener('transitionend', statsHandler);
+      shellfinStats.classList.add('show');
+      monsterStats.classList.add('show');
     }
   }
 

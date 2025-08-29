@@ -15,6 +15,9 @@
 #battle-monster {
   top: 10%;
   left: 55%;
+}
+
+#battle-monster.enter {
   animation: monster-slide 1s ease-out forwards;
 }
 
@@ -27,6 +30,9 @@
 #battle-shellfin {
   bottom: 10%;
   right: 55%;
+}
+
+#battle-shellfin.enter {
   animation: shellfin-slide 1s ease-out forwards;
 }
 
@@ -45,6 +51,14 @@
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(4px);
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.stat-box.show {
+  transform: scale(1);
+  opacity: 1;
 }
 
 #monster-stats {
