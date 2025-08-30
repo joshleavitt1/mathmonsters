@@ -1,6 +1,6 @@
 {
   "Walkthrough": {
-    "total": 2,
+    "total": 3,
     "questions": [
       {
         "name": "Question 1",
@@ -14,6 +14,15 @@
       {
         "name": "Question 2",
         "number": 2,
+        "question": "Coral is a close relative of the sea anemone. Is coral a plant, a rock, or an animal?",
+        "choices": [
+          { "image": "question_1_1.png", "name": "Plant", "correct": "true" },
+          { "image": "question_1_2.png", "name": "Rock", "correct": "false" }
+        ]
+      },
+      {
+        "name": "Question 3",
+        "number": 3,
         "question": "Coral is a close relative of the sea anemone. Is coral a plant, a rock, or an animal?",
         "choices": [
           { "image": "question_1_1.png", "name": "Plant", "correct": "true" },
