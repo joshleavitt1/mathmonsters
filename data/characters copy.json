@@ -2,7 +2,7 @@
   "heroes": {
     "shellfin": {
       "name": "Shellfin",
-      "attack": 3,
+      "attack": 1,
       "health": 3,
       "damage": 0
     }
