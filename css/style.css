@@ -157,6 +157,75 @@ html, body {
   font-size: 18px;
 }
 
+#message .generic-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+#message .win-content {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+}
+
+#message.win {
+  text-align: center;
+  align-items: center;
+}
+
+#message.win .generic-content {
+  display: none;
+}
+
+#message.win .win-content {
+  display: flex;
+}
+
+#message.win .hero-name {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 40px;
+  color: #272B34;
+  margin: 0;
+}
+
+#message.win .hero-level,
+#message.win .stat-box .label {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 14px;
+  color: #858585;
+  margin: 0;
+}
+
+#message.win .hero-sprite {
+  width: 120px;
+  margin: 16px 0;
+}
+
+#message.win .stats {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+  width: 100%;
+}
+
+#message.win .stat-box {
+  background: #F6F6F6;
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+#message.win .stat-box .value {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 24px;
+  color: #006AFF;
+  margin: 0;
+}
+
 #skip-button {
   position: absolute;
   top: 10px;

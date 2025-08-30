@@ -9,7 +9,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const monsterHpFill = monsterStats.querySelector('.hp-fill');
   const shellfinName = shellfinStats.querySelector('.name');
   const shellfinHpFill = shellfinStats.querySelector('.hp-fill');
-  const button = message.querySelector('button');
+  const genericContent = message.querySelector('.generic-content');
+  const winContent = message.querySelector('.win-content');
+  const button = genericContent.querySelector('button');
+  const heroNameDisplay = winContent.querySelector('.hero-name');
+  const heroLevelDisplay = winContent.querySelector('.hero-level');
+  const heroSpriteDisplay = winContent.querySelector('.hero-sprite');
+  const attackDisplay = winContent.querySelector('.attack');
+  const healthDisplay = winContent.querySelector('.health');
+  const claimButton = winContent.querySelector('button');
   const questionBox = document.getElementById('question');
   const questionHeading = questionBox.querySelector('h1');
   const questionText = questionBox.querySelector('p');
@@ -115,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const text = correct
       ? 'Awesome job! Only two more hits needed to take Octomurk down. Let’s do it!'
       : 'Ouch, that hurt! Don’t worry though, you still do damage when you get the question wrong.';
-    message.querySelector('p').textContent = text;
+    message.querySelector('.generic-content p').textContent = text;
     overlay.classList.add('show');
     message.classList.add('show');
     button.onclick = () => {
@@ -138,15 +146,20 @@ document.addEventListener('DOMContentLoaded', () => {
         introMonster.style.animation = '';
         introMonster.classList.add('pop-in');
         setTimeout(() => {
-          message.querySelector('p').textContent = 'win';
+          heroNameDisplay.textContent = hero.name;
+          heroLevelDisplay.textContent = `Level ${hero.level}`;
+          heroSpriteDisplay.src = `../images/${hero.name.toLowerCase()}_message.png`;
+          attackDisplay.textContent = hero.attack;
+          healthDisplay.textContent = hero.health - hero.damage;
+          message.classList.add('win');
           overlay.classList.add('show');
           message.classList.add('show');
-          button.onclick = null;
-        }, 600);
+          claimButton.onclick = null;
+        }, 2400);
       }, 300);
       return;
     }
-    message.querySelector('p').textContent = 'lose';
+    message.querySelector('.generic-content p').textContent = 'lose';
     overlay.classList.add('show');
     message.classList.add('show');
     button.onclick = null;
