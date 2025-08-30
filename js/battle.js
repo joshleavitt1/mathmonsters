@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
           heroNameDisplay.textContent = hero.name;
           heroLevelDisplay.textContent = `Level ${hero.level}`;
-          heroSpriteDisplay.src = `../images/${hero.name.toLowerCase()}_message.png`;
+          heroSpriteDisplay.src = `../images/${hero.name.toLowerCase()}.png`;
           attackDisplay.textContent = hero.attack;
           healthDisplay.textContent = hero.health - hero.damage;
           message.classList.add('win');
