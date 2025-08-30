@@ -180,6 +180,12 @@ html, body {
 
 #message.win .win-content {
   display: flex;
+  padding-top: 40px;
+  width: 100%;
+}
+
+#message.win .win-content button {
+  width: 100%;
 }
 
 #message.win .hero-name {
@@ -198,7 +204,7 @@ html, body {
 }
 
 #message.win .hero-sprite {
-  width: 120px;
+  width: 300px;
   margin: 16px 0;
 }
 
@@ -217,6 +223,12 @@ html, body {
   flex-direction: column;
   align-items: center;
   flex: 1;
+  position: static;
+  transform: none;
+  opacity: 1;
+  border: none;
+  backdrop-filter: none;
+  transition: none;
 }
 
 #message.win .stat-box .value {
