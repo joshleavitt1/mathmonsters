@@ -2,8 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const shellfin = document.getElementById('shellfin');
   const monster = document.getElementById('monster');
   const message = document.getElementById('message');
-  const messageText = message.querySelector('p');
-  const button = message.querySelector('button');
+  const messageText = message.querySelector('.generic-content p');
+  const button = message.querySelector('.generic-content button');
   const overlay = document.getElementById('overlay');
   const battle = document.getElementById('battle');
   const skipButton = document.getElementById('skip-button');
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function startBattle() {
-    message.classList.remove('show');
+    message.classList.remove('show', 'win');
     overlay.classList.remove('show');
     button.onclick = null;
     shellfin.classList.add('pop');
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     battle.style.display = 'none';
     shellfin.classList.remove('pop');
     monster.classList.remove('pop');
-    message.classList.remove('show');
+    message.classList.remove('show', 'win');
     overlay.classList.remove('show');
     messageText.textContent = "Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help!";
     button.onclick = startBattle;
@@ -82,14 +82,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     message.addEventListener('transitionend', handleSlide);
-    message.classList.remove('show');
+    message.classList.remove('show', 'win');
     overlay.classList.remove('show');
   }
 
   function skipToBattle() {
     document.getElementById('game').style.display = 'none';
     battle.style.display = 'block';
-    message.classList.remove('show');
+    message.classList.remove('show', 'win');
     overlay.classList.remove('show');
   }
 
