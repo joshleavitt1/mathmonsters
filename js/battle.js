@@ -29,6 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const ATTACK_DELAY_MS = 1200;
 
+  function applyDamage(attacker, defender) {
+    defender.damage = Number(defender.damage) + Number(attacker.attack);
+  }
+
   fetch('../data/characters.json')
     .then((res) => res.json())
     .then((data) => {
@@ -155,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.animationName === 'hero-attack') {
           shellfin.classList.remove('attack');
           shellfin.removeEventListener('animationend', handleHero);
-          foe.damage += hero.attack;
+          applyDamage(hero, foe);
           const percent = ((foe.health - foe.damage) / foe.health) * 100;
           monsterHpFill.style.width = percent + '%';
           function afterBar(ev) {
@@ -188,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.animationName === 'monster-attack') {
           monster.classList.remove('attack');
           monster.removeEventListener('animationend', handleMonster);
-          hero.damage += foe.attack;
+          applyDamage(foe, hero);
           const percent = ((hero.health - hero.damage) / hero.health) * 100;
           shellfinHpFill.style.width = percent + '%';
           function afterBar(ev) {
