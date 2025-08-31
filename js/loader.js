@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const loading = document.getElementById('loading');
   const imageSources = [
     '../images/background/background.png',
-    '../images/characters/shellfin.png',
     '../images/battle/monster_battle.png',
     '../images/battle/shellfin_battle.png',
     '../images/message/shellfin_message.png',
@@ -16,13 +15,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch data ahead of time
   Promise.all([
     fetch('../data/characters.json').then((res) => res.json()),
-    fetch('../data/questions.json').then((res) => res.json())
+    fetch('../data/missions.json').then((res) => res.json())
   ])
-    .then(([characters, questions]) => {
+    .then(([characters, missions]) => {
       window.preloadedData.characters = characters;
-      window.preloadedData.questions = questions;
+      window.preloadedData.missions = missions;
+      // Collect hero level images
+      Object.values(characters.heroes).forEach((hero) => {
+        Object.values(hero.levels).forEach((level) => {
+          imageSources.push(`../images/characters/${level.image}`);
+        });
+      });
       // Collect question images
-      questions.Walkthrough.questions.forEach((q) => {
+      missions.Walkthrough.questions.forEach((q) => {
         q.choices.forEach((choice) => {
           if (choice.image) {
             imageSources.push(`../images/questions/${choice.image}`);

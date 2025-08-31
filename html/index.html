@@ -15,7 +15,7 @@
   <div id="loading">Loading...</div>
   <button id="skip-button">Skip</button>
   <div id="game">
-     <img id="shellfin" src="../images/characters/shellfin.png" alt="Shellfin" />
+     <img id="shellfin" src="../images/characters/shellfin_level_1.png" alt="Shellfin" />
      <img id="monster" src="../images/battle/monster_battle.png" alt="monster" />
   </div>
   <div id="battle" style="display: none;">
@@ -41,6 +41,13 @@
       <h1 class="hero-name">Mission Complete</h1>
       <img class="hero-sprite" src="" alt="Hero sprite" />
       <div class="stats">
+        <div class="stat-box progress-box">
+          <div class="level-labels">
+            <span class="hero-level current"></span>
+            <span class="hero-level next"></span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+        </div>
         <div class="stat-box">
           <p class="label">Accuracy</p>
           <p class="value attack"></p>
@@ -48,13 +55,6 @@
         <div class="stat-box">
           <p class="label">Speed</p>
           <p class="value health"></p>
-        </div>
-        <div class="stat-box progress-box">
-          <div class="level-labels">
-            <span class="hero-level current"></span>
-            <span class="hero-level next"></span>
-          </div>
-          <div class="progress-bar"><div class="progress-fill"></div></div>
         </div>
       </div>
       <button type="button">Continue</button>
