@@ -192,28 +192,23 @@ document.addEventListener('DOMContentLoaded', () => {
           claimButton.onclick = null;
 
           setTimeout(() => {
-            const newExperience = hero.experience + missionExperience;
             const currentStart = Number(hero.levels[hero.level].start);
             const nextStart = Number(hero.levels[hero.level + 1]?.start || maxLevelStart);
+            hero.experience += missionExperience;
             xpFill.addEventListener('transitionend', function handleXp(e) {
               if (e.propertyName === 'width') {
                 xpFill.removeEventListener('transitionend', handleXp);
-                hero.experience = newExperience;
-                const nextLevel = hero.level + 1;
-                const nextLevelData = hero.levels[nextLevel];
-                if (nextLevelData && hero.experience >= Number(nextLevelData.start)) {
-                  hero.level = nextLevel;
+                if (hero.experience >= nextStart) {
+                  hero.level += 1;
                   updateLevelProgress(true);
                   levelUpBadge.classList.remove('show');
                   void levelUpBadge.offsetWidth;
                   levelUpBadge.classList.add('show');
-                } else {
-                  updateLevelProgress();
                 }
               }
             });
             const fillPercent = Math.min(
-              ((newExperience - currentStart) / (nextStart - currentStart || 1)) * 100,
+              ((hero.experience - currentStart) / (nextStart - currentStart || 1)) * 100,
               100
             );
             xpFill.style.width = fillPercent + '%';
@@ -228,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { once: true }
               );
             };
-          }, 1600);
+          }, 2400);
         }, 3200);
       }, 300);
       return;
