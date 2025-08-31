@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
           overlay.classList.add('show');
           message.classList.add('show');
           claimButton.onclick = null;
-        }, 2400);
+        }, 3200);
       }, 300);
       return;
     }
