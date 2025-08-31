@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let correctAnswers = 0;
   let startTime;
   let endTime;
+  let missionExperience = 0;
 
   const ATTACK_DELAY_MS = 1200;
 
@@ -59,12 +60,13 @@ document.addEventListener('DOMContentLoaded', () => {
       monsterHpFill.style.width = monsterHpPercent + '%';
     });
 
-  fetch('../data/questions.json')
+  fetch('../data/missions.json')
     .then((res) => res.json())
     .then((data) => {
       const walkthrough = data.Walkthrough;
       questions = walkthrough.questions;
       totalQuestions = questions.length;
+      missionExperience = walkthrough.experience;
     });
 
   function showQuestion() {
@@ -159,10 +161,10 @@ document.addEventListener('DOMContentLoaded', () => {
         introMonster.classList.add('pop-in');
         setTimeout(() => {
           heroNameDisplay.textContent = 'Mission Complete';
-          heroSpriteDisplay.src = `../images/characters/${hero.name.toLowerCase()}.png`;
+          heroSpriteDisplay.src = `../images/characters/${hero.levels[hero.level].image}`;
           const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
           attackDisplay.textContent = `${accuracy}%`;
-          const speed = ((endTime - startTime) / 1000).toFixed(2);
+          const speed = Math.floor((endTime - startTime) / 1000);
           healthDisplay.textContent = `${speed}s`;
           levelLeftDisplay.textContent = `Level ${hero.level}`;
           levelRightDisplay.textContent = `Level ${hero.level + 1}`;
@@ -171,6 +173,30 @@ document.addEventListener('DOMContentLoaded', () => {
           overlay.classList.add('show');
           message.classList.add('show');
           claimButton.onclick = null;
+
+          setTimeout(() => {
+            const newExperience = hero.experience + missionExperience;
+            xpFill.addEventListener('transitionend', function handleXp(e) {
+              if (e.propertyName === 'width') {
+                xpFill.removeEventListener('transitionend', handleXp);
+                hero.experience = newExperience;
+                const nextLevel = hero.level + 1;
+                const nextLevelData = hero.levels[nextLevel];
+                if (nextLevelData && hero.experience >= Number(nextLevelData.start)) {
+                  hero.level = nextLevel;
+                  levelLeftDisplay.textContent = `Level ${hero.level}`;
+                  levelRightDisplay.textContent = `Level ${hero.level + 1}`;
+                  setTimeout(() => {
+                    heroSpriteDisplay.src = `../images/characters/${hero.levels[hero.level].image}`;
+                    heroSpriteDisplay.classList.remove('pop-in');
+                    void heroSpriteDisplay.offsetWidth;
+                    heroSpriteDisplay.classList.add('pop-in');
+                  }, 600);
+                }
+              }
+            });
+            xpFill.style.width = newExperience + '%';
+          }, 600);
         }, 3200);
       }, 300);
       return;
