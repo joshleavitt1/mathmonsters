@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         monster.removeEventListener('animationend', handlePop);
         document.getElementById('game').style.display = 'none';
         battle.style.display = 'block';
-        messageText.textContent = "Each battle is a series of questions – answer right to attack, but answer wrong and take damage.";
+        messageText.textContent = "Each battle is a series of questions – answer right to attack and fight back. Let’s get learning!";
       }
     }
 
