@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const button = message.querySelector('.generic-content button');
   const overlay = document.getElementById('overlay');
   const battle = document.getElementById('battle');
-  const skipButton = document.getElementById('skip-button');
+  const skipBattleButton = document.getElementById('skip-button');
+  const skipWinButton = document.getElementById('skip-win-button');
 
   shellfin.addEventListener('animationend', (e) => {
     if (e.animationName === 'swim') {
@@ -93,7 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.classList.remove('show');
   }
 
+  function skipToWin() {
+    message.classList.remove('show', 'win');
+    overlay.classList.remove('show');
+    document.dispatchEvent(new Event('skip-win'));
+  }
+
   resetScene();
   window.addEventListener('pageshow', resetScene);
-  skipButton.addEventListener('click', skipToBattle);
+  skipBattleButton.addEventListener('click', skipToBattle);
+  skipWinButton.addEventListener('click', skipToWin);
 });
