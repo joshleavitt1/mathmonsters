@@ -13,10 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const winContent = message.querySelector('.win-content');
   const button = genericContent.querySelector('button');
   const heroNameDisplay = winContent.querySelector('.hero-name');
-  const heroLevelDisplay = winContent.querySelector('.hero-level');
   const heroSpriteDisplay = winContent.querySelector('.hero-sprite');
   const attackDisplay = winContent.querySelector('.attack');
   const healthDisplay = winContent.querySelector('.health');
+  const levelLeftDisplay = winContent.querySelector('.level-labels .current');
+  const levelRightDisplay = winContent.querySelector('.level-labels .next');
+  const xpFill = winContent.querySelector('.progress-fill');
   const claimButton = winContent.querySelector('button');
   const questionBox = document.getElementById('question');
   const questionHeading = questionBox.querySelector('h1');
@@ -34,6 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let hero;
   let foe;
   let feedbackShown = { correct: false, incorrect: false };
+  let correctAnswers = 0;
+  let startTime;
+  let endTime;
 
   const ATTACK_DELAY_MS = 1200;
 
@@ -59,13 +64,16 @@ document.addEventListener('DOMContentLoaded', () => {
     .then((data) => {
       const walkthrough = data.Walkthrough;
       questions = walkthrough.questions;
-      totalQuestions = walkthrough.total;
+      totalQuestions = questions.length;
     });
 
   function showQuestion() {
     overlay.classList.add('show');
     function setupQuestion() {
       const q = questions[currentQuestion];
+      if (currentQuestion === 0) {
+        startTime = Date.now();
+      }
       questionHeading.textContent = `Question ${q.number} of ${totalQuestions}`;
       questionText.textContent = q.question;
       choices.innerHTML = '';
@@ -107,9 +115,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('answer-submitted', (e) => {
     overlay.classList.remove('show');
     if (e.detail.correct) {
+      correctAnswers++;
       heroAttack(true);
     } else {
       monsterAttack(() => heroAttack(false, () => showFeedback(false)), 300);
+    }
+    if (currentQuestion === totalQuestions - 1) {
+      endTime = Date.now();
     }
   });
 
@@ -146,11 +158,15 @@ document.addEventListener('DOMContentLoaded', () => {
         introMonster.style.animation = '';
         introMonster.classList.add('pop-in');
         setTimeout(() => {
-          heroNameDisplay.textContent = hero.name;
-          heroLevelDisplay.textContent = `Level ${hero.level}`;
+          heroNameDisplay.textContent = 'Mission Complete';
           heroSpriteDisplay.src = `../images/characters/${hero.name.toLowerCase()}.png`;
-          attackDisplay.textContent = hero.attack;
-          healthDisplay.textContent = hero.health - hero.damage;
+          const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
+          attackDisplay.textContent = `${accuracy}%`;
+          const speed = ((endTime - startTime) / 1000).toFixed(2);
+          healthDisplay.textContent = `${speed}s`;
+          levelLeftDisplay.textContent = `Level ${hero.level}`;
+          levelRightDisplay.textContent = `Level ${hero.level + 1}`;
+          xpFill.style.width = hero.experience + '%';
           message.classList.add('win');
           overlay.classList.add('show');
           message.classList.add('show');
