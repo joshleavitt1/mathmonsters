@@ -13,12 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const winContent = message.querySelector('.win-content');
   const button = genericContent.querySelector('button');
   const heroNameDisplay = winContent.querySelector('.hero-name');
-  const heroSpriteDisplay = winContent.querySelector('.hero-sprite');
   const attackDisplay = winContent.querySelector('.attack');
   const healthDisplay = winContent.querySelector('.health');
-  const levelLeftDisplay = winContent.querySelector('.level-labels .current');
-  const levelRightDisplay = winContent.querySelector('.level-labels .next');
   const xpFill = winContent.querySelector('.progress-fill');
+  const levelUpBadge = winContent.querySelector('.level-up-badge');
   const claimButton = winContent.querySelector('button');
   const questionBox = document.getElementById('question');
   const questionHeading = questionBox.querySelector('h1');
@@ -78,8 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextLevelData = hero.levels[hero.level + 1];
     const currentStart = Number(currentLevelData.start);
     const nextStart = nextLevelData ? Number(nextLevelData.start) : maxLevelStart;
-    levelLeftDisplay.textContent = `Level ${hero.level}`;
-    levelRightDisplay.textContent = `Level ${hero.level + 1}`;
     const progressPercent = ((hero.experience - currentStart) / (nextStart - currentStart || 1)) * 100;
     if (reset) {
       xpFill.style.transition = 'none';
@@ -182,7 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
         introMonster.classList.add('pop-in');
         setTimeout(() => {
           heroNameDisplay.textContent = 'Mission Complete';
-          heroSpriteDisplay.src = `../images/characters/${hero.levels[hero.level].image}`;
           const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
           attackDisplay.textContent = `${accuracy}%`;
           const speed = Math.floor((endTime - startTime) / 1000);
@@ -209,12 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (nextLevelData && hero.experience >= Number(nextLevelData.start)) {
                   hero.level = nextLevel;
                   updateLevelProgress(true);
-                  setTimeout(() => {
-                    heroSpriteDisplay.src = `../images/characters/${hero.levels[hero.level].image}`;
-                    heroSpriteDisplay.classList.remove('pop-in');
-                    void heroSpriteDisplay.offsetWidth;
-                    heroSpriteDisplay.classList.add('pop-in');
-                  }, 600);
+                  levelUpBadge.classList.remove('show');
+                  void levelUpBadge.offsetWidth;
+                  levelUpBadge.classList.add('show');
                 } else {
                   updateLevelProgress();
                 }
@@ -225,6 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
               100
             );
             xpFill.style.width = fillPercent + '%';
+            claimButton.onclick = () => {
+              message.classList.remove('show');
+              overlay.classList.remove('show');
+              message.addEventListener(
+                'transitionend',
+                () => {
+                  window.location.href = '../html/walkthrough.html';
+                },
+                { once: true }
+              );
+            };
           }, 1600);
         }, 3200);
       }, 300);
