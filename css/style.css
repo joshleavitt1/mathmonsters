@@ -286,11 +286,16 @@ html, body {
   animation: hero-pop-in 0.5s forwards;
 }
 
-#skip-button {
+#skip-buttons {
   position: absolute;
   top: 10px;
   right: 10px;
+  display: flex;
+  gap: 10px;
+  z-index: 30;
+}
+
+#skip-buttons button {
   padding: 4px 8px;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  z-index: 30;
 }

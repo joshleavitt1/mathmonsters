@@ -310,4 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   monster.addEventListener('animationend', handleEnd);
   shellfin.addEventListener('animationend', handleEnd);
+
+  document.addEventListener('skip-win', () => {
+    endBattle('win');
+  });
 });
