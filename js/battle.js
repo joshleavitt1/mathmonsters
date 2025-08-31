@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let startTime;
   let endTime;
   let missionExperience = 0;
+  let prevLevel;
 
   const ATTACK_DELAY_MS = 1200;
 
@@ -194,6 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             const currentStart = Number(hero.levels[hero.level].start);
             const nextStart = Number(hero.levels[hero.level + 1]?.start || maxLevelStart);
+            prevLevel = hero.level;
             hero.experience += missionExperience;
             xpFill.addEventListener('transitionend', function handleXp(e) {
               if (e.propertyName === 'width') {
@@ -215,10 +217,42 @@ document.addEventListener('DOMContentLoaded', () => {
               message.classList.remove('show');
               overlay.classList.remove('show');
               introMonster.style.display = 'none';
-              introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
+              introShellfin.src = `../images/characters/${hero.levels[prevLevel].image}`;
               introShellfin.style.display = 'block';
               introShellfin.classList.add('center');
               message.addEventListener('transitionend', () => updateLevelProgress(true), { once: true });
+
+              setTimeout(() => {
+                const genericImg = genericContent.querySelector('img');
+                const genericP = genericContent.querySelector('p');
+                const genericBtn = genericContent.querySelector('button');
+                genericImg.src = '../images/message/shellfin_message.png';
+                genericP.textContent = "Now that I leveled up, I’m ready to evolve and become even more powerful.";
+                genericBtn.textContent = 'Continue';
+                overlay.classList.add('show');
+                message.classList.remove('win');
+                message.classList.add('show');
+                genericBtn.onclick = () => {
+                  message.classList.remove('show');
+                  overlay.classList.remove('show');
+                  introShellfin.classList.remove('pop', 'pop-in');
+                  introShellfin.classList.add('pop');
+                  introShellfin.addEventListener('animationend', function handlePop(e) {
+                    if (e.animationName === 'bubble-pop') {
+                      introShellfin.removeEventListener('animationend', handlePop);
+                      introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
+                      introShellfin.classList.remove('pop');
+                      introShellfin.classList.add('pop-in');
+                      introShellfin.addEventListener('animationend', function handlePopIn(ev) {
+                        if (ev.animationName === 'bubble-pop-in') {
+                          introShellfin.classList.remove('pop-in');
+                          introShellfin.removeEventListener('animationend', handlePopIn);
+                        }
+                      });
+                    }
+                  });
+                };
+              }, 1600);
             };
           }, 2400);
         }, 3200);

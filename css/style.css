@@ -59,6 +59,10 @@ html, body {
   animation: bubble-pop 0.5s forwards;
 }
 
+#shellfin.pop-in {
+  animation: bubble-pop-in 0.5s forwards;
+}
+
 #monster.pop {
   animation: bubble-pop 0.5s forwards;
 }
@@ -270,8 +274,8 @@ html, body {
 
 #message.win .stat-box.progress-box .level-up-badge {
   position: absolute;
-  top: -20px;
-  right: -20px;
+  top: -40px;
+  right: -40px;
   width: 56px;
   height: 56px;
   background: #00B600;
