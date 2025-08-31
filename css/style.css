@@ -255,15 +255,6 @@ html, body {
   position: relative;
 }
 
-#message.win .stat-box.progress-box .level-range {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 100%;
-  background: #FFFFFF;
-}
-
 #message.win .stat-box.progress-box .progress-fill {
   position: absolute;
   left: 0;
@@ -279,6 +270,14 @@ html, body {
   font-size: 24px;
   color: #006AFF;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#message.win .stat-box .value .icon {
+  width: 24px;
+  height: 24px;
 }
 
 @keyframes hero-pop-in {

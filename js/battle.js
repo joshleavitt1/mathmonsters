@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const healthDisplay = winContent.querySelector('.health');
   const levelLeftDisplay = winContent.querySelector('.level-labels .current');
   const levelRightDisplay = winContent.querySelector('.level-labels .next');
-  const levelRange = winContent.querySelector('.level-range');
   const xpFill = winContent.querySelector('.progress-fill');
   const claimButton = winContent.querySelector('button');
   const questionBox = document.getElementById('question');
@@ -36,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentQuestion = 0;
   let hero;
   let foe;
-  let minLevelStart = 0;
   let maxLevelStart = 0;
   let feedbackShown = { correct: false, incorrect: false };
   let correctAnswers = 0;
@@ -62,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
       shellfinHpFill.style.width = heroHpPercent + '%';
       monsterHpFill.style.width = monsterHpPercent + '%';
       const starts = Object.values(hero.levels).map((l) => Number(l.start));
-      minLevelStart = Math.min(...starts);
       maxLevelStart = Math.max(...starts);
     });
 
@@ -83,11 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextStart = nextLevelData ? Number(nextLevelData.start) : maxLevelStart;
     levelLeftDisplay.textContent = `Level ${hero.level}`;
     levelRightDisplay.textContent = `Level ${hero.level + 1}`;
-    const total = maxLevelStart - minLevelStart || 1;
-    const rangeLeft = ((currentStart - minLevelStart) / total) * 100;
-    const rangeWidth = ((nextStart - currentStart) / total) * 100;
-    levelRange.style.left = rangeLeft + '%';
-    levelRange.style.width = rangeWidth + '%';
     const progressPercent = ((hero.experience - currentStart) / (nextStart - currentStart || 1)) * 100;
     if (reset) {
       xpFill.style.transition = 'none';
@@ -195,7 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
           attackDisplay.textContent = `${accuracy}%`;
           const speed = Math.floor((endTime - startTime) / 1000);
           healthDisplay.textContent = `${speed}s`;
+          xpFill.style.transition = 'none';
           updateLevelProgress();
+          void xpFill.offsetWidth;
+          xpFill.style.transition = 'width 0.6s linear';
           message.classList.add('win');
           overlay.classList.add('show');
           message.classList.add('show');
@@ -230,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
               100
             );
             xpFill.style.width = fillPercent + '%';
-          }, 600);
+          }, 1600);
         }, 3200);
       }, 300);
       return;
