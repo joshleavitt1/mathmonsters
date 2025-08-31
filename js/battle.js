@@ -195,7 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
           attackDisplay.textContent = `${accuracy}%`;
           const speed = Math.floor((endTime - startTime) / 1000);
           healthDisplay.textContent = `${speed}s`;
+          xpFill.style.transition = 'none';
           updateLevelProgress();
+          void xpFill.offsetWidth;
+          xpFill.style.transition = 'width 0.6s linear';
           message.classList.add('win');
           overlay.classList.add('show');
           message.classList.add('show');
@@ -230,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
               100
             );
             xpFill.style.width = fillPercent + '%';
-          }, 600);
+          }, 1200);
         }, 3200);
       }, 300);
       return;

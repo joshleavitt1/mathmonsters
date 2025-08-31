@@ -279,6 +279,14 @@ html, body {
   font-size: 24px;
   color: #006AFF;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#message.win .stat-box .value .icon {
+  width: 24px;
+  height: 24px;
 }
 
 @keyframes hero-pop-in {
