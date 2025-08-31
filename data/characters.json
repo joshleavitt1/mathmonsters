@@ -3,6 +3,7 @@
     "shellfin": {
       "name": "Shellfin",
       "level": 1,
+      "experience": 0,
       "attack": 3,
       "health": 3,
       "damage": 0
