@@ -3,7 +3,7 @@ html, body {
     height: 100%;
     margin: 0;
     overflow: hidden;
-    background: url('../images/background.png') no-repeat center/cover;
+    background: url('../images/background/background.png') no-repeat center/cover;
  }
 
 #overlay {

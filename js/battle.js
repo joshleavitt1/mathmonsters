@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         battleDiv.style.display = 'none';
         game.style.display = 'block';
         introShellfin.style.display = 'none';
-        introMonster.src = '../images/monster_battle_dead.png';
+        introMonster.src = '../images/battle/monster_battle_dead.png';
         introMonster.style.display = 'block';
         introMonster.classList.remove('pop', 'pop-in');
         introMonster.style.animation = 'none';
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
           heroNameDisplay.textContent = hero.name;
           heroLevelDisplay.textContent = `Level ${hero.level}`;
-          heroSpriteDisplay.src = `../images/${hero.name.toLowerCase()}.png`;
+          heroSpriteDisplay.src = `../images/characters/${hero.name.toLowerCase()}.png`;
           attackDisplay.textContent = hero.attack;
           healthDisplay.textContent = hero.health - hero.damage;
           message.classList.add('win');

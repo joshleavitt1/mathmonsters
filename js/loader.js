@@ -4,11 +4,11 @@ window.preloadedData = {};
 document.addEventListener('DOMContentLoaded', () => {
   const loading = document.getElementById('loading');
   const imageSources = [
-    '../images/background.png',
-    '../images/shellfin.png',
-    '../images/monster_battle.png',
-    '../images/shellfin_battle.png',
-    '../images/shellfin_message.png',
+    '../images/background/background.png',
+    '../images/characters/shellfin.png',
+    '../images/battle/monster_battle.png',
+    '../images/battle/shellfin_battle.png',
+    '../images/message/shellfin_message.png',
     '../images/questions/button/correct.svg',
     '../images/questions/button/incorrect.svg'
   ];
