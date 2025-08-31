@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     monster.classList.remove('pop');
     message.classList.remove('show', 'win');
     overlay.classList.remove('show');
-    messageText.textContent = "Hi! I’m Shellfin – half turtle, half manta ray. Monsters have taken over my reef, and I need your help!";
+    messageText.textContent = "Hi! I’m Shellfin. I live on the reef, but monsters have taken over and I need you help!";
     button.onclick = startBattle;
     shellfin.style.animation = 'none';
     monster.style.animation = 'none';
