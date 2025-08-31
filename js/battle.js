@@ -200,7 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 xpFill.removeEventListener('transitionend', handleXp);
                 if (hero.experience >= nextStart) {
                   hero.level += 1;
-                  updateLevelProgress(true);
                   levelUpBadge.classList.remove('show');
                   void levelUpBadge.offsetWidth;
                   levelUpBadge.classList.add('show');
@@ -215,13 +214,11 @@ document.addEventListener('DOMContentLoaded', () => {
             claimButton.onclick = () => {
               message.classList.remove('show');
               overlay.classList.remove('show');
-              message.addEventListener(
-                'transitionend',
-                () => {
-                  window.location.href = '../html/walkthrough.html';
-                },
-                { once: true }
-              );
+              introMonster.style.display = 'none';
+              introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
+              introShellfin.style.display = 'block';
+              introShellfin.classList.add('center');
+              message.addEventListener('transitionend', () => updateLevelProgress(true), { once: true });
             };
           }, 2400);
         }, 3200);
