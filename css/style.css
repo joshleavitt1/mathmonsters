@@ -255,15 +255,6 @@ html, body {
   position: relative;
 }
 
-#message.win .stat-box.progress-box .level-range {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 100%;
-  background: #FFFFFF;
-}
-
 #message.win .stat-box.progress-box .progress-fill {
   position: absolute;
   left: 0;
@@ -281,7 +272,7 @@ html, body {
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 #message.win .stat-box .value .icon {
