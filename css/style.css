@@ -212,7 +212,7 @@ html, body {
 #message.win .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 16px;
   margin: 16px 0;
   width: 100%;
 }
