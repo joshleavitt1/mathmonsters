@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const healthDisplay = winContent.querySelector('.health');
   const levelLeftDisplay = winContent.querySelector('.level-labels .current');
   const levelRightDisplay = winContent.querySelector('.level-labels .next');
+  const levelRange = winContent.querySelector('.level-range');
   const xpFill = winContent.querySelector('.progress-fill');
   const claimButton = winContent.querySelector('button');
   const questionBox = document.getElementById('question');
@@ -35,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentQuestion = 0;
   let hero;
   let foe;
+  let minLevelStart = 0;
+  let maxLevelStart = 0;
   let feedbackShown = { correct: false, incorrect: false };
   let correctAnswers = 0;
   let startTime;
@@ -58,6 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const monsterHpPercent = ((foe.health - foe.damage) / foe.health) * 100;
       shellfinHpFill.style.width = heroHpPercent + '%';
       monsterHpFill.style.width = monsterHpPercent + '%';
+      const starts = Object.values(hero.levels).map((l) => Number(l.start));
+      minLevelStart = Math.min(...starts);
+      maxLevelStart = Math.max(...starts);
     });
 
   fetch('../data/missions.json')
@@ -68,6 +74,29 @@ document.addEventListener('DOMContentLoaded', () => {
       totalQuestions = questions.length;
       missionExperience = walkthrough.experience;
     });
+
+  function updateLevelProgress(reset = false) {
+    if (!hero || !hero.levels) return;
+    const currentLevelData = hero.levels[hero.level];
+    const nextLevelData = hero.levels[hero.level + 1];
+    const currentStart = Number(currentLevelData.start);
+    const nextStart = nextLevelData ? Number(nextLevelData.start) : maxLevelStart;
+    levelLeftDisplay.textContent = `Level ${hero.level}`;
+    levelRightDisplay.textContent = `Level ${hero.level + 1}`;
+    const total = maxLevelStart - minLevelStart || 1;
+    const rangeLeft = ((currentStart - minLevelStart) / total) * 100;
+    const rangeWidth = ((nextStart - currentStart) / total) * 100;
+    levelRange.style.left = rangeLeft + '%';
+    levelRange.style.width = rangeWidth + '%';
+    const progressPercent = ((hero.experience - currentStart) / (nextStart - currentStart || 1)) * 100;
+    if (reset) {
+      xpFill.style.transition = 'none';
+      xpFill.style.width = '0%';
+      void xpFill.offsetWidth;
+      xpFill.style.transition = 'width 0.6s linear';
+    }
+    xpFill.style.width = Math.min(Math.max(progressPercent, 0), 100) + '%';
+  }
 
   function showQuestion() {
     overlay.classList.add('show');
@@ -166,9 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
           attackDisplay.textContent = `${accuracy}%`;
           const speed = Math.floor((endTime - startTime) / 1000);
           healthDisplay.textContent = `${speed}s`;
-          levelLeftDisplay.textContent = `Level ${hero.level}`;
-          levelRightDisplay.textContent = `Level ${hero.level + 1}`;
-          xpFill.style.width = hero.experience + '%';
+          updateLevelProgress();
           message.classList.add('win');
           overlay.classList.add('show');
           message.classList.add('show');
@@ -176,6 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
           setTimeout(() => {
             const newExperience = hero.experience + missionExperience;
+            const currentStart = Number(hero.levels[hero.level].start);
+            const nextStart = Number(hero.levels[hero.level + 1]?.start || maxLevelStart);
             xpFill.addEventListener('transitionend', function handleXp(e) {
               if (e.propertyName === 'width') {
                 xpFill.removeEventListener('transitionend', handleXp);
@@ -184,18 +213,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nextLevelData = hero.levels[nextLevel];
                 if (nextLevelData && hero.experience >= Number(nextLevelData.start)) {
                   hero.level = nextLevel;
-                  levelLeftDisplay.textContent = `Level ${hero.level}`;
-                  levelRightDisplay.textContent = `Level ${hero.level + 1}`;
+                  updateLevelProgress(true);
                   setTimeout(() => {
                     heroSpriteDisplay.src = `../images/characters/${hero.levels[hero.level].image}`;
                     heroSpriteDisplay.classList.remove('pop-in');
                     void heroSpriteDisplay.offsetWidth;
                     heroSpriteDisplay.classList.add('pop-in');
                   }, 600);
+                } else {
+                  updateLevelProgress();
                 }
               }
             });
-            xpFill.style.width = newExperience + '%';
+            const fillPercent = Math.min(
+              ((newExperience - currentStart) / (nextStart - currentStart || 1)) * 100,
+              100
+            );
+            xpFill.style.width = fillPercent + '%';
           }, 600);
         }, 3200);
       }, 300);
