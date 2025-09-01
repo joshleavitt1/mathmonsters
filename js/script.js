@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const battle = document.getElementById('battle');
   const skipBattleButton = document.getElementById('skip-button');
   const skipWinButton = document.getElementById('skip-win-button');
+  const resetProgressButton = document.getElementById('reset-progress-button');
 
   shellfin.addEventListener('animationend', (e) => {
     if (e.animationName === 'swim') {
@@ -118,4 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('pageshow', resetScene);
   skipBattleButton.addEventListener('click', skipToBattle);
   skipWinButton.addEventListener('click', skipToWin);
+  if (resetProgressButton) {
+    resetProgressButton.addEventListener('click', resetProgress);
+  }
 });
