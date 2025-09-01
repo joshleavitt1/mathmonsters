@@ -102,10 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function resetProgress() {
-    localStorage.removeItem('characters');
-    // Optionally re-seed from your bundled defaults:
-    if (window.preloadedData?.characters) {
-      localStorage.setItem('characters', JSON.stringify(window.preloadedData.characters));
+    try {
+      localStorage.clear();
+    } catch (err) {
+      console.error('Failed to clear saved progress', err);
     }
     location.reload();
   }
