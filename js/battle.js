@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const introMonster = document.getElementById('monster');
   const introShellfin = document.getElementById('shellfin');
   const battleDiv = document.getElementById('battle');
-  const levelDisplay = document.getElementById('hero-level-display');
   let questions = [];
   let totalQuestions = 0;
   let currentQuestion = 0;
@@ -42,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let startTime;
   let endTime;
   let missionExperience = 0;
-  let prevLevel = null;
+  let prevLevel;
 
   const ATTACK_DELAY_MS = 1200;
 
@@ -60,12 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function applyDamage(attacker, defender) {
     defender.damage = Number(defender.damage) + Number(attacker.attack);
-  }
-
-  function updateHeroLevelDisplay() {
-    if (levelDisplay && hero) {
-      levelDisplay.textContent = `Level ${hero.level}`;
-    }
   }
 
   function loadData() {
@@ -90,8 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
     questions = walkthrough.questions;
     totalQuestions = questions.length;
     missionExperience = walkthrough.experience;
-
-    updateHeroLevelDisplay();
   }
 
   document.addEventListener('assets-loaded', loadData);
@@ -221,19 +212,17 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             const currentStart = Number(hero.levels[hero.level].start);
             const nextStart = Number(hero.levels[hero.level + 1]?.start || maxLevelStart);
-            prevLevel = null;
+            prevLevel = hero.level;
             hero.experience += missionExperience;
             xpFill.addEventListener('transitionend', function handleXp(e) {
               if (e.propertyName === 'width') {
                 xpFill.removeEventListener('transitionend', handleXp);
                 if (hero.experience >= nextStart) {
-                  prevLevel = hero.level;
                   hero.level += 1;
                   saveCharacterData();
                   levelUpBadge.classList.remove('show');
                   void levelUpBadge.offsetWidth;
                   levelUpBadge.classList.add('show');
-                  updateHeroLevelDisplay();
                 }
               }
             });
@@ -246,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
               message.classList.remove('show');
               overlay.classList.remove('show');
               message.addEventListener('transitionend', () => updateLevelProgress(true), { once: true });
-              if (prevLevel === null) return;
+
               introMonster.classList.remove('pop', 'pop-in');
               introMonster.classList.add('pop');
               introMonster.addEventListener('animationend', function handleMonsterPop(e) {
@@ -261,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   introShellfin.style.transform = 'translateX(100vw)';
                   void introShellfin.offsetWidth;
                   setTimeout(() => {
-                    introShellfin.style.animation = 'swim 2s forwards';
+                    introShellfin.style.animation = 'swim 1s forwards';
                   }, 400);
 
                   introShellfin.addEventListener('animationend', function handleSwim(ev) {
@@ -282,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         introShellfin.addEventListener('animationend', function handlePop(e) {
                           if (e.animationName === 'bubble-pop') {
                             introShellfin.removeEventListener('animationend', handlePop);
-                            introShellfin.src = `../images/characters/${hero.levels[prevLevel + 1].image}`;
+                            introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
                             introShellfin.classList.remove('pop');
                             introShellfin.classList.add('pop-in');
                             introShellfin.addEventListener('animationend', function handlePopIn(ev2) {
