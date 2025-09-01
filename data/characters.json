@@ -15,10 +15,6 @@
         "2": {
           "start": "100",
           "image": "shellfin_level_2.png"
-        },
-        "3": {
-          "start": "200",
-          "image": "shellfin_level_3.png"
         }
       }
     }
