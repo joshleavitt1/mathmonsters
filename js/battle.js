@@ -45,6 +45,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const ATTACK_DELAY_MS = 1200;
 
+  function saveCharacterData() {
+    try {
+      if (window.preloadedData?.characters?.heroes?.shellfin) {
+        window.preloadedData.characters.heroes.shellfin.level = hero.level;
+        window.preloadedData.characters.heroes.shellfin.experience = hero.experience;
+        localStorage.setItem('characters', JSON.stringify(window.preloadedData.characters));
+      }
+    } catch (err) {
+      console.error('Failed to save character data', err);
+    }
+  }
+
   function applyDamage(attacker, defender) {
     defender.damage = Number(defender.damage) + Number(attacker.attack);
   }
@@ -207,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 xpFill.removeEventListener('transitionend', handleXp);
                 if (hero.experience >= nextStart) {
                   hero.level += 1;
+                  saveCharacterData();
                   levelUpBadge.classList.remove('show');
                   void levelUpBadge.offsetWidth;
                   levelUpBadge.classList.add('show');
@@ -236,42 +249,49 @@ document.addEventListener('DOMContentLoaded', () => {
                   introShellfin.style.animation = 'none';
                   introShellfin.style.transform = 'translateX(100vw)';
                   void introShellfin.offsetWidth;
-                  introShellfin.style.animation = 'swim 1s forwards';
+                  setTimeout(() => {
+                    introShellfin.style.animation = 'swim 1s forwards';
+                  }, 400);
 
-                  genericImg.src = '../images/message/shellfin_message.png';
-                  genericP.textContent = "Now that I leveled up, I’m ready to evolve and become even more powerful.";
-                  button.textContent = 'Continue';
-                  overlay.classList.add('show');
-                  message.classList.remove('win');
-                  message.classList.add('show');
+                  introShellfin.addEventListener('animationend', function handleSwim(ev) {
+                    if (ev.animationName === 'swim') {
+                      introShellfin.removeEventListener('animationend', handleSwim);
+                      genericImg.src = '../images/message/shellfin_message.png';
+                      genericP.textContent = "Now that I leveled up, I’m ready to evolve and become even more powerful.";
+                      button.textContent = 'Continue';
+                      overlay.classList.add('show');
+                      message.classList.remove('win');
+                      message.classList.add('show');
 
-                  button.onclick = () => {
-                    message.classList.remove('show');
-                    overlay.classList.remove('show');
-                    introShellfin.classList.remove('pop', 'pop-in');
-                    introShellfin.classList.add('pop');
-                    introShellfin.addEventListener('animationend', function handlePop(e) {
-                      if (e.animationName === 'bubble-pop') {
-                        introShellfin.removeEventListener('animationend', handlePop);
-                        introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
-                        introShellfin.classList.remove('pop');
-                        introShellfin.classList.add('pop-in');
-                        introShellfin.addEventListener('animationend', function handlePopIn(ev) {
-                          if (ev.animationName === 'bubble-pop-in') {
-                            introShellfin.classList.remove('pop-in');
-                            introShellfin.removeEventListener('animationend', handlePopIn);
-                            setTimeout(() => {
-                              genericImg.src = '../images/message/shellfin_message.png';
-                              genericP.textContent = 'test';
-                              button.textContent = 'Continue';
-                              overlay.classList.add('show');
-                              message.classList.add('show');
-                            }, 800000);
+                      button.onclick = () => {
+                        message.classList.remove('show');
+                        overlay.classList.remove('show');
+                        introShellfin.classList.remove('pop', 'pop-in');
+                        introShellfin.classList.add('pop');
+                        introShellfin.addEventListener('animationend', function handlePop(e) {
+                          if (e.animationName === 'bubble-pop') {
+                            introShellfin.removeEventListener('animationend', handlePop);
+                            introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
+                            introShellfin.classList.remove('pop');
+                            introShellfin.classList.add('pop-in');
+                            introShellfin.addEventListener('animationend', function handlePopIn(ev2) {
+                              if (ev2.animationName === 'bubble-pop-in') {
+                                introShellfin.classList.remove('pop-in');
+                                introShellfin.removeEventListener('animationend', handlePopIn);
+                                setTimeout(() => {
+                                  genericImg.src = '../images/message/shellfin_message.png';
+                                  genericP.textContent = 'test';
+                                  button.textContent = 'Continue';
+                                  overlay.classList.add('show');
+                                  message.classList.add('show');
+                                }, 400);
+                              }
+                            });
                           }
                         });
-                      }
-                    });
-                  };
+                      };
+                    }
+                  });
                 }
               });
             };

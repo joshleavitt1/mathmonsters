@@ -13,8 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   // Fetch data ahead of time
+  const storedChars = localStorage.getItem('characters');
+  const charactersPromise = storedChars
+    ? Promise.resolve(JSON.parse(storedChars))
+    : fetch('../data/characters.json').then((res) => res.json());
+
   Promise.all([
-    fetch('../data/characters.json').then((res) => res.json()),
+    charactersPromise,
     fetch('../data/missions.json').then((res) => res.json())
   ])
     .then(([characters, missions]) => {
