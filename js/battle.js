@@ -213,47 +213,80 @@ document.addEventListener('DOMContentLoaded', () => {
               100
             );
             xpFill.style.width = fillPercent + '%';
-            claimButton.onclick = () => {
-              message.classList.remove('show');
-              overlay.classList.remove('show');
-              introMonster.style.display = 'none';
-              introShellfin.src = `../images/characters/${hero.levels[prevLevel].image}`;
-              introShellfin.style.display = 'block';
-              introShellfin.classList.add('center');
-              message.addEventListener('transitionend', () => updateLevelProgress(true), { once: true });
-
-              setTimeout(() => {
-                const genericImg = genericContent.querySelector('img');
-                const genericP = genericContent.querySelector('p');
-                const genericBtn = genericContent.querySelector('button');
-                genericImg.src = '../images/message/shellfin_message.png';
-                genericP.textContent = "Now that I leveled up, I’m ready to evolve and become even more powerful.";
-                genericBtn.textContent = 'Continue';
-                overlay.classList.add('show');
-                message.classList.remove('win');
-                message.classList.add('show');
-                genericBtn.onclick = () => {
-                  message.classList.remove('show');
-                  overlay.classList.remove('show');
-                  introShellfin.classList.remove('pop', 'pop-in');
-                  introShellfin.classList.add('pop');
-                  introShellfin.addEventListener('animationend', function handlePop(e) {
-                    if (e.animationName === 'bubble-pop') {
-                      introShellfin.removeEventListener('animationend', handlePop);
-                      introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
-                      introShellfin.classList.remove('pop');
-                      introShellfin.classList.add('pop-in');
-                      introShellfin.addEventListener('animationend', function handlePopIn(ev) {
-                        if (ev.animationName === 'bubble-pop-in') {
-                          introShellfin.classList.remove('pop-in');
-                          introShellfin.removeEventListener('animationend', handlePopIn);
-                        }
-                      });
-                    }
-                  });
-                };
-              }, 1600);
-            };
+              claimButton.onclick = () => {
+                overlay.classList.remove('show');
+                function afterSlide(e) {
+                  if (e.propertyName === 'transform') {
+                    message.removeEventListener('transitionend', afterSlide);
+                    updateLevelProgress(true);
+                    introMonster.classList.remove('pop', 'pop-in');
+                    introMonster.classList.add('pop');
+                    introMonster.addEventListener('animationend', function handleMonsterPop(ev) {
+                      if (ev.animationName === 'bubble-pop') {
+                        introMonster.removeEventListener('animationend', handleMonsterPop);
+                        introMonster.style.display = 'none';
+                        introShellfin.src = `../images/characters/${hero.levels[prevLevel].image}`;
+                        introShellfin.style.display = 'block';
+                        introShellfin.classList.remove('center');
+                        introShellfin.style.transform = 'translateX(-100vw)';
+                        introShellfin.style.animation = 'swim 2s forwards';
+                        introShellfin.addEventListener('animationend', function handleHeroSlide(ev2) {
+                          if (ev2.animationName === 'swim') {
+                            introShellfin.removeEventListener('animationend', handleHeroSlide);
+                            const genericImg = genericContent.querySelector('img');
+                            const genericP = genericContent.querySelector('p');
+                            const genericBtn = genericContent.querySelector('button');
+                            genericImg.src = '../images/message/shellfin_message.png';
+                            genericP.textContent = "Now that I leveled up, I’m ready to evolve and become even more powerful.";
+                            genericBtn.textContent = 'Continue';
+                            message.classList.remove('win');
+                            overlay.classList.add('show');
+                            message.classList.add('show');
+                            genericBtn.onclick = () => {
+                              overlay.classList.remove('show');
+                              function afterSecondSlide(ev3) {
+                                if (ev3.propertyName === 'transform') {
+                                  message.removeEventListener('transitionend', afterSecondSlide);
+                                  introShellfin.classList.remove('pop', 'pop-in');
+                                  introShellfin.classList.add('pop');
+                                  introShellfin.addEventListener('animationend', function handleHeroPop(eh) {
+                                    if (eh.animationName === 'bubble-pop') {
+                                      introShellfin.removeEventListener('animationend', handleHeroPop);
+                                      introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
+                                      introShellfin.classList.remove('pop');
+                                      introShellfin.classList.add('pop-in');
+                                      introShellfin.addEventListener('animationend', function handleHeroPopIn(eh2) {
+                                        if (eh2.animationName === 'bubble-pop-in') {
+                                          introShellfin.classList.remove('pop-in');
+                                          introShellfin.removeEventListener('animationend', handleHeroPopIn);
+                                          setTimeout(() => {
+                                            genericP.textContent = 'test';
+                                            genericBtn.textContent = 'Continue';
+                                            genericBtn.onclick = () => {
+                                              message.classList.remove('show');
+                                              overlay.classList.remove('show');
+                                            };
+                                            overlay.classList.add('show');
+                                            message.classList.add('show');
+                                          }, 800000);
+                                        }
+                                      });
+                                    }
+                                  });
+                                }
+                              }
+                              message.addEventListener('transitionend', afterSecondSlide);
+                              message.classList.remove('show');
+                            };
+                          }
+                        });
+                      }
+                    });
+                  }
+                }
+                message.addEventListener('transitionend', afterSlide);
+                message.classList.remove('show');
+              };
           }, 2400);
         }, 3200);
       }, 300);
