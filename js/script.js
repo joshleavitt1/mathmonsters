@@ -100,6 +100,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.dispatchEvent(new Event('skip-win'));
   }
 
+  function resetProgress() {
+    localStorage.removeItem('characters');
+    // Optionally re-seed from your bundled defaults:
+    if (window.preloadedData?.characters) {
+      localStorage.setItem('characters', JSON.stringify(window.preloadedData.characters));
+    }
+    location.reload();
+  }
+  // attach to a hidden dev button or a keyboard shortcut, e.g.:
+  document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'r' && e.metaKey) resetProgress();
+  });
+  
+
   resetScene();
   window.addEventListener('pageshow', resetScene);
   skipBattleButton.addEventListener('click', skipToBattle);
