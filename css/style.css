@@ -192,7 +192,6 @@ html, body {
 
 #message.win .win-content {
   display: flex;
-  padding-top: 40px;
   width: 100%;
 }
 
@@ -202,7 +201,7 @@ html, body {
 
 #message.win .hero-name {
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 32px;
+  font-size: 28px;
   color: #272B34;
   margin: 0;
 }
@@ -274,8 +273,8 @@ html, body {
 
 #message.win .stat-box.progress-box .level-up-badge {
   position: absolute;
-  top: -40px;
-  right: -40px;
+  top: -80px;
+  right: -30px;
   width: 56px;
   height: 56px;
   background: #00B600;
