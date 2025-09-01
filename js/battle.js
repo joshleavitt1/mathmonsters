@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         introShellfin.addEventListener('animationend', function handlePop(e) {
                           if (e.animationName === 'bubble-pop') {
                             introShellfin.removeEventListener('animationend', handlePop);
-                            introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
+                            introShellfin.src = `../images/characters/${hero.levels[prevLevel + 1].image}`;
                             introShellfin.classList.remove('pop');
                             introShellfin.classList.add('pop-in');
                             introShellfin.addEventListener('animationend', function handlePopIn(ev2) {
