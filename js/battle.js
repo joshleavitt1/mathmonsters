@@ -307,38 +307,41 @@ document.addEventListener('DOMContentLoaded', () => {
                   message.classList.remove('win');
                   message.classList.add('show');
 
-                  // On continue, pop out OLD sprite, then pop-in NEW (or same if no level-up)
+                  // On continue, wait briefly then pop out OLD sprite, then pop-in NEW (or same if no level-up)
                   button.onclick = () => {
                     message.classList.remove('show');
                     overlay.classList.remove('show');
 
                     introShellfin.classList.remove('pop', 'pop-in');
-                    introShellfin.classList.add('pop');
 
-                    introShellfin.addEventListener('animationend', function handlePop(e2) {
-                      if (e2.animationName !== 'bubble-pop') return;
-                      introShellfin.removeEventListener('animationend', handlePop);
+                    setTimeout(() => {
+                      introShellfin.classList.add('pop');
 
-                      const showLevel = hadLevelUp ? newLevel : oldLevel;
-                      introShellfin.src = `../images/characters/${hero.levels[showLevel]?.image}`;
+                      introShellfin.addEventListener('animationend', function handlePop(e2) {
+                        if (e2.animationName !== 'bubble-pop') return;
+                        introShellfin.removeEventListener('animationend', handlePop);
 
-                      introShellfin.classList.remove('pop');
-                      introShellfin.classList.add('pop-in');
+                        const showLevel = hadLevelUp ? newLevel : oldLevel;
+                        introShellfin.src = `../images/characters/${hero.levels[showLevel]?.image}`;
 
-                      introShellfin.addEventListener('animationend', function handlePopIn(ev2) {
-                        if (ev2.animationName !== 'bubble-pop-in') return;
-                        introShellfin.classList.remove('pop-in');
-                        introShellfin.removeEventListener('animationend', handlePopIn);
+                        introShellfin.classList.remove('pop');
+                        introShellfin.classList.add('pop-in');
 
-                        setTimeout(() => {
-                          genericImg.src = '../images/message/shellfin_message.png';
-                          genericP.textContent = hadLevelUp ? 'test' : 'Ready for the next mission?';
-                          button.textContent = 'Continue';
-                          overlay.classList.add('show');
-                          message.classList.add('show');
-                        }, 400);
+                        introShellfin.addEventListener('animationend', function handlePopIn(ev2) {
+                          if (ev2.animationName !== 'bubble-pop-in') return;
+                          introShellfin.classList.remove('pop-in');
+                          introShellfin.removeEventListener('animationend', handlePopIn);
+
+                          setTimeout(() => {
+                            genericImg.src = '../images/message/shellfin_message.png';
+                            genericP.textContent = hadLevelUp ? 'test' : 'Ready for the next mission?';
+                            button.textContent = 'Continue';
+                            overlay.classList.add('show');
+                            message.classList.add('show');
+                          }, 400);
+                        }, { once: true });
                       }, { once: true });
-                    }, { once: true });
+                    }, 400);
                   };
                 }, { once: true });
               }, { once: true });
