@@ -339,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
                           setTimeout(() => {
                             genericImg.src = '../images/message/shellfin_message.png';
                             genericP.textContent = 'Ready for the next mission?';
+                            genericP.textContent = hadLevelUp ? 'test' : 'Ready for the next mission?';
                             button.textContent = 'Continue';
                             overlay.classList.add('show');
                             message.classList.add('show');
