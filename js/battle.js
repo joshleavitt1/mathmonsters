@@ -338,8 +338,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                           setTimeout(() => {
                             genericImg.src = '../images/message/shellfin_message.png';
-                            genericP.textContent = 'Ready for the next mission?';
-                            genericP.textContent = hadLevelUp ? 'test' : 'Ready for the next mission?';
+                        
+                            genericP.textContent =
+                              'Barnacle armor – awesome! Take on more missions to learn about the ocean and evolve me even further!';
                             button.textContent = 'Continue';
                             overlay.classList.add('show');
                             message.classList.add('show');
