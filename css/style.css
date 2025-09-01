@@ -158,6 +158,17 @@ html, body {
   width: 64px;
 }
 
+#hero-level-display {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 16px;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  z-index: 30;
+}
+
 #message button {
   width: 100%;
   height: 56px;

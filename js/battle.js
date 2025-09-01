@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const introMonster = document.getElementById('monster');
   const introShellfin = document.getElementById('shellfin');
   const battleDiv = document.getElementById('battle');
+  const levelDisplay = document.getElementById('hero-level-display');
   let questions = [];
   let totalQuestions = 0;
   let currentQuestion = 0;
@@ -41,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let startTime;
   let endTime;
   let missionExperience = 0;
-  let prevLevel;
+  let prevLevel = null;
 
   const ATTACK_DELAY_MS = 1200;
 
@@ -59,6 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function applyDamage(attacker, defender) {
     defender.damage = Number(defender.damage) + Number(attacker.attack);
+  }
+
+  function updateHeroLevelDisplay() {
+    if (levelDisplay && hero) {
+      levelDisplay.textContent = `Level ${hero.level}`;
+    }
   }
 
   function loadData() {
@@ -83,6 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
     questions = walkthrough.questions;
     totalQuestions = questions.length;
     missionExperience = walkthrough.experience;
+
+    updateHeroLevelDisplay();
   }
 
   document.addEventListener('assets-loaded', loadData);
@@ -212,17 +221,19 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             const currentStart = Number(hero.levels[hero.level].start);
             const nextStart = Number(hero.levels[hero.level + 1]?.start || maxLevelStart);
-            prevLevel = hero.level;
+            prevLevel = null;
             hero.experience += missionExperience;
             xpFill.addEventListener('transitionend', function handleXp(e) {
               if (e.propertyName === 'width') {
                 xpFill.removeEventListener('transitionend', handleXp);
                 if (hero.experience >= nextStart) {
+                  prevLevel = hero.level;
                   hero.level += 1;
                   saveCharacterData();
                   levelUpBadge.classList.remove('show');
                   void levelUpBadge.offsetWidth;
                   levelUpBadge.classList.add('show');
+                  updateHeroLevelDisplay();
                 }
               }
             });
@@ -235,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
               message.classList.remove('show');
               overlay.classList.remove('show');
               message.addEventListener('transitionend', () => updateLevelProgress(true), { once: true });
-
+              if (prevLevel === null) return;
               introMonster.classList.remove('pop', 'pop-in');
               introMonster.classList.add('pop');
               introMonster.addEventListener('animationend', function handleMonsterPop(e) {
