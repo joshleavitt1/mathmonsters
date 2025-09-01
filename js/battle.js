@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   introShellfin.style.transform = 'translateX(100vw)';
                   void introShellfin.offsetWidth;
                   setTimeout(() => {
-                    introShellfin.style.animation = 'swim 1s forwards';
+                    introShellfin.style.animation = 'swim 2s forwards';
                   }, 400);
 
                   introShellfin.addEventListener('animationend', function handleSwim(ev) {
