@@ -268,6 +268,7 @@ html, body {
   top: 0;
   width: 0%;
   height: 100%;
+  border-radius: 4px;
   background: #006AFF;
   transition: width 0.6s linear;
 }
