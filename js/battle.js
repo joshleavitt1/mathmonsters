@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const introShellfin = document.getElementById('shellfin');
   const battleDiv = document.getElementById('battle');
   const heroLevelDisplay = document.getElementById('hero-level-display');
+
   let questions = [];
   let totalQuestions = 0;
   let currentQuestion = 0;
@@ -42,14 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let startTime;
   let endTime;
   let missionExperience = 0;
-  let prevLevel;
 
   const ATTACK_DELAY_MS = 1200;
 
   function updateHeroLevelDisplay() {
-    if (heroLevelDisplay && hero) {
-      heroLevelDisplay.textContent = `Level: ${hero.level}`;
-    }
+    if (heroLevelDisplay && hero) heroLevelDisplay.textContent = `Level: ${hero.level}`;
   }
 
   function saveCharacterData() {
@@ -87,9 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
     maxLevelStart = Math.max(...starts);
 
     const walkthrough = data.missions.Walkthrough;
-    questions = walkthrough.questions;
+    questions = walkthrough.questions || [];
     totalQuestions = questions.length;
-    missionExperience = walkthrough.experience;
+    missionExperience = walkthrough.experience || 0;
+
     updateHeroLevelDisplay();
   }
 
@@ -103,10 +102,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentStart = Number(currentLevelData.start);
     const nextStart = nextLevelData ? Number(nextLevelData.start) : maxLevelStart;
     const progressPercent = ((hero.experience - currentStart) / (nextStart - currentStart || 1)) * 100;
+
     if (reset) {
       xpFill.style.transition = 'none';
       xpFill.style.width = '0%';
-      void xpFill.offsetWidth;
+      void xpFill.offsetWidth; // reflow
       xpFill.style.transition = 'width 0.6s linear';
     }
     xpFill.style.width = Math.min(Math.max(progressPercent, 0), 100) + '%';
@@ -114,43 +114,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showQuestion() {
     overlay.classList.add('show');
-    function setupQuestion() {
+
+    const setupQuestion = () => {
       const q = questions[currentQuestion];
-      if (currentQuestion === 0) {
-        startTime = Date.now();
-      }
-      questionHeading.textContent = `Question ${q.number} of ${totalQuestions}`;
-      questionText.textContent = q.question;
+      if (!q) return;
+
+      if (currentQuestion === 0) startTime = Date.now();
+
+      const num = q.number ?? (currentQuestion + 1);
+      questionHeading.textContent = `Question ${num} of ${totalQuestions}`;
+      questionText.textContent = q.question || '';
       choices.innerHTML = '';
       questionButton.disabled = true;
-      q.choices.forEach((choice) => {
+
+      (q.choices || []).forEach((choice) => {
         const div = document.createElement('div');
         div.classList.add('choice');
-        div.dataset.correct = choice.correct;
+        div.dataset.correct = !!choice.correct;
         if (choice.image) {
           const img = document.createElement('img');
           img.src = `../images/questions/${choice.image}`;
-          img.alt = choice.name;
+          img.alt = choice.name || '';
           div.appendChild(img);
         }
         const p = document.createElement('p');
-        p.textContent = choice.name;
+        p.textContent = choice.name || '';
         div.appendChild(p);
         choices.appendChild(div);
       });
-      const percent = (q.number / totalQuestions) * 100;
+
+      const percent = (num / totalQuestions) * 100;
       progressFill.style.width = percent + '%';
       questionBox.classList.add('show');
-    }
+    };
 
     if (message.classList.contains('show')) {
-      function handleSlide(e) {
+      const handleSlide = (e) => {
         if (e.propertyName === 'transform') {
           message.removeEventListener('transitionend', handleSlide);
           setupQuestion();
         }
-      }
-      message.addEventListener('transitionend', handleSlide);
+      };
+      message.addEventListener('transitionend', handleSlide, { once: true });
       message.classList.remove('show');
     } else {
       setupQuestion();
@@ -163,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
       correctAnswers++;
       heroAttack(true);
     } else {
+      // After monster attacks, chain hero attack and then show incorrect feedback
       monsterAttack(() => heroAttack(false, () => showFeedback(false)), 300);
     }
     if (currentQuestion === totalQuestions - 1) {
@@ -177,15 +183,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     feedbackShown[key] = true;
+
     const text = correct
       ? 'Awesome job! Only two more hits needed to take Octomurk down. Let’s do it!'
       : 'Ouch, that hurt! Don’t worry though, you still do damage when you get the question wrong.';
+
     message.querySelector('.generic-content p').textContent = text;
     overlay.classList.add('show');
     message.classList.add('show');
-    button.onclick = () => {
-      nextTurn();
-    };
+    button.onclick = () => nextTurn();
   }
 
   function endBattle(result) {
@@ -193,122 +199,157 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         battleDiv.style.display = 'none';
         game.style.display = 'block';
+
         introShellfin.style.display = 'none';
         introMonster.src = '../images/battle/monster_battle_dead.png';
         introMonster.style.display = 'block';
+
         introMonster.classList.remove('pop', 'pop-in');
         introMonster.style.animation = 'none';
         introMonster.style.transform = 'translateX(-50%) scale(0)';
         void introMonster.offsetWidth;
         introMonster.style.animation = '';
         introMonster.classList.add('pop-in');
+
         setTimeout(() => {
           heroNameDisplay.textContent = 'Mission Complete';
           const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
           attackDisplay.textContent = `${accuracy}%`;
-          const speed = Math.floor((endTime - startTime) / 1000);
+          const speed = Math.max(0, Math.floor((endTime - startTime) / 1000));
           healthDisplay.textContent = `${speed}s`;
+
           xpFill.style.transition = 'none';
           updateLevelProgress();
           void xpFill.offsetWidth;
           xpFill.style.transition = 'width 0.6s linear';
+
           message.classList.add('win');
           overlay.classList.add('show');
           message.classList.add('show');
+
+          // Avoid duplicate handlers
           claimButton.onclick = null;
 
           setTimeout(() => {
+            // Snapshot BEFORE XP changes
+            const oldLevel = hero.level;
+
             const currentStart = Number(hero.levels[hero.level].start);
             const nextStart = Number(hero.levels[hero.level + 1]?.start || maxLevelStart);
-            prevLevel = hero.level;
+
+            // Award XP
             hero.experience += missionExperience;
-            xpFill.addEventListener('transitionend', function handleXp(e) {
-              if (e.propertyName === 'width') {
-                xpFill.removeEventListener('transitionend', handleXp);
-                if (hero.experience >= nextStart) {
-                  hero.level += 1;
-                  updateHeroLevelDisplay();
-                  saveCharacterData();
-                  levelUpBadge.classList.remove('show');
-                  void levelUpBadge.offsetWidth;
-                  levelUpBadge.classList.add('show');
-                }
-              }
-            });
+
+            // Animate the XP bar to the new fill
             const fillPercent = Math.min(
               ((hero.experience - currentStart) / (nextStart - currentStart || 1)) * 100,
               100
             );
+            xpFill.addEventListener('transitionend', function handleXp(e) {
+              if (e.propertyName !== 'width') return;
+              xpFill.removeEventListener('transitionend', handleXp);
+
+              // Level-up check (single-step; expand if you want multi-level jumps)
+              if (hero.experience >= nextStart && hero.levels[hero.level + 1]) {
+                hero.level += 1;
+                updateHeroLevelDisplay();
+                saveCharacterData();
+
+                levelUpBadge.classList.remove('show');
+                void levelUpBadge.offsetWidth;
+                levelUpBadge.classList.add('show');
+              }
+            }, { once: true });
+
             xpFill.style.width = fillPercent + '%';
+
             claimButton.onclick = () => {
               message.classList.remove('show');
               overlay.classList.remove('show');
+
+              // After the slide-out finishes, reset the progress bar (nice polish)
               message.addEventListener('transitionend', () => updateLevelProgress(true), { once: true });
 
+              // Pop the monster away first
               introMonster.classList.remove('pop', 'pop-in');
               introMonster.classList.add('pop');
               introMonster.addEventListener('animationend', function handleMonsterPop(e) {
-                if (e.animationName === 'bubble-pop') {
-                  introMonster.removeEventListener('animationend', handleMonsterPop);
-                  introMonster.style.display = 'none';
+                if (e.animationName !== 'bubble-pop') return;
+                introMonster.removeEventListener('animationend', handleMonsterPop);
+                introMonster.style.display = 'none';
 
-                  introShellfin.src = `../images/characters/${hero.levels[prevLevel].image}`;
-                  introShellfin.style.display = 'block';
-                  introShellfin.classList.remove('center', 'pop', 'pop-in');
-                  introShellfin.style.animation = 'none';
-                  introShellfin.style.transform = 'translateX(100vw)';
-                  void introShellfin.offsetWidth;
-                  setTimeout(() => {
-                    introShellfin.style.animation = 'swim 2s forwards';
-                  }, 400);
+                // Determine NEW state AFTER any level-up happened
+                const newLevel = hero.level;
+                const hadLevelUp = newLevel > oldLevel;
 
-                  introShellfin.addEventListener('animationend', function handleSwim(ev) {
-                    if (ev.animationName === 'swim') {
-                      introShellfin.removeEventListener('animationend', handleSwim);
-                      genericImg.src = '../images/message/shellfin_message.png';
-                      genericP.textContent = "Now that I leveled up, I’m ready to evolve and become even more powerful.";
-                      button.textContent = 'Continue';
-                      overlay.classList.add('show');
-                      message.classList.remove('win');
-                      message.classList.add('show');
+                // 1) Show OLD sprite (always)
+                introShellfin.src = `../images/characters/${hero.levels[oldLevel]?.image}`;
+                introShellfin.style.display = 'block';
+                introShellfin.classList.remove('center', 'pop', 'pop-in');
+                introShellfin.style.animation = 'none';
+                introShellfin.style.transform = 'translateX(100vw)';
+                void introShellfin.offsetWidth;
+                setTimeout(() => {
+                  introShellfin.style.animation = 'swim 1s forwards';
+                }, 400);
 
-                      button.onclick = () => {
-                        message.classList.remove('show');
-                        overlay.classList.remove('show');
-                        introShellfin.classList.remove('pop', 'pop-in');
-                        introShellfin.classList.add('pop');
-                        introShellfin.addEventListener('animationend', function handlePop(e) {
-                          if (e.animationName === 'bubble-pop') {
-                            introShellfin.removeEventListener('animationend', handlePop);
-                            introShellfin.src = `../images/characters/${hero.levels[prevLevel + 1].image}`;
-                            introShellfin.classList.remove('pop');
-                            introShellfin.classList.add('pop-in');
-                            introShellfin.addEventListener('animationend', function handlePopIn(ev2) {
-                              if (ev2.animationName === 'bubble-pop-in') {
-                                introShellfin.classList.remove('pop-in');
-                                introShellfin.removeEventListener('animationend', handlePopIn);
-                                setTimeout(() => {
-                                  genericImg.src = '../images/message/shellfin_message.png';
-                                  genericP.textContent = 'test';
-                                  button.textContent = 'Continue';
-                                  overlay.classList.add('show');
-                                  message.classList.add('show');
-                                }, 400);
-                              }
-                            });
-                          }
-                        });
-                      };
-                    }
-                  });
-                }
-              });
+                // When old sprite swim finishes, show message
+                introShellfin.addEventListener('animationend', function handleSwim(ev) {
+                  if (ev.animationName !== 'swim') return;
+                  introShellfin.removeEventListener('animationend', handleSwim);
+
+                  genericImg.src = '../images/message/shellfin_message.png';
+                  genericP.textContent = hadLevelUp
+                    ? "Now that I leveled up, I’m ready to evolve and become even more powerful."
+                    : "Nice win! Let’s keep training to grow stronger.";
+                  button.textContent = 'Continue';
+                  overlay.classList.add('show');
+                  message.classList.remove('win');
+                  message.classList.add('show');
+
+                  // On continue, pop out OLD sprite, then pop-in NEW (or same if no level-up)
+                  button.onclick = () => {
+                    message.classList.remove('show');
+                    overlay.classList.remove('show');
+
+                    introShellfin.classList.remove('pop', 'pop-in');
+                    introShellfin.classList.add('pop');
+
+                    introShellfin.addEventListener('animationend', function handlePop(e2) {
+                      if (e2.animationName !== 'bubble-pop') return;
+                      introShellfin.removeEventListener('animationend', handlePop);
+
+                      const showLevel = hadLevelUp ? newLevel : oldLevel;
+                      introShellfin.src = `../images/characters/${hero.levels[showLevel]?.image}`;
+
+                      introShellfin.classList.remove('pop');
+                      introShellfin.classList.add('pop-in');
+
+                      introShellfin.addEventListener('animationend', function handlePopIn(ev2) {
+                        if (ev2.animationName !== 'bubble-pop-in') return;
+                        introShellfin.classList.remove('pop-in');
+                        introShellfin.removeEventListener('animationend', handlePopIn);
+
+                        setTimeout(() => {
+                          genericImg.src = '../images/message/shellfin_message.png';
+                          genericP.textContent = hadLevelUp ? 'test' : 'Ready for the next mission?';
+                          button.textContent = 'Continue';
+                          overlay.classList.add('show');
+                          message.classList.add('show');
+                        }, 400);
+                      }, { once: true });
+                    }, { once: true });
+                  };
+                }, { once: true });
+              }, { once: true });
             };
           }, 1600);
         }, 3200);
       }, 300);
       return;
     }
+
+    // Lose
     message.querySelector('.generic-content p').textContent = 'lose';
     overlay.classList.add('show');
     message.classList.add('show');
@@ -318,66 +359,64 @@ document.addEventListener('DOMContentLoaded', () => {
   function heroAttack(correct, after) {
     setTimeout(() => {
       shellfin.classList.add('attack');
-      function handleHero(e) {
-        if (e.animationName === 'hero-attack') {
-          shellfin.classList.remove('attack');
-          shellfin.removeEventListener('animationend', handleHero);
-          applyDamage(hero, foe);
-          const percent = ((foe.health - foe.damage) / foe.health) * 100;
-          monsterHpFill.style.width = percent + '%';
-          function afterBar(ev) {
-            if (ev.propertyName === 'width') {
-              monsterHpFill.removeEventListener('transitionend', afterBar);
-              if (foe.damage >= foe.health) {
-                endBattle('win');
-                return;
-              }
-              setTimeout(() => {
-                if (after) {
-                  after();
-                } else {
-                  showFeedback(correct);
-                }
-              }, 1200);
-            }
+      const handleHero = (e) => {
+        if (e.animationName !== 'hero-attack') return;
+        shellfin.classList.remove('attack');
+        shellfin.removeEventListener('animationend', handleHero);
+
+        applyDamage(hero, foe);
+        const percent = ((foe.health - foe.damage) / foe.health) * 100;
+        monsterHpFill.style.width = percent + '%';
+
+        const afterBar = (ev) => {
+          if (ev.propertyName !== 'width') return;
+          monsterHpFill.removeEventListener('transitionend', afterBar);
+
+          if (foe.damage >= foe.health) {
+            endBattle('win');
+            return;
           }
-          monsterHpFill.addEventListener('transitionend', afterBar);
-        }
-      }
-      shellfin.addEventListener('animationend', handleHero);
+
+          setTimeout(() => {
+            if (after) after();
+            else showFeedback(correct);
+          }, 1200);
+        };
+        monsterHpFill.addEventListener('transitionend', afterBar, { once: true });
+      };
+      shellfin.addEventListener('animationend', handleHero, { once: true });
     }, ATTACK_DELAY_MS);
   }
 
   function monsterAttack(after, postDelay = 1200) {
     setTimeout(() => {
       monster.classList.add('attack');
-      function handleMonster(e) {
-        if (e.animationName === 'monster-attack') {
-          monster.classList.remove('attack');
-          monster.removeEventListener('animationend', handleMonster);
-          applyDamage(foe, hero);
-          const percent = ((hero.health - hero.damage) / hero.health) * 100;
-          shellfinHpFill.style.width = percent + '%';
-          function afterBar(ev) {
-            if (ev.propertyName === 'width') {
-              shellfinHpFill.removeEventListener('transitionend', afterBar);
-              if (hero.damage >= hero.health) {
-                endBattle('lose');
-                return;
-              }
-              setTimeout(() => {
-                if (after) {
-                  after();
-                } else {
-                  showFeedback(false);
-                }
-              }, postDelay);
-            }
+      const handleMonster = (e) => {
+        if (e.animationName !== 'monster-attack') return;
+        monster.classList.remove('attack');
+        monster.removeEventListener('animationend', handleMonster);
+
+        applyDamage(foe, hero);
+        const percent = ((hero.health - hero.damage) / hero.health) * 100;
+        shellfinHpFill.style.width = percent + '%';
+
+        const afterBar = (ev) => {
+          if (ev.propertyName !== 'width') return;
+          shellfinHpFill.removeEventListener('transitionend', afterBar);
+
+          if (hero.damage >= hero.health) {
+            endBattle('lose');
+            return;
           }
-          shellfinHpFill.addEventListener('transitionend', afterBar);
-        }
-      }
-      monster.addEventListener('animationend', handleMonster);
+
+          setTimeout(() => {
+            if (after) after();
+            else showFeedback(false);
+          }, postDelay);
+        };
+        shellfinHpFill.addEventListener('transitionend', afterBar, { once: true });
+      };
+      monster.addEventListener('animationend', handleMonster, { once: true });
     }, ATTACK_DELAY_MS);
   }
 
@@ -395,20 +434,19 @@ document.addEventListener('DOMContentLoaded', () => {
     done++;
     if (done === 2) {
       let statsDone = 0;
-      function statsHandler(ev) {
-        if (ev.propertyName === 'transform') {
-          statsDone++;
-          if (statsDone === 2) {
-            shellfinStats.removeEventListener('transitionend', statsHandler);
-            monsterStats.removeEventListener('transitionend', statsHandler);
-            setTimeout(() => {
-              overlay.classList.add('show');
-              message.classList.add('show');
-              button.onclick = showQuestion;
-            }, 600);
-          }
+      const statsHandler = (ev) => {
+        if (ev.propertyName !== 'transform') return;
+        statsDone++;
+        if (statsDone === 2) {
+          shellfinStats.removeEventListener('transitionend', statsHandler);
+          monsterStats.removeEventListener('transitionend', statsHandler);
+          setTimeout(() => {
+            overlay.classList.add('show');
+            message.classList.add('show');
+            button.onclick = showQuestion;
+          }, 600);
         }
-      }
+      };
       shellfinStats.addEventListener('transitionend', statsHandler);
       monsterStats.addEventListener('transitionend', statsHandler);
       shellfinStats.classList.add('show');
