@@ -21,9 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionHeading = questionBox.querySelector('h1');
   const questionText = questionBox.querySelector('p');
-    const choices = questionBox.querySelector('.choices');
-    const progressFill = questionBox.querySelector('.progress-fill');
-    const questionButton = questionBox.querySelector('button');
+  const choices = questionBox.querySelector('.choices');
+  const progressFill = questionBox.querySelector('.progress-fill');
+  const questionButton = questionBox.querySelector('button');
   const game = document.getElementById('game');
   const introMonster = document.getElementById('monster');
   const introShellfin = document.getElementById('shellfin');
@@ -47,29 +47,32 @@ document.addEventListener('DOMContentLoaded', () => {
     defender.damage = Number(defender.damage) + Number(attacker.attack);
   }
 
-  fetch('../data/characters.json')
-    .then((res) => res.json())
-    .then((data) => {
-      hero = data.heroes.shellfin;
-      foe = data.monsters.octomurk;
-      shellfinName.textContent = hero.name;
-      monsterName.textContent = foe.name;
-      const heroHpPercent = ((hero.health - hero.damage) / hero.health) * 100;
-      const monsterHpPercent = ((foe.health - foe.damage) / foe.health) * 100;
-      shellfinHpFill.style.width = heroHpPercent + '%';
-      monsterHpFill.style.width = monsterHpPercent + '%';
-      const starts = Object.values(hero.levels).map((l) => Number(l.start));
-      maxLevelStart = Math.max(...starts);
-    });
+  function loadData() {
+    const data = window.preloadedData;
+    if (!data || !data.characters || !data.missions) return;
 
-  fetch('../data/missions.json')
-    .then((res) => res.json())
-    .then((data) => {
-      const walkthrough = data.Walkthrough;
-      questions = walkthrough.questions;
-      totalQuestions = questions.length;
-      missionExperience = walkthrough.experience;
-    });
+    hero = data.characters.heroes.shellfin;
+    foe = data.characters.monsters.octomurk;
+
+    shellfinName.textContent = hero.name;
+    monsterName.textContent = foe.name;
+
+    const heroHpPercent = ((hero.health - hero.damage) / hero.health) * 100;
+    const monsterHpPercent = ((foe.health - foe.damage) / foe.health) * 100;
+    shellfinHpFill.style.width = heroHpPercent + '%';
+    monsterHpFill.style.width = monsterHpPercent + '%';
+
+    const starts = Object.values(hero.levels).map((l) => Number(l.start));
+    maxLevelStart = Math.max(...starts);
+
+    const walkthrough = data.missions.Walkthrough;
+    questions = walkthrough.questions;
+    totalQuestions = questions.length;
+    missionExperience = walkthrough.experience;
+  }
+
+  document.addEventListener('assets-loaded', loadData);
+  loadData();
 
   function updateLevelProgress(reset = false) {
     if (!hero || !hero.levels) return;
@@ -213,83 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
               100
             );
             xpFill.style.width = fillPercent + '%';
-<<<<<<< Updated upstream
-              claimButton.onclick = () => {
-                overlay.classList.remove('show');
-                function afterSlide(e) {
-                  if (e.propertyName === 'transform') {
-                    message.removeEventListener('transitionend', afterSlide);
-                    updateLevelProgress(true);
-                    introMonster.classList.remove('pop', 'pop-in');
-                    introMonster.classList.add('pop');
-                    introMonster.addEventListener('animationend', function handleMonsterPop(ev) {
-                      if (ev.animationName === 'bubble-pop') {
-                        introMonster.removeEventListener('animationend', handleMonsterPop);
-                        introMonster.style.display = 'none';
-                        introShellfin.src = `../images/characters/${hero.levels[prevLevel].image}`;
-                        introShellfin.style.display = 'block';
-                        introShellfin.classList.remove('center');
-                        introShellfin.style.transform = 'translateX(-100vw)';
-                        introShellfin.style.animation = 'swim 2s forwards';
-                        introShellfin.addEventListener('animationend', function handleHeroSlide(ev2) {
-                          if (ev2.animationName === 'swim') {
-                            introShellfin.removeEventListener('animationend', handleHeroSlide);
-                            const genericImg = genericContent.querySelector('img');
-                            const genericP = genericContent.querySelector('p');
-                            const genericBtn = genericContent.querySelector('button');
-                            genericImg.src = '../images/message/shellfin_message.png';
-                            genericP.textContent = "Now that I leveled up, I’m ready to evolve and become even more powerful.";
-                            genericBtn.textContent = 'Continue';
-                            message.classList.remove('win');
-                            overlay.classList.add('show');
-                            message.classList.add('show');
-                            genericBtn.onclick = () => {
-                              overlay.classList.remove('show');
-                              function afterSecondSlide(ev3) {
-                                if (ev3.propertyName === 'transform') {
-                                  message.removeEventListener('transitionend', afterSecondSlide);
-                                  introShellfin.classList.remove('pop', 'pop-in');
-                                  introShellfin.classList.add('pop');
-                                  introShellfin.addEventListener('animationend', function handleHeroPop(eh) {
-                                    if (eh.animationName === 'bubble-pop') {
-                                      introShellfin.removeEventListener('animationend', handleHeroPop);
-                                      introShellfin.src = `../images/characters/${hero.levels[hero.level].image}`;
-                                      introShellfin.classList.remove('pop');
-                                      introShellfin.classList.add('pop-in');
-                                      introShellfin.addEventListener('animationend', function handleHeroPopIn(eh2) {
-                                        if (eh2.animationName === 'bubble-pop-in') {
-                                          introShellfin.classList.remove('pop-in');
-                                          introShellfin.removeEventListener('animationend', handleHeroPopIn);
-                                          setTimeout(() => {
-                                            genericP.textContent = 'test';
-                                            genericBtn.textContent = 'Continue';
-                                            genericBtn.onclick = () => {
-                                              message.classList.remove('show');
-                                              overlay.classList.remove('show');
-                                            };
-                                            overlay.classList.add('show');
-                                            message.classList.add('show');
-                                          }, 800000);
-                                        }
-                                      });
-                                    }
-                                  });
-                                }
-                              }
-                              message.addEventListener('transitionend', afterSecondSlide);
-                              message.classList.remove('show');
-                            };
-                          }
-                        });
-                      }
-                    });
-                  }
-                }
-                message.addEventListener('transitionend', afterSlide);
-                message.classList.remove('show');
-              };
-          }, 2400);
-=======
             claimButton.onclick = () => {
               message.classList.remove('show');
               overlay.classList.remove('show');
@@ -332,7 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
               }, 1600);
             };
           }, 1600);
->>>>>>> Stashed changes
         }, 3200);
       }, 300);
       return;
