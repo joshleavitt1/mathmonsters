@@ -313,6 +313,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     overlay.classList.remove('show');
 
                     introShellfin.classList.remove('pop', 'pop-in');
+                    introShellfin.style.animation = 'none';
+                    introShellfin.style.transform = 'translateX(-50%)';
+                    void introShellfin.offsetWidth;
+                    introShellfin.style.animation = '';
 
                     setTimeout(() => {
                       introShellfin.classList.add('pop');
@@ -334,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                           setTimeout(() => {
                             genericImg.src = '../images/message/shellfin_message.png';
+                            genericP.textContent = 'Ready for the next mission?';
                             genericP.textContent = hadLevelUp ? 'test' : 'Ready for the next mission?';
                             button.textContent = 'Continue';
                             overlay.classList.add('show');
