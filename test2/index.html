@@ -106,7 +106,7 @@
     joystickBase.style.width = `${baseRadius * 2}px`;
     joystickBase.style.height = `${baseRadius * 2}px`;
     joystickBase.style.left = `${baseX - baseRadius}px`;
-    joystickBase.style.top = `${baseY - baseRadius}px`;=
+    joystickBase.style.top = `${baseY - baseRadius}px`;
     joystickBase.style.touchAction = 'none';
     document.body.appendChild(joystickBase);
 
@@ -153,6 +153,8 @@
     attackBtn.addEventListener('pointerdown', () => {
       const bubble = this.physics.add.image(player.x, player.y, 'bubble');
       bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
+    });
+
     this.input.on('pointerdown', pointer => {
       if (Phaser.Math.Distance.Between(pointer.x, pointer.y, baseX, baseY) <= baseRadius) {
         joystickPointer = pointer.id;
@@ -180,14 +182,7 @@
       }
     }
 
-    attackBtn.addEventListener('pointerdown', () => {
-      const bubble = this.physics.add.image(player.x, player.y, 'bubble');
-      bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
-    });
-
     function moveThumb(pointer) {
-      const dx = pointer.clientX - baseX;
-      const dy = pointer.clientY - baseY;
       const dx = pointer.x - baseX;
       const dy = pointer.y - baseY;
       joystickVector.set(dx, dy);
