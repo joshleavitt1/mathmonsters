@@ -20,26 +20,22 @@
       border-radius: 50%;
       box-sizing: border-box;
     }
-      .action-btn {
-        position: absolute;
-        width: 72px;
-        height: 72px;
-        border-radius: 50%;
-        border: 1px solid rgba(255,255,255,0.4);
-        background: rgba(255,255,255,0.1);
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        user-select: none;
-      }
-
-      .action-btn img {
-        width: 36px;
-        height: 36px;
-      }
-    .action-btn {
+    #controls {
       position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 40px 40px;
+      box-sizing: border-box;
+    }
+    #actions {
+      display: flex;
+      gap: 24px;
+    }
+    .action-btn {
       width: 60px;
       height: 60px;
       border-radius: 10px;
@@ -49,9 +45,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
-      color: #fff;
       user-select: none;
+    }
+    .action-btn img {
+      width: 20px;
+      height: 20px;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
@@ -71,11 +69,12 @@
   };
 
   let player;
-  let joystickBase, joystickThumb;
+  let joystickBase, joystickThumb, joystickContainer;
   const joystickVector = new Phaser.Math.Vector2();
   let joystickPointer = null;
   let facing = 'right';
-  let attackBtn, shieldBtn;
+  let attackBtn, shieldBtn, controls, actionsContainer;
+  let baseX, baseY;
 
   new Phaser.Game(config);
 
@@ -97,46 +96,52 @@
 
     const baseRadius = 36;
     const thumbRadius = 24;
-    const baseX = 90;
-    const baseY = height - 90;
 
-    // Create joystick visuals using DOM elements
+    controls = document.createElement('div');
+    controls.id = 'controls';
+    document.body.appendChild(controls);
+
+    joystickContainer = document.createElement('div');
+    joystickContainer.style.position = 'relative';
+    joystickContainer.style.width = `${baseRadius * 2}px`;
+    joystickContainer.style.height = `${baseRadius * 2}px`;
+    controls.appendChild(joystickContainer);
+
     joystickBase = document.createElement('div');
     joystickBase.className = 'joystick-base';
     joystickBase.style.width = `${baseRadius * 2}px`;
     joystickBase.style.height = `${baseRadius * 2}px`;
-    joystickBase.style.left = `${baseX - baseRadius}px`;
-    joystickBase.style.top = `${baseY - baseRadius}px`;
+    joystickBase.style.left = '0';
+    joystickBase.style.top = '0';
     joystickBase.style.touchAction = 'none';
-    document.body.appendChild(joystickBase);
+    joystickContainer.appendChild(joystickBase);
 
     joystickThumb = document.createElement('div');
     joystickThumb.className = 'joystick-thumb';
     joystickThumb.style.width = `${thumbRadius * 2}px`;
     joystickThumb.style.height = `${thumbRadius * 2}px`;
-    joystickThumb.style.left = `${baseX - thumbRadius}px`;
-    joystickThumb.style.top = `${baseY - thumbRadius}px`;
+    joystickThumb.style.left = `${baseRadius - thumbRadius}px`;
+    joystickThumb.style.top = `${baseRadius - thumbRadius}px`;
     joystickThumb.style.touchAction = 'none';
-    document.body.appendChild(joystickThumb);
+    joystickContainer.appendChild(joystickThumb);
 
-    // Action buttons
+    actionsContainer = document.createElement('div');
+    actionsContainer.id = 'actions';
+    controls.appendChild(actionsContainer);
+
     attackBtn = document.createElement('div');
     attackBtn.className = 'action-btn';
-    attackBtn.style.right = '120px';
-    attackBtn.style.bottom = '40px';
     attackBtn.innerHTML = '<img src="assets/attack.svg" alt="attack">';
-    attackBtn.style.right = '110px';
-    attackBtn.style.bottom = '40px';
-    attackBtn.textContent = '🗡️';
-    document.body.appendChild(attackBtn);
+    actionsContainer.appendChild(attackBtn);
 
     shieldBtn = document.createElement('div');
     shieldBtn.className = 'action-btn';
-    shieldBtn.style.right = '40px';
-    shieldBtn.style.bottom = '40px';
     shieldBtn.innerHTML = '<img src="assets/defend.svg" alt="defend">';
-    shieldBtn.textContent = '🛡️';
-    document.body.appendChild(shieldBtn);
+    actionsContainer.appendChild(shieldBtn);
+
+    const rect = joystickContainer.getBoundingClientRect();
+    baseX = rect.left + baseRadius;
+    baseY = rect.top + baseRadius;
 
     // Bubble texture for attack
     const bubbleGfx = this.add.graphics();
@@ -151,7 +156,8 @@
     window.addEventListener('pointerup', endJoystick);
 
     attackBtn.addEventListener('pointerdown', () => {
-      const bubble = this.physics.add.image(player.x, player.y, 'bubble');
+      const offset = facing === 'right' ? 20 : -20;
+      const bubble = this.physics.add.image(player.x + offset, player.y, 'bubble');
       bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
     });
 
@@ -176,8 +182,8 @@
     function endJoystick(e) {
       if (e.pointerId === joystickPointer) {
         joystickPointer = null;
-        joystickThumb.style.left = `${baseX - thumbRadius}px`;
-        joystickThumb.style.top = `${baseY - thumbRadius}px`;
+        joystickThumb.style.left = `${baseRadius - thumbRadius}px`;
+        joystickThumb.style.top = `${baseRadius - thumbRadius}px`;
         joystickVector.set(0, 0);
       }
     }
@@ -188,8 +194,8 @@
       joystickVector.set(dx, dy);
       const dist = Math.min(joystickVector.length(), baseRadius);
       const angle = joystickVector.angle();
-      joystickThumb.style.left = `${baseX - thumbRadius + Math.cos(angle) * dist}px`;
-      joystickThumb.style.top = `${baseY - thumbRadius + Math.sin(angle) * dist}px`;
+      joystickThumb.style.left = `${baseRadius - thumbRadius + Math.cos(angle) * dist}px`;
+      joystickThumb.style.top = `${baseRadius - thumbRadius + Math.sin(angle) * dist}px`;
     }
   }
 
