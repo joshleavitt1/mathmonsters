@@ -5,8 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
   <title>Virtual Joystick Demo</title>
   <style>
-    html, body { height: 100%; margin: 0; touch-action: none; }
+    html, body { height: 100%; margin: 0; touch-action: none; overflow: hidden; }
     #game { width: 100%; height: 100%; }
+    .joystick-base {
+      position: absolute;
+      border: 1px solid #fff;
+      border-radius: 50%;
+      backdrop-filter: blur(4px);
+    }
+    .joystick-thumb {
+      position: absolute;
+      background: linear-gradient(#FFAE00, #FF6A00);
+      border: 4px solid #fff;
+      border-radius: 50%;
+      box-sizing: border-box;
+    }
+      .action-btn {
+        position: absolute;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.4);
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+      }
+
+      .action-btn img {
+        width: 36px;
+        height: 36px;
+      }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 </head>
@@ -28,14 +59,14 @@
   let joystickBase, joystickThumb;
   const joystickVector = new Phaser.Math.Vector2();
   let joystickPointer = null;
+  let facing = 'right';
+  let attackBtn, shieldBtn;
 
   new Phaser.Game(config);
 
   function preload() {
     this.load.image('bg', '../images/background/background.png');
-    // Load directional player sprites from the local assets folder
-    this.load.image('playerFront', 'assets/swim_shellfin_front.png');
-    this.load.image('playerBack', 'assets/swim_shellfin_back.png');
+    // Load player left and right sprites
     this.load.image('playerLeft', 'assets/swim_shellfin_left.png');
     this.load.image('playerRight', 'assets/swim_shellfin_right.png');
   }
@@ -43,55 +74,96 @@
   function create() {
     const { width, height } = this.scale;
 
-    this.add.image(width / 2, height / 2, 'bg')
-      .setDisplaySize(width, height);
+    this.add.image(width / 2, height / 2, 'bg').setDisplaySize(width, height);
 
-    player = this.physics.add.image(width / 2, height / 2, 'playerFront')
+    player = this.physics.add.image(width / 2, height / 2, 'playerRight')
       .setCollideWorldBounds(true)
-      // Ensure the sprite displays at the intended size
       .setDisplaySize(150, 150);
 
-    const baseRadius = 60;
-    const thumbRadius = 30;
+    const baseRadius = 36;
+    const thumbRadius = 24;
     const baseX = 90;
     const baseY = height - 90;
 
-    joystickBase = this.add.circle(baseX, baseY, baseRadius, 0xffffff, 0.2)
-      .setStrokeStyle(2, 0xffffff, 0.3)
-      .setScrollFactor(0)
-      .setInteractive();
+    // Create joystick visuals using DOM elements
+    joystickBase = document.createElement('div');
+    joystickBase.className = 'joystick-base';
+    joystickBase.style.width = `${baseRadius * 2}px`;
+    joystickBase.style.height = `${baseRadius * 2}px`;
+    joystickBase.style.left = `${baseX - baseRadius}px`;
+    joystickBase.style.top = `${baseY - baseRadius}px`;
+    joystickBase.style.touchAction = 'none';
+    document.body.appendChild(joystickBase);
 
-    joystickThumb = this.add.circle(baseX, baseY, thumbRadius, 0xffffff, 0.8)
-      .setScrollFactor(0);
+    joystickThumb = document.createElement('div');
+    joystickThumb.className = 'joystick-thumb';
+    joystickThumb.style.width = `${thumbRadius * 2}px`;
+    joystickThumb.style.height = `${thumbRadius * 2}px`;
+    joystickThumb.style.left = `${baseX - thumbRadius}px`;
+    joystickThumb.style.top = `${baseY - thumbRadius}px`;
+    joystickThumb.style.touchAction = 'none';
+    document.body.appendChild(joystickThumb);
 
-    joystickBase.on('pointerdown', pointer => {
-      joystickPointer = pointer.id;
-      moveThumb(pointer);
+    // Action buttons
+    attackBtn = document.createElement('div');
+    attackBtn.className = 'action-btn';
+    attackBtn.style.right = '120px';
+    attackBtn.style.bottom = '40px';
+    attackBtn.innerHTML = '<img src="assets/attack.svg" alt="attack">';
+    document.body.appendChild(attackBtn);
+
+    shieldBtn = document.createElement('div');
+    shieldBtn.className = 'action-btn';
+    shieldBtn.style.right = '40px';
+    shieldBtn.style.bottom = '40px';
+    shieldBtn.innerHTML = '<img src="assets/defend.svg" alt="defend">';
+    document.body.appendChild(shieldBtn);
+
+    // Bubble texture for attack
+    const bubbleGfx = this.add.graphics();
+    bubbleGfx.fillStyle(0x9bd7fb, 0.6).fillCircle(10, 10, 10);
+    bubbleGfx.lineStyle(2, 0xffffff, 0.8).strokeCircle(10, 10, 10);
+    bubbleGfx.generateTexture('bubble', 20, 20);
+    bubbleGfx.destroy();
+
+    joystickBase.addEventListener('pointerdown', startJoystick);
+    joystickThumb.addEventListener('pointerdown', startJoystick);
+    window.addEventListener('pointermove', moveJoystick);
+    window.addEventListener('pointerup', endJoystick);
+
+    attackBtn.addEventListener('pointerdown', () => {
+      const bubble = this.physics.add.image(player.x, player.y, 'bubble');
+      bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
     });
 
-    this.input.on('pointermove', pointer => {
-      if (pointer.id === joystickPointer) {
-        moveThumb(pointer);
+    function startJoystick(e) {
+      joystickPointer = e.pointerId;
+      moveThumb(e);
+    }
+
+    function moveJoystick(e) {
+      if (e.pointerId === joystickPointer) {
+        moveThumb(e);
       }
-    });
+    }
 
-    this.input.on('pointerup', pointer => {
-      if (pointer.id === joystickPointer) {
+    function endJoystick(e) {
+      if (e.pointerId === joystickPointer) {
         joystickPointer = null;
-        joystickThumb.x = joystickBase.x;
-        joystickThumb.y = joystickBase.y;
+        joystickThumb.style.left = `${baseX - thumbRadius}px`;
+        joystickThumb.style.top = `${baseY - thumbRadius}px`;
         joystickVector.set(0, 0);
       }
-    });
+    }
 
     function moveThumb(pointer) {
-      const dx = pointer.x - joystickBase.x;
-      const dy = pointer.y - joystickBase.y;
+      const dx = pointer.clientX - baseX;
+      const dy = pointer.clientY - baseY;
       joystickVector.set(dx, dy);
       const dist = Math.min(joystickVector.length(), baseRadius);
       const angle = joystickVector.angle();
-      joystickThumb.x = joystickBase.x + Math.cos(angle) * dist;
-      joystickThumb.y = joystickBase.y + Math.sin(angle) * dist;
+      joystickThumb.style.left = `${baseX - thumbRadius + Math.cos(angle) * dist}px`;
+      joystickThumb.style.top = `${baseY - thumbRadius + Math.sin(angle) * dist}px`;
     }
   }
 
@@ -101,15 +173,14 @@
       player.x += dir.x * SPEED * (delta / 1000);
       player.y += dir.y * SPEED * (delta / 1000);
 
-      let texture;
-      if (Math.abs(dir.x) > Math.abs(dir.y)) {
-        texture = dir.x > 0 ? 'playerRight' : 'playerLeft';
-      } else {
-        texture = dir.y > 0 ? 'playerFront' : 'playerBack';
+      if (Math.abs(dir.x) > 0.1) {
+        facing = dir.x > 0 ? 'right' : 'left';
       }
+      const texture = facing === 'right' ? 'playerRight' : 'playerLeft';
       player.setTexture(texture).setDisplaySize(150, 150);
     } else {
-      player.setTexture('playerFront').setDisplaySize(150, 150);
+      const texture = facing === 'right' ? 'playerRight' : 'playerLeft';
+      player.setTexture(texture).setDisplaySize(150, 150);
     }
   }
 })();
