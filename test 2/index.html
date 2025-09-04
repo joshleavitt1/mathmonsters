@@ -38,6 +38,8 @@
     this.load.image('playerBack', 'assets/boy_back.png');
     this.load.image('playerLeft', 'assets/boy_left.png');
     this.load.image('playerRight', 'assets/boy_right.png');
+    // Load the updated player sprite from the local assets folder
+    this.load.image('player', 'assets/boy_front.png');
   }
 
   function create() {
@@ -47,6 +49,9 @@
       .setDisplaySize(width, height);
 
     player = this.physics.add.image(width / 2, height / 2, 'playerFront')
+    player = this.physics.add.image(width / .5, height / .5, 'player')
+      .setCollideWorldBounds(true);
+    player = this.physics.add.image(width / 2, height / 2, 'player')
       .setCollideWorldBounds(true)
       // Ensure the sprite displays at the intended size
       .setDisplaySize(150, 150);
