@@ -33,7 +33,8 @@
 
   function preload() {
     this.load.image('bg', '../images/background/background.png');
-    this.load.image('player', '../images/characters/shellfin_level_1.png');
+    // Load the updated player sprite from the local assets folder
+    this.load.image('player', 'assets/boy_front.png');
   }
 
   function create() {
@@ -43,7 +44,9 @@
       .setDisplaySize(width, height);
 
     player = this.physics.add.image(width / 2, height / 2, 'player')
-      .setCollideWorldBounds(true);
+      .setCollideWorldBounds(true)
+      // Ensure the sprite displays at the intended size
+      .setDisplaySize(150, 150);
 
     const baseRadius = 60;
     const thumbRadius = 30;
