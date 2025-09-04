@@ -33,7 +33,11 @@
 
   function preload() {
     this.load.image('bg', '../images/background/background.png');
-    this.load.image('player', '../images/characters/shellfin_level_1.png');
+    // Load directional player sprites from the local assets folder
+    this.load.image('playerFront', 'assets/boy_front.png');
+    this.load.image('playerBack', 'assets/boy_back.png');
+    this.load.image('playerLeft', 'assets/boy_left.png');
+    this.load.image('playerRight', 'assets/boy_right.png');
   }
 
   function create() {
@@ -42,8 +46,10 @@
     this.add.image(width / 2, height / 2, 'bg')
       .setDisplaySize(width, height);
 
-    player = this.physics.add.image(width / 2, height / 2, 'player')
-      .setCollideWorldBounds(true);
+    player = this.physics.add.image(width / 2, height / 2, 'playerFront')
+      .setCollideWorldBounds(true)
+      // Ensure the sprite displays at the intended size
+      .setDisplaySize(150, 150);
 
     const baseRadius = 60;
     const thumbRadius = 30;
@@ -94,6 +100,16 @@
       const dir = joystickVector.clone().normalize();
       player.x += dir.x * SPEED * (delta / 1000);
       player.y += dir.y * SPEED * (delta / 1000);
+
+      let texture;
+      if (Math.abs(dir.x) > Math.abs(dir.y)) {
+        texture = dir.x > 0 ? 'playerRight' : 'playerLeft';
+      } else {
+        texture = dir.y > 0 ? 'playerFront' : 'playerBack';
+      }
+      player.setTexture(texture).setDisplaySize(150, 150);
+    } else {
+      player.setTexture('playerFront').setDisplaySize(150, 150);
     }
   }
 })();
