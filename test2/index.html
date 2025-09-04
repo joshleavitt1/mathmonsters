@@ -7,11 +7,29 @@
   <style>
     html, body { height: 100%; margin: 0; touch-action: none; overflow: hidden; }
     #game { width: 100%; height: 100%; }
-    .joystick-base {
-      position: absolute;
+
+    /* Glassy bits */
+    .glass {
       border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 16px;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Joystick */
+    .joystick-base {
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.4);
       backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      box-sizing: border-box;
+      background: none;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+      cursor: pointer;
     }
     .joystick-thumb {
       position: absolute;
@@ -22,6 +40,8 @@
       border-radius: 50%;
       box-sizing: border-box;
     }
+
+    /* Bottom controls bar */
     #controls {
       position: absolute;
       bottom: 0;
@@ -29,35 +49,50 @@
       width: 100%;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-end;
       padding: 0 40px 40px;
       box-sizing: border-box;
+      pointer-events: none; /* allow game clicks except on actual controls */
     }
+    #joystick-wrap, #actions {
+      pointer-events: auto;
+    }
+
+    /* Actions row: two buttons side-by-side */
     #actions {
       display: flex;
-      gap: 24px;
+      gap: 16px;
+      align-items: center;
     }
     .action-btn {
-        position: absolute;
-        width: 72px;
-        height: 72px;
-        border-radius: 50%;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        user-select: none;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      box-sizing: border-box;
+      background: none;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+      cursor: pointer;
     }
     .action-btn img {
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
+      display: block;
+    }
+    .action-btn:active {
+      transform: scale(0.96);
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 </head>
 <body>
   <div id="game"></div>
+
 <script>
 (() => {
   const SPEED = 200;
@@ -75,14 +110,13 @@
   const joystickVector = new Phaser.Math.Vector2();
   let joystickPointer = null;
   let facing = 'right';
-  let attackBtn, shieldBtn, controls, actionsContainer;
+  let attackBtn, defendBtn, controls, actionsContainer, joystickWrap;
   let baseX, baseY;
 
   new Phaser.Game(config);
 
   function preload() {
     this.load.image('bg', '../images/background/background.png');
-    // Load player left and right sprites
     this.load.image('playerLeft', 'assets/swim_shellfin_left.png');
     this.load.image('playerRight', 'assets/swim_shellfin_right.png');
   }
@@ -99,15 +133,25 @@
     const baseRadius = 36;
     const thumbRadius = 24;
 
+    // === Controls Bar (Bottom) ===
     controls = document.createElement('div');
     controls.id = 'controls';
     document.body.appendChild(controls);
+
+    // Left side: Joystick
+    joystickWrap = document.createElement('div');
+    joystickWrap.id = 'joystick-wrap';
+    joystickWrap.style.position = 'relative';
+    joystickWrap.style.width = `${baseRadius * 2}px`;
+    joystickWrap.style.height = `${baseRadius * 2}px`;
+    joystickWrap.className = 'glass';
+    controls.appendChild(joystickWrap);
 
     joystickContainer = document.createElement('div');
     joystickContainer.style.position = 'relative';
     joystickContainer.style.width = `${baseRadius * 2}px`;
     joystickContainer.style.height = `${baseRadius * 2}px`;
-    controls.appendChild(joystickContainer);
+    joystickWrap.appendChild(joystickContainer);
 
     joystickBase = document.createElement('div');
     joystickBase.className = 'joystick-base';
@@ -127,35 +171,29 @@
     joystickThumb.style.touchAction = 'none';
     joystickContainer.appendChild(joystickThumb);
 
+    // Right side: Actions (two buttons next to each other)
     actionsContainer = document.createElement('div');
     actionsContainer.id = 'actions';
     controls.appendChild(actionsContainer);
 
-    attackBtn = document.createElement('div');
+    attackBtn = document.createElement('button');
+    attackBtn.type = 'button';
     attackBtn.className = 'action-btn';
-    attackBtn.innerHTML = '<img src="assets/attack.svg" alt="attack">';
+    attackBtn.title = 'Attack';
+    attackBtn.innerHTML = '<img src="assets/attack.png" alt="attack">';
     actionsContainer.appendChild(attackBtn);
 
-    shieldBtn = document.createElement('div');
-    shieldBtn.className = 'action-btn';
-    shieldBtn.innerHTML = '<img src="assets/defend.svg" alt="defend">';
-    actionsContainer.appendChild(shieldBtn);
+    defendBtn = document.createElement('button');
+    defendBtn.type = 'button';
+    defendBtn.className = 'action-btn';
+    defendBtn.title = 'Defend';
+    defendBtn.innerHTML = '<img src="assets/defend.png" alt="defend">';
+    actionsContainer.appendChild(defendBtn);
 
+    // Compute joystick center after layout
     const rect = joystickContainer.getBoundingClientRect();
     baseX = rect.left + baseRadius;
     baseY = rect.top + baseRadius;
-    attackBtn.style.right = '124px';
-    attackBtn.style.bottom = '40px';
-    attackBtn.innerHTML = '<img src="assets/attack.png" alt="attack">';
-    document.body.appendChild(attackBtn);
-
-    shieldBtn = document.createElement('div');
-    shieldBtn.className = 'action-btn';
-    shieldBtn.style.right = '40px';
-    shieldBtn.style.bottom = '40px';
-    shieldBtn.innerHTML = '<img src="assets/defend.png" alt="defend">';
-    document.body.appendChild(shieldBtn);
-
 
     // Bubble texture for attack
     const bubbleGfx = this.add.graphics();
@@ -164,16 +202,11 @@
     bubbleGfx.generateTexture('bubble', 20, 20);
     bubbleGfx.destroy();
 
+    // Joystick handlers
     joystickBase.addEventListener('pointerdown', startJoystick);
     joystickThumb.addEventListener('pointerdown', startJoystick);
     window.addEventListener('pointermove', moveJoystick);
     window.addEventListener('pointerup', endJoystick);
-
-    attackBtn.addEventListener('pointerdown', () => {
-      const offset = facing === 'right' ? 60 : -60;
-      const bubble = this.physics.add.image(player.x + offset, player.y, 'bubble');
-      bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
-    });
 
     this.input.on('pointerdown', pointer => {
       if (Phaser.Math.Distance.Between(pointer.x, pointer.y, baseX, baseY) <= baseRadius) {
@@ -186,22 +219,17 @@
       joystickPointer = e.pointerId;
       moveThumb(e);
     }
-
     function moveJoystick(e) {
-      if (e.pointerId === joystickPointer) {
-        moveThumb(e);
-      }
+      if (e.pointerId === joystickPointer) moveThumb(e);
     }
-
     function endJoystick(e) {
       if (e.pointerId === joystickPointer) {
         joystickPointer = null;
         joystickThumb.style.left = `${baseRadius - thumbRadius}px`;
-        joystickThumb.style.top = `${baseRadius - thumbRadius}px`;
+        joystickThumb.style.top  = `${baseRadius - thumbRadius}px`;
         joystickVector.set(0, 0);
       }
     }
-
     function moveThumb(pointer) {
       const dx = pointer.x - baseX;
       const dy = pointer.y - baseY;
@@ -209,24 +237,55 @@
       const dist = Math.min(joystickVector.length(), baseRadius);
       const angle = joystickVector.angle();
       joystickThumb.style.left = `${baseRadius - thumbRadius + Math.cos(angle) * dist}px`;
-      joystickThumb.style.top = `${baseRadius - thumbRadius + Math.sin(angle) * dist}px`;
+      joystickThumb.style.top  = `${baseRadius - thumbRadius + Math.sin(angle) * dist}px`;
     }
+
+    // === Actions ===
+    attackBtn.addEventListener('pointerdown', () => {
+      const offset = facing === 'right' ? 60 : -60;
+      const bubble = this.physics.add.image(player.x + offset, player.y, 'bubble');
+      bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
+    });
+
+    // Simple defend toggle (example): briefly reduce speed as a "brace"
+    let defendTimeout = null;
+    defendBtn.addEventListener('pointerdown', () => {
+      if (defendTimeout) return; // ignore spam while active
+      const originalSpeed = SPEED;
+      window._speedMultiplier = 0.6; // slow movement to simulate guarding
+      defendBtn.style.transform = 'scale(0.94)';
+      defendTimeout = setTimeout(() => {
+        window._speedMultiplier = 1;
+        defendBtn.style.transform = '';
+        defendTimeout = null;
+      }, 800);
+    });
+
+    // Initialize speed multiplier
+    window._speedMultiplier = 1;
+
+    // Recompute joystick center on resize
+    window.addEventListener('resize', () => {
+      const r = joystickContainer.getBoundingClientRect();
+      baseX = r.left + baseRadius;
+      baseY = r.top + baseRadius;
+    });
   }
 
   function update(time, delta) {
+    const dt = (delta / 1000) * (window._speedMultiplier || 1);
+
     if (joystickVector.length() > 0) {
       const dir = joystickVector.clone().normalize();
-      player.x += dir.x * SPEED * (delta / 1000);
-      player.y += dir.y * SPEED * (delta / 1000);
+      player.x += dir.x * SPEED * dt;
+      player.y += dir.y * SPEED * dt;
 
       if (Math.abs(dir.x) > 0.1) {
         facing = dir.x > 0 ? 'right' : 'left';
       }
-      const texture = facing === 'right' ? 'playerRight' : 'playerLeft';
-      player.setTexture(texture).setDisplaySize(150, 150);
+      player.setTexture(facing === 'right' ? 'playerRight' : 'playerLeft').setDisplaySize(150, 150);
     } else {
-      const texture = facing === 'right' ? 'playerRight' : 'playerLeft';
-      player.setTexture(texture).setDisplaySize(150, 150);
+      player.setTexture(facing === 'right' ? 'playerRight' : 'playerLeft').setDisplaySize(150, 150);
     }
   }
 })();
