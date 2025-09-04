@@ -38,6 +38,21 @@
         width: 36px;
         height: 36px;
       }
+    .action-btn {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #fff;
+      user-select: none;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 </head>
@@ -91,7 +106,7 @@
     joystickBase.style.width = `${baseRadius * 2}px`;
     joystickBase.style.height = `${baseRadius * 2}px`;
     joystickBase.style.left = `${baseX - baseRadius}px`;
-    joystickBase.style.top = `${baseY - baseRadius}px`;
+    joystickBase.style.top = `${baseY - baseRadius}px`;=
     joystickBase.style.touchAction = 'none';
     document.body.appendChild(joystickBase);
 
@@ -110,6 +125,9 @@
     attackBtn.style.right = '120px';
     attackBtn.style.bottom = '40px';
     attackBtn.innerHTML = '<img src="assets/attack.svg" alt="attack">';
+    attackBtn.style.right = '110px';
+    attackBtn.style.bottom = '40px';
+    attackBtn.textContent = '🗡️';
     document.body.appendChild(attackBtn);
 
     shieldBtn = document.createElement('div');
@@ -117,6 +135,7 @@
     shieldBtn.style.right = '40px';
     shieldBtn.style.bottom = '40px';
     shieldBtn.innerHTML = '<img src="assets/defend.svg" alt="defend">';
+    shieldBtn.textContent = '🛡️';
     document.body.appendChild(shieldBtn);
 
     // Bubble texture for attack
@@ -134,6 +153,11 @@
     attackBtn.addEventListener('pointerdown', () => {
       const bubble = this.physics.add.image(player.x, player.y, 'bubble');
       bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
+    this.input.on('pointerdown', pointer => {
+      if (Phaser.Math.Distance.Between(pointer.x, pointer.y, baseX, baseY) <= baseRadius) {
+        joystickPointer = pointer.id;
+        moveThumb(pointer);
+      }
     });
 
     function startJoystick(e) {
@@ -156,9 +180,16 @@
       }
     }
 
+    attackBtn.addEventListener('pointerdown', () => {
+      const bubble = this.physics.add.image(player.x, player.y, 'bubble');
+      bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
+    });
+
     function moveThumb(pointer) {
       const dx = pointer.clientX - baseX;
       const dy = pointer.clientY - baseY;
+      const dx = pointer.x - baseX;
+      const dy = pointer.y - baseY;
       joystickVector.set(dx, dy);
       const dist = Math.min(joystickVector.length(), baseRadius);
       const angle = joystickVector.angle();
