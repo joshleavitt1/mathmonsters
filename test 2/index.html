@@ -20,6 +20,24 @@
       border-radius: 50%;
       box-sizing: border-box;
     }
+      .action-btn {
+        position: absolute;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.4);
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+      }
+
+      .action-btn img {
+        width: 36px;
+        height: 36px;
+      }
     .action-btn {
       position: absolute;
       width: 60px;
@@ -77,8 +95,8 @@
       .setCollideWorldBounds(true)
       .setDisplaySize(150, 150);
 
-    const baseRadius = 60;
-    const thumbRadius = 30;
+    const baseRadius = 36;
+    const thumbRadius = 24;
     const baseX = 90;
     const baseY = height - 90;
 
@@ -88,7 +106,8 @@
     joystickBase.style.width = `${baseRadius * 2}px`;
     joystickBase.style.height = `${baseRadius * 2}px`;
     joystickBase.style.left = `${baseX - baseRadius}px`;
-    joystickBase.style.top = `${baseY - baseRadius}px`;
+    joystickBase.style.top = `${baseY - baseRadius}px`;=
+    joystickBase.style.touchAction = 'none';
     document.body.appendChild(joystickBase);
 
     joystickThumb = document.createElement('div');
@@ -97,11 +116,15 @@
     joystickThumb.style.height = `${thumbRadius * 2}px`;
     joystickThumb.style.left = `${baseX - thumbRadius}px`;
     joystickThumb.style.top = `${baseY - thumbRadius}px`;
+    joystickThumb.style.touchAction = 'none';
     document.body.appendChild(joystickThumb);
 
     // Action buttons
     attackBtn = document.createElement('div');
     attackBtn.className = 'action-btn';
+    attackBtn.style.right = '120px';
+    attackBtn.style.bottom = '40px';
+    attackBtn.innerHTML = '<img src="assets/attack.svg" alt="attack">';
     attackBtn.style.right = '110px';
     attackBtn.style.bottom = '40px';
     attackBtn.textContent = '🗡️';
@@ -111,6 +134,7 @@
     shieldBtn.className = 'action-btn';
     shieldBtn.style.right = '40px';
     shieldBtn.style.bottom = '40px';
+    shieldBtn.innerHTML = '<img src="assets/defend.svg" alt="defend">';
     shieldBtn.textContent = '🛡️';
     document.body.appendChild(shieldBtn);
 
@@ -121,6 +145,14 @@
     bubbleGfx.generateTexture('bubble', 20, 20);
     bubbleGfx.destroy();
 
+    joystickBase.addEventListener('pointerdown', startJoystick);
+    joystickThumb.addEventListener('pointerdown', startJoystick);
+    window.addEventListener('pointermove', moveJoystick);
+    window.addEventListener('pointerup', endJoystick);
+
+    attackBtn.addEventListener('pointerdown', () => {
+      const bubble = this.physics.add.image(player.x, player.y, 'bubble');
+      bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
     this.input.on('pointerdown', pointer => {
       if (Phaser.Math.Distance.Between(pointer.x, pointer.y, baseX, baseY) <= baseRadius) {
         joystickPointer = pointer.id;
@@ -128,20 +160,25 @@
       }
     });
 
-    this.input.on('pointermove', pointer => {
-      if (pointer.id === joystickPointer) {
-        moveThumb(pointer);
-      }
-    });
+    function startJoystick(e) {
+      joystickPointer = e.pointerId;
+      moveThumb(e);
+    }
 
-    this.input.on('pointerup', pointer => {
-      if (pointer.id === joystickPointer) {
+    function moveJoystick(e) {
+      if (e.pointerId === joystickPointer) {
+        moveThumb(e);
+      }
+    }
+
+    function endJoystick(e) {
+      if (e.pointerId === joystickPointer) {
         joystickPointer = null;
         joystickThumb.style.left = `${baseX - thumbRadius}px`;
         joystickThumb.style.top = `${baseY - thumbRadius}px`;
         joystickVector.set(0, 0);
       }
-    });
+    }
 
     attackBtn.addEventListener('pointerdown', () => {
       const bubble = this.physics.add.image(player.x, player.y, 'bubble');
@@ -149,6 +186,8 @@
     });
 
     function moveThumb(pointer) {
+      const dx = pointer.clientX - baseX;
+      const dy = pointer.clientY - baseY;
       const dx = pointer.x - baseX;
       const dy = pointer.y - baseY;
       joystickVector.set(dx, dy);
