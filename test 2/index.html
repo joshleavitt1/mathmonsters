@@ -38,8 +38,6 @@
     this.load.image('playerBack', 'assets/swim_shellfin_back.png');
     this.load.image('playerLeft', 'assets/swim_shellfin_left.png');
     this.load.image('playerRight', 'assets/swim_shellfin_right.png');
-    // Load the updated player sprite from the local assets folder
-    this.load.image('player', 'assets/swim_shellfin_front.png');
   }
 
   function create() {
@@ -49,9 +47,6 @@
       .setDisplaySize(width, height);
 
     player = this.physics.add.image(width / 2, height / 2, 'playerFront')
-    player = this.physics.add.image(width / .5, height / .5, 'player')
-      .setCollideWorldBounds(true);
-    player = this.physics.add.image(width / 2, height / 2, 'player')
       .setCollideWorldBounds(true)
       // Ensure the sprite displays at the intended size
       .setDisplaySize(150, 150);
