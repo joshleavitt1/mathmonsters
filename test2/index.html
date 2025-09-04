@@ -83,6 +83,7 @@
       width: 24px;
       height: 24px;
       display: block;
+      image-rendering: pixelated;
     }
     .action-btn:active {
       transform: scale(0.96);
@@ -101,6 +102,7 @@
     parent: 'game',
     width: window.innerWidth,
     height: window.innerHeight,
+    pixelArt: true,
     physics: { default: 'arcade', arcade: { debug: false } },
     scene: { preload, create, update }
   };
@@ -199,14 +201,14 @@
     attackBtn.type = 'button';
     attackBtn.className = 'action-btn';
     attackBtn.title = 'Attack';
-    attackBtn.innerHTML = '<img src="assets/attack.png" alt="attack">';
+    attackBtn.innerHTML = '<img src="assets/attack.svg" alt="attack">';
     actionsContainer.appendChild(attackBtn);
 
     defendBtn = document.createElement('button');
     defendBtn.type = 'button';
     defendBtn.className = 'action-btn';
     defendBtn.title = 'Defend';
-    defendBtn.innerHTML = '<img src="assets/defend.png" alt="defend">';
+    defendBtn.innerHTML = '<img src="assets/defend.svg" alt="defend">';
     actionsContainer.appendChild(defendBtn);
 
     // Compute joystick center after layout
@@ -376,9 +378,11 @@
       if (Math.abs(dir.x) > 0.1) {
         facing = dir.x > 0 ? 'right' : 'left';
       }
-      player.setTexture(facing === 'right' ? 'playerRight' : 'playerLeft').setDisplaySize(150, 150);
+      player.setTexture(facing === 'right' ? 'playerRight' : 'playerLeft')
+        .setDisplaySize(150, 150);
     } else {
-      player.setTexture(facing === 'right' ? 'playerRight' : 'playerLeft').setDisplaySize(150, 150);
+      player.setTexture(facing === 'right' ? 'playerRight' : 'playerLeft')
+        .setDisplaySize(150, 150);
     }
 
     if (shield) {
