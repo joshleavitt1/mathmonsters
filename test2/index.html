@@ -170,7 +170,7 @@
     window.addEventListener('pointerup', endJoystick);
 
     attackBtn.addEventListener('pointerdown', () => {
-      const offset = facing === 'right' ? 20 : -20;
+      const offset = facing === 'right' ? 60 : -60;
       const bubble = this.physics.add.image(player.x + offset, player.y, 'bubble');
       bubble.setVelocity(facing === 'right' ? 300 : -300, 0);
     });
