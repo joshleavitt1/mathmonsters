@@ -3,6 +3,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const questionsContainer = document.getElementById('questions-container');
     const form = document.getElementById('battle-form');
 
+    const params = new URLSearchParams(window.location.search);
+    const battleId = params.get('id');
+    let existingBattle = null;
+
+    if (battleId) {
+      fetch('/battles')
+        .then(res => res.json())
+        .then(battles => {
+          existingBattle = battles.find(b => b.id === Number(battleId));
+          if (existingBattle) {
+            populateForm(existingBattle);
+          }
+        });
+    }
+
     form.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && e.target.type === 'text') {
         e.preventDefault();
@@ -14,6 +29,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const block = createQuestionBlock(index);
     questionsContainer.appendChild(block);
   });
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      if (!validateForm()) {
+        alert('Please complete all fields and ensure at least one question is fully completed.');
+        return;
+      }
+      const data = collectFormData();
+      const method = battleId ? 'PUT' : 'POST';
+      const url = battleId ? `/battles/${battleId}` : '/battles';
+      fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(() => {
+        window.location.href = 'home.html';
+      });
+    });
 
     questionsContainer.addEventListener('change', (e) => {
       if (e.target.classList.contains('question-type')) {
@@ -219,5 +252,88 @@ document.addEventListener('DOMContentLoaded', () => {
         answer.name = `q${index}answer`;
       }
     }
+  }
+
+  function collectFormData() {
+    const battleName = document.getElementById('battle-name').value.trim();
+    const questions = [];
+    questionsContainer.querySelectorAll('.question-block').forEach(block => {
+      const questionText = block.querySelector('input[type="text"]').value.trim();
+      const type = block.querySelector('.question-type').value;
+      if (!questionText || !type) return;
+      if (type === 'multiple') {
+        const options = [...block.querySelectorAll('.answer-input')].map(i => i.value.trim());
+        const correct = [];
+        block.querySelectorAll('.correct-btn').forEach((btn, idx) => {
+          if (btn.classList.contains('selected')) correct.push(idx);
+        });
+        questions.push({ question: questionText, type, options, correct });
+      } else if (type === 'boolean') {
+        const options = [...block.querySelectorAll('.answer-input')].map(i => i.value.trim());
+        const correctIndex = Array.from(block.querySelectorAll('.correct-btn')).findIndex(btn => btn.classList.contains('selected'));
+        questions.push({ question: questionText, type, options, correct: correctIndex });
+      } else if (type === 'text') {
+        const answer = block.querySelector('.answer-input').value.trim();
+        questions.push({ question: questionText, type, answer });
+      }
+    });
+    return { name: battleName, questions };
+  }
+
+  function validateForm() {
+    const battleName = document.getElementById('battle-name').value.trim();
+    if (!battleName) return false;
+    const blocks = questionsContainer.querySelectorAll('.question-block');
+    if (blocks.length === 0) return false;
+    for (const block of blocks) {
+      const questionText = block.querySelector('input[type="text"]').value.trim();
+      const type = block.querySelector('.question-type').value;
+      if (!questionText || !type) return false;
+      if (type === 'multiple') {
+        const options = block.querySelectorAll('.answer-input');
+        if ([...options].some(o => !o.value.trim())) return false;
+        if (block.querySelectorAll('.correct-btn.selected').length === 0) return false;
+      } else if (type === 'boolean') {
+        if (block.querySelectorAll('.correct-btn.selected').length !== 1) return false;
+      } else if (type === 'text') {
+        if (!block.querySelector('.answer-input').value.trim()) return false;
+      }
+    }
+    return true;
+  }
+
+  function populateForm(battle) {
+    document.getElementById('battle-name').value = battle.name;
+    questionsContainer.innerHTML = '';
+    battle.questions.forEach((q, idx) => {
+      const block = createQuestionBlock(idx + 1);
+      questionsContainer.appendChild(block);
+      block.querySelector('input[type="text"]').value = q.question;
+      const select = block.querySelector('.question-type');
+      select.value = q.type;
+      select.style.color = '#272B34';
+      renderAnswerFields(block, q.type);
+      if (q.type === 'multiple') {
+        const inputs = block.querySelectorAll('.answer-input');
+        q.options.forEach((opt, i) => inputs[i].value = opt);
+        q.correct.forEach(i => {
+          const btn = block.querySelectorAll('.correct-btn')[i];
+          if (btn) {
+            btn.classList.add('selected');
+            btn.querySelector('img').src = 'images/box_checked.svg';
+          }
+        });
+      } else if (q.type === 'boolean') {
+        const inputs = block.querySelectorAll('.answer-input');
+        q.options.forEach((opt, i) => inputs[i].value = opt);
+        const btn = block.querySelectorAll('.correct-btn')[q.correct];
+        if (btn) {
+          btn.classList.add('selected');
+          btn.querySelector('img').src = 'images/box_checked.svg';
+        }
+      } else if (q.type === 'text') {
+        block.querySelector('.answer-input').value = q.answer;
+      }
+    });
   }
 });
