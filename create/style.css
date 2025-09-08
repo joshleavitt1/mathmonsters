@@ -9,8 +9,15 @@ html, body {
   background: #f3f5f9;
 }
 
+@font-face {
+  font-family: 'Arial Rounded MT Bold';
+  src: local('Arial Rounded MT Bold'), local('ArialRoundedMTBold');
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
-  --font-rounded: 'Arial Rounded MT', Arial, sans-serif;
+  --font-rounded: 'Arial Rounded MT Bold', 'Arial Rounded MT', Arial, sans-serif;
 }
 
 .text-large {
@@ -34,17 +41,6 @@ html, body {
 body {
   margin: 0;
   font-family: var(--font-rounded);
-  background: #f3f5f9;
-  color: #333;
-}
-
-.top-bar {
-  background: #001f8b;
-}
-
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
   background: #f3f5f9;
   color: #333;
 }
@@ -94,13 +90,21 @@ select {
   width: 100%;
   height: 56px;
   padding: 24px;
-  color: #D6D6D6;
+  color: #9C9C9C;
   border: 1px solid #D6D6D6;
   border-radius: 6px;
   background: #fff;
   font-family: var(--font-rounded);
   font-size: 16px;
   letter-spacing: -0.02em;
+}
+
+input[type="text"]:focus {
+  color: #272B34;
+}
+
+input[type="text"]::placeholder {
+  color: #9C9C9C;
 }
 
 .subcard {
