@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
         deleteBtn.className = 'delete-question';
-        deleteBtn.innerHTML = `<img src="../images/delete.svg" alt="Delete">`;
+        deleteBtn.innerHTML = `<img src="images/delete.svg" alt="Delete">`;
         header.appendChild(deleteBtn);
       }
 

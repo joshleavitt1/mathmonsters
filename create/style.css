@@ -112,7 +112,7 @@ form {
 
   select {
     color: #9C9C9C;
-    background: #fff url('../images/chevron.svg') no-repeat right 16px center;
+    background: #fff url('/images/chevron.svg') no-repeat right 16px center;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
