@@ -48,6 +48,7 @@ body {
   background: #f3f5f9;
   color: #333;
 }
+
 .top-bar {
   background: #000666;
   color: #fff;
@@ -72,26 +73,28 @@ main {
   justify-content: center;
   padding: 40px 20px;
 }
+
 form {
   background: #fff;
-  padding: 30px;
+  padding: 40px;
   width: 100%;
   max-width: 500px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 80px rgba(0,0,0,0.08);
 }
 
 label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 24px;
   font-weight: 600;
 }
 
 input[type="text"],
 select {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 20px;
+  height: 56px;
+  padding: 24px;
+  color: #D6D6D6;
   border: 1px solid #D6D6D6;
   border-radius: 6px;
   background: #fff;
@@ -104,11 +107,7 @@ select {
   background: #F4F6FA;
   border-radius: 8px;
   padding: 40px;
-  margin-bottom: 20px;
-}
-
-.question-block {
-  margin-top: 30px;
+  margin-bottom: 40px;
 }
 
 #add-question {
@@ -121,12 +120,6 @@ select {
   justify-content: center;
   gap: 8px;
   margin: 20px auto;
-}
-
-.question-block {
-  margin-top: 30px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
 }
   
 #add-question.link-button {
