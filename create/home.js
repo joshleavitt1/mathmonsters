@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const createBtn = document.getElementById('create-battle');
 
   createBtn.addEventListener('click', () => {
-    window.location.href = 'index.html';
+    window.location.href = 'create.html';
   });
 
   fetch('/battles')
@@ -11,45 +11,31 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(battles => {
       battles.forEach(battle => {
         const item = document.createElement('div');
-        item.className = 'subcard';
+        item.className = 'battle-card';
 
-        const header = document.createElement('div');
-        header.style.display = 'flex';
-        header.style.justifyContent = 'space-between';
-        header.style.alignItems = 'center';
+        const info = document.createElement('div');
+        info.className = 'battle-info';
 
         const name = document.createElement('h2');
-        name.className = 'text-large';
+        name.className = 'battle-name';
         name.textContent = battle.name;
-        header.appendChild(name);
+        info.appendChild(name);
 
-        const buttons = document.createElement('div');
-        buttons.style.display = 'flex';
-        buttons.style.gap = '10px';
-
-        const launch = document.createElement('button');
-        launch.className = 'submit-btn text-small';
-        launch.style.width = 'auto';
-        launch.textContent = 'Launch';
-        buttons.appendChild(launch);
+        const count = document.createElement('p');
+        count.className = 'battle-count';
+        count.textContent = `${battle.questions.length} Questions`;
+        info.appendChild(count);
 
         const edit = document.createElement('button');
         edit.className = 'submit-btn text-small';
         edit.style.width = 'auto';
         edit.textContent = 'Edit';
         edit.addEventListener('click', () => {
-          window.location.href = `index.html?id=${battle.id}`;
+          window.location.href = `create.html?id=${battle.id}`;
         });
-        buttons.appendChild(edit);
 
-        header.appendChild(buttons);
-        item.appendChild(header);
-
-        const count = document.createElement('p');
-        count.className = 'text-small';
-        count.textContent = `${battle.questions.length} Questions`;
-        item.appendChild(count);
-
+        item.appendChild(info);
+        item.appendChild(edit);
         list.appendChild(item);
       });
     });

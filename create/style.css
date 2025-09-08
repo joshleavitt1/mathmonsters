@@ -130,6 +130,34 @@ input[type="text"]::placeholder {
     margin-bottom: 40px;
   }
 
+  .battle-card {
+    background: #F4F6FA;
+    border-radius: 8px;
+    padding: 40px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .battle-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .battle-name {
+    font-size: 36px;
+    color: #272B34;
+    margin: 0;
+  }
+
+  .battle-count {
+    font-size: 16px;
+    color: #9C9C9C;
+    margin: 8px 0 0;
+  }
+
 .question-block > .question-header,
 .question-block > input[type="text"] {
     margin-bottom: 24px;

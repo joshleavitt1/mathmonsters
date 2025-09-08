@@ -3,41 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Create Battle</title>
+  <title>Battle Home</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
-<body>
-  <header class="top-bar">
-    <h1 class="text-large">Create Battle</h1>
-    <button class="close" aria-label="Close">
-      <img src="images/close.svg" alt="Close" />
-    </button>
-  </header>
-  <main>
-    <form id="battle-form">
-      <div class="subcard">
-        <label for="battle-name" class="text-large">Battle Name</label>
-        <input type="text" id="battle-name" class="text-small" placeholder="Enter Name" />
+  <body>
+    <div style="padding:40px 80px; width:100%; box-sizing:border-box;">
+      <h1 class="text-large" style="margin-bottom:40px;">Welcome, Josh</h1>
+        <button id="create-battle" class="submit-btn text-medium" style="width:auto; margin-bottom:40px;">Create Battle</button>
+        <div id="battle-list"></div>
       </div>
-      <div id="questions-container">
-        <section class="question-block subcard" data-index="1">
-          <div class="question-header">
-            <label for="question-name-1" class="text-large">Question 1</label>
-          </div>
-          <input type="text" id="question-name-1" name="question1" class="text-small" placeholder="Enter Question" />
-          <select name="type1" class="question-type text-small">
-            <option value="" disabled selected>Select Category</option>
-            <option value="multiple">Multiple Choice</option>
-            <option value="boolean">True or False</option>
-            <option value="text">Type Answer</option>
-          </select>
-          <div class="answer-fields"></div>
-        </section>
-      </div>
-      <button type="button" id="add-question" class="text-medium"><img src="images/plus.svg" alt="Add" class="plus-icon"/>Add Question</button>
-      <button type="submit" class="submit-btn text-medium">Submit</button>
-    </form>
-  </main>
-  <script src="./script.js"></script>
-</body>
-</html>
+      <script src="./home.js"></script>
+    </body>
+  </html>
