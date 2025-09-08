@@ -2,6 +2,13 @@
   box-sizing: border-box;
 }
 
+html, body {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+  background: #f3f5f9;
+}
+
 :root {
   --font-rounded: 'Arial Rounded MT', Arial, sans-serif;
 }
@@ -167,4 +174,25 @@ select {
   font-family: var(--font-rounded);
   font-size: 16px;
   letter-spacing: -0.02em;
+}
+
+@media (max-width: 600px) {
+  .top-bar {
+    padding: 15px 0;
+  }
+  main {
+    padding: 20px 10px;
+  }
+  .subcard {
+    padding: 20px;
+  }
+  .text-large {
+    font-size: 20px;
+  }
+  .text-medium {
+    font-size: 18px;
+  }
+  .text-small {
+    font-size: 14px;
+  }
 }
