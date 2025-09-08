@@ -2,6 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const addQuestionBtn = document.getElementById('add-question');
     const questionsContainer = document.getElementById('questions-container');
     const form = document.getElementById('battle-form');
+    const closeBtn = document.querySelector('.close');
+    closeBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
 
     const params = new URLSearchParams(window.location.search);
     const battleId = params.get('id');
@@ -44,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       }).then(() => {
-        window.location.href = 'home.html';
+        window.location.href = 'index.html';
       });
     });
 
