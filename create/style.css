@@ -61,9 +61,12 @@ body {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #fff;
-  font-size: 32px;
   cursor: pointer;
+}
+
+.top-bar .close img {
+  width: 24px;
+  height: 24px;
 }
 main {
   display: flex;
@@ -109,6 +112,11 @@ form {
 
   select {
     color: #9C9C9C;
+    background: #fff url('../images/chevron.svg') no-repeat right 16px center;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding-right: 40px;
   }
 
 input[type="text"]::placeholder {
@@ -144,7 +152,7 @@ input[type="text"]::placeholder {
     justify-content: center;
   }
 
-  .delete-question svg {
+  .delete-question img {
     width: 20px;
     height: 20px;
   }
@@ -158,7 +166,7 @@ input[type="text"]::placeholder {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 20px auto;
+  margin: 40px auto;
 }
   
 #add-question.link-button {
@@ -173,15 +181,9 @@ input[type="text"]::placeholder {
   margin-bottom: 20px;
 }
 
-  #add-question .plus {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  #add-question .plus-icon {
     width: 24px;
     height: 24px;
-    border-radius: 50%;
-    background: #0070f3;
-    color: #fff;
   }
 
   .submit-btn {
