@@ -1,0 +1,28 @@
+{
+  "Test Battle": {
+    "total questions": 2,
+    "questions": [
+      {
+        "name": "Question 1",
+        "number": 1,
+        "question": "What is my name?",
+        "category": "Multiple Choice",
+        "choices": [
+          { "choice 1": "Josh", "choice 2": "Dan", "choice 3": "Robby" },
+        ]
+      },
+      {
+        "name": "Question 2",
+        "number": 2,
+        "question": "What is my name?",
+        "category": "Multiple Choice",
+        "choices": [
+          { "choice 1": "Josh", "choice 2": "Dan", "choice 3": "Robby" },
+        ]
+      }
+    ]
+  }
+}
+
+
+
