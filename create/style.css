@@ -1,0 +1,140 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --font-rounded: 'Arial Rounded MT', Arial, sans-serif;
+}
+
+.text-large {
+  font-family: var(--font-rounded);
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.text-medium {
+  font-family: var(--font-rounded);
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.text-small {
+  font-family: var(--font-rounded);
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-rounded);
+  background: #f3f5f9;
+  color: #333;
+}
+
+.top-bar {
+  background: #001f8b;
+  color: #fff;
+  padding: 20px 0;
+  text-align: center;
+  position: relative;
+}
+
+.top-bar .close {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 32px;
+  cursor: pointer;
+}
+main {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+form {
+  background: #fff;
+  padding: 30px;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+input[type="text"],
+select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #D6D6D6;
+  border-radius: 6px;
+  background: #fff;
+  font-family: var(--font-rounded);
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.subcard {
+  background: #F4F6FA;
+  border-radius: 8px;
+  padding: 40px;
+  margin-bottom: 20px;
+}
+
+.question-block {
+  margin-top: 30px;
+}
+
+#add-question {
+  background: none;
+  border: none;
+  color: #0070f3;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px auto;
+}
+
+#add-question .plus {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #0070f3;
+  color: #fff;
+  line-height: 20px;
+  text-align: center;
+}
+
+.submit-btn {
+  background: #0053f0;
+  border: none;
+  color: #fff;
+  width: 100%;
+  padding: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.answer-fields input[type="text"] {
+  margin-bottom: 10px;
+}
+
+.answer-fields label {
+  margin-right: 10px;
+  font-weight: normal;
+  font-family: var(--font-rounded);
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
