@@ -1,28 +1,26 @@
-{
-  "Test Battle": {
-    "total questions": 2,
+[
+  {
+    "id": 1,
+    "name": "Intro Battle",
     "questions": [
       {
-        "name": "Question 1",
-        "number": 1,
-        "question": "What is my name?",
-        "category": "Multiple Choice",
-        "choices": [
-          { "choice 1": "Josh", "choice 2": "Dan", "choice 3": "Robby" },
-        ]
-      },
+        "question": "What is 2 + 2?",
+        "type": "multiple",
+        "options": ["3", "4", "5"],
+        "correct": [1]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Deep Sea Knowledge",
+    "questions": [
       {
-        "name": "Question 2",
-        "number": 2,
-        "question": "What is my name?",
-        "category": "Multiple Choice",
-        "choices": [
-          { "choice 1": "Josh", "choice 2": "Dan", "choice 3": "Robby" },
-        ]
+        "question": "The ocean is salty. True or false?",
+        "type": "boolean",
+        "options": ["True", "False"],
+        "correct": 0
       }
     ]
   }
-}
-
-
-
+]
