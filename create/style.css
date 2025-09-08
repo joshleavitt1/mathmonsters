@@ -33,6 +33,15 @@ body {
 
 .top-bar {
   background: #001f8b;
+=======
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f5f9;
+  color: #333;
+}
+.top-bar {
+  background: #000666;
   color: #fff;
   padding: 20px 0;
   text-align: center;
@@ -69,7 +78,7 @@ label {
   margin-bottom: 8px;
   font-weight: 600;
 }
-
+  
 input[type="text"],
 select {
   width: 100%;
@@ -106,6 +115,25 @@ select {
   margin: 20px auto;
 }
 
+=======
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+.question-block {
+  margin-top: 30px;
+}
+#add-question.link-button {
+  background: none;
+  border: none;
+  color: #006AFF;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
 #add-question .plus {
   display: inline-block;
   width: 20px;
@@ -137,4 +165,5 @@ select {
   font-family: var(--font-rounded);
   font-size: 16px;
   letter-spacing: -0.02em;
+
 }
