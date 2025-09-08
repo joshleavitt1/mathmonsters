@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'create.html';
   });
 
-  fetch('/battles')
+  fetch('../data/battles.json')
     .then(res => res.json())
     .then(battles => {
       if (!Array.isArray(battles)) return;
