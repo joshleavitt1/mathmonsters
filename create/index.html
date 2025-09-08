@@ -8,20 +8,22 @@
 </head>
 <body>
   <header class="top-bar">
-    <h1>Create Battle</h1>
+    <h1 class="text-large">Create Battle</h1>
+
     <button class="close" aria-label="Close">&times;</button>
   </header>
   <main>
     <form id="battle-form">
-      <div class="form-section">
-        <label for="battle-name">Battle Name</label>
-        <input type="text" id="battle-name" placeholder="Enter Name" />
+      <div class="subcard">
+        <label for="battle-name" class="text-large">Battle Name</label>
+        <input type="text" id="battle-name" class="text-small" placeholder="Enter Name" />
       </div>
       <div id="questions-container">
-        <section class="question-block" data-index="1">
-          <h2>Question 1</h2>
-          <input type="text" name="question1" placeholder="Enter Question" />
-          <select name="type1" class="question-type">
+        <section class="question-block subcard" data-index="1">
+          <h2 class="text-large">Question 1</h2>
+          <input type="text" name="question1" class="text-small" placeholder="Enter Question" />
+          <select name="type1" class="question-type text-small">
+
             <option value="" disabled selected>Select Category</option>
             <option value="multiple">Multiple Choice</option>
             <option value="boolean">True or False</option>
@@ -30,8 +32,6 @@
           <div class="answer-fields"></div>
         </section>
       </div>
-      <button type="button" id="add-question" class="link-button">Add Question <span class="plus">+</span></button>
-      <button type="submit" class="submit-btn">Submit</button>
     </form>
   </main>
   <script src="script.js"></script>

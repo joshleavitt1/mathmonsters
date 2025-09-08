@@ -18,12 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function createQuestionBlock(index) {
     const section = document.createElement('section');
-    section.className = 'question-block';
+    section.className = 'question-block subcard';
     section.dataset.index = index;
     section.innerHTML = `
-      <h2>Question ${index}</h2>
-      <input type="text" name="question${index}" placeholder="Enter Question" />
-      <select name="type${index}" class="question-type">
+      <h2 class="text-large">Question ${index}</h2>
+      <input type="text" name="question${index}" class="text-small" placeholder="Enter Question" />
+      <select name="type${index}" class="question-type text-small">
         <option value="" disabled selected>Select Category</option>
         <option value="multiple">Multiple Choice</option>
         <option value="boolean">True or False</option>
@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         input.type = 'text';
         input.placeholder = `Option ${i}`;
         input.name = `q${index}option${i}`;
+        input.className = 'text-small';
         container.appendChild(input);
       }
     } else if (type === 'boolean') {
@@ -58,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
       input.type = 'text';
       input.placeholder = 'Type answer';
       input.name = `q${index}answer`;
+      input.className = 'text-small';
       container.appendChild(input);
     }
   }
