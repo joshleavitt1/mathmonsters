@@ -130,10 +130,13 @@ input[type="text"]::placeholder {
     margin-bottom: 40px;
   }
 
-  .question-block > .question-header,
-  .question-block > input[type="text"],
-  .question-block > select {
+.question-block > .question-header,
+.question-block > input[type="text"] {
     margin-bottom: 24px;
+  }
+
+  .question-block > select {
+    margin-bottom: 0;
   }
 
   .question-header {
@@ -200,19 +203,51 @@ input[type="text"]::placeholder {
     background: #004BD8;
   }
 
-  .answer-fields input[type="text"] {
-    margin-bottom: 10px;
+  .answers-label {
+    margin-top: 40px;
+    margin-bottom: 24px;
   }
 
-.answer-fields label {
-  display: inline-flex;
-  align-items: center;
-  margin-right: 10px;
-  font-weight: normal;
-  font-family: var(--font-rounded);
-  font-size: 16px;
-  letter-spacing: -0.02em;
-}
+  .answers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .answer-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .answer-row input[type="text"] {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .correct-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #9C9C9C;
+    font-family: var(--font-rounded);
+    font-size: 16px;
+    letter-spacing: -0.02em;
+    padding: 0;
+  }
+
+  .correct-btn.selected {
+    color: #00B600;
+  }
+
+  .correct-btn.disabled {
+    cursor: default;
+    pointer-events: none;
+  }
 
 @media (max-width: 600px) {
   .top-bar {
