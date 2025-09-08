@@ -28,6 +28,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const block = e.target.closest('.question-block');
         block.remove();
         updateQuestionNumbers();
+        return;
+      }
+
+      const correctBtn = e.target.closest('.correct-btn');
+      if (correctBtn && !correctBtn.classList.contains('disabled')) {
+        const block = correctBtn.closest('.question-block');
+        const type = block.querySelector('.question-type').value;
+        if (type === 'boolean') {
+          block.querySelectorAll('.correct-btn').forEach(btn => {
+            btn.classList.remove('selected');
+            btn.querySelector('img').src = 'images/box_empty.svg';
+          });
+          correctBtn.classList.add('selected');
+          correctBtn.querySelector('img').src = 'images/box_checked.svg';
+        } else if (type === 'multiple') {
+          correctBtn.classList.toggle('selected');
+          const img = correctBtn.querySelector('img');
+          if (correctBtn.classList.contains('selected')) {
+            img.src = 'images/box_checked.svg';
+          } else {
+            img.src = 'images/box_empty.svg';
+          }
+        }
       }
     });
 
@@ -86,29 +109,77 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = block.querySelector('.answer-fields');
     container.innerHTML = '';
     const index = block.dataset.index;
+
+    if (!type) return;
+
+    const label = document.createElement('div');
+    label.className = 'answers-label text-medium';
+    label.textContent = 'Answers';
+    container.appendChild(label);
+
+    const list = document.createElement('div');
+    list.className = 'answers-list';
+    container.appendChild(list);
+
     if (type === 'multiple') {
       for (let i = 1; i <= 4; i++) {
+        const row = document.createElement('div');
+        row.className = 'answer-row';
+
         const input = document.createElement('input');
         input.type = 'text';
-        input.placeholder = `Option ${i}`;
+        input.placeholder = 'Enter Answer';
         input.name = `q${index}option${i}`;
-        input.className = 'text-small';
-        container.appendChild(input);
+        input.className = 'text-small answer-input';
+        row.appendChild(input);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'correct-btn text-small';
+        btn.innerHTML = `<img src="images/box_empty.svg" alt="checkbox"> Correct`;
+        row.appendChild(btn);
+
+        list.appendChild(row);
       }
     } else if (type === 'boolean') {
-      const trueLabel = document.createElement('label');
-      trueLabel.innerHTML = `<input type="radio" name="q${index}bool" value="true"> True`;
-      const falseLabel = document.createElement('label');
-      falseLabel.innerHTML = `<input type="radio" name="q${index}bool" value="false"> False`;
-      container.appendChild(trueLabel);
-      container.appendChild(falseLabel);
+      ['True', 'False'].forEach((value, i) => {
+        const row = document.createElement('div');
+        row.className = 'answer-row';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value;
+        input.readOnly = true;
+        input.name = `q${index}option${i + 1}`;
+        input.className = 'text-small answer-input';
+        row.appendChild(input);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'correct-btn text-small';
+        btn.innerHTML = `<img src="images/box_empty.svg" alt="checkbox"> Correct`;
+        row.appendChild(btn);
+
+        list.appendChild(row);
+      });
     } else if (type === 'text') {
+      const row = document.createElement('div');
+      row.className = 'answer-row';
+
       const input = document.createElement('input');
       input.type = 'text';
-      input.placeholder = 'Type answer';
+      input.placeholder = 'Enter Answer';
       input.name = `q${index}answer`;
-      input.className = 'text-small';
-      container.appendChild(input);
+      input.className = 'text-small answer-input';
+      row.appendChild(input);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'correct-btn text-small selected disabled';
+      btn.innerHTML = `<img src="images/box_checked.svg" alt="checkbox"> Correct`;
+      row.appendChild(btn);
+
+      list.appendChild(row);
     }
   }
 
@@ -133,17 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const index = block.dataset.index;
     const container = block.querySelector('.answer-fields');
     if (type === 'multiple') {
-      const options = container.querySelectorAll('input');
+      const options = container.querySelectorAll('.answer-input');
       options.forEach((input, i) => {
         input.name = `q${index}option${i + 1}`;
       });
     } else if (type === 'boolean') {
-      const radios = container.querySelectorAll('input');
-      radios.forEach(radio => {
-        radio.name = `q${index}bool`;
+      const options = container.querySelectorAll('.answer-input');
+      options.forEach((input, i) => {
+        input.name = `q${index}option${i + 1}`;
       });
     } else if (type === 'text') {
-      const answer = container.querySelector('input');
+      const answer = container.querySelector('.answer-input');
       if (answer) {
         answer.name = `q${index}answer`;
       }
