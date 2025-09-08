@@ -9,7 +9,15 @@ document.addEventListener('DOMContentLoaded', () => {
   fetch('/battles')
     .then(res => res.json())
     .then(battles => {
+      if (!Array.isArray(battles)) return;
+
       battles.forEach(battle => {
+        // Guard against malformed battle data which previously caused the page
+        // to fail rendering any battles.
+        const questionCount = Array.isArray(battle.questions)
+          ? battle.questions.length
+          : 0;
+
         const item = document.createElement('div');
         item.className = 'battle-card';
 
@@ -23,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const count = document.createElement('p');
         count.className = 'battle-count';
-        count.textContent = `${battle.questions.length} Questions`;
+        count.textContent = `${questionCount} Questions`;
         info.appendChild(count);
 
         const edit = document.createElement('button');
@@ -38,5 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
         item.appendChild(edit);
         list.appendChild(item);
       });
+    })
+    .catch(() => {
+      // If the request fails, avoid leaving the homepage blank.
+      list.innerHTML = '<p class="text-small">No battles found.</p>';
     });
 });
