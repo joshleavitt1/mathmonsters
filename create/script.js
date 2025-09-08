@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const addQuestionBtn = document.getElementById('add-question');
     const questionsContainer = document.getElementById('questions-container');
     const form = document.getElementById('battle-form');
-    let questionCount = 1;
 
     form.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && e.target.type === 'text') {
@@ -11,13 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
   addQuestionBtn.addEventListener('click', () => {
-    questionCount++;
-    const block = createQuestionBlock(questionCount);
-      questionsContainer.appendChild(block);
-    });
+    const index = questionsContainer.querySelectorAll('.question-block').length + 1;
+    const block = createQuestionBlock(index);
+    questionsContainer.appendChild(block);
+  });
 
     questionsContainer.addEventListener('change', (e) => {
       if (e.target.classList.contains('question-type')) {
+        e.target.style.color = e.target.value ? '#272B34' : '#9C9C9C';
         const block = e.target.closest('.question-block');
         renderAnswerFields(block, e.target.value);
       }
@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target.closest('.delete-question')) {
         const block = e.target.closest('.question-block');
         block.remove();
+        updateQuestionNumbers();
       }
     });
 
@@ -48,10 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
         deleteBtn.className = 'delete-question';
-        deleteBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 6h18M9 6V4h6v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" fill="none" stroke="currentColor" stroke-width="2"/>
-          </svg>`;
+        deleteBtn.innerHTML = `<img src="../images/delete.svg" alt="Delete">`;
         header.appendChild(deleteBtn);
       }
 
@@ -74,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <option value="boolean">True or False</option>
           <option value="text">Type Answer</option>
         `;
+      select.style.color = '#9C9C9C';
       section.appendChild(select);
 
       const answers = document.createElement('div');
@@ -110,6 +109,44 @@ document.addEventListener('DOMContentLoaded', () => {
       input.name = `q${index}answer`;
       input.className = 'text-small';
       container.appendChild(input);
+    }
+  }
+
+  function updateQuestionNumbers() {
+    const blocks = questionsContainer.querySelectorAll('.question-block');
+    blocks.forEach((block, idx) => {
+      const index = idx + 1;
+      block.dataset.index = index;
+      const label = block.querySelector('.question-header label');
+      label.setAttribute('for', `question-name-${index}`);
+      label.textContent = `Question ${index}`;
+      const input = block.querySelector('input[type="text"]');
+      input.id = `question-name-${index}`;
+      input.name = `question${index}`;
+      const select = block.querySelector('.question-type');
+      select.name = `type${index}`;
+      updateAnswerFieldNames(block, select.value);
+    });
+  }
+
+  function updateAnswerFieldNames(block, type) {
+    const index = block.dataset.index;
+    const container = block.querySelector('.answer-fields');
+    if (type === 'multiple') {
+      const options = container.querySelectorAll('input');
+      options.forEach((input, i) => {
+        input.name = `q${index}option${i + 1}`;
+      });
+    } else if (type === 'boolean') {
+      const radios = container.querySelectorAll('input');
+      radios.forEach(radio => {
+        radio.name = `q${index}bool`;
+      });
+    } else if (type === 'text') {
+      const answer = container.querySelector('input');
+      if (answer) {
+        answer.name = `q${index}answer`;
+      }
     }
   }
 });
