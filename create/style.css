@@ -8,7 +8,7 @@ body {
   color: #333;
 }
 .top-bar {
-  background: #001f8b;
+  background: #000666;
   color: #fff;
   padding: 20px 0;
   text-align: center;
@@ -36,7 +36,7 @@ form {
   width: 100%;
   max-width: 500px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 64px rgba(0,0,0,0.1);
 }
 label {
   display: block;
@@ -57,7 +57,7 @@ select {
 #add-question.link-button {
   background: none;
   border: none;
-  color: #0070f3;
+  color: #006AFF;
   cursor: pointer;
   font-size: 14px;
   display: inline-flex;
@@ -70,7 +70,7 @@ select {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #0070f3;
+  background: #006AFF;
   color: #fff;
   line-height: 20px;
   text-align: center;
