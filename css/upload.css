@@ -28,6 +28,11 @@ main {
   cursor: pointer;
 }
 
+.drop-area.dragover {
+  border-color: #000666;
+  background: #F0F4FF;
+}
+
 .upload-placeholder img {
   width: 60px;
   margin-bottom: 16px;
@@ -61,4 +66,16 @@ main {
 #submit-btn:disabled {
   background: #9C9C9C;
   cursor: not-allowed;
+}
+
+.preview {
+  border-top: 1px solid #D6D6D6;
+  padding-top: 20px;
+  max-height: 150px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.hidden {
+  display: none;
 }
