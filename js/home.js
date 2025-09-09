@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const createBtn = document.getElementById('create-battle');
 
   createBtn.addEventListener('click', () => {
-    window.location.href = 'create.html';
+    window.location.href = 'upload.html';
   });
 
   const renderBattles = (battles) => {
