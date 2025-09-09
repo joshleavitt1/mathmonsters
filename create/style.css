@@ -78,7 +78,7 @@ form {
   background: #fff;
   padding: 40px;
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
   border-radius: 8px;
   box-shadow: 0 4px 80px rgba(0,0,0,0.08);
 }
@@ -157,6 +157,11 @@ input[type="text"]::placeholder {
     font-size: 16px;
     color: #9C9C9C;
     margin: 8px 0 0;
+  }
+
+  .battle-actions {
+    display: flex;
+    gap: 10px;
   }
 
 .question-block > .question-header,
