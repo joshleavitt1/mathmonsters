@@ -94,6 +94,16 @@
   border-color: #006AFF;
 }
 
+#question .choice.correct-choice {
+  border-color: #00B600;
+  background: rgba(0, 182, 0, 0.08);
+}
+
+#question .choice.wrong-choice {
+  border-color: #E20000;
+  background: rgba(226, 0, 0, 0.08);
+}
+
 #question .choice img {
   width: 50%;
   height: auto;

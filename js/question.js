@@ -21,6 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
     button.disabled = true;
     const isCorrect = choice.dataset.correct === 'true';
 
+    Array.from(choicesContainer.children).forEach((c) =>
+      c.classList.remove('selected')
+    );
+    if (isCorrect) {
+      choice.classList.add('correct-choice');
+    } else {
+      const correctChoices = choicesContainer.querySelectorAll(
+        '.choice[data-correct="true"]'
+      );
+      correctChoices.forEach((c) => c.classList.add('correct-choice'));
+      choice.classList.add('wrong-choice');
+    }
+
     button.classList.add('result', isCorrect ? 'correct' : 'incorrect');
     button.innerHTML = isCorrect
       ? '<img src="../images/questions/button/correct.svg" alt="Correct icon" /> Correct'
@@ -32,7 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
           questionBox.removeEventListener('transitionend', handleSlide);
           button.classList.remove('result', 'correct', 'incorrect');
           button.textContent = 'Answer';
-          Array.from(choicesContainer.children).forEach((c) => c.classList.remove('selected'));
+          Array.from(choicesContainer.children).forEach((c) =>
+            c.classList.remove('selected', 'correct-choice', 'wrong-choice')
+          );
           document.dispatchEvent(
             new CustomEvent('answer-submitted', { detail: { correct: isCorrect } })
           );
