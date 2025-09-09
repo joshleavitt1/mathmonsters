@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('battle-form');
     const closeBtn = document.querySelector('.close');
     closeBtn.addEventListener('click', () => {
-      window.location.href = 'home.html';
+      window.location.href = 'index.html';
     });
 
     const params = new URLSearchParams(window.location.search);
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Unable to delete battle.');
             return;
           }
-          window.location.href = 'home.html';
+          window.location.href = 'index.html';
         });
       }
     }
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      window.location.href = 'home.html';
+      window.location.href = 'index.html';
     });
 
     questionsContainer.addEventListener('change', (e) => {

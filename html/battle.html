@@ -1,0 +1,75 @@
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="transparent" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Shellfin Intro</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/question.css" />
+    <link rel="stylesheet" href="../css/battle.css" />
+  </head>
+  <body>
+  <div id="loading">Loading...</div>
+  <div id="game">
+     <img id="shellfin" src="../images/characters/shellfin_level_1.png" alt="Shellfin" />
+     <img id="monster" src="../images/battle/monster_battle.png" alt="monster" />
+  </div>
+  <div id="battle" style="display: none;">
+    <img id="battle-monster" class="enter" src="../images/battle/monster_battle.png" alt="Monster" />
+    <img id="battle-shellfin" class="enter" src="../images/battle/shellfin_battle.png" alt="Shellfin" />
+    <div id="monster-stats" class="stat-box">
+      <div class="name"></div>
+      <div class="hp-bar"><div class="hp-fill"></div></div>
+    </div>
+    <div id="shellfin-stats" class="stat-box">
+      <div class="name"></div>
+      <div class="hp-bar"><div class="hp-fill"></div></div>
+    </div>
+  </div>
+  <div id="overlay"></div>
+  <div id="message">
+    <div class="generic-content">
+      <img src="../images/message/shellfin_message.png" alt="Shellfin avatar" />
+      <p>Hi! I’m Shellfin. I live on the reef, but monsters have taken over and I need you help!</p>
+      <button type="button">Continue</button>
+    </div>
+    <div class="win-content">
+      <h1 class="hero-name">Mission Complete</h1>
+      <div class="stats">
+        <div class="stat-box progress-box">
+          <p class="progress-label">Experience</p>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+            <div class="level-up-badge">Level<br />Up</div>
+          </div>
+        </div>
+        <div class="stat-box">
+          <p class="label">Accuracy</p>
+          <div class="value"><span class="attack"></span></div>
+        </div>
+        <div class="stat-box">
+          <p class="label">Speed</p>
+          <div class="value"><span class="health"></span></div>
+          <div class="value"><span class="attack"></span></div>
+        </div>
+      </div>
+      <button type="button">Continue</button>
+    </div>
+  </div>
+    <div id="question">
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <h1></h1>
+      <p></p>
+      <div class="choices"></div>
+      <button type="button">Answer</button>
+    </div>
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <script src="../js/supabaseClient.js"></script>
+      <script src="../js/loader.js"></script>
+      <script src="../js/battle.js"></script>
+      <script src="../js/question.js"></script>
+    </body>
+    </html>
