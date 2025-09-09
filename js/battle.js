@@ -73,6 +73,14 @@ document.addEventListener('DOMContentLoaded', () => {
     hero = data.characters.heroes.shellfin;
     foe = data.characters.monsters.octomurk;
 
+    const walkthrough = data.missions.Walkthrough;
+    questions = walkthrough.questions || [];
+    totalQuestions = questions.length;
+    missionExperience = walkthrough.experience || 0;
+
+    foe.health = totalQuestions;
+    foe.damage = Number(foe.damage) || 0;
+
     shellfinName.textContent = hero.name;
     monsterName.textContent = foe.name;
 
@@ -83,11 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const starts = Object.values(hero.levels).map((l) => Number(l.start));
     maxLevelStart = Math.max(...starts);
-
-    const walkthrough = data.missions.Walkthrough;
-    questions = walkthrough.questions || [];
-    totalQuestions = questions.length;
-    missionExperience = walkthrough.experience || 0;
 
     updateHeroLevelDisplay();
   }

@@ -33,11 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const actions = document.createElement('div');
         actions.className = 'battle-actions';
 
-        const launch = document.createElement('button');
-        launch.className = 'submit-btn text-small';
-        launch.style.width = 'auto';
-        launch.textContent = 'Launch';
-        launch.addEventListener('click', () => {
+        const view = document.createElement('button');
+        view.className = 'submit-btn text-small';
+        view.style.width = 'auto';
+        view.textContent = 'View';
+        view.addEventListener('click', () => {
           window.location.href = `../html/index.html?id=${battle.id}`;
         });
 
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
           window.location.href = `create.html?id=${battle.id}`;
         });
 
-        actions.appendChild(launch);
+        actions.appendChild(view);
         actions.appendChild(edit);
 
         item.appendChild(info);
