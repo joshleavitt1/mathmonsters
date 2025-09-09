@@ -2,7 +2,6 @@
 window.preloadedData = {};
 
 document.addEventListener('DOMContentLoaded', () => {
-    const loading = document.getElementById('loading');
     const imageSources = [
       '../images/background/background.png',
       '../images/battle/monster_battle.png',
@@ -97,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
       })
       .finally(() => {
-        loading.classList.add('hide');
         document.dispatchEvent(new Event('assets-loaded'));
       });
   });

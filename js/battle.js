@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let hero;
   let foe;
   let maxLevelStart = 0;
-  let feedbackShown = { correct: false, incorrect: false };
   let correctAnswers = 0;
+  let answeredQuestions = 0;
   let startTime;
   let endTime;
   let missionExperience = 0;
@@ -62,6 +62,14 @@ document.addEventListener('DOMContentLoaded', () => {
     defender.damage = Number(defender.damage) + Number(attacker.attack);
   }
 
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
   function loadData() {
     const data = window.preloadedData;
     if (!data || !data.characters || !data.missions) return;
@@ -70,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     foe = data.characters.monsters.octomurk;
 
     const walkthrough = data.missions.Walkthrough;
-    questions = walkthrough.questions || [];
+    questions = shuffle(walkthrough.questions || []);
     totalQuestions = questions.length;
     missionExperience = walkthrough.experience || 0;
 
@@ -120,9 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const q = questions[currentQuestion];
       if (!q) return;
 
-      if (currentQuestion === 0) startTime = Date.now();
+      if (currentQuestion === 0 && answeredQuestions === 0) startTime = Date.now();
 
-      const num = q.number ?? (currentQuestion + 1);
+      const num = currentQuestion + 1;
       questionHeading.textContent = `Question ${num} of ${totalQuestions}`;
       questionText.textContent = q.question || '';
       choices.innerHTML = '';
@@ -144,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         choices.appendChild(div);
       });
 
-      const percent = (num / totalQuestions) * 100;
+      const percent = (currentQuestion / totalQuestions) * 100;
       progressFill.style.width = percent + '%';
       questionBox.classList.add('show');
     };
@@ -182,35 +190,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('answer-submitted', (e) => {
     overlay.classList.remove('show');
+    answeredQuestions++;
     if (e.detail.correct) {
       correctAnswers++;
-      heroAttack(true);
+      if (correctAnswers === totalQuestions) {
+        endTime = Date.now();
+      }
+      heroAttack(true, () => nextTurn(true));
     } else {
-      // After monster attacks, chain hero attack and then show incorrect feedback
-      monsterAttack(() => heroAttack(false, () => showFeedback(false)), 300);
-    }
-    if (currentQuestion === totalQuestions - 1) {
-      endTime = Date.now();
+      const wrongQuestion = questions.splice(currentQuestion, 1)[0];
+      const insertIndex =
+        currentQuestion +
+        Math.floor(Math.random() * (questions.length - currentQuestion + 1));
+      questions.splice(insertIndex, 0, wrongQuestion);
+      monsterAttack(() => nextTurn(false), 300);
     }
   });
-
-  function showFeedback(correct) {
-    const key = correct ? 'correct' : 'incorrect';
-    if (feedbackShown[key]) {
-      nextTurn();
-      return;
-    }
-    feedbackShown[key] = true;
-
-    const text = correct
-      ? 'Awesome job! Only two more hits needed to take Octomurk down. Let’s do it!'
-      : 'Ouch, that hurt! Don’t worry though, you still do damage when you get the question wrong.';
-
-    message.querySelector('.generic-content p').textContent = text;
-    overlay.classList.add('show');
-    message.classList.add('show');
-    button.onclick = () => nextTurn();
-  }
 
   function endBattle(result) {
     if (result === 'win') {
@@ -231,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
           heroNameDisplay.textContent = 'Mission Complete';
-          const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
+          const accuracy = Math.round((correctAnswers / answeredQuestions) * 100);
           attackDisplay.textContent = `${accuracy}%`;
           const speed = Math.max(0, Math.floor((endTime - startTime) / 1000));
           healthDisplay.textContent = `${speed}s`;
@@ -447,9 +442,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }, ATTACK_DELAY_MS);
   }
 
-  function nextTurn() {
-    currentQuestion++;
-    if (currentQuestion < totalQuestions) {
+  function nextTurn(increment = true) {
+    if (increment) currentQuestion++;
+    if (currentQuestion < questions.length) {
       showQuestion();
     }
   }
