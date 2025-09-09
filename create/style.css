@@ -285,6 +285,32 @@ input[type="text"]::placeholder {
     pointer-events: none;
   }
 
+  /* Validation error styles */
+  .error {
+    border: 2px solid #E20000 !important;
+  }
+
+  .error-message {
+    color: #E20000;
+    margin-top: 16px;
+  }
+
+  .answers-list.error {
+    padding: 16px;
+    border-radius: 6px;
+  }
+
+  .delete-btn {
+    background: #fff;
+    border: 2px solid #E20000;
+    color: #E20000;
+    width: 100%;
+    padding: 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 16px;
+  }
+
 @media (max-width: 600px) {
   .top-bar {
     padding: 15px 0;
