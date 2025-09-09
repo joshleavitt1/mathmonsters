@@ -92,24 +92,33 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function parseQA(text) {
-    const lines = text.split(/\r?\n/);
+    const blocks = text.split(/\n{2,}/);
     const out = [];
-    let current = null;
-    lines.forEach(line => {
-      const q = line.match(/^(?:Q\d*[:.\-]|Question\s*\d*[:.\-])\s*(.+)/i);
-      const a = line.match(/^(?:A\d*[:.\-]|Answer\s*\d*[:.\-])\s*(.+)/i);
-      if (q) {
-        current = { question: q[1].trim(), answer: '' };
-        out.push(current);
-      } else if (a && current) {
-        current.answer += (current.answer ? ' ' : '') + a[1].trim();
-      } else if (current) {
-        if (current.answer) {
-          current.answer += ' ' + line.trim();
+    blocks.forEach(block => {
+      const lines = block.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return;
+      const qLines = [];
+      const aLines = [];
+      let collectingQuestion = true;
+      lines.forEach(line => {
+        const q = line.match(/^(?:Q\d*|Question\s*\d*)[:.\-\)]\s*(.+)/i);
+        const a = line.match(/^(?:A\d*|Answer\s*\d*)[:.\-\)]\s*(.+)/i);
+        if (q) {
+          qLines.push(q[1].trim());
+          collectingQuestion = false;
+        } else if (a) {
+          aLines.push(a[1].trim());
+          collectingQuestion = false;
+        } else if (collectingQuestion) {
+          qLines.push(line);
+          if (/[?]$/.test(line)) collectingQuestion = false;
         } else {
-          current.question += ' ' + line.trim();
+          aLines.push(line);
         }
-      }
+      });
+      const question = qLines.join(' ').trim();
+      const answer = aLines.join(' ').trim();
+      if (question && answer) out.push({ question, answer });
     });
     return out;
   }
