@@ -10,17 +10,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const battleId = params.get('id');
     let existingBattle = null;
+    let battles = [];
 
-    if (battleId) {
-      fetch('/battles')
-        .then(res => res.json())
-        .then(battles => {
-          existingBattle = battles.find(b => b.id === Number(battleId));
-          if (existingBattle) {
-            populateForm(existingBattle);
-          }
-        });
+    async function loadBattles() {
+      try {
+        const stored = localStorage.getItem('battles');
+        if (stored) {
+          battles = JSON.parse(stored);
+        } else {
+          const res = await fetch('../data/battles.json');
+          battles = await res.json();
+        }
+      } catch (err) {
+        console.error('Error loading battles:', err);
+        battles = [];
+      }
     }
+
+    loadBattles().then(() => {
+      if (battleId) {
+        existingBattle = battles.find(b => b.id === Number(battleId));
+        if (existingBattle) {
+          populateForm(existingBattle);
+        }
+      }
+    });
 
     form.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && e.target.type === 'text') {
@@ -34,22 +48,51 @@ document.addEventListener('DOMContentLoaded', () => {
     questionsContainer.appendChild(block);
   });
 
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       if (!validateForm()) {
         alert('Please complete all fields and ensure at least one question is fully completed.');
         return;
       }
       const data = collectFormData();
-      const method = battleId ? 'PUT' : 'POST';
-      const url = battleId ? `/battles/${battleId}` : '/battles';
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      }).then(() => {
-        window.location.href = 'index.html';
-      });
+      await loadBattles();
+      if (battleId) {
+        const idNum = Number(battleId);
+        const index = battles.findIndex(b => b.id === idNum);
+        if (index !== -1) {
+          battles[index] = { ...data, id: idNum };
+        } else {
+          battles.push({ ...data, id: idNum });
+        }
+      } else {
+        const newId = battles.length ? Math.max(...battles.map(b => b.id)) + 1 : 1;
+        battles.push({ ...data, id: newId });
+      }
+
+      try {
+        if (window.showSaveFilePicker) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: 'battles.json',
+            types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(JSON.stringify(battles, null, 2));
+          await writable.close();
+        } else {
+          throw new Error('File System Access API not supported');
+        }
+      } catch (err) {
+        console.warn('File save failed, falling back to localStorage.', err);
+        try {
+          localStorage.setItem('battles', JSON.stringify(battles));
+        } catch (storageErr) {
+          console.error('Failed to save battles.', storageErr);
+          alert('Unable to save battle.');
+          return;
+        }
+      }
+
+      window.location.href = 'index.html';
     });
 
     questionsContainer.addEventListener('change', (e) => {
