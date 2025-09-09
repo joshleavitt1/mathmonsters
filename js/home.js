@@ -37,9 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
         view.className = 'submit-btn text-small';
         view.style.width = 'auto';
         view.textContent = 'View';
-        view.addEventListener('click', () => {
-          window.location.href = `../html/index.html?id=${battle.id}`;
-        });
+          view.addEventListener('click', () => {
+            window.location.href = `../html/battle.html?id=${battle.id}`;
+          });
 
         const edit = document.createElement('button');
         edit.className = 'submit-btn text-small edit-btn';
