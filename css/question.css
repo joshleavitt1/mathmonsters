@@ -83,7 +83,6 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  aspect-ratio: 1 / 1;
   border: 3px solid transparent;
   cursor: pointer;
   padding: 16px;
@@ -102,7 +101,7 @@
 }
 
 #question .choice p {
-  margin: 8px 0 0;
+  margin: 0;
   text-align: center;
 }
 

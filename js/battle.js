@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const introMonster = document.getElementById('monster');
   const introShellfin = document.getElementById('shellfin');
   const battleDiv = document.getElementById('battle');
-  const heroLevelDisplay = document.getElementById('hero-level-display');
 
   let questions = [];
   let totalQuestions = 0;
@@ -46,9 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const ATTACK_DELAY_MS = 1200;
 
-  function updateHeroLevelDisplay() {
-    if (heroLevelDisplay && hero) heroLevelDisplay.textContent = `Level: ${hero.level}`;
-  }
 
   function saveCharacterData() {
     try {
@@ -92,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const starts = Object.values(hero.levels).map((l) => Number(l.start));
     maxLevelStart = Math.max(...starts);
 
-    updateHeroLevelDisplay();
+    
   }
 
   document.addEventListener('assets-loaded', loadData);
@@ -255,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
               // Level-up check (single-step; expand if you want multi-level jumps)
               if (hero.experience >= nextStart && hero.levels[hero.level + 1]) {
                 hero.level += 1;
-                updateHeroLevelDisplay();
+                
                 saveCharacterData();
 
                 levelUpBadge.classList.remove('show');
@@ -467,7 +463,4 @@ document.addEventListener('DOMContentLoaded', () => {
   monster.addEventListener('animationend', handleEnd);
   shellfin.addEventListener('animationend', handleEnd);
 
-  document.addEventListener('skip-win', () => {
-    endBattle('win');
-  });
 });
