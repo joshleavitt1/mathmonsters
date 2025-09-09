@@ -7,12 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'create.html';
   });
 
-  const renderBattles = battles => {
+  const renderBattles = (battles) => {
     if (!Array.isArray(battles)) return;
 
-    battles.forEach(battle => {
-      // Guard against malformed battle data which previously caused the page
-      // to fail rendering any battles.
+    battles.forEach((battle) => {
       const questionCount = Array.isArray(battle.questions)
         ? battle.questions.length
         : 0;
@@ -47,38 +45,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  const loadBattlesFromFetch = () => {
-    fetch('../data/battles.json')
-      .then(res => res.json())
-      .then(battles => {
-        if (!Array.isArray(battles)) return;
-        localStorage.setItem('battles', JSON.stringify(battles));
-        renderBattles(battles);
-      })
-      .catch(() => {
-        // If the request fails, avoid leaving the homepage blank.
-        list.innerHTML = '<p class="text-small">No battles found.</p>';
-      });
-  };
-
-  try {
-    const stored = localStorage.getItem('battles');
-    if (stored) {
-      const battles = JSON.parse(stored);
-      renderBattles(battles);
-    } else {
-      loadBattlesFromFetch();
+  async function loadBattles() {
+    if (!window.supabaseClient) {
+      list.innerHTML = '<p class="text-small">No battles found.</p>';
+      return;
     }
-  } catch (err) {
-    // If parsing fails, reset the storage and fall back to fetch.
-    localStorage.removeItem('battles');
-    loadBattlesFromFetch();
+
+    const { data, error } = await window.supabaseClient
+      .from('battles')
+      .select('id, name, questions');
+
+    if (error) {
+      console.error('Error loading battles:', error);
+      list.innerHTML = '<p class="text-small">No battles found.</p>';
+      return;
+    }
+
+    renderBattles(data);
   }
 
+  loadBattles();
+
   if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
-      localStorage.removeItem('battles');
-      window.location.reload();
+    resetBtn.addEventListener('click', async () => {
+      if (!window.supabaseClient) return;
+      await window.supabaseClient.from('battles').delete().neq('id', 0);
+      list.innerHTML = '';
     });
   }
 });

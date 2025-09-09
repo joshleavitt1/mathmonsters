@@ -13,23 +13,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let battles = [];
 
     async function loadBattles() {
-      try {
-        const stored = localStorage.getItem('battles');
-        if (stored) {
-          battles = JSON.parse(stored);
-        } else {
-          const res = await fetch('../data/battles.json');
-          battles = await res.json();
-        }
-      } catch (err) {
-        console.error('Error loading battles:', err);
+      if (!window.supabaseClient) {
         battles = [];
+        return;
       }
+      const { data, error } = await window.supabaseClient
+        .from('battles')
+        .select('id, name, questions');
+      if (error) {
+        console.error('Error loading battles:', error);
+        battles = [];
+        return;
+      }
+      battles = data;
     }
 
-    loadBattles().then(() => {
-      if (battleId) {
-        existingBattle = battles.find(b => b.id === Number(battleId));
+    loadBattles().then(async () => {
+      if (battleId && window.supabaseClient) {
+        const { data } = await window.supabaseClient
+          .from('battles')
+          .select('id, name, questions')
+          .eq('id', battleId)
+          .single();
+        existingBattle = data;
         if (existingBattle) {
           populateForm(existingBattle);
         }
@@ -56,40 +62,27 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const data = collectFormData();
       await loadBattles();
+      let idNum;
       if (battleId) {
-        const idNum = Number(battleId);
-        const index = battles.findIndex(b => b.id === idNum);
-        if (index !== -1) {
-          battles[index] = { ...data, id: idNum };
-        } else {
-          battles.push({ ...data, id: idNum });
-        }
+        idNum = Number(battleId);
       } else {
-        const newId = battles.length ? Math.max(...battles.map(b => b.id)) + 1 : 1;
-        battles.push({ ...data, id: newId });
+        const maxId = battles.length ? Math.max(...battles.map(b => b.id)) : 0;
+        idNum = maxId + 1;
       }
 
-      try {
-        if (window.showSaveFilePicker) {
-          const handle = await window.showSaveFilePicker({
-            suggestedName: 'battles.json',
-            types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }]
-          });
-          const writable = await handle.createWritable();
-          await writable.write(JSON.stringify(battles, null, 2));
-          await writable.close();
-        } else {
-          throw new Error('File System Access API not supported');
-        }
-      } catch (err) {
-        console.warn('File save failed, falling back to localStorage.', err);
-        try {
-          localStorage.setItem('battles', JSON.stringify(battles));
-        } catch (storageErr) {
-          console.error('Failed to save battles.', storageErr);
-          alert('Unable to save battle.');
-          return;
-        }
+      if (!window.supabaseClient) {
+        alert('Supabase not configured.');
+        return;
+      }
+
+      const { error } = await window.supabaseClient
+        .from('battles')
+        .upsert({ id: idNum, name: data.name, questions: data.questions });
+
+      if (error) {
+        console.error('Failed to save battle.', error);
+        alert('Unable to save battle.');
+        return;
       }
 
       window.location.href = 'index.html';
