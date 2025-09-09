@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const battleId = params.get('id');
     let existingBattle = null;
+    if (battleId) {
+      const title = document.querySelector('.top-bar h1');
+      if (title) title.textContent = 'Edit Battle';
+      const submitBtn = form.querySelector('.submit-btn');
+      if (submitBtn) submitBtn.textContent = 'Edit';
+    }
     let battles = [];
 
     async function loadBattles() {
@@ -195,16 +201,16 @@ document.addEventListener('DOMContentLoaded', () => {
     container.appendChild(list);
 
     if (type === 'multiple') {
-      for (let i = 1; i <= 4; i++) {
-        const row = document.createElement('div');
-        row.className = 'answer-row';
+        for (let i = 1; i <= 4; i++) {
+          const row = document.createElement('div');
+          row.className = 'answer-row';
 
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Enter Answer';
-        input.name = `q${index}option${i}`;
-        input.className = 'text-small answer-input';
-        row.appendChild(input);
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = i > 2 ? 'Enter Answer (Optional)' : 'Enter Answer';
+          input.name = `q${index}option${i}`;
+          input.className = 'text-small answer-input';
+          row.appendChild(input);
 
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -330,9 +336,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const type = block.querySelector('.question-type').value;
       if (!questionText || !type) return false;
       if (type === 'multiple') {
-        const options = block.querySelectorAll('.answer-input');
-        if ([...options].some(o => !o.value.trim())) return false;
-        if (block.querySelectorAll('.correct-btn.selected').length === 0) return false;
+        const inputs = block.querySelectorAll('.answer-input');
+        const values = [...inputs].map(i => i.value.trim());
+        if (!values[0] || !values[1]) return false;
+        const selected = block.querySelectorAll('.correct-btn.selected');
+        if (selected.length === 0) return false;
+        for (const btn of selected) {
+          const idx = Array.from(block.querySelectorAll('.correct-btn')).indexOf(btn);
+          if (!values[idx]) return false;
+        }
       } else if (type === 'boolean') {
         if (block.querySelectorAll('.correct-btn.selected').length !== 1) return false;
       } else if (type === 'text') {
