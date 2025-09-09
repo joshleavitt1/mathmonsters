@@ -453,9 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
           shellfinStats.removeEventListener('transitionend', statsHandler);
           monsterStats.removeEventListener('transitionend', statsHandler);
           setTimeout(() => {
-            overlay.classList.add('show');
-            message.classList.add('show');
-            button.onclick = showQuestion;
+            showQuestion();
           }, 600);
         }
       };
