@@ -14,7 +14,31 @@ document.addEventListener('DOMContentLoaded', () => {
       const title = document.querySelector('.top-bar h1');
       if (title) title.textContent = 'Edit Battle';
       const submitBtn = form.querySelector('.submit-btn');
-      if (submitBtn) submitBtn.textContent = 'Edit';
+      if (submitBtn) {
+        submitBtn.textContent = 'Save';
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.id = 'delete-battle';
+        deleteBtn.className = 'delete-btn text-medium';
+        deleteBtn.textContent = 'Delete Battle';
+        submitBtn.insertAdjacentElement('afterend', deleteBtn);
+        deleteBtn.addEventListener('click', async () => {
+          if (!window.supabaseClient) {
+            alert('Supabase not configured.');
+            return;
+          }
+          const { error } = await window.supabaseClient
+            .from('battles')
+            .delete()
+            .eq('id', battleId);
+          if (error) {
+            console.error('Failed to delete battle.', error);
+            alert('Unable to delete battle.');
+            return;
+          }
+          window.location.href = 'index.html';
+        });
+      }
     }
     let battles = [];
 
@@ -54,6 +78,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    function removeError(field) {
+      field.classList.remove('error');
+      const msg = field.nextElementSibling;
+      if (msg && msg.classList.contains('error-message')) {
+        msg.remove();
+      }
+    }
+
+    form.addEventListener('input', e => {
+      if (e.target.classList.contains('error')) {
+        removeError(e.target);
+      }
+    });
+
+    form.addEventListener('change', e => {
+      if (e.target.classList.contains('error')) {
+        removeError(e.target);
+      }
+    });
+
   addQuestionBtn.addEventListener('click', () => {
     const index = questionsContainer.querySelectorAll('.question-block').length + 1;
     const block = createQuestionBlock(index);
@@ -62,8 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     form.addEventListener('submit', async e => {
       e.preventDefault();
-      if (!validateForm()) {
-        alert('Please complete all fields and ensure at least one question is fully completed.');
+      const firstError = validateForm();
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
       const data = collectFormData();
@@ -129,6 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
           } else {
             img.src = 'images/box_empty.svg';
           }
+        }
+        const list = block.querySelector('.answers-list');
+        if (list.classList.contains('error')) {
+          removeError(list);
         }
       }
     });
@@ -326,32 +375,72 @@ document.addEventListener('DOMContentLoaded', () => {
     return { name: battleName, questions };
   }
 
+  function clearErrors() {
+    form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+    form.querySelectorAll('.error-message').forEach(el => el.remove());
+  }
+
+  function markError(el) {
+    el.classList.add('error');
+    const msg = document.createElement('div');
+    msg.className = 'error-message text-small';
+    msg.textContent = 'Required Field';
+    el.insertAdjacentElement('afterend', msg);
+  }
+
   function validateForm() {
-    const battleName = document.getElementById('battle-name').value.trim();
-    if (!battleName) return false;
+    clearErrors();
+    let firstError = null;
+    const battleNameField = document.getElementById('battle-name');
+    if (!battleNameField.value.trim()) {
+      markError(battleNameField);
+      firstError = firstError || battleNameField;
+    }
     const blocks = questionsContainer.querySelectorAll('.question-block');
-    if (blocks.length === 0) return false;
-    for (const block of blocks) {
-      const questionText = block.querySelector('input[type="text"]').value.trim();
-      const type = block.querySelector('.question-type').value;
-      if (!questionText || !type) return false;
+    blocks.forEach(block => {
+      const questionInput = block.querySelector('input[type="text"]');
+      if (!questionInput.value.trim()) {
+        markError(questionInput);
+        firstError = firstError || questionInput;
+      }
+      const typeField = block.querySelector('.question-type');
+      if (!typeField.value) {
+        markError(typeField);
+        firstError = firstError || typeField;
+      }
+      const type = typeField.value;
       if (type === 'multiple') {
-        const inputs = block.querySelectorAll('.answer-input');
-        const values = [...inputs].map(i => i.value.trim());
-        if (!values[0] || !values[1]) return false;
+        const rows = block.querySelectorAll('.answer-row');
+        rows.forEach((row, idx) => {
+          const input = row.querySelector('.answer-input');
+          const correctBtn = row.querySelector('.correct-btn');
+          const required = idx < 2 || correctBtn.classList.contains('selected');
+          if (required && !input.value.trim()) {
+            markError(input);
+            firstError = firstError || input;
+          }
+        });
         const selected = block.querySelectorAll('.correct-btn.selected');
-        if (selected.length === 0) return false;
-        for (const btn of selected) {
-          const idx = Array.from(block.querySelectorAll('.correct-btn')).indexOf(btn);
-          if (!values[idx]) return false;
+        if (selected.length === 0) {
+          const list = block.querySelector('.answers-list');
+          markError(list);
+          firstError = firstError || list;
         }
       } else if (type === 'boolean') {
-        if (block.querySelectorAll('.correct-btn.selected').length !== 1) return false;
+        if (block.querySelectorAll('.correct-btn.selected').length !== 1) {
+          const list = block.querySelector('.answers-list');
+          markError(list);
+          firstError = firstError || list;
+        }
       } else if (type === 'text') {
-        if (!block.querySelector('.answer-input').value.trim()) return false;
+        const input = block.querySelector('.answer-input');
+        if (!input.value.trim()) {
+          markError(input);
+          firstError = firstError || input;
+        }
       }
-    }
-    return true;
+    });
+    return firstError;
   }
 
   function populateForm(battle) {
