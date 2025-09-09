@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const list = document.getElementById('battle-list');
   const createBtn = document.getElementById('create-battle');
-  const resetBtn = document.getElementById('reset-battles');
 
   createBtn.addEventListener('click', () => {
     window.location.href = 'create.html';
@@ -43,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const edit = document.createElement('button');
-        edit.className = 'submit-btn text-small';
+        edit.className = 'submit-btn text-small edit-btn';
         edit.style.width = 'auto';
         edit.textContent = 'Edit';
         edit.addEventListener('click', () => {
@@ -79,12 +78,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadBattles();
-
-  if (resetBtn) {
-    resetBtn.addEventListener('click', async () => {
-      if (!window.supabaseClient) return;
-      await window.supabaseClient.from('battles').delete().neq('id', 0);
-      list.innerHTML = '';
-    });
-  }
 });
