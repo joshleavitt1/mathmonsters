@@ -161,6 +161,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function showBattleIntro() {
+    genericImg.style.display = 'none';
+    genericP.textContent =
+      "It’s battle time! Answer questions to power your attacks. Miss one, and your enemy fights back! Let's get learning!";
+    button.textContent = 'Battle';
+    overlay.classList.add('show');
+    message.classList.add('show');
+
+    button.onclick = () => {
+      genericImg.style.display = '';
+      button.textContent = 'Continue';
+      message.classList.remove('show');
+      overlay.classList.remove('show');
+      showQuestion();
+    };
+  }
+
   document.addEventListener('answer-submitted', (e) => {
     overlay.classList.remove('show');
     if (e.detail.correct) {
@@ -448,9 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statsDone === 2) {
           shellfinStats.removeEventListener('transitionend', statsHandler);
           monsterStats.removeEventListener('transitionend', statsHandler);
-          setTimeout(() => {
-            showQuestion();
-          }, 600);
+          setTimeout(showBattleIntro, 3000);
         }
       };
       shellfinStats.addEventListener('transitionend', statsHandler);
