@@ -445,6 +445,25 @@ document.addEventListener('DOMContentLoaded', () => {
     return firstError;
   }
 
+  const uploaded = localStorage.getItem('uploadedQuestions');
+  if (uploaded && !battleId) {
+    const parsed = JSON.parse(uploaded);
+    questionsContainer.innerHTML = '';
+    parsed.forEach((q, idx) => {
+      const block = createQuestionBlock(idx + 1);
+      questionsContainer.appendChild(block);
+      const input = block.querySelector('input[type="text"]');
+      input.value = q.question || '';
+      const select = block.querySelector('.question-type');
+      select.value = 'text';
+      select.style.color = '#272B34';
+      renderAnswerFields(block, 'text');
+      const answerInput = block.querySelector('.answer-input');
+      if (answerInput) answerInput.value = q.answer || '';
+    });
+    localStorage.removeItem('uploadedQuestions');
+  }
+
   function populateForm(battle) {
     document.getElementById('battle-name').value = battle.name;
     questionsContainer.innerHTML = '';
