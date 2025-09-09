@@ -308,7 +308,7 @@ input[type="text"]::placeholder {
     padding: 15px;
     border-radius: 6px;
     cursor: pointer;
-    margin-top: 16px;
+    margin-top: 24px;
   }
 
 @media (max-width: 600px) {

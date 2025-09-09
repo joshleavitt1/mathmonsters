@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteBtn.type = 'button';
         deleteBtn.id = 'delete-battle';
         deleteBtn.className = 'delete-btn text-medium';
-        deleteBtn.textContent = 'Delete Battle';
+        deleteBtn.textContent = 'Delete';
         submitBtn.insertAdjacentElement('afterend', deleteBtn);
         deleteBtn.addEventListener('click', async () => {
           if (!window.supabaseClient) {
