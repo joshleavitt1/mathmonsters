@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('battle-form');
     const closeBtn = document.querySelector('.close');
     closeBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
+      window.location.href = 'home.html';
     });
 
     const params = new URLSearchParams(window.location.search);
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Unable to delete battle.');
             return;
           }
-          window.location.href = 'index.html';
+          window.location.href = 'home.html';
         });
       }
     }
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      window.location.href = 'index.html';
+      window.location.href = 'home.html';
     });
 
     questionsContainer.addEventListener('change', (e) => {
@@ -163,17 +163,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'boolean') {
           block.querySelectorAll('.correct-btn').forEach(btn => {
             btn.classList.remove('selected');
-            btn.querySelector('img').src = 'images/box_empty.svg';
+            btn.querySelector('img').src = '../images/create/box_empty.svg';
           });
           correctBtn.classList.add('selected');
-          correctBtn.querySelector('img').src = 'images/box_checked.svg';
+          correctBtn.querySelector('img').src = '../images/create/box_checked.svg';
         } else if (type === 'multiple') {
           correctBtn.classList.toggle('selected');
           const img = correctBtn.querySelector('img');
           if (correctBtn.classList.contains('selected')) {
-            img.src = 'images/box_checked.svg';
+            img.src = '../images/create/box_checked.svg';
           } else {
-            img.src = 'images/box_empty.svg';
+            img.src = '../images/create/box_empty.svg';
           }
         }
         const list = block.querySelector('.answers-list');
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
         deleteBtn.className = 'delete-question';
-        deleteBtn.innerHTML = `<img src="images/delete.svg" alt="Delete">`;
+        deleteBtn.innerHTML = `<img src="../images/create/delete.svg" alt="Delete">`;
         header.appendChild(deleteBtn);
       }
 
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'correct-btn text-small';
-        btn.innerHTML = `<img src="images/box_empty.svg" alt="checkbox"> Correct`;
+        btn.innerHTML = `<img src="../images/create/box_empty.svg" alt="checkbox"> Correct`;
         row.appendChild(btn);
 
         list.appendChild(row);
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'correct-btn text-small';
-        btn.innerHTML = `<img src="images/box_empty.svg" alt="checkbox"> Correct`;
+        btn.innerHTML = `<img src="../images/create/box_empty.svg" alt="checkbox"> Correct`;
         row.appendChild(btn);
 
         list.appendChild(row);
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'correct-btn text-small selected disabled';
-      btn.innerHTML = `<img src="images/box_checked.svg" alt="checkbox"> Correct`;
+      btn.innerHTML = `<img src="../images/create/box_checked.svg" alt="checkbox"> Correct`;
       row.appendChild(btn);
 
       list.appendChild(row);
@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const btn = block.querySelectorAll('.correct-btn')[i];
           if (btn) {
             btn.classList.add('selected');
-            btn.querySelector('img').src = 'images/box_checked.svg';
+            btn.querySelector('img').src = '../images/create/box_checked.svg';
           }
         });
       } else if (q.type === 'boolean') {
@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = block.querySelectorAll('.correct-btn')[q.correct];
         if (btn) {
           btn.classList.add('selected');
-          btn.querySelector('img').src = 'images/box_checked.svg';
+          btn.querySelector('img').src = '../images/create/box_checked.svg';
         }
       } else if (q.type === 'text') {
         block.querySelector('.answer-input').value = q.answer;
