@@ -80,7 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function removeError(field) {
       field.classList.remove('error');
-      const msg = field.nextElementSibling;
+      const container = field.classList.contains('answer-input') ? field.closest('.answer-row') : field;
+      const msg = container.nextElementSibling;
       if (msg && msg.classList.contains('error-message')) {
         msg.remove();
       }
@@ -380,13 +381,14 @@ document.addEventListener('DOMContentLoaded', () => {
     form.querySelectorAll('.error-message').forEach(el => el.remove());
   }
 
-  function markError(el) {
-    el.classList.add('error');
-    const msg = document.createElement('div');
-    msg.className = 'error-message text-small';
-    msg.textContent = 'Required Field';
-    el.insertAdjacentElement('afterend', msg);
-  }
+    function markError(el, message = 'Required Field') {
+      el.classList.add('error');
+      const container = el.classList.contains('answer-input') ? el.closest('.answer-row') : el;
+      const msg = document.createElement('div');
+      msg.className = 'error-message text-small';
+      msg.textContent = message;
+      container.insertAdjacentElement('afterend', msg);
+    }
 
   function validateForm() {
     clearErrors();
@@ -423,13 +425,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const selected = block.querySelectorAll('.correct-btn.selected');
         if (selected.length === 0) {
           const list = block.querySelector('.answers-list');
-          markError(list);
+          markError(list, 'Select a Correct Answer');
           firstError = firstError || list;
         }
       } else if (type === 'boolean') {
         if (block.querySelectorAll('.correct-btn.selected').length !== 1) {
           const list = block.querySelector('.answers-list');
-          markError(list);
+          markError(list, 'Select a Correct Answer');
           firstError = firstError || list;
         }
       } else if (type === 'text') {

@@ -27,6 +27,10 @@ html, body {
   font-weight:100;
 }
 
+h1.text-large {
+  font-size: 40px;
+}
+
 .text-medium {
   font-family: var(--font-rounded);
   font-size: 20px;
@@ -145,10 +149,11 @@ input[type="text"]::placeholder {
   .battle-info {
     display: flex;
     flex-direction: column;
+    gap: 8px;
   }
 
   .battle-name {
-    font-size: 36px;
+    font-size: 32px;
     color: #272B34;
     margin: 0;
   }
@@ -235,6 +240,16 @@ input[type="text"]::placeholder {
 
   .submit-btn:hover {
     background: #004BD8;
+  }
+
+  .edit-btn {
+    background: #fff;
+    border: 2px solid #006AFF;
+    color: #006AFF;
+  }
+
+  .edit-btn:hover {
+    background: #fff;
   }
 
   .answers-label {
