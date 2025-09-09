@@ -88,7 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const starts = Object.values(hero.levels).map((l) => Number(l.start));
     maxLevelStart = Math.max(...starts);
 
-    
+    // Show the battle view once data is ready
+    game.style.display = 'none';
+    battleDiv.style.display = 'block';
   }
 
   document.addEventListener('assets-loaded', loadData);
