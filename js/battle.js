@@ -60,32 +60,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = window.preloadedData;
     const config = data.config || {};
     STREAK_GOAL = Number(config.streakGoal) || STREAK_GOAL;
-    if (config.hero) {
-      hero.attack = Number(config.hero.attack) || hero.attack;
-      hero.health = Number(config.hero.health) || hero.health;
-      hero.gems = Number(config.hero.gems) || hero.gems;
-      hero.damage = Number(config.hero.damage) || hero.damage;
-      hero.name = config.hero.name || hero.name;
+    const heroData = data.characters?.[config.selectedHero];
+    const monsterData = data.characters?.[config.selectedMonster];
+    if (heroData) {
+      hero.attack = Number(heroData.attack) || hero.attack;
+      hero.health = Number(heroData.health) || hero.health;
+      hero.gems = Number(heroData.gems) || hero.gems;
+      hero.damage = Number(heroData.damage) || hero.damage;
+      hero.name = heroData.name || hero.name;
     }
-    if (config.monster) {
-      monster.attack = Number(config.monster.attack) || monster.attack;
-      monster.health = Number(config.monster.health) || monster.health;
-      monster.damage = Number(config.monster.damage) || monster.damage;
-      monster.name = config.monster.name || monster.name;
+    if (monsterData) {
+      monster.attack = Number(monsterData.attack) || monster.attack;
+      monster.health = Number(monsterData.health) || monster.health;
+      monster.damage = Number(monsterData.damage) || monster.damage;
+      monster.name = monsterData.name || monster.name;
     }
-    if (data && data.characters && data.missions) {
-      const heroData = data.characters.heroes?.shellfin;
-      const monsterData = data.characters.monsters?.octomurk;
-      if (heroData) {
-        hero.attack = Number(heroData.attack) || hero.attack;
-        hero.health = Number(heroData.health) || hero.health;
-        hero.name = heroData.name || hero.name;
-      }
-      if (monsterData) {
-        monster.attack = Number(monsterData.attack) || monster.attack;
-        monster.health = Number(monsterData.health) || monster.health;
-        monster.name = monsterData.name || monster.name;
-      }
+    if (data && data.missions) {
       questions = shuffle(data.missions.Walkthrough?.questions || []);
     }
     attackVal.textContent = hero.attack;
