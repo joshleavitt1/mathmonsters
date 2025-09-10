@@ -1,8 +1,8 @@
 (async function() {
   try {
     const [varsRes, questionsRes] = await Promise.all([
-      fetch('/data/variables.json'),
-      fetch('/data/questions.json')
+      fetch('../data/variables.json'),
+      fetch('../data/questions.json')
     ]);
     const varsData = await varsRes.json();
     const questionsData = await questionsRes.json();
