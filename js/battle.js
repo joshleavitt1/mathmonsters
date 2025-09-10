@@ -144,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
       streakLabel.classList.add('show');
     } else {
       streakLabel.textContent = '';
+      streakLabel.classList.remove('show');
     }
   }
 
@@ -155,63 +156,75 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function heroAttack() {
-    heroImg.classList.add('attack');
-    const handler = (e) => {
-      if (e.animationName !== 'hero-attack') return;
-      heroImg.classList.remove('attack');
-      heroImg.removeEventListener('animationend', handler);
-      monster.damage += hero.attack;
-      updateHealthBars();
-      if (monster.damage >= monster.health) {
-        endBattle(true);
-      } else {
-        currentQuestion++;
-        showQuestion();
-      }
-    };
-    heroImg.addEventListener('animationend', handler);
+    setTimeout(() => {
+      heroImg.classList.add('attack');
+      const handler = (e) => {
+        if (e.animationName !== 'hero-attack') return;
+        heroImg.classList.remove('attack');
+        heroImg.removeEventListener('animationend', handler);
+        setTimeout(() => {
+          monster.damage += hero.attack;
+          updateHealthBars();
+          if (monster.damage >= monster.health) {
+            endBattle(true);
+          } else {
+            currentQuestion++;
+            showQuestion();
+          }
+        }, 1000);
+      };
+      heroImg.addEventListener('animationend', handler);
+    }, 1000);
   }
 
   function monsterAttack() {
-    monsterImg.classList.add('attack');
-    const handler = (e) => {
-      if (e.animationName !== 'monster-attack') return;
-      monsterImg.classList.remove('attack');
-      monsterImg.removeEventListener('animationend', handler);
-      hero.damage += monster.attack;
-      updateHealthBars();
-      if (hero.damage >= hero.health) {
-        endBattle(false);
-      } else {
-        currentQuestion++;
-        showQuestion();
-      }
-    };
-    monsterImg.addEventListener('animationend', handler);
+    setTimeout(() => {
+      monsterImg.classList.add('attack');
+      const handler = (e) => {
+        if (e.animationName !== 'monster-attack') return;
+        monsterImg.classList.remove('attack');
+        monsterImg.removeEventListener('animationend', handler);
+        setTimeout(() => {
+          hero.damage += monster.attack;
+          updateHealthBars();
+          if (hero.damage >= hero.health) {
+            endBattle(false);
+          } else {
+            currentQuestion++;
+            showQuestion();
+          }
+        }, 1000);
+      };
+      monsterImg.addEventListener('animationend', handler);
+    }, 1000);
   }
 
   document.addEventListener('answer-submitted', (e) => {
     const correct = e.detail.correct;
     questionBox.classList.remove('show');
     if (correct) {
-      streak++;
-      updateStreak();
-      const stat = ['attack', 'health', 'gem'][Math.floor(Math.random() * 3)];
-      if (stat === 'attack') {
-        hero.attack++;
-        attackVal.textContent = hero.attack;
-        showIncrease(attackInc);
-      } else if (stat === 'health') {
-        hero.health++;
-        healthVal.textContent = hero.health;
-        showIncrease(healthInc);
-        updateHealthBars();
-      } else {
-        hero.gems++;
-        gemVal.textContent = hero.gems;
-        showIncrease(gemInc);
-      }
-      setTimeout(heroAttack, 3000);
+      setTimeout(() => {
+        streak++;
+        updateStreak();
+        const stat = ['attack', 'health', 'gem'][Math.floor(Math.random() * 3)];
+        setTimeout(() => {
+          if (stat === 'attack') {
+            hero.attack++;
+            attackVal.textContent = hero.attack;
+            showIncrease(attackInc);
+          } else if (stat === 'health') {
+            hero.health++;
+            healthVal.textContent = hero.health;
+            showIncrease(healthInc);
+            updateHealthBars();
+          } else {
+            hero.gems++;
+            gemVal.textContent = hero.gems;
+            showIncrease(gemInc);
+          }
+          setTimeout(heroAttack, 2000);
+        }, 1000);
+      }, 2000);
     } else {
       streak = 0;
       updateStreak();
