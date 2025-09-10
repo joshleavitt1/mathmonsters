@@ -132,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
       choicesEl.appendChild(div);
     });
     questionBox.classList.add('show');
+    updateStreak();
   }
 
   function updateStreak() {
@@ -170,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
           currentQuestion++;
           showQuestion();
         }
-      }, 1000);
+      }, 500);
     };
     heroImg.addEventListener('animationend', handler);
   }
@@ -191,42 +192,38 @@ document.addEventListener('DOMContentLoaded', () => {
             currentQuestion++;
             showQuestion();
           }
-        }, 1000);
+        }, 500);
       };
       monsterImg.addEventListener('animationend', handler);
-    }, 1000);
+    }, 300);
   }
 
   document.addEventListener('answer-submitted', (e) => {
     const correct = e.detail.correct;
     questionBox.classList.remove('show');
     if (correct) {
+      streak++;
+      const stat = ['attack', 'health', 'gem'][Math.floor(Math.random() * 3)];
       setTimeout(() => {
-        streak++;
-        updateStreak();
-        const stat = ['attack', 'health', 'gem'][Math.floor(Math.random() * 3)];
-        setTimeout(() => {
-          if (stat === 'attack') {
-            hero.attack++;
-            attackVal.textContent = hero.attack;
-            showIncrease(attackInc);
-          } else if (stat === 'health') {
-            hero.health++;
-            healthVal.textContent = hero.health;
-            showIncrease(healthInc);
-            updateHealthBars();
-          } else {
-            hero.gems++;
-            gemVal.textContent = hero.gems;
-            showIncrease(gemInc);
-          }
-          setTimeout(heroAttack, 2000);
-        }, 2000);
-      }, 2000);
+        if (stat === 'attack') {
+          hero.attack++;
+          attackVal.textContent = hero.attack;
+          showIncrease(attackInc);
+        } else if (stat === 'health') {
+          hero.health++;
+          healthVal.textContent = hero.health;
+          showIncrease(healthInc);
+          updateHealthBars();
+        } else {
+          hero.gems++;
+          gemVal.textContent = hero.gems;
+          showIncrease(gemInc);
+        }
+        setTimeout(heroAttack, 500);
+      }, 500);
     } else {
       streak = 0;
-      updateStreak();
-      setTimeout(monsterAttack, 3000);
+      setTimeout(monsterAttack, 500);
     }
   });
 
@@ -241,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initBattle() {
     loadData();
-    setTimeout(showQuestion, 3000);
+    setTimeout(showQuestion, 1000);
   }
 
   if (window.preloadedData) {
