@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const healthVal = questionBox.querySelector('.health .value');
   const gemVal = questionBox.querySelector('.gem .value');
   const attackInc = questionBox.querySelector('.attack .increase');
+  const healthInc = questionBox.querySelector('.health .increase');
+  const gemInc = questionBox.querySelector('.gem .increase');
 
   const levelMessage = document.getElementById('level-message');
   const levelText = levelMessage.querySelector('p');
