@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             document.dispatchEvent(new Event('close-question'));
             heroAttack();
-          }, 4000);
+          }, 2000);
         }, 1000);
       }, 1000);
     } else {
