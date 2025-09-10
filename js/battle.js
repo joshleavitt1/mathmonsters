@@ -219,5 +219,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   loadData();
-  showQuestion();
+  setTimeout(showQuestion, 3000);
 });
