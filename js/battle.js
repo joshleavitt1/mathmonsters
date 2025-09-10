@@ -17,8 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const healthVal = questionBox.querySelector('.health .value');
   const gemVal = questionBox.querySelector('.gem .value');
   const attackInc = questionBox.querySelector('.attack .increase');
-  const healthInc = questionBox.querySelector('.health .increase');
-  const gemInc = questionBox.querySelector('.gem .increase');
 
   const levelMessage = document.getElementById('level-message');
   const levelText = levelMessage.querySelector('p');
@@ -137,8 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function showIncrease(el) {
-    el.textContent = '+1';
+  function showIncrease(el, text) {
+    el.textContent = text;
     el.classList.remove('show');
     void el.offsetWidth;
     el.classList.add('show');
@@ -197,20 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
         streak++;
         updateStreak();
         setTimeout(() => {
-          const stat = ['attack', 'health', 'gem'][Math.floor(Math.random() * 3)];
-          if (stat === 'attack') {
-            hero.attack++;
+          if (streak >= STREAK_GOAL) {
+            hero.attack *= 2;
             attackVal.textContent = hero.attack;
-            showIncrease(attackInc);
-          } else if (stat === 'health') {
-            hero.health++;
-            healthVal.textContent = hero.health;
-            showIncrease(healthInc);
-            updateHealthBars();
-          } else {
-            hero.gems++;
-            gemVal.textContent = hero.gems;
-            showIncrease(gemInc);
+            showIncrease(attackInc, 'x2');
+            streak = 0;
+            updateStreak();
           }
           setTimeout(() => {
             document.dispatchEvent(new Event('close-question'));
