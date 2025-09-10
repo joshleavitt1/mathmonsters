@@ -1,0 +1,77 @@
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: url('../images/background/background.png') no-repeat center/cover;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+}
+
+.level-message {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  animation: pop-in 0.3s ease-out;
+}
+
+.level-message .level-title {
+  font-size: 20px;
+  color: #9C9C9C;
+  margin: 0;
+}
+
+.level-message .progress-bar {
+  width: 100%;
+  height: 16px;
+  background: #F4F6FA;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.level-message .progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #006AFF;
+  border-radius: 4px;
+}
+
+.level-message .math-type {
+  font-size: 32px;
+  color: #272B34;
+  margin: 0;
+}
+
+.level-message .enemy-image {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+}
+
+.btn-primary {
+  width: 100%;
+  height: 56px;
+  background: #006AFF;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  80% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
