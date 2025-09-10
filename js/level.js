@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const res = await fetch('../data/levels.json');
+    const res = await fetch('/data/levels.json');
     const data = await res.json();
     const current = data.levels[0];
 
