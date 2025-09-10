@@ -37,6 +37,13 @@ body {
   overflow: hidden;
 }
 
+.level-message .progress-fill {
+  width: 0%;
+  height: 100%;
+  background: #006AFF;
+  transition: width 0.5s ease-in-out;
+}
+
 .level-message .level-info {
   display: flex;
   flex-direction: column;
