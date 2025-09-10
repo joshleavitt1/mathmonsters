@@ -86,6 +86,7 @@
   width: 0%;
   height: 100%;
   background: #006AFF;
+  transition: width 0.5s ease-in-out;
 }
 
 #question .streak-label {
@@ -105,7 +106,7 @@
 @keyframes streak-pop {
   0% { opacity: 0; transform: scale(0.8); }
   50% { opacity: 1; transform: scale(1.1); }
-  100% { opacity: 0; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 #question .status {
@@ -148,9 +149,8 @@
   background: #FFAE00;
   color: #006AFF;
   font-size: 20px;
-  padding-left: 14px;
-  padding-right: 14px;
-  border-radius: 100%;
+  padding: 2px 8px;
+  border-radius: 12px;
   opacity: 0;
   transform: scale(0.5);
 }
