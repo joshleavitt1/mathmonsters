@@ -23,9 +23,9 @@
 
 #question h1 {
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 14px;
-  color: #858585;
-  margin: 0 0 8px;
+  font-size: 16px;
+  color: #888888;
+  margin: 8px 0;
 }
 
 #question p {
@@ -55,16 +55,81 @@
 #question .progress-bar {
   width: 100%;
   height: 16px;
-  background: #F6F6F6;
+  background: #F4F6FA;
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 #question .progress-fill {
   width: 0%;
   height: 100%;
   background: #006AFF;
+}
+
+#question .streak-label {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 16px;
+  color: #006AFF;
+  margin-top: 4px;
+  align-self: flex-end;
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+#question .streak-label.show {
+  animation: streak-pop 0.6s forwards;
+}
+
+@keyframes streak-pop {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+#question .status {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  margin: 8px 0 16px;
+}
+
+#question .status .stat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 20px;
+  color: #006AFF;
+}
+
+#question .status .stat img {
+  width: 24px;
+  height: 24px;
+}
+
+#question .status .stat .increase {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #FFAE00;
+  color: #006AFF;
+  font-size: 20px;
+  padding-left: 14px;
+  padding-right: 14px;
+  border-radius: 100%;
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+#question .status .stat .increase.show {
+  animation: increase-pop 0.6s forwards;
+}
+
+@keyframes increase-pop {
+  0% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0; transform: scale(1); }
 }
 
 #question .choices {

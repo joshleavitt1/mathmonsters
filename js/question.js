@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.propertyName === 'transform') {
           questionBox.removeEventListener('transitionend', handleSlide);
           button.classList.remove('result', 'correct', 'incorrect');
-          button.textContent = 'Answer';
+          button.textContent = 'Submit';
           Array.from(choicesContainer.children).forEach((c) =>
             c.classList.remove('selected', 'correct-choice', 'wrong-choice')
           );
