@@ -110,3 +110,47 @@
   50% { transform: translateX(-50px); }
   100% { transform: translateX(0); }
 }
+
+#level-message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+  z-index: 30;
+}
+
+#level-message.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+#level-message .content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+#level-message .content p {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 24px;
+  margin: 0 0 16px;
+}
+
+#level-message .content button {
+  background: #006AFF;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 18px;
+}
