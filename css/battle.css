@@ -11,34 +11,14 @@
   max-width: 80vw;
 }
 
-/* Monster slides in from the right */
 #battle-monster {
   top: 10%;
   left: 55%;
 }
 
-#battle-monster.enter {
-  animation: monster-slide 1s ease-out forwards;
-}
-
-@keyframes monster-slide {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
-}
-
-/* Shellfin slides in from the left */
 #battle-shellfin {
   bottom: 10%;
   right: 55%;
-}
-
-#battle-shellfin.enter {
-  animation: shellfin-slide 1s ease-out forwards;
-}
-
-@keyframes shellfin-slide {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
 }
 
 .stat-box {

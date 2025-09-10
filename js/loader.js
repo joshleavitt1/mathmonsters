@@ -21,10 +21,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     Promise.all([
       charactersPromise,
-      fetch('../data/missions.json').then((res) => res.json()),
+      fetch('../data/questions.json').then((res) => res.json()),
       fetch('../data/config.json').then((res) => res.json())
     ])
-      .then(async ([characters, missions, config]) => {
+      .then(async ([characters, questionsData, config]) => {
+        const missions = { Walkthrough: { questions: [], total: 0 } };
+        if (questionsData?.questions) {
+          missions.Walkthrough.questions = questionsData.questions.map(
+            (q, idx) => ({
+              name: `Question ${idx + 1}`,
+              number: idx + 1,
+              question: q.question,
+              choices: (q.options || []).map((opt) => ({
+                name: opt,
+                correct: opt === q.answer,
+              })),
+            })
+          );
+          missions.Walkthrough.total = missions.Walkthrough.questions.length;
+        }
+        if (characters?.monsters?.octomurk) {
+          characters.monsters.octomurk.health = missions.Walkthrough.questions.length;
+          characters.monsters.octomurk.damage = 0;
+        }
         window.preloadedData.characters = characters;
         window.preloadedData.missions = missions;
         window.preloadedData.config = config;
