@@ -146,6 +146,7 @@
 
 #question .status .stat .increase {
   position: absolute;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   top: -10px;
   right: -10px;
   background: #FFAE00;
