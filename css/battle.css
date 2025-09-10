@@ -12,11 +12,11 @@
 }
 
 #battle-monster.slide-in {
-  animation: monster-enter 0.5s ease-out forwards;
+  animation: monster-enter 1s ease-out forwards;
 }
 
 #battle-shellfin.slide-in {
-  animation: hero-enter 0.5s ease-out forwards;
+  animation: hero-enter 1s ease-out forwards;
 }
 
 #battle-monster {
@@ -82,11 +82,11 @@
 }
 
 #battle-shellfin.attack {
-  animation: hero-attack 0.5s ease-in-out;
+  animation: hero-attack 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #battle-monster.attack {
-  animation: monster-attack 0.5s ease-in-out;
+  animation: monster-attack 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes hero-enter {
@@ -108,12 +108,14 @@
 }
 
 @keyframes hero-attack {
-  50% { transform: translateX(50px); }
+  40% { transform: translateX(60px); }
+  60% { transform: translateX(40px); }
   100% { transform: translateX(0); }
 }
 
 @keyframes monster-attack {
-  50% { transform: translateX(-50px); }
+  40% { transform: translateX(-60px); }
+  60% { transform: translateX(-40px); }
   100% { transform: translateX(0); }
 }
 
