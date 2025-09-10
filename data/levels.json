@@ -1,0 +1,11 @@
+{
+  "levels": [
+    {
+      "id": 1,
+      "math": "Addition",
+      "enemySprite": "battle/monster_battle.png",
+      "background": "background/background.png",
+      "progress": 0.0
+    }
+  ]
+}
