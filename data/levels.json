@@ -4,7 +4,7 @@
       "id": 1,
       "math": "Addition",
       "enemySprite": "battle/monster_battle.png",
-      "progress": 0
+      "progress": 0.3333
     }
   ]
 }
