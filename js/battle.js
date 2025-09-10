@@ -17,8 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const healthVal = questionBox.querySelector('.health .value');
   const gemVal = questionBox.querySelector('.gem .value');
   const attackInc = questionBox.querySelector('.attack .increase');
-  const healthInc = questionBox.querySelector('.health .increase');
-  const gemInc = questionBox.querySelector('.gem .increase');
 
   const levelMessage = document.getElementById('level-message');
   const levelText = levelMessage.querySelector('p');
@@ -197,9 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
         streak++;
         updateStreak();
         setTimeout(() => {
-          const stat = ['attack', 'health', 'gem'][Math.floor(Math.random() * 3)];
-          if (stat === 'attack') {
-            hero.attack++;
+          if (streak >= STREAK_GOAL) {
+            hero.attack *= 2;
             attackVal.textContent = hero.attack;
             showIncrease(attackInc, '+1');
           } else if (stat === 'health') {
