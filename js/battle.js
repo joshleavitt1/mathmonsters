@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelText = levelMessage.querySelector('p');
   const levelButton = levelMessage.querySelector('button');
 
-  let STREAK_GOAL = 10;
+  let STREAK_GOAL = 5;
   let questions = [];
   let currentQuestion = 0;
   let streak = 0;
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             document.dispatchEvent(new Event('close-question'));
             heroAttack();
-          }, 1000);
+          }, 4000);
         }, 1000);
       }, 1000);
     } else {
