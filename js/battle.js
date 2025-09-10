@@ -200,30 +200,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('answer-submitted', (e) => {
     const correct = e.detail.correct;
-    questionBox.classList.remove('show');
     if (correct) {
       streak++;
+      updateStreak();
       const stat = ['attack', 'health', 'gem'][Math.floor(Math.random() * 3)];
-      setTimeout(() => {
-        if (stat === 'attack') {
-          hero.attack++;
-          attackVal.textContent = hero.attack;
-          showIncrease(attackInc);
-        } else if (stat === 'health') {
-          hero.health++;
-          healthVal.textContent = hero.health;
-          showIncrease(healthInc);
-          updateHealthBars();
-        } else {
-          hero.gems++;
-          gemVal.textContent = hero.gems;
-          showIncrease(gemInc);
-        }
-        setTimeout(heroAttack, 500);
-      }, 500);
+      if (stat === 'attack') {
+        hero.attack++;
+        attackVal.textContent = hero.attack;
+        showIncrease(attackInc);
+      } else if (stat === 'health') {
+        hero.health++;
+        healthVal.textContent = hero.health;
+        showIncrease(healthInc);
+        updateHealthBars();
+      } else {
+        hero.gems++;
+        gemVal.textContent = hero.gems;
+        showIncrease(gemInc);
+      }
+      setTimeout(heroAttack, 1500);
     } else {
       streak = 0;
-      setTimeout(monsterAttack, 500);
+      updateStreak();
+      setTimeout(monsterAttack, 1500);
     }
   });
 
