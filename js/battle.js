@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const q = questions[currentQuestion];
     if (!q) return;
     headingEl.textContent = 'Question';
-    questionText.textContent = q.question || '';
+    questionText.textContent = q.question || q.q || '';
     choicesEl.innerHTML = '';
 
     let choices = q.choices;
@@ -165,12 +165,14 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         monster.damage += hero.attack;
         updateHealthBars();
-        if (monster.damage >= monster.health) {
-          endBattle(true);
-        } else {
-          currentQuestion++;
-          showQuestion();
-        }
+        setTimeout(() => {
+          if (monster.damage >= monster.health) {
+            endBattle(true);
+          } else {
+            currentQuestion++;
+            showQuestion();
+          }
+        }, 1000);
       }, 500);
     };
     heroImg.addEventListener('animationend', handler);
@@ -186,12 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
           hero.damage += monster.attack;
           updateHealthBars();
-          if (hero.damage >= hero.health) {
-            endBattle(false);
-          } else {
-            currentQuestion++;
-            showQuestion();
-          }
+          setTimeout(() => {
+            if (hero.damage >= hero.health) {
+              endBattle(false);
+            } else {
+              currentQuestion++;
+              showQuestion();
+            }
+          }, 1000);
         }, 500);
       };
       monsterImg.addEventListener('animationend', handler);
@@ -201,28 +205,38 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('answer-submitted', (e) => {
     const correct = e.detail.correct;
     if (correct) {
-      streak++;
-      updateStreak();
-      const stat = ['attack', 'health', 'gem'][Math.floor(Math.random() * 3)];
-      if (stat === 'attack') {
-        hero.attack++;
-        attackVal.textContent = hero.attack;
-        showIncrease(attackInc);
-      } else if (stat === 'health') {
-        hero.health++;
-        healthVal.textContent = hero.health;
-        showIncrease(healthInc);
-        updateHealthBars();
-      } else {
-        hero.gems++;
-        gemVal.textContent = hero.gems;
-        showIncrease(gemInc);
-      }
-      setTimeout(heroAttack, 1500);
+      setTimeout(() => {
+        streak++;
+        updateStreak();
+        setTimeout(() => {
+          const stat = ['attack', 'health', 'gem'][Math.floor(Math.random() * 3)];
+          if (stat === 'attack') {
+            hero.attack++;
+            attackVal.textContent = hero.attack;
+            showIncrease(attackInc);
+          } else if (stat === 'health') {
+            hero.health++;
+            healthVal.textContent = hero.health;
+            showIncrease(healthInc);
+            updateHealthBars();
+          } else {
+            hero.gems++;
+            gemVal.textContent = hero.gems;
+            showIncrease(gemInc);
+          }
+          setTimeout(() => {
+            document.dispatchEvent(new Event('close-question'));
+            heroAttack();
+          }, 1000);
+        }, 1000);
+      }, 1000);
     } else {
       streak = 0;
       updateStreak();
-      setTimeout(monsterAttack, 1500);
+      setTimeout(() => {
+        document.dispatchEvent(new Event('close-question'));
+        monsterAttack();
+      }, 1000);
     }
   });
 

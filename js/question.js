@@ -43,19 +43,22 @@ document.addEventListener('DOMContentLoaded', () => {
       new CustomEvent('answer-submitted', { detail: { correct: isCorrect } })
     );
 
-    setTimeout(() => {
-      function handleFade(e) {
-        if (e.propertyName === 'opacity') {
-          questionBox.removeEventListener('transitionend', handleFade);
-          button.classList.remove('result', 'correct', 'incorrect');
-          button.textContent = 'Submit';
-          Array.from(choicesContainer.children).forEach((c) =>
-            c.classList.remove('selected', 'correct-choice', 'wrong-choice')
-          );
-        }
-      }
-      questionBox.addEventListener('transitionend', handleFade);
-      questionBox.classList.remove('show');
-    }, 1000);
   });
+
+  function closeQuestion() {
+    function handleFade(e) {
+      if (e.propertyName === 'opacity') {
+        questionBox.removeEventListener('transitionend', handleFade);
+        button.classList.remove('result', 'correct', 'incorrect');
+        button.textContent = 'Submit';
+        Array.from(choicesContainer.children).forEach((c) =>
+          c.classList.remove('selected', 'correct-choice', 'wrong-choice')
+        );
+      }
+    }
+    questionBox.addEventListener('transitionend', handleFade);
+    questionBox.classList.remove('show');
+  }
+
+  document.addEventListener('close-question', closeQuestion);
 });
