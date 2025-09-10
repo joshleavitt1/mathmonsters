@@ -71,6 +71,11 @@ body {
   justify-content: center;
 }
 
+.btn-primary:disabled {
+  background: #D2D8E2;
+  color: #272B34;
+}
+
 @keyframes pop-in {
   0% { transform: scale(0.8); opacity: 0; }
   80% { transform: scale(1.05); opacity: 1; }

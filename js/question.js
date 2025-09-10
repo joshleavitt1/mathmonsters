@@ -40,9 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
       : '<img src="../images/questions/button/incorrect.svg" alt="Incorrect icon" /> Incorrect';
 
     setTimeout(() => {
-      function handleSlide(e) {
-        if (e.propertyName === 'transform') {
-          questionBox.removeEventListener('transitionend', handleSlide);
+      function handleFade(e) {
+        if (e.propertyName === 'opacity') {
+          questionBox.removeEventListener('transitionend', handleFade);
           button.classList.remove('result', 'correct', 'incorrect');
           button.textContent = 'Submit';
           Array.from(choicesContainer.children).forEach((c) =>
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
           );
         }
       }
-      questionBox.addEventListener('transitionend', handleSlide);
+      questionBox.addEventListener('transitionend', handleFade);
       questionBox.classList.remove('show');
     }, 1000);
   });
