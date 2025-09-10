@@ -138,10 +138,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showIncrease(el, text) {
+    [attackInc, healthInc, gemInc].forEach((inc) => {
+      inc.classList.remove('show');
+      inc.textContent = '';
+    });
+
     el.textContent = text;
-    el.classList.remove('show');
     void el.offsetWidth;
     el.classList.add('show');
+
+    setTimeout(() => {
+      el.classList.remove('show');
+    }, 1000);
   }
 
   function heroAttack() {
