@@ -195,8 +195,17 @@ document.addEventListener('DOMContentLoaded', () => {
         streak++;
         updateStreak();
         setTimeout(() => {
+          const stats = ['attack', 'health', 'gem'];
+          const stat = stats[Math.floor(Math.random() * stats.length)];
+
           if (streak >= STREAK_GOAL) {
             hero.attack *= 2;
+            attackVal.textContent = hero.attack;
+            showIncrease(attackInc, 'x2');
+            streak = 0;
+            updateStreak();
+          } else if (stat === 'attack') {
+            hero.attack++;
             attackVal.textContent = hero.attack;
             showIncrease(attackInc, '+1');
           } else if (stat === 'health') {
@@ -208,18 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
             hero.gems++;
             gemVal.textContent = hero.gems;
             showIncrease(gemInc, '+1');
-          }
-
-          if (streak >= STREAK_GOAL) {
-            hero.attack *= 2;
-            attackVal.textContent = hero.attack;
-            if (stat === 'attack') {
-              setTimeout(() => showIncrease(attackInc, 'x2'), 500);
-            } else {
-              showIncrease(attackInc, 'x2');
-            }
-            streak = 0;
-            updateStreak();
           }
 
           setTimeout(() => {
