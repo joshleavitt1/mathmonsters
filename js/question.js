@@ -39,6 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
       ? '<img src="../images/questions/button/correct.svg" alt="Correct icon" /> Correct'
       : '<img src="../images/questions/button/incorrect.svg" alt="Incorrect icon" /> Incorrect';
 
+    document.dispatchEvent(
+      new CustomEvent('answer-submitted', { detail: { correct: isCorrect } })
+    );
+
     setTimeout(() => {
       function handleFade(e) {
         if (e.propertyName === 'opacity') {
@@ -47,9 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
           button.textContent = 'Submit';
           Array.from(choicesContainer.children).forEach((c) =>
             c.classList.remove('selected', 'correct-choice', 'wrong-choice')
-          );
-          document.dispatchEvent(
-            new CustomEvent('answer-submitted', { detail: { correct: isCorrect } })
           );
         }
       }
