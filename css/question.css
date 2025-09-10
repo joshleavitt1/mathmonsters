@@ -92,7 +92,7 @@
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 16px;
   color: #006AFF;
-  margin-top: 4px;
+  margin-top: 8px;
   align-self: flex-start; /* works only if parent is display:flex */
   text-align: left; /* makes text align left */
   display: block;   /* ensures it can stretch full width if needed */
@@ -147,15 +147,15 @@
 #question .status .stat .increase {
   position: absolute;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  top: -10px;
-  right: -10px;
+  top: -5px;
+  right: -5px;
   background: #FFAE00;
   color: #ffffff;
   font-size: 20px;
-  padding: 2px 8px;
+  padding: 4px 12px;
   border-radius: 12px;
   opacity: 0;
-  transform: scale(0.5);
+  transform: scale(1);
 }
 
 #question .status .stat .increase.show {
