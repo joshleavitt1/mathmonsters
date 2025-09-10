@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroHpFill = document.querySelector('#shellfin-stats .hp-fill');
   const monsterNameEl = document.querySelector('#monster-stats .name');
   const heroNameEl = document.querySelector('#shellfin-stats .name');
+  const monsterStats = document.getElementById('monster-stats');
+  const heroStats = document.getElementById('shellfin-stats');
 
   const questionBox = document.getElementById('question');
   const questionText = questionBox.querySelector('p');
@@ -30,6 +32,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
+
+  heroImg.classList.add('slide-in');
+  monsterImg.classList.add('slide-in');
+  heroStats.classList.add('show');
+  monsterStats.classList.add('show');
+
+  heroImg.addEventListener(
+    'animationend',
+    () => heroImg.classList.remove('slide-in'),
+    { once: true }
+  );
+  monsterImg.addEventListener(
+    'animationend',
+    () => monsterImg.classList.remove('slide-in'),
+    { once: true }
+  );
 
   function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
