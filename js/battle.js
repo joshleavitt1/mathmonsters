@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const healthVal = questionBox.querySelector('.health .value');
   const gemVal = questionBox.querySelector('.gem .value');
   const attackInc = questionBox.querySelector('.attack .increase');
+  const healthInc = questionBox.querySelector('.health .increase');
+  const gemInc = questionBox.querySelector('.gem .increase');
 
   const levelMessage = document.getElementById('level-message');
   const levelText = levelMessage.querySelector('p');
@@ -136,10 +138,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showIncrease(el, text) {
+    [attackInc, healthInc, gemInc].forEach((inc) => {
+      inc.classList.remove('show');
+      inc.textContent = '';
+    });
+
     el.textContent = text;
-    el.classList.remove('show');
     void el.offsetWidth;
     el.classList.add('show');
+
+    setTimeout(() => {
+      el.classList.remove('show');
+    }, 1000);
   }
 
   function heroAttack() {
@@ -195,8 +205,17 @@ document.addEventListener('DOMContentLoaded', () => {
         streak++;
         updateStreak();
         setTimeout(() => {
+          const stats = ['attack', 'health', 'gem'];
+          const stat = stats[Math.floor(Math.random() * stats.length)];
+
           if (streak >= STREAK_GOAL) {
             hero.attack *= 2;
+            attackVal.textContent = hero.attack;
+            showIncrease(attackInc, 'x2');
+            streak = 0;
+            updateStreak();
+          } else if (stat === 'attack') {
+            hero.attack++;
             attackVal.textContent = hero.attack;
             showIncrease(attackInc, '+1');
           } else if (stat === 'health') {
@@ -208,18 +227,6 @@ document.addEventListener('DOMContentLoaded', () => {
             hero.gems++;
             gemVal.textContent = hero.gems;
             showIncrease(gemInc, '+1');
-          }
-
-          if (streak >= STREAK_GOAL) {
-            hero.attack *= 2;
-            attackVal.textContent = hero.attack;
-            if (stat === 'attack') {
-              setTimeout(() => showIncrease(attackInc, 'x2'), 500);
-            } else {
-              showIncrease(attackInc, 'x2');
-            }
-            streak = 0;
-            updateStreak();
           }
 
           setTimeout(() => {
