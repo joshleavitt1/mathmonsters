@@ -75,15 +75,19 @@ document.addEventListener('DOMContentLoaded', () => {
       monster.name = config.monster.name || monster.name;
     }
     if (data && data.characters && data.missions) {
-      const heroData = data.characters.heroes.shellfin;
-      const monsterData = data.characters.monsters.octomurk;
-      hero.attack = Number(heroData.attack) || hero.attack;
-      hero.health = Number(heroData.health) || hero.health;
-      hero.name = heroData.name || hero.name;
-      monster.attack = Number(monsterData.attack) || monster.attack;
-      monster.health = Number(monsterData.health) || monster.health;
-      monster.name = monsterData.name || monster.name;
-      questions = shuffle(data.missions.Walkthrough.questions || []);
+      const heroData = data.characters.heroes?.shellfin;
+      const monsterData = data.characters.monsters?.octomurk;
+      if (heroData) {
+        hero.attack = Number(heroData.attack) || hero.attack;
+        hero.health = Number(heroData.health) || hero.health;
+        hero.name = heroData.name || hero.name;
+      }
+      if (monsterData) {
+        monster.attack = Number(monsterData.attack) || monster.attack;
+        monster.health = Number(monsterData.health) || monster.health;
+        monster.name = monsterData.name || monster.name;
+      }
+      questions = shuffle(data.missions.Walkthrough?.questions || []);
     }
     attackVal.textContent = hero.attack;
     healthVal.textContent = hero.health;
