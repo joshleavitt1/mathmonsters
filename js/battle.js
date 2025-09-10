@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelText = levelMessage.querySelector('p');
   const levelButton = levelMessage.querySelector('button');
 
-  const STREAK_GOAL = 10;
+  let STREAK_GOAL = 10;
   let questions = [];
   let currentQuestion = 0;
   let streak = 0;
@@ -41,6 +41,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function loadData() {
     const data = window.preloadedData;
+    const config = data.config || {};
+    STREAK_GOAL = Number(config.streakGoal) || STREAK_GOAL;
+    if (config.hero) {
+      hero.attack = Number(config.hero.attack) || hero.attack;
+      hero.health = Number(config.hero.health) || hero.health;
+      hero.gems = Number(config.hero.gems) || hero.gems;
+      hero.damage = Number(config.hero.damage) || hero.damage;
+      hero.name = config.hero.name || hero.name;
+    }
+    if (config.monster) {
+      monster.attack = Number(config.monster.attack) || monster.attack;
+      monster.health = Number(config.monster.health) || monster.health;
+      monster.damage = Number(config.monster.damage) || monster.damage;
+      monster.name = config.monster.name || monster.name;
+    }
     if (data && data.characters && data.missions) {
       const heroData = data.characters.heroes.shellfin;
       const monsterData = data.characters.monsters.octomurk;
