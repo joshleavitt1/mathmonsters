@@ -2,7 +2,7 @@
   try {
     const [varsRes, questionRes] = await Promise.all([
       fetch('../data/variables.json'),
-      fetch('../data/question.json')
+      fetch('../data/questions.json')
     ]);
     const varsData = await varsRes.json();
     const questionData = await questionRes.json();
