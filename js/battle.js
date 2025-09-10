@@ -137,8 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function showIncrease(el) {
-    el.textContent = '+1';
+  function showIncrease(el, text) {
+    el.textContent = text;
     el.classList.remove('show');
     void el.offsetWidth;
     el.classList.add('show');
@@ -201,17 +201,30 @@ document.addEventListener('DOMContentLoaded', () => {
           if (stat === 'attack') {
             hero.attack++;
             attackVal.textContent = hero.attack;
-            showIncrease(attackInc);
+            showIncrease(attackInc, '+1');
           } else if (stat === 'health') {
             hero.health++;
             healthVal.textContent = hero.health;
-            showIncrease(healthInc);
+            showIncrease(healthInc, '+1');
             updateHealthBars();
           } else {
             hero.gems++;
             gemVal.textContent = hero.gems;
-            showIncrease(gemInc);
+            showIncrease(gemInc, '+1');
           }
+
+          if (streak >= STREAK_GOAL) {
+            hero.attack *= 2;
+            attackVal.textContent = hero.attack;
+            if (stat === 'attack') {
+              setTimeout(() => showIncrease(attackInc, 'x2'), 500);
+            } else {
+              showIncrease(attackInc, 'x2');
+            }
+            streak = 0;
+            updateStreak();
+          }
+
           setTimeout(() => {
             document.dispatchEvent(new Event('close-question'));
             heroAttack();
