@@ -36,7 +36,7 @@
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 16px;
   color: #888888;
-  margin: 8px 0;
+  margin: 16px 0 0 0;
 }
 
 #question p {
@@ -68,7 +68,7 @@
   width: 100%;
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 0px;
 }
 
 #question .progress-bar {
