@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionText = questionBox.querySelector('p');
   const choicesEl = questionBox.querySelector('.choices');
-  const headingEl = questionBox.querySelector('h1');
   const progressFill = questionBox.querySelector('.progress-fill');
   const streakLabel = questionBox.querySelector('.streak-label');
   const attackVal = questionBox.querySelector('.attack .value');
@@ -107,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function showQuestion() {
     const q = questions[currentQuestion];
     if (!q) return;
-    headingEl.textContent = 'Question';
     questionText.textContent = q.question || q.q || '';
     choicesEl.innerHTML = '';
 
