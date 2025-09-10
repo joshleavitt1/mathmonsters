@@ -218,6 +218,14 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.reload();
   });
 
-  loadData();
-  setTimeout(showQuestion, 3000);
+  function initBattle() {
+    loadData();
+    setTimeout(showQuestion, 3000);
+  }
+
+  if (window.preloadedData) {
+    initBattle();
+  } else {
+    document.addEventListener('data-loaded', initBattle, { once: true });
+  }
 });

@@ -10,8 +10,10 @@
     if (!varsData.missions.Walkthrough) varsData.missions.Walkthrough = {};
     varsData.missions.Walkthrough.questions = questionsData.questions || [];
     window.preloadedData = varsData;
+    document.dispatchEvent(new Event('data-loaded'));
   } catch (e) {
     console.error('Failed to load data', e);
     window.preloadedData = {};
+    document.dispatchEvent(new Event('data-loaded'));
   }
 })();
