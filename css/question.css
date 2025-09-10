@@ -94,7 +94,9 @@
   font-size: 16px;
   color: #006AFF;
   margin-top: 4px;
-  align-self: flex-start;
+  align-self: flex-start; /* works only if parent is display:flex */
+  text-align: left; /* makes text align left */
+  display: block;   /* ensures it can stretch full width if needed */
   opacity: 0;
   transform: scale(0.8);
 }
