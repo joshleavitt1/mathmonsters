@@ -110,7 +110,13 @@ document.addEventListener('DOMContentLoaded', () => {
     headingEl.textContent = 'Question';
     questionText.textContent = q.question || '';
     choicesEl.innerHTML = '';
-    (q.choices || []).forEach((choice) => {
+
+    let choices = q.choices;
+    if (!choices && q.options) {
+      choices = q.options.map((opt) => ({ name: opt, correct: opt === q.answer }));
+    }
+
+    (choices || []).forEach((choice) => {
       const div = document.createElement('div');
       div.classList.add('choice');
       div.dataset.correct = !!choice.correct;
