@@ -21,11 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     Promise.all([
       charactersPromise,
-      fetch('../data/missions.json').then((res) => res.json())
+      fetch('../data/missions.json').then((res) => res.json()),
+      fetch('../data/config.json').then((res) => res.json())
     ])
-      .then(async ([characters, missions]) => {
+      .then(async ([characters, missions, config]) => {
         window.preloadedData.characters = characters;
         window.preloadedData.missions = missions;
+        window.preloadedData.config = config;
 
         if (battleId && window.supabaseClient) {
           try {

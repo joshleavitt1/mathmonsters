@@ -1,0 +1,16 @@
+{
+  "streakGoal": 10,
+  "hero": {
+    "attack": 1,
+    "health": 5,
+    "gems": 0,
+    "damage": 0,
+    "name": "Hero"
+  },
+  "monster": {
+    "attack": 1,
+    "health": 5,
+    "damage": 0,
+    "name": "Monster"
+  }
+}
