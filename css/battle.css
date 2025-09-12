@@ -160,6 +160,15 @@
   100% { transform: translateX(0); }
 }
 
+#set-streak-btn {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 1000;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
 #level-message {
   position: absolute;
   top: 0;
