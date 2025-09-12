@@ -91,12 +91,10 @@
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 16px;
   color: #006AFF;
-  margin-top: 8px;
-  align-self: flex-start; /* works only if parent is display:flex */
-  text-align: left; /* makes text align left */
-  display: block;   /* ensures it can stretch full width if needed */
+  margin-left: 16px;
   opacity: 0;
   transform: scale(0.8);
+  white-space: nowrap;
 }
 
 #question .streak-label.show {
@@ -110,63 +108,7 @@
   100% { opacity: 1; transform: scale(1); }
 }
 
-#question .status {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  margin: 8px 0 16px;
-}
 
-#question .top-bar .status {
-  width: auto;
-  margin: 0;
-  gap: 16px;
-}
-
-#question .status .stat {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 20px;
-  color: #006AFF;
-}
-
-#question .status .stat img {
-  width: 20px;
-  height: 20px;
-}
-
-#question .status .stat .value {
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 20px;
-  color: #006AFF;
-}
-
-#question .status .stat .increase {
-  position: absolute;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  top: -5px;
-  right: -5px;
-  background: #FFAE00;
-  color: #ffffff;
-  font-size: 20px;
-  padding: 4px 12px;
-  border-radius: 12px;
-  opacity: 0;
-  transform: scale(1);
-}
-
-#question .status .stat .increase.show {
-  animation: increase-pop 1.6s forwards;
-}
-
-@keyframes increase-pop {
-  0% { opacity: 0; transform: scale(0.5); }
-  20% { opacity: 1; transform: scale(1.2); }
-  80% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1); }
-}
 
 #question .choices {
   display: grid;
@@ -174,7 +116,6 @@
   gap: 16px;
   width: 100%;
   margin-top: 16px;
-  height: 64px;
 }
 
 #question .choice {
@@ -189,6 +130,7 @@
   cursor: pointer;
   padding: 16px;
   box-sizing: border-box;
+  height: 64px;
 }
 
 #question .choice.selected {
