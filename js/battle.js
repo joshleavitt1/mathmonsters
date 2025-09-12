@@ -295,6 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  document.addEventListener('close-question', () => {
+    streak = 0;
+    streakMaxed = false;
+    streakIconShown = false;
+    updateStreak();
+  });
+
   function endBattle(win) {
     levelText.textContent = win ? 'you win' : 'you lose';
     levelMessage.classList.add('show');
