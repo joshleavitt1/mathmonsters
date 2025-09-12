@@ -14,12 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressBar = questionBox.querySelector('.progress-bar');
   const progressFill = questionBox.querySelector('.progress-fill');
   const streakLabel = questionBox.querySelector('.streak-label');
-  const attackVal = questionBox.querySelector('.attack .value');
-  const healthVal = questionBox.querySelector('.health .value');
-  const gemVal = questionBox.querySelector('.gem .value');
-  const attackInc = questionBox.querySelector('.attack .increase');
-  const healthInc = questionBox.querySelector('.health .increase');
-  const gemInc = questionBox.querySelector('.gem .increase');
+  const heroAttackVal = heroStats.querySelector('.attack .value');
+  const heroHealthVal = heroStats.querySelector('.health .value');
+  const heroAttackInc = heroStats.querySelector('.attack .increase');
+  const heroHealthInc = heroStats.querySelector('.health .increase');
+  const monsterAttackVal = monsterStats.querySelector('.attack .value');
+  const monsterHealthVal = monsterStats.querySelector('.health .value');
 
   const levelMessage = document.getElementById('level-message');
   const levelText = levelMessage.querySelector('p');
@@ -79,9 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (data && data.missions) {
       questions = shuffle(data.missions.Walkthrough?.questions || []);
     }
-    if (attackVal) attackVal.textContent = hero.attack;
-    if (healthVal) healthVal.textContent = hero.health;
-    if (gemVal) gemVal.textContent = hero.gems;
+    if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+    if (heroHealthVal) heroHealthVal.textContent = hero.health;
+    if (monsterAttackVal) monsterAttackVal.textContent = monster.attack;
+    if (monsterHealthVal) monsterHealthVal.textContent = monster.health;
     heroNameEl.textContent = hero.name;
     monsterNameEl.textContent = monster.name;
     updateHealthBars();
@@ -143,18 +144,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showIncrease(el, text) {
-    [attackInc, healthInc, gemInc].forEach((inc) => {
-      if (inc) {
-        inc.classList.remove('show');
-        inc.textContent = '';
-      }
-    });
-
     if (!el) return;
+    el.classList.remove('show');
     el.textContent = text;
     void el.offsetWidth;
     el.classList.add('show');
-
     setTimeout(() => {
       el.classList.remove('show');
     }, 1000);
@@ -176,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentQuestion++;
             showQuestion();
           }
-        }, 1000);
+        }, 2000);
       }, 500);
     };
     heroImg.addEventListener('animationend', handler);
@@ -199,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
               currentQuestion++;
               showQuestion();
             }
-          }, 1000);
+          }, 2000);
         }, 500);
       };
       monsterImg.addEventListener('animationend', handler);
@@ -209,40 +203,31 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('answer-submitted', (e) => {
     const correct = e.detail.correct;
     if (correct) {
-      setTimeout(() => {
-        streak++;
+      document.dispatchEvent(new Event('close-question'));
+      streak++;
+      updateStreak();
+
+      const stats = ['attack', 'health'];
+      const stat = stats[Math.floor(Math.random() * stats.length)];
+
+      if (streak >= STREAK_GOAL) {
+        hero.attack *= 2;
+        if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+        showIncrease(heroAttackInc, 'x2');
+        streak = 0;
         updateStreak();
-        setTimeout(() => {
-          const stats = ['attack', 'health', 'gem'];
-          const stat = stats[Math.floor(Math.random() * stats.length)];
+      } else if (stat === 'attack') {
+        hero.attack++;
+        if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+        showIncrease(heroAttackInc, '+1');
+      } else {
+        hero.health++;
+        if (heroHealthVal) heroHealthVal.textContent = hero.health;
+        showIncrease(heroHealthInc, '+1');
+        updateHealthBars();
+      }
 
-          if (streak >= STREAK_GOAL) {
-            hero.attack *= 2;
-            if (attackVal) attackVal.textContent = hero.attack;
-            showIncrease(attackInc, 'x2');
-            streak = 0;
-            updateStreak();
-          } else if (stat === 'attack') {
-            hero.attack++;
-            if (attackVal) attackVal.textContent = hero.attack;
-            showIncrease(attackInc, '+1');
-          } else if (stat === 'health') {
-            hero.health++;
-            if (healthVal) healthVal.textContent = hero.health;
-            showIncrease(healthInc, '+1');
-            updateHealthBars();
-          } else {
-            hero.gems++;
-            if (gemVal) gemVal.textContent = hero.gems;
-            showIncrease(gemInc, '+1');
-          }
-
-          setTimeout(() => {
-            document.dispatchEvent(new Event('close-question'));
-            heroAttack();
-          }, 2000);
-        }, 1000);
-      }, 1000);
+      setTimeout(heroAttack, 1000);
     } else {
       streak = 0;
       updateStreak();
@@ -264,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initBattle() {
     loadData();
-    setTimeout(showQuestion, 1000);
+    setTimeout(showQuestion, 2000);
   }
 
   if (window.preloadedData) {
