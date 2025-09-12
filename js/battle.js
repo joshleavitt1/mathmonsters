@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionText = questionBox.querySelector('p');
   const choicesEl = questionBox.querySelector('.choices');
+  const progressBar = questionBox.querySelector('.progress-bar');
   const progressFill = questionBox.querySelector('.progress-fill');
   const streakLabel = questionBox.querySelector('.streak-label');
   const attackVal = questionBox.querySelector('.attack .value');
@@ -78,9 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (data && data.missions) {
       questions = shuffle(data.missions.Walkthrough?.questions || []);
     }
-    attackVal.textContent = hero.attack;
-    healthVal.textContent = hero.health;
-    gemVal.textContent = hero.gems;
+    if (attackVal) attackVal.textContent = hero.attack;
+    if (healthVal) healthVal.textContent = hero.health;
+    if (gemVal) gemVal.textContent = hero.gems;
     heroNameEl.textContent = hero.name;
     monsterNameEl.textContent = monster.name;
     updateHealthBars();
@@ -127,11 +128,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const percent = Math.min(streak / STREAK_GOAL, 1) * 100;
     progressFill.style.width = percent + '%';
     if (streak > 0) {
+      progressBar.classList.add('with-label');
+      streakLabel.style.display = 'block';
       streakLabel.textContent = `${streak} in a row`;
       streakLabel.classList.remove('show');
       void streakLabel.offsetWidth;
       streakLabel.classList.add('show');
     } else {
+      progressBar.classList.remove('with-label');
+      streakLabel.style.display = 'none';
       streakLabel.textContent = '';
       streakLabel.classList.remove('show');
     }
@@ -139,10 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showIncrease(el, text) {
     [attackInc, healthInc, gemInc].forEach((inc) => {
-      inc.classList.remove('show');
-      inc.textContent = '';
+      if (inc) {
+        inc.classList.remove('show');
+        inc.textContent = '';
+      }
     });
 
+    if (!el) return;
     el.textContent = text;
     void el.offsetWidth;
     el.classList.add('show');
@@ -210,22 +218,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (streak >= STREAK_GOAL) {
             hero.attack *= 2;
-            attackVal.textContent = hero.attack;
+            if (attackVal) attackVal.textContent = hero.attack;
             showIncrease(attackInc, 'x2');
             streak = 0;
             updateStreak();
           } else if (stat === 'attack') {
             hero.attack++;
-            attackVal.textContent = hero.attack;
+            if (attackVal) attackVal.textContent = hero.attack;
             showIncrease(attackInc, '+1');
           } else if (stat === 'health') {
             hero.health++;
-            healthVal.textContent = hero.health;
+            if (healthVal) healthVal.textContent = hero.health;
             showIncrease(healthInc, '+1');
             updateHealthBars();
           } else {
             hero.gems++;
-            gemVal.textContent = hero.gems;
+            if (gemVal) gemVal.textContent = hero.gems;
             showIncrease(gemInc, '+1');
           }
 
