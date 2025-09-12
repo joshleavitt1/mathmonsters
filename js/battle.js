@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initBattle() {
     loadData();
-    setTimeout(showQuestion, 3000);
+    setTimeout(showQuestion, 1000);
   }
 
   if (window.preloadedData) {
