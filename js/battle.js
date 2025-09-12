@@ -199,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('answer-submitted', (e) => {
     const correct = e.detail.correct;
     if (correct) {
-      document.dispatchEvent(new Event('close-question'));
       streak++;
       updateStreak();
 
@@ -228,10 +227,15 @@ document.addEventListener('DOMContentLoaded', () => {
         updateHealthBars();
       }
 
+      // Keep the question visible briefly so the player can
+      // see the result and streak progress before it closes.
       setTimeout(() => {
-        showIncrease(incEl, incText);
-        setTimeout(heroAttack, 1000);
-      }, 300);
+        document.dispatchEvent(new Event('close-question'));
+        setTimeout(() => {
+          showIncrease(incEl, incText);
+          setTimeout(heroAttack, 1000);
+        }, 300);
+      }, 2000);
     } else {
       streak = 0;
       updateStreak();
