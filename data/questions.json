@@ -1,502 +1,882 @@
 [
   {
-    "q": "What is 10 + 36?",
+    "id": 1,
+    "question": "What is 3 + 4?",
     "options": [
-      "44",
-      "46",
-      "51",
-      "48"
+      7,
+      0,
+      5,
+      4
     ],
-    "answer": "46"
+    "answer": 7
   },
   {
-    "q": "What is 1 + 45?",
+    "id": 2,
+    "question": "What is 4 + 0?",
     "options": [
-      "46",
-      "47",
-      "49",
-      "44"
+      12,
+      4,
+      6,
+      3
     ],
-    "answer": "46"
+    "answer": 4
   },
   {
-    "q": "What is 47 + 11?",
+    "id": 3,
+    "question": "What is 8 + 0?",
     "options": [
-      "60",
-      "55",
-      "58",
-      "59"
+      3,
+      4,
+      8,
+      6
     ],
-    "answer": "58"
+    "answer": 8
   },
   {
-    "q": "What is 16 + 38?",
+    "id": 4,
+    "question": "What is 9 + 7?",
     "options": [
-      "55",
-      "58",
-      "54",
-      "52"
+      15,
+      0,
+      16,
+      9
     ],
-    "answer": "54"
+    "answer": 16
   },
   {
-    "q": "What is 20 + 21?",
+    "id": 5,
+    "question": "What is 1 + 0?",
     "options": [
-      "43",
-      "41",
-      "39",
-      "45"
+      2,
+      1,
+      13,
+      0
     ],
-    "answer": "41"
+    "answer": 1
   },
   {
-    "q": "What is 32 + 31?",
+    "id": 6,
+    "question": "What is 5 + 7?",
     "options": [
-      "63",
-      "68",
-      "67",
-      "60"
+      12,
+      17,
+      8,
+      5
     ],
-    "answer": "63"
+    "answer": 12
   },
   {
-    "q": "What is 19 + 14?",
+    "id": 7,
+    "question": "What is 4 + 9?",
     "options": [
-      "31",
-      "35",
-      "33",
-      "30"
+      14,
+      13,
+      15,
+      18
     ],
-    "answer": "33"
+    "answer": 13
   },
   {
-    "q": "What is 6 + 3?",
+    "id": 8,
+    "question": "What is 8 + 3?",
     "options": [
-      "9",
-      "14",
-      "11",
-      "6"
+      13,
+      18,
+      11,
+      17
     ],
-    "answer": "9"
+    "answer": 11
   },
   {
-    "q": "What is 43 + 5?",
+    "id": 9,
+    "question": "What is 9 + 4?",
     "options": [
-      "46",
-      "48",
-      "51",
-      "45"
+      6,
+      15,
+      13,
+      12
     ],
-    "answer": "48"
+    "answer": 13
   },
   {
-    "q": "What is 23 + 37?",
+    "id": 10,
+    "question": "What is 5 + 3?",
     "options": [
-      "57",
-      "65",
-      "62",
-      "60"
+      8,
+      14,
+      18,
+      3
     ],
-    "answer": "60"
+    "answer": 8
   },
   {
-    "q": "What is 33 + 19?",
+    "id": 11,
+    "question": "What is 0 + 7?",
     "options": [
-      "52",
-      "49",
-      "50",
-      "51"
+      0,
+      4,
+      15,
+      7
     ],
-    "answer": "52"
+    "answer": 7
   },
   {
-    "q": "What is 45 + 47?",
+    "id": 12,
+    "question": "What is 0 + 7?",
     "options": [
-      "95",
-      "94",
-      "92",
-      "97"
+      9,
+      12,
+      18,
+      7
     ],
-    "answer": "92"
+    "answer": 7
   },
   {
-    "q": "What is 21 + 39?",
+    "id": 13,
+    "question": "What is 0 + 2?",
     "options": [
-      "59",
-      "65",
-      "60",
-      "63"
+      14,
+      8,
+      6,
+      2
     ],
-    "answer": "60"
+    "answer": 2
   },
   {
-    "q": "What is 33 + 27?",
+    "id": 14,
+    "question": "What is 1 + 4?",
     "options": [
-      "62",
-      "58",
-      "64",
-      "60"
+      17,
+      0,
+      13,
+      5
     ],
-    "answer": "60"
+    "answer": 5
   },
   {
-    "q": "What is 7 + 15?",
+    "id": 15,
+    "question": "What is 9 + 4?",
     "options": [
-      "22",
-      "21",
-      "25",
-      "23"
+      17,
+      7,
+      13,
+      12
     ],
-    "answer": "22"
+    "answer": 13
   },
   {
-    "q": "What is 14 + 12?",
+    "id": 16,
+    "question": "What is 5 + 1?",
     "options": [
-      "28",
-      "31",
-      "25",
-      "26"
+      4,
+      6,
+      17,
+      3
     ],
-    "answer": "26"
+    "answer": 6
   },
   {
-    "q": "What is 25 + 45?",
+    "id": 17,
+    "question": "What is 3 + 3?",
     "options": [
-      "71",
-      "70",
-      "67",
-      "74"
+      17,
+      4,
+      14,
+      6
     ],
-    "answer": "70"
+    "answer": 6
   },
   {
-    "q": "What is 23 + 41?",
+    "id": 18,
+    "question": "What is 2 + 2?",
     "options": [
-      "68",
-      "62",
-      "65",
-      "64"
+      4,
+      12,
+      10,
+      3
     ],
-    "answer": "64"
+    "answer": 4
   },
   {
-    "q": "What is 33 + 34?",
+    "id": 19,
+    "question": "What is 2 + 2?",
     "options": [
-      "66",
-      "72",
-      "67",
-      "65"
+      10,
+      15,
+      4,
+      16
     ],
-    "answer": "67"
+    "answer": 4
   },
   {
-    "q": "What is 16 + 15?",
+    "id": 20,
+    "question": "What is 3 + 1?",
     "options": [
-      "36",
-      "29",
-      "30",
-      "31"
+      13,
+      4,
+      3,
+      12
     ],
-    "answer": "31"
+    "answer": 4
   },
   {
-    "q": "What is 15 + 14?",
+    "id": 21,
+    "question": "What is 9 + 1?",
     "options": [
-      "26",
-      "32",
-      "29",
-      "31"
+      6,
+      4,
+      15,
+      10
     ],
-    "answer": "29"
+    "answer": 10
   },
   {
-    "q": "What is 16 + 4?",
+    "id": 22,
+    "question": "What is 7 + 2?",
     "options": [
-      "24",
-      "18",
-      "19",
-      "20"
+      14,
+      10,
+      9,
+      12
     ],
-    "answer": "20"
+    "answer": 9
   },
   {
-    "q": "What is 41 + 41?",
+    "id": 23,
+    "question": "What is 3 + 6?",
     "options": [
-      "82",
-      "83",
-      "79",
-      "86"
+      9,
+      14,
+      5,
+      8
     ],
-    "answer": "82"
+    "answer": 9
   },
   {
-    "q": "What is 17 + 13?",
+    "id": 24,
+    "question": "What is 7 + 3?",
     "options": [
-      "28",
-      "32",
-      "33",
-      "30"
+      7,
+      10,
+      5,
+      9
     ],
-    "answer": "30"
+    "answer": 10
   },
   {
-    "q": "What is 34 + 22?",
+    "id": 25,
+    "question": "What is 3 + 0?",
     "options": [
-      "60",
-      "57",
-      "53",
-      "56"
+      2,
+      6,
+      17,
+      3
     ],
-    "answer": "56"
+    "answer": 3
   },
   {
-    "q": "What is 2 + 44?",
+    "id": 26,
+    "question": "What is 4 + 9?",
     "options": [
-      "46",
-      "49",
-      "48",
-      "51"
+      5,
+      13,
+      6,
+      4
     ],
-    "answer": "46"
+    "answer": 13
   },
   {
-    "q": "What is 37 + 21?",
+    "id": 27,
+    "question": "What is 9 + 9?",
     "options": [
-      "59",
-      "57",
-      "60",
-      "58"
+      18,
+      13,
+      5,
+      4
     ],
-    "answer": "58"
+    "answer": 18
   },
   {
-    "q": "What is 19 + 10?",
+    "id": 28,
+    "question": "What is 1 + 6?",
     "options": [
-      "29",
-      "30",
-      "28",
-      "33"
+      7,
+      13,
+      16,
+      3
     ],
-    "answer": "29"
+    "answer": 7
   },
   {
-    "q": "What is 31 + 16?",
+    "id": 29,
+    "question": "What is 9 + 0?",
     "options": [
-      "48",
-      "44",
-      "45",
-      "47"
+      12,
+      5,
+      0,
+      9
     ],
-    "answer": "47"
+    "answer": 9
   },
   {
-    "q": "What is 40 + 12?",
+    "id": 30,
+    "question": "What is 9 + 4?",
     "options": [
-      "53",
-      "49",
-      "55",
-      "52"
+      13,
+      4,
+      6,
+      16
     ],
-    "answer": "52"
+    "answer": 13
   },
   {
-    "q": "What is 42 + 16?",
+    "id": 31,
+    "question": "What is 9 + 7?",
     "options": [
-      "60",
-      "58",
-      "59",
-      "57"
+      13,
+      3,
+      12,
+      16
     ],
-    "answer": "58"
+    "answer": 16
   },
   {
-    "q": "What is 49 + 11?",
+    "id": 32,
+    "question": "What is 8 + 9?",
     "options": [
-      "65",
-      "58",
-      "63",
-      "60"
+      14,
+      1,
+      16,
+      17
     ],
-    "answer": "60"
+    "answer": 17
   },
   {
-    "q": "What is 28 + 30?",
+    "id": 33,
+    "question": "What is 3 + 3?",
     "options": [
-      "63",
-      "59",
-      "58",
-      "57"
+      6,
+      9,
+      7,
+      4
     ],
-    "answer": "58"
+    "answer": 6
   },
   {
-    "q": "What is 4 + 35?",
+    "id": 34,
+    "question": "What is 3 + 0?",
     "options": [
-      "44",
-      "37",
-      "39",
-      "40"
+      8,
+      18,
+      14,
+      3
     ],
-    "answer": "39"
+    "answer": 3
   },
   {
-    "q": "What is 3 + 21?",
+    "id": 35,
+    "question": "What is 1 + 2?",
     "options": [
-      "21",
-      "24",
-      "26",
-      "27"
+      0,
+      5,
+      3,
+      15
     ],
-    "answer": "24"
+    "answer": 3
   },
   {
-    "q": "What is 22 + 28?",
+    "id": 36,
+    "question": "What is 4 + 4?",
     "options": [
-      "52",
-      "51",
-      "55",
-      "50"
+      12,
+      8,
+      13,
+      11
     ],
-    "answer": "50"
+    "answer": 8
   },
   {
-    "q": "What is 1 + 8?",
+    "id": 37,
+    "question": "What is 4 + 1?",
     "options": [
-      "9",
-      "13",
-      "14",
-      "8"
+      17,
+      7,
+      8,
+      5
     ],
-    "answer": "9"
+    "answer": 5
   },
   {
-    "q": "What is 46 + 16?",
+    "id": 38,
+    "question": "What is 5 + 4?",
     "options": [
-      "66",
-      "67",
-      "63",
-      "62"
+      4,
+      12,
+      9,
+      8
     ],
-    "answer": "62"
+    "answer": 9
   },
   {
-    "q": "What is 50 + 19?",
+    "id": 39,
+    "question": "What is 6 + 8?",
     "options": [
-      "74",
-      "69",
-      "67",
-      "66"
+      14,
+      9,
+      17,
+      10
     ],
-    "answer": "69"
+    "answer": 14
   },
   {
-    "q": "What is 9 + 42?",
+    "id": 40,
+    "question": "What is 3 + 5?",
     "options": [
-      "51",
-      "53",
-      "56",
-      "50"
+      16,
+      8,
+      17,
+      15
     ],
-    "answer": "51"
+    "answer": 8
   },
   {
-    "q": "What is 42 + 19?",
+    "id": 41,
+    "question": "What is 4 + 5?",
     "options": [
-      "62",
-      "61",
-      "66",
-      "63"
+      9,
+      7,
+      3,
+      11
     ],
-    "answer": "61"
+    "answer": 9
   },
   {
-    "q": "What is 48 + 30?",
+    "id": 42,
+    "question": "What is 9 + 7?",
     "options": [
-      "83",
-      "76",
-      "77",
-      "78"
+      16,
+      13,
+      11,
+      7
     ],
-    "answer": "78"
+    "answer": 16
   },
   {
-    "q": "What is 11 + 34?",
+    "id": 43,
+    "question": "What is 3 + 3?",
     "options": [
-      "44",
-      "47",
-      "45",
-      "42"
+      6,
+      10,
+      2,
+      12
     ],
-    "answer": "45"
+    "answer": 6
   },
   {
-    "q": "What is 24 + 24?",
+    "id": 44,
+    "question": "What is 4 + 6?",
     "options": [
-      "48",
-      "52",
-      "45",
-      "49"
+      9,
+      16,
+      13,
+      10
     ],
-    "answer": "48"
+    "answer": 10
   },
   {
-    "q": "What is 11 + 43?",
+    "id": 45,
+    "question": "What is 6 + 5?",
     "options": [
-      "54",
-      "51",
-      "53",
-      "59"
+      3,
+      1,
+      16,
+      11
     ],
-    "answer": "54"
+    "answer": 11
   },
   {
-    "q": "What is 43 + 3?",
+    "id": 46,
+    "question": "What is 5 + 1?",
     "options": [
-      "46",
-      "44",
-      "51",
-      "48"
+      8,
+      12,
+      6,
+      18
     ],
-    "answer": "46"
+    "answer": 6
   },
   {
-    "q": "What is 43 + 30?",
+    "id": 47,
+    "question": "What is 3 + 9?",
     "options": [
-      "72",
-      "73",
-      "78",
-      "77"
+      9,
+      7,
+      8,
+      12
     ],
-    "answer": "73"
+    "answer": 12
   },
   {
-    "q": "What is 5 + 2?",
+    "id": 48,
+    "question": "What is 8 + 8?",
     "options": [
-      "11",
-      "7",
-      "4",
-      "5"
+      16,
+      2,
+      15,
+      13
     ],
-    "answer": "7"
+    "answer": 16
   },
   {
-    "q": "What is 35 + 16?",
+    "id": 49,
+    "question": "What is 2 + 2?",
     "options": [
-      "49",
-      "50",
-      "51",
-      "56"
+      11,
+      4,
+      3,
+      14
     ],
-    "answer": "51"
+    "answer": 4
   },
   {
-    "q": "What is 22 + 48?",
+    "id": 50,
+    "question": "What is 6 + 9?",
     "options": [
-      "70",
-      "72",
-      "69",
-      "75"
+      9,
+      12,
+      15,
+      13
     ],
-    "answer": "70"
+    "answer": 15
+  },
+  {
+    "id": 51,
+    "question": "What is 7 + 6?",
+    "options": [
+      9,
+      13,
+      5,
+      14
+    ],
+    "answer": 13
+  },
+  {
+    "id": 52,
+    "question": "What is 8 + 1?",
+    "options": [
+      2,
+      17,
+      10,
+      9
+    ],
+    "answer": 9
+  },
+  {
+    "id": 53,
+    "question": "What is 9 + 5?",
+    "options": [
+      10,
+      7,
+      4,
+      14
+    ],
+    "answer": 14
+  },
+  {
+    "id": 54,
+    "question": "What is 8 + 6?",
+    "options": [
+      14,
+      3,
+      18,
+      4
+    ],
+    "answer": 14
+  },
+  {
+    "id": 55,
+    "question": "What is 4 + 6?",
+    "options": [
+      10,
+      7,
+      9,
+      18
+    ],
+    "answer": 10
+  },
+  {
+    "id": 56,
+    "question": "What is 6 + 6?",
+    "options": [
+      16,
+      9,
+      12,
+      15
+    ],
+    "answer": 12
+  },
+  {
+    "id": 57,
+    "question": "What is 4 + 1?",
+    "options": [
+      1,
+      6,
+      17,
+      5
+    ],
+    "answer": 5
+  },
+  {
+    "id": 58,
+    "question": "What is 2 + 2?",
+    "options": [
+      2,
+      15,
+      4,
+      17
+    ],
+    "answer": 4
+  },
+  {
+    "id": 59,
+    "question": "What is 5 + 9?",
+    "options": [
+      14,
+      2,
+      17,
+      9
+    ],
+    "answer": 14
+  },
+  {
+    "id": 60,
+    "question": "What is 9 + 6?",
+    "options": [
+      18,
+      13,
+      15,
+      8
+    ],
+    "answer": 15
+  },
+  {
+    "id": 61,
+    "question": "What is 6 + 4?",
+    "options": [
+      8,
+      10,
+      1,
+      16
+    ],
+    "answer": 10
+  },
+  {
+    "id": 62,
+    "question": "What is 6 + 7?",
+    "options": [
+      13,
+      17,
+      18,
+      5
+    ],
+    "answer": 13
+  },
+  {
+    "id": 63,
+    "question": "What is 9 + 9?",
+    "options": [
+      17,
+      11,
+      18,
+      8
+    ],
+    "answer": 18
+  },
+  {
+    "id": 64,
+    "question": "What is 6 + 0?",
+    "options": [
+      6,
+      0,
+      15,
+      1
+    ],
+    "answer": 6
+  },
+  {
+    "id": 65,
+    "question": "What is 2 + 4?",
+    "options": [
+      0,
+      13,
+      1,
+      6
+    ],
+    "answer": 6
+  },
+  {
+    "id": 66,
+    "question": "What is 5 + 4?",
+    "options": [
+      13,
+      18,
+      9,
+      14
+    ],
+    "answer": 9
+  },
+  {
+    "id": 67,
+    "question": "What is 8 + 5?",
+    "options": [
+      4,
+      0,
+      12,
+      13
+    ],
+    "answer": 13
+  },
+  {
+    "id": 68,
+    "question": "What is 4 + 0?",
+    "options": [
+      7,
+      4,
+      1,
+      11
+    ],
+    "answer": 4
+  },
+  {
+    "id": 69,
+    "question": "What is 0 + 5?",
+    "options": [
+      7,
+      5,
+      4,
+      3
+    ],
+    "answer": 5
+  },
+  {
+    "id": 70,
+    "question": "What is 0 + 5?",
+    "options": [
+      15,
+      5,
+      2,
+      9
+    ],
+    "answer": 5
+  },
+  {
+    "id": 71,
+    "question": "What is 7 + 9?",
+    "options": [
+      15,
+      16,
+      5,
+      4
+    ],
+    "answer": 16
+  },
+  {
+    "id": 72,
+    "question": "What is 5 + 8?",
+    "options": [
+      5,
+      17,
+      15,
+      13
+    ],
+    "answer": 13
+  },
+  {
+    "id": 73,
+    "question": "What is 9 + 3?",
+    "options": [
+      13,
+      7,
+      6,
+      12
+    ],
+    "answer": 12
+  },
+  {
+    "id": 74,
+    "question": "What is 6 + 6?",
+    "options": [
+      18,
+      12,
+      16,
+      0
+    ],
+    "answer": 12
+  },
+  {
+    "id": 75,
+    "question": "What is 8 + 2?",
+    "options": [
+      18,
+      7,
+      1,
+      10
+    ],
+    "answer": 10
+  },
+  {
+    "id": 76,
+    "question": "What is 2 + 0?",
+    "options": [
+      2,
+      7,
+      8,
+      4
+    ],
+    "answer": 2
+  },
+  {
+    "id": 77,
+    "question": "What is 5 + 7?",
+    "options": [
+      14,
+      11,
+      0,
+      12
+    ],
+    "answer": 12
+  },
+  {
+    "id": 78,
+    "question": "What is 3 + 8?",
+    "options": [
+      6,
+      10,
+      11,
+      12
+    ],
+    "answer": 11
+  },
+  {
+    "id": 79,
+    "question": "What is 1 + 0?",
+    "options": [
+      10,
+      1,
+      18,
+      7
+    ],
+    "answer": 1
+  },
+  {
+    "id": 80,
+    "question": "What is 4 + 9?",
+    "options": [
+      13,
+      2,
+      4,
+      5
+    ],
+    "answer": 13
   }
 ]
