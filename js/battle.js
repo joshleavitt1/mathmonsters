@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentQuestion = 0;
   let streak = 0;
   let streakMaxed = false;
+  let streakIconShown = false;
 
   if (testButton) {
     testButton.addEventListener('click', () => {
@@ -147,10 +148,15 @@ document.addEventListener('DOMContentLoaded', () => {
       streakLabel.classList.remove('show');
       void streakLabel.offsetWidth;
       streakLabel.classList.add('show');
-      if (streakIcon) {
-        streakIcon.classList.remove('show');
-        void streakIcon.offsetWidth;
-        streakIcon.classList.add('show');
+      if (streakIcon && !streakIconShown) {
+        progressFill.addEventListener(
+          'transitionend',
+          () => {
+            streakIcon.classList.add('show');
+          },
+          { once: true }
+        );
+        streakIconShown = true;
       }
     } else {
       progressFill.style.background = '#006AFF';
@@ -166,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (streakIcon) {
         streakIcon.classList.remove('show');
       }
+      streakIconShown = false;
     }
   }
 
