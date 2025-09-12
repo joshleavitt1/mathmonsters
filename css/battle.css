@@ -61,7 +61,7 @@
 
 .stat-box .name {
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 18px;
+  font-size: 20px;
   color: #fff;
 }
 
@@ -160,5 +160,5 @@
   border-radius: 8px;
   padding: 12px 24px;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 18px;
+  font-size: 20px;
 }
