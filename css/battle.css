@@ -103,7 +103,7 @@
 
 .stat-box .stat .increase.show {
   opacity: 1;
-  transform: translateY(-10px);
+  transform: translateY(-7.5px);
 }
 
 .hp-bar {

@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     el.classList.add('show');
     setTimeout(() => {
       el.classList.remove('show');
-    }, 1000);
+    }, 2000);
   }
 
   function heroAttack() {
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
         monsterAttack();
-      }, 1000);
+      }, 2000);
     }
   });
 
