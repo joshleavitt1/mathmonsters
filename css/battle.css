@@ -95,7 +95,7 @@
   background: #00B600;
   color: #FFFFFF;
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 6px 12px;
   opacity: 0;
   transform: translateY(0);
   transition: opacity 0.3s, transform 0.3s;
