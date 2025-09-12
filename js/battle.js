@@ -203,36 +203,31 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('answer-submitted', (e) => {
     const correct = e.detail.correct;
     if (correct) {
-      setTimeout(() => {
-        streak++;
+      document.dispatchEvent(new Event('close-question'));
+      streak++;
+      updateStreak();
+
+      const stats = ['attack', 'health'];
+      const stat = stats[Math.floor(Math.random() * stats.length)];
+
+      if (streak >= STREAK_GOAL) {
+        hero.attack *= 2;
+        if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+        showIncrease(heroAttackInc, 'x2');
+        streak = 0;
         updateStreak();
-        setTimeout(() => {
-          const stats = ['attack', 'health'];
-          const stat = stats[Math.floor(Math.random() * stats.length)];
+      } else if (stat === 'attack') {
+        hero.attack++;
+        if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+        showIncrease(heroAttackInc, '+1');
+      } else {
+        hero.health++;
+        if (heroHealthVal) heroHealthVal.textContent = hero.health;
+        showIncrease(heroHealthInc, '+1');
+        updateHealthBars();
+      }
 
-          if (streak >= STREAK_GOAL) {
-            hero.attack *= 2;
-            if (heroAttackVal) heroAttackVal.textContent = hero.attack;
-            showIncrease(heroAttackInc, 'x2');
-            streak = 0;
-            updateStreak();
-          } else if (stat === 'attack') {
-            hero.attack++;
-            if (heroAttackVal) heroAttackVal.textContent = hero.attack;
-            showIncrease(heroAttackInc, '+1');
-          } else {
-            hero.health++;
-            if (heroHealthVal) heroHealthVal.textContent = hero.health;
-            showIncrease(heroHealthInc, '+1');
-            updateHealthBars();
-          }
-
-          setTimeout(() => {
-            document.dispatchEvent(new Event('close-question'));
-            heroAttack();
-          }, 2000);
-        }, 1000);
-      }, 1000);
+      setTimeout(heroAttack, 1000);
     } else {
       streak = 0;
       updateStreak();
