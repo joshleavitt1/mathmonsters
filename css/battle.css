@@ -169,6 +169,15 @@
   padding: 4px 8px;
 }
 
+#kill-enemy-btn {
+  position: fixed;
+  top: 40px;
+  right: 8px;
+  z-index: 1000;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
 #level-message {
   position: absolute;
   top: 0;

@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const streakLabel = questionBox.querySelector('.streak-label');
   const streakIcon = questionBox.querySelector('.streak-icon');
   const testButton = document.getElementById('set-streak-btn');
+  const killButton = document.getElementById('kill-enemy-btn');
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
   const heroAttackInc = heroStats.querySelector('.attack .increase');
@@ -49,6 +50,14 @@ document.addEventListener('DOMContentLoaded', () => {
       streak = Math.min(STREAK_GOAL - 1, 4);
       streakMaxed = false;
       updateStreak();
+    });
+  }
+
+  if (killButton) {
+    killButton.addEventListener('click', () => {
+      monster.damage = monster.health;
+      updateHealthBars();
+      endBattle(true);
     });
   }
 
