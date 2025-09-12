@@ -26,6 +26,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelMessage = document.getElementById('level-message');
   const levelText = levelMessage.querySelector('p');
   const levelButton = levelMessage.querySelector('button');
+  const completeMessage = document.getElementById('complete-message');
+  const completeEnemyImg = completeMessage?.querySelector('.enemy-image');
+  const levelTitle = completeMessage?.querySelector('.level-title');
+  const progressFill2 = completeMessage?.querySelector('.progress-fill');
+  const accuracyValue = completeMessage?.querySelector('.accuracy-value');
+  const speedValue = completeMessage?.querySelector('.speed-value');
+  const nextBattleBtn = completeMessage?.querySelector('.next-battle-btn');
 
   let STREAK_GOAL = 5;
   let questions = [];
@@ -33,6 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let streak = 0;
   let streakMaxed = false;
   let streakIconShown = false;
+  let correctAnswers = 0;
+  let totalAnswers = 0;
+  const battleStart = Date.now();
 
   if (testButton) {
     testButton.addEventListener('click', () => {
@@ -235,6 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('answer-submitted', (e) => {
     const correct = e.detail.correct;
+    totalAnswers++;
+    if (correct) correctAnswers++;
     if (correct) {
       let incEl = null;
       let incText = '';
@@ -310,13 +322,32 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function endBattle(win) {
-    levelText.textContent = win ? 'you win' : 'you lose';
-    levelMessage.classList.add('show');
+    if (win) {
+      const accuracy = totalAnswers
+        ? Math.round((correctAnswers / totalAnswers) * 100)
+        : 0;
+      const speed = Math.round((Date.now() - battleStart) / 1000);
+      if (accuracyValue) accuracyValue.textContent = `${accuracy}%`;
+      if (speedValue) speedValue.textContent = `${speed}s`;
+      if (completeEnemyImg) completeEnemyImg.src = monsterImg.src;
+      if (progressFill2) progressFill2.style.width = '100%';
+      if (levelTitle) levelTitle.textContent = 'Level 1';
+      completeMessage?.classList.add('show');
+    } else {
+      levelText.textContent = 'you lose';
+      levelMessage.classList.add('show');
+    }
   }
 
   levelButton.addEventListener('click', () => {
     window.location.reload();
   });
+
+  if (nextBattleBtn) {
+    nextBattleBtn.addEventListener('click', () => {
+      window.location.href = '../html/level.html';
+    });
+  }
 
   function initBattle() {
     loadData();
