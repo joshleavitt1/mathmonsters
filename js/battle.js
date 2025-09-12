@@ -338,7 +338,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const speed = Math.round((Date.now() - battleStart) / 1000);
       if (accuracyValue) accuracyValue.textContent = `${accuracy}%`;
       if (speedValue) speedValue.textContent = `${speed}s`;
-      if (completeEnemyImg) completeEnemyImg.src = monsterImg.src;
+      if (completeEnemyImg) {
+        completeEnemyImg.src = monsterImg.src;
+        setTimeout(() => {
+          completeEnemyImg.classList.add('fade-out');
+          completeEnemyImg.addEventListener(
+            'transitionend',
+            () => {
+              completeEnemyImg.src = '../images/battle/monster_complete.png';
+              completeEnemyImg.classList.remove('fade-out');
+            },
+            { once: true }
+          );
+        }, 2000);
+      }
       if (progressFill2) progressFill2.style.width = '100%';
       if (levelTitle) levelTitle.textContent = 'Level 1';
       completeMessage?.classList.add('show');
