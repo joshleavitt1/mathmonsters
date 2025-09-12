@@ -94,7 +94,7 @@
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   background: #00B600;
   color: #FFFFFF;
-  padding: 12px 4px
+  padding: 12px 4px;
   opacity: 0;
   transform: translateY(0);
   transition: opacity 0.3s, transform 0.3s;
