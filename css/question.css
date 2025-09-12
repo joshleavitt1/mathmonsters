@@ -76,8 +76,12 @@
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0;
-  margin-right: 16px;
+  margin-right: 0;
   flex: 1;
+}
+
+#question .progress-bar.with-label {
+  margin-right: 16px;
 }
 
 #question .progress-fill {
@@ -95,6 +99,7 @@
   opacity: 0;
   transform: scale(0.8);
   white-space: nowrap;
+  display: none;
 }
 
 #question .streak-label.show {

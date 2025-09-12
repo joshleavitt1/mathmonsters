@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionText = questionBox.querySelector('p');
   const choicesEl = questionBox.querySelector('.choices');
+  const progressBar = questionBox.querySelector('.progress-bar');
   const progressFill = questionBox.querySelector('.progress-fill');
   const streakLabel = questionBox.querySelector('.streak-label');
   const attackVal = questionBox.querySelector('.attack .value');
@@ -127,11 +128,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const percent = Math.min(streak / STREAK_GOAL, 1) * 100;
     progressFill.style.width = percent + '%';
     if (streak > 0) {
+      progressBar.classList.add('with-label');
+      streakLabel.style.display = 'block';
       streakLabel.textContent = `${streak} in a row`;
       streakLabel.classList.remove('show');
       void streakLabel.offsetWidth;
       streakLabel.classList.add('show');
     } else {
+      progressBar.classList.remove('with-label');
+      streakLabel.style.display = 'none';
       streakLabel.textContent = '';
       streakLabel.classList.remove('show');
     }
