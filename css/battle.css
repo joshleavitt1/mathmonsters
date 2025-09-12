@@ -67,7 +67,7 @@
 
 .stat-box .stats {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   align-items: center;
 }
 
