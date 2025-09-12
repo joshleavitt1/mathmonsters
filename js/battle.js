@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressBar = questionBox.querySelector('.progress-bar');
   const progressFill = questionBox.querySelector('.progress-fill');
   const streakLabel = questionBox.querySelector('.streak-label');
+  const streakIcon = questionBox.querySelector('.streak-icon');
+  const testButton = document.getElementById('set-streak-btn');
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
   const heroAttackInc = heroStats.querySelector('.attack .increase');
@@ -29,6 +31,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let questions = [];
   let currentQuestion = 0;
   let streak = 0;
+  let streakMaxed = false;
+
+  if (testButton) {
+    testButton.addEventListener('click', () => {
+      streak = Math.min(STREAK_GOAL - 1, 4);
+      streakMaxed = false;
+      updateStreak();
+    });
+  }
 
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
@@ -129,13 +140,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const percent = Math.min(streak / STREAK_GOAL, 1) * 100;
     progressFill.style.width = percent + '%';
     progressBar.classList.add('with-label');
-    streakLabel.textContent = `${streak} in a row`;
-    if (streak > 0) {
+    if (streakMaxed) {
+      progressFill.style.background = '#FF6A00';
+      streakLabel.textContent = '2x attack';
+      streakLabel.style.color = '#FF6A00';
       streakLabel.classList.remove('show');
       void streakLabel.offsetWidth;
       streakLabel.classList.add('show');
+      if (streakIcon) {
+        streakIcon.classList.remove('show');
+        void streakIcon.offsetWidth;
+        streakIcon.classList.add('show');
+      }
     } else {
-      streakLabel.classList.remove('show');
+      progressFill.style.background = '#006AFF';
+      streakLabel.style.color = '#006AFF';
+      streakLabel.textContent = `${streak} in a row`;
+      if (streak > 0) {
+        streakLabel.classList.remove('show');
+        void streakLabel.offsetWidth;
+        streakLabel.classList.add('show');
+      } else {
+        streakLabel.classList.remove('show');
+      }
+      if (streakIcon) {
+        streakIcon.classList.remove('show');
+      }
     }
   }
 
@@ -199,33 +229,51 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('answer-submitted', (e) => {
     const correct = e.detail.correct;
     if (correct) {
-      streak++;
-      updateStreak();
-
-      const stats = ['attack', 'health'];
-      const stat = stats[Math.floor(Math.random() * stats.length)];
       let incEl = null;
       let incText = '';
-
-      if (streak >= STREAK_GOAL) {
-        hero.attack *= 2;
-        if (heroAttackVal) heroAttackVal.textContent = hero.attack;
-        incEl = heroAttackInc;
-        incText = 'x2';
-        streak = 0;
-        updateStreak();
-      } else if (stat === 'attack') {
-        hero.attack++;
-        if (heroAttackVal) heroAttackVal.textContent = hero.attack;
-        incEl = heroAttackInc;
-        incText = '+1';
+      if (!streakMaxed) {
+        streak++;
+        if (streak >= STREAK_GOAL) {
+          streak = STREAK_GOAL;
+          streakMaxed = true;
+          hero.attack *= 2;
+          if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+          incEl = heroAttackInc;
+          incText = 'x2';
+        } else {
+          const stats = ['attack', 'health'];
+          const stat = stats[Math.floor(Math.random() * stats.length)];
+          if (stat === 'attack') {
+            hero.attack++;
+            if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+            incEl = heroAttackInc;
+            incText = '+1';
+          } else {
+            hero.health++;
+            if (heroHealthVal) heroHealthVal.textContent = hero.health;
+            incEl = heroHealthInc;
+            incText = '+1';
+            updateHealthBars();
+          }
+        }
       } else {
-        hero.health++;
-        if (heroHealthVal) heroHealthVal.textContent = hero.health;
-        incEl = heroHealthInc;
-        incText = '+1';
-        updateHealthBars();
+        const stats = ['attack', 'health'];
+        const stat = stats[Math.floor(Math.random() * stats.length)];
+        if (stat === 'attack') {
+          hero.attack++;
+          if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+          incEl = heroAttackInc;
+          incText = '+1';
+        } else {
+          hero.health++;
+          if (heroHealthVal) heroHealthVal.textContent = hero.health;
+          incEl = heroHealthInc;
+          incText = '+1';
+          updateHealthBars();
+        }
       }
+
+      updateStreak();
 
       // Keep the question visible briefly so the player can
       // see the result and streak progress before it closes.
@@ -238,6 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 2000);
     } else {
       streak = 0;
+      streakMaxed = false;
       updateStreak();
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
