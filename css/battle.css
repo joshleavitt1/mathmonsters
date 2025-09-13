@@ -205,11 +205,12 @@
 }
 
 #level-message .content button {
+  width: 100%;
+  height: 64px;
   background: #006AFF;
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 12px 24px;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
 }
@@ -356,7 +357,7 @@
 
 #complete-message .content button {
   width: 100%;
-  height: 56px;
+  height: 64px;
   background: #006AFF;
   color: #fff;
   border: none;

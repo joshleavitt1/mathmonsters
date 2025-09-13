@@ -141,13 +141,13 @@ html, body {
 
 #message button {
   width: 100%;
-  height: 56px;
+  height: 64px;
   background: #006AFF;
   color: #fff;
   border: none;
   border-radius: 8px;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 #message .generic-content {
