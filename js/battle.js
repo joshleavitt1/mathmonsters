@@ -317,13 +317,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Keep the question visible briefly so the player can
       // see the result and streak progress before it closes.
+      // If the streak just hit the goal (x2), linger a bit longer.
+      const lingerTime = incText === 'x2' ? 4000 : 2000;
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
         setTimeout(() => {
           showIncrease(incEl, incText);
           setTimeout(heroAttack, 1000);
         }, 300);
-      }, 2000);
+      }, lingerTime);
     } else {
       streak = 0;
       streakMaxed = false;
