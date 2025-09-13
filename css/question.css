@@ -68,6 +68,11 @@
 #question .top-bar {
   width: 100%;
   align-items: center;
+  display: none;
+}
+
+#question .top-bar.show {
+  display: flex;
 }
 
 #question .progress-wrap {
