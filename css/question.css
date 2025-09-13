@@ -68,11 +68,17 @@
 #question .top-bar {
   width: 100%;
   align-items: center;
-  display: none;
+  display: flex;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 #question .top-bar.show {
-  display: flex;
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 #question .progress-wrap {
