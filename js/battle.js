@@ -227,6 +227,12 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         monster.damage += hero.attack;
         updateHealthBars();
+        if (streakMaxed) {
+          // Double-attack was used; reset streak.
+          streak = 0;
+          streakMaxed = false;
+          updateStreak();
+        }
         setTimeout(() => {
           if (monster.damage >= monster.health) {
             endBattle(true);
