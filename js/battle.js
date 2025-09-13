@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     progressBar.classList.add('with-label');
     if (streakMaxed) {
       progressFill.style.background = '#FF6A00';
-      streakLabel.textContent = '2x attack';
+      streakLabel.textContent = '2x Attack';
       streakLabel.style.color = '#FF6A00';
       streakLabel.classList.remove('show');
       void streakLabel.offsetWidth;
@@ -323,12 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.addEventListener('close-question', () => {
-    streak = 0;
-    streakMaxed = false;
-    streakIconShown = false;
-    updateStreak();
-  });
+
 
   function endBattle(win) {
     if (win) {
