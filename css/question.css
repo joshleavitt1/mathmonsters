@@ -156,8 +156,6 @@
   100% { opacity: 1; transform: scale(2.5); }
 }
 
-
-
 #question .choices {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -202,6 +200,9 @@
 }
 
 #question .choice p {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 16px;
+  color: #888888;
   margin: 0;
   text-align: center;
 }
