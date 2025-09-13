@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroStats = document.getElementById('shellfin-stats');
 
   const questionBox = document.getElementById('question');
-  const questionText = questionBox.querySelector('p');
+  const questionText = questionBox.querySelector('.question-text');
   const choicesEl = questionBox.querySelector('.choices');
   const topBar = questionBox.querySelector('.top-bar');
   const progressBar = questionBox.querySelector('.progress-bar');

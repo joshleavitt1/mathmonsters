@@ -40,13 +40,14 @@
   color: #888888;
 }
 
-#question p {
+#question .question-text {
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 24px;
   margin: 0;
   padding: 0;
   color: #272B34;
   width: 100%;
+  padding-top: 16px;
 }
 
 #question button {
@@ -68,7 +69,7 @@
 #question .top-bar {
   width: 100%;
   align-items: center;
-  display: flex;
+  display: none;
   visibility: hidden;
   opacity: 0;
   transform: translateY(10px);
@@ -76,9 +77,14 @@
 }
 
 #question .top-bar.show {
+  display: flex;
   visibility: visible;
   opacity: 1;
   transform: translateY(0);
+}
+
+#question .top-bar.show + .question-text {
+  padding-top: 0;
 }
 
 #question .progress-wrap {
