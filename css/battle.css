@@ -321,14 +321,14 @@
   transition: width 0.5s ease-in-out;
 }
 
-#complete-message .stats {
+#complete-message .level-boxes {
   width: 100%;
   height: 100%;
   display: flex;
   gap: 16px;
 }
 
-#complete-message .stat-box {
+#complete-message .level-boxes .level-box {
   flex: 1;
   background: #F6F6F6;
   border-radius: 8px;
@@ -340,14 +340,14 @@
   gap: 8px;
 }
 
-#complete-message .stat-box .label {
+#complete-message .level-boxes .level-box .label {
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 14px;
   color: #858585;
   margin: 0;
 }
 
-#complete-message .stat-box .value {
+#complete-message .level-boxes .level-box .value {
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 24px;
   color: #006AFF;
