@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressFill2 = completeMessage?.querySelector('.progress-fill');
   const accuracyValue = completeMessage?.querySelector('.accuracy-value');
   const speedValue = completeMessage?.querySelector('.speed-value');
+  const checkIcon = completeMessage?.querySelector('.check-icon');
   const nextBattleBtn = completeMessage?.querySelector('.next-battle-btn');
 
   let STREAK_GOAL = 5;
@@ -336,16 +337,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (completeEnemyImg) {
         completeEnemyImg.src = monsterImg.src;
         setTimeout(() => {
-          completeEnemyImg.classList.add('fade-out');
-          completeEnemyImg.addEventListener(
-            'transitionend',
-            () => {
-              completeEnemyImg.src = '../images/battle/monster_complete.png';
-              completeEnemyImg.classList.remove('fade-out');
-            },
-            { once: true }
-          );
-        }, 2000);
+          completeEnemyImg.classList.add('dimmed');
+          if (checkIcon) checkIcon.classList.add('show');
+        }, 1000);
       }
       if (progressFill2) progressFill2.style.width = '100%';
       if (levelTitle) levelTitle.textContent = 'Level 1';
