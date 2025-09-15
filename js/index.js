@@ -17,6 +17,8 @@ const initLandingInteractions = () => {
 
   const defaultTabIndex = messageCard.getAttribute('tabindex') ?? '0';
   let hideMessageCardTimeout;
+  let activateOverlayTimeout;
+  const MESSAGE_CARD_POP_DURATION = 450;
 
   const loadLevelPreview = async () => {
     try {
@@ -70,26 +72,34 @@ const initLandingInteractions = () => {
   loadLevelPreview();
 
   const openOverlay = () => {
-    if (document.body.classList.contains('level-open')) {
+    if (
+      document.body.classList.contains('level-open') ||
+      messageCard.classList.contains('message-card--activating')
+    ) {
       return;
     }
 
     window.clearTimeout(hideMessageCardTimeout);
+    window.clearTimeout(activateOverlayTimeout);
     messageCard.classList.remove('message-card--hidden');
-
-    document.body.classList.add('level-open');
-    levelOverlay.setAttribute('aria-hidden', 'false');
+    messageCard.classList.add('message-card--activating');
     messageCard.setAttribute('aria-expanded', 'true');
-    messageCard.setAttribute('aria-hidden', 'true');
-    messageCard.setAttribute('tabindex', '-1');
 
-    window.setTimeout(() => {
-      battleButton?.focus({ preventScroll: true });
-    }, 400);
+    activateOverlayTimeout = window.setTimeout(() => {
+      messageCard.classList.remove('message-card--activating');
+      document.body.classList.add('level-open');
+      levelOverlay.setAttribute('aria-hidden', 'false');
+      messageCard.setAttribute('aria-hidden', 'true');
+      messageCard.setAttribute('tabindex', '-1');
 
-    hideMessageCardTimeout = window.setTimeout(() => {
-      messageCard.classList.add('message-card--hidden');
-    }, 620);
+      window.setTimeout(() => {
+        battleButton?.focus({ preventScroll: true });
+      }, 400);
+
+      hideMessageCardTimeout = window.setTimeout(() => {
+        messageCard.classList.add('message-card--hidden');
+      }, 620);
+    }, MESSAGE_CARD_POP_DURATION);
   };
 
   const closeOverlay = () => {
@@ -98,6 +108,8 @@ const initLandingInteractions = () => {
     }
 
     window.clearTimeout(hideMessageCardTimeout);
+    window.clearTimeout(activateOverlayTimeout);
+    messageCard.classList.remove('message-card--activating');
     messageCard.classList.remove('message-card--hidden');
     document.body.classList.remove('level-open');
     levelOverlay.setAttribute('aria-hidden', 'true');
