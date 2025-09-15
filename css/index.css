@@ -24,13 +24,9 @@ main.landing {
   left: 50%;
   max-width: 300px;
   max-height: 300px;
-  transform: translate(-250%, 0);
-  animation-name: hero-slide, hero-float;
-  animation-duration: 1.5s, 3.5s;
-  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1), ease-in-out;
-  animation-delay: 0s, 1.5s;
-  animation-fill-mode: forwards, both;
-  animation-iteration-count: 1, infinite;
+  transform: translateX(150%);
+  animation: hero-slide 1.35s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
+    hero-float 3.5s ease-in-out 1.35s infinite;
   image-rendering: auto;
   z-index: 2;
   pointer-events: none;
@@ -38,22 +34,25 @@ main.landing {
 
 @keyframes hero-slide {
   0% {
-    transform: translate(150%, 0);
+    transform: translateX(150%);
+  }
+  80% {
+    transform: translateX(-54%);
   }
   100% {
-    transform: translate(-50%, 0);
+    transform: translateX(-50%);
   }
 }
 
 @keyframes hero-float {
   0% {
-    transform: translate(-50%, 0);
+    transform: translateX(-50%) translateY(0);
   }
   50% {
-    transform: translate(-50%, -16px);
+    transform: translateX(-50%) translateY(-16px);
   }
   100% {
-    transform: translate(-50%, 0);
+    transform: translateX(-50%) translateY(0);
   }
 }
 
@@ -66,40 +65,80 @@ main.landing {
 }
 
 .bubble {
+  --drift: 0px;
   position: absolute;
   bottom: -80px;
   left: var(--left);
   width: var(--size);
   height: var(--size);
-  background: rgba(255, 255, 255, 0.55);
+  background: radial-gradient(
+      circle at 32% 32%,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 255, 255, 0.18) 35%,
+      rgba(255, 255, 255, 0.05) 60%,
+      rgba(255, 255, 255, 0) 100%
+    );
   border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.75);
   opacity: 0;
   animation: bubble-rise var(--duration) ease-in infinite;
   animation-delay: var(--delay);
-  filter: blur(0.25px);
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.25);
+  filter: blur(0.2px);
 }
 
+.bubble:nth-of-type(odd) {
+  --drift: 10px;
+}
+
+.bubble:nth-of-type(3n) {
+  --drift: -8px;
+}
+
+.bubble::before,
 .bubble::after {
   content: '';
   position: absolute;
-  inset: 20%;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.bubble::before {
+  top: 18%;
+  left: 22%;
+  width: 28%;
+  height: 28%;
+  background: rgba(255, 255, 255, 0.85);
+  filter: blur(2px);
+  opacity: 0.85;
+}
+
+.bubble::after {
+  inset: 12%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 40%,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(255, 255, 255, 0.05) 70%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  filter: blur(1.25px);
 }
 
 @keyframes bubble-rise {
   0% {
-    transform: translateY(0) scale(0.7);
+    transform: translate3d(0, 0, 0) scale(0.68);
     opacity: 0;
   }
-  15% {
-    opacity: 0.5;
+  20% {
+    opacity: 0.55;
   }
-  40% {
-    opacity: 0.8;
+  45% {
+    opacity: 0.92;
   }
   100% {
-    transform: translateY(-110vh) scale(1.05);
+    transform: translate3d(var(--drift, 0px), -110vh, 0) scale(1.06);
     opacity: 0;
   }
 }
@@ -118,13 +157,14 @@ main.landing {
   gap: 24px;
   align-items: flex-start;
   text-align: left;
-  overflow:hidden;
+  overflow: hidden;
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
   animation: message-pop 0.5s ease-out forwards;
   animation-delay: 2.2s;
   z-index: 3;
   cursor: pointer;
   transition: transform 0.6s ease, opacity 0.6s ease;
+  visibility: visible;
 }
 
 @keyframes message-pop {
@@ -176,6 +216,12 @@ main.landing {
   transform: translate(-50%, 4px) scale(0.98);
 }
 
+.message-card--hidden {
+  visibility: hidden;
+  pointer-events: none;
+  display: none;
+}
+
 body.level-open {
   overflow: hidden;
 }
@@ -203,55 +249,74 @@ body.level-open .message-card {
 
 .level-overlay .level-card {
   width: min(420px, 100%);
-  padding: 28px;
+  padding: 32px 32px 36px;
   border-radius: 16px;
   background: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
   box-shadow: 0 24px 54px rgba(17, 30, 52, 0.35);
   transform: translateY(24px) scale(0.95);
   transition: transform 0.6s ease;
-}
-
-.level-overlay .progress-bar {
-  width: 100%;
-  height: 16px;
-  background: #f4f6fa;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.level-overlay .progress-fill {
-  width: var(--progress-current, 0%);
-  height: 100%;
-  background: linear-gradient(90deg, #00a1ff 0%, #006aff 100%);
-  transition: width 0.6s ease;
 }
 
 .level-overlay .level-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-}
-
-.level-overlay .level-title {
-  margin: 0;
-  font-size: 20px;
-  color: #9c9c9c;
+  gap: 6px;
 }
 
 .level-overlay .math-type {
   margin: 0;
-  font-size: 36px;
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #778099;
+}
+
+.level-overlay .battle-title {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 700;
   color: #272b34;
 }
 
 .level-overlay .enemy-image {
   width: min(220px, 60%);
   height: auto;
+}
+
+.level-overlay .battle-stats {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(0, 48, 120, 0.08);
+  border-radius: 12px;
+}
+
+.level-overlay .battle-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.level-overlay .stat-label {
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7a859b;
+}
+
+.level-overlay .stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1d2433;
 }
 
 .level-overlay .btn-primary {
@@ -286,8 +351,4 @@ body.level-open .level-overlay {
 
 body.level-open .level-overlay .level-card {
   transform: translateY(0) scale(1);
-}
-
-body.level-open .level-overlay .progress-fill {
-  width: var(--progress-target, 0%);
 }

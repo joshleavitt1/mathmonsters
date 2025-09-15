@@ -44,20 +44,33 @@
       />
     </aside>
     <div id="level-overlay" class="level-overlay" aria-hidden="true">
-      <div class="level-card" role="dialog" aria-modal="true" aria-labelledby="level-overlay-title">
-        <div class="progress-bar">
-          <div class="progress-fill"></div>
-        </div>
+      <div
+        class="level-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="level-overlay-battle level-overlay-math"
+        aria-describedby="level-overlay-stats"
+      >
         <div class="level-info">
-          <p id="level-overlay-title" class="level-title level-number">Level 1</p>
-          <p class="math-type">Addition</p>
+          <p id="level-overlay-math" class="math-type">Addition</p>
+          <p id="level-overlay-battle" class="battle-title">Battle 1</p>
         </div>
         <img
           class="enemy-image"
           src="images/battle/monster_battle.png"
           alt="Enemy monster ready for battle"
         />
-        <button class="btn-primary battle-btn" type="button">Battle</button>
+        <div id="level-overlay-stats" class="battle-stats" aria-live="polite">
+          <div class="battle-stat">
+            <span class="stat-label">Accuracy</span>
+            <span class="stat-value accuracy-value">0</span>
+          </div>
+          <div class="battle-stat">
+            <span class="stat-label">Time</span>
+            <span class="stat-value time-value">0</span>
+          </div>
+        </div>
+        <button class="btn-primary battle-btn" type="button">Let's Battle</button>
       </div>
     </div>
   </main>
