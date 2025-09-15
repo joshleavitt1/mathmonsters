@@ -73,13 +73,12 @@ main.landing {
   height: var(--size);
   background: radial-gradient(
       circle at 32% 32%,
-      rgba(255, 255, 255, 0.45) 0%,
-      rgba(255, 255, 255, 0.18) 35%,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.05) 35%,
       rgba(255, 255, 255, 0.05) 60%,
       rgba(255, 255, 255, 0) 100%
     );
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.75);
   opacity: 0;
   animation: bubble-rise var(--duration) ease-in infinite;
   animation-delay: var(--delay);
@@ -151,7 +150,7 @@ main.landing {
   transform: translate(-50%, calc(100% + 16px)) scale(0.9);
   min-width: 400px;
   padding: 24px;
-  border-radius: 16px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.96);
   display: flex;
   gap: 24px;
