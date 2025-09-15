@@ -25,7 +25,14 @@
       alt="Shellfin swimming into view"
     />
 
-    <aside class="message-card" aria-live="polite">
+    <aside
+      class="message-card"
+      role="button"
+      tabindex="0"
+      aria-live="polite"
+      aria-controls="level-overlay"
+      aria-expanded="false"
+    >
       <div class="message-text">
         <p class="message-title">Addition</p>
         <p class="message-subtitle">Battle 1</p>
@@ -36,6 +43,24 @@
         alt="Enemy monster ready for battle"
       />
     </aside>
+    <div id="level-overlay" class="level-overlay" aria-hidden="true">
+      <div class="level-card" role="dialog" aria-modal="true" aria-labelledby="level-overlay-title">
+        <div class="progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="level-info">
+          <p id="level-overlay-title" class="level-title level-number">Level 1</p>
+          <p class="math-type">Addition</p>
+        </div>
+        <img
+          class="enemy-image"
+          src="images/battle/monster_battle.png"
+          alt="Enemy monster ready for battle"
+        />
+        <button class="btn-primary battle-btn" type="button">Battle</button>
+      </div>
+    </div>
   </main>
+  <script src="js/index.js" defer></script>
 </body>
 </html>
