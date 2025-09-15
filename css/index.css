@@ -211,6 +211,17 @@ main.landing {
   visibility: visible;
 }
 
+/* Prevent rapid re-triggering while the card is animating */
+.message-card--animating {
+  pointer-events: none;
+}
+
+body.message-exiting .message-card {
+  transform: translate(-50%, -40vh) scale(1.2);
+  opacity: 0;
+  pointer-events: none;
+}
+
 @keyframes message-pop {
   0%   { transform: translate(-50%, calc(100% + 16px)) scale(0.8); opacity: 0; }
   60%  { transform: translate(-50%, -8px) scale(1.05); opacity: 1; }
@@ -228,11 +239,6 @@ main.landing {
 .message-card--hidden { visibility: hidden; pointer-events: none; display: none; }
 
 body.level-open { overflow: hidden; }
-body.level-open .message-card {
-  transform: translate(-50%, -40vh) scale(1.2);
-  opacity: 0;
-  pointer-events: none;
-}
 
 .level-overlay {
   position: fixed;
@@ -306,5 +312,9 @@ body.level-open .level-overlay .level-card { transform: translateY(0) scale(1); 
 @media (prefers-reduced-motion: reduce) {
   .bubble { animation: none; opacity: 0.35; }
   .hero { animation: none; transform: translateX(-50%); }
-  .message-card { animation: none; }
+  .message-card {
+    animation: none;
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
 }
