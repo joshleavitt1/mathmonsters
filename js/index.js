@@ -2,18 +2,21 @@ const initLandingInteractions = () => {
   const messageCard = document.querySelector('.message-card');
   const levelOverlay = document.getElementById('level-overlay');
   const battleButton = levelOverlay?.querySelector('.battle-btn');
-  const progressFill = levelOverlay?.querySelector('.progress-fill');
   const messageTitle = messageCard?.querySelector('.message-title');
   const messageSubtitle = messageCard?.querySelector('.message-subtitle');
   const messageEnemy = messageCard?.querySelector('.message-enemy');
-  const overlayLevel = levelOverlay?.querySelector('.level-number');
   const overlayMath = levelOverlay?.querySelector('.math-type');
   const overlayEnemy = levelOverlay?.querySelector('.enemy-image');
-  const progressBar = levelOverlay?.querySelector('.progress-bar');
+  const overlayBattleTitle = levelOverlay?.querySelector('.battle-title');
+  const overlayAccuracy = levelOverlay?.querySelector('.accuracy-value');
+  const overlayTime = levelOverlay?.querySelector('.time-value');
 
   if (!messageCard || !levelOverlay) {
     return;
   }
+
+  const defaultTabIndex = messageCard.getAttribute('tabindex') ?? '0';
+  let hideMessageCardTimeout;
 
   const loadLevelPreview = async () => {
     try {
@@ -25,47 +28,39 @@ const initLandingInteractions = () => {
         return;
       }
 
-      const { id, math, enemySprite, progress } = firstLevel;
-      const enemyPath = `images/${enemySprite}`;
+      const { id, math, enemySprite } = firstLevel;
+      const enemyPath = typeof enemySprite === 'string' ? `images/${enemySprite}` : '';
 
-      if (messageTitle) {
+      if (messageTitle && typeof math === 'string') {
         messageTitle.textContent = math;
       }
 
-      if (messageSubtitle) {
+      if (messageSubtitle && typeof id !== 'undefined') {
         messageSubtitle.textContent = `Battle ${id}`;
       }
 
-      if (messageEnemy) {
+      if (messageEnemy && enemyPath) {
         messageEnemy.src = enemyPath;
       }
 
-      if (overlayLevel) {
-        overlayLevel.textContent = `Level ${id}`;
-      }
-
-      if (overlayMath) {
+      if (overlayMath && typeof math === 'string') {
         overlayMath.textContent = math;
       }
 
-      if (overlayEnemy) {
+      if (overlayBattleTitle && typeof id !== 'undefined') {
+        overlayBattleTitle.textContent = `Battle ${id}`;
+      }
+
+      if (overlayEnemy && enemyPath) {
         overlayEnemy.src = enemyPath;
       }
 
-      const safeProgress = Math.max(0, Math.min(progress ?? 0, 1));
-      const progressPercent = safeProgress * 100;
-      const percentLabel = `${Math.round(progressPercent * 10) / 10}%`;
-
-      if (progressFill) {
-        progressFill.style.setProperty('--progress-target', percentLabel);
+      if (overlayAccuracy) {
+        overlayAccuracy.textContent = '0';
       }
 
-      if (progressBar && progressFill) {
-        progressBar.setAttribute('role', 'progressbar');
-        progressBar.setAttribute('aria-label', 'Level progress');
-        progressBar.setAttribute('aria-valuemin', '0');
-        progressBar.setAttribute('aria-valuemax', '100');
-        progressBar.setAttribute('aria-valuenow', `${Math.round(progressPercent)}`);
+      if (overlayTime) {
+        overlayTime.textContent = '0';
       }
     } catch (error) {
       console.error('Failed to load level preview', error);
@@ -79,18 +74,22 @@ const initLandingInteractions = () => {
       return;
     }
 
+    window.clearTimeout(hideMessageCardTimeout);
+    messageCard.classList.remove('message-card--hidden');
+
     document.body.classList.add('level-open');
     levelOverlay.setAttribute('aria-hidden', 'false');
     messageCard.setAttribute('aria-expanded', 'true');
+    messageCard.setAttribute('aria-hidden', 'true');
+    messageCard.setAttribute('tabindex', '-1');
 
     window.setTimeout(() => {
       battleButton?.focus({ preventScroll: true });
     }, 400);
 
-    if (progressBar && progressFill) {
-      const target = progressFill.style.getPropertyValue('--progress-target') || '0%';
-      progressBar.setAttribute('aria-valuenow', target.replace('%', ''));
-    }
+    hideMessageCardTimeout = window.setTimeout(() => {
+      messageCard.classList.add('message-card--hidden');
+    }, 620);
   };
 
   const closeOverlay = () => {
@@ -98,10 +97,17 @@ const initLandingInteractions = () => {
       return;
     }
 
+    window.clearTimeout(hideMessageCardTimeout);
+    messageCard.classList.remove('message-card--hidden');
     document.body.classList.remove('level-open');
     levelOverlay.setAttribute('aria-hidden', 'true');
     messageCard.setAttribute('aria-expanded', 'false');
-    messageCard.focus({ preventScroll: true });
+    messageCard.setAttribute('aria-hidden', 'false');
+    messageCard.setAttribute('tabindex', defaultTabIndex);
+
+    window.setTimeout(() => {
+      messageCard.focus({ preventScroll: true });
+    }, 520);
   };
 
   messageCard.addEventListener('click', openOverlay);

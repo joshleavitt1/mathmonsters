@@ -7,15 +7,34 @@
   <link rel="stylesheet" href="../css/level.css" />
 </head>
 <body>
-  <div class="level-message">
-    <div class="progress-bar"><div class="progress-fill"></div></div>
-    <div class="level-info">
-      <p class="level-title level-number">Level 1</p>
-      <p class="math-type">Addition</p>
-    </div>
-    <img class="enemy-image" src="../images/battle/monster_battle.png" alt="Enemy" />
-    <button class="btn-primary battle-btn">Battle</button>
-  </div>
+  <main class="level-screen">
+    <section
+      class="level-message"
+      aria-labelledby="level-screen-battle level-screen-math"
+      aria-describedby="level-screen-stats"
+    >
+      <div class="level-info">
+        <p id="level-screen-math" class="math-type">Addition</p>
+        <p id="level-screen-battle" class="battle-title">Battle 1</p>
+      </div>
+      <img
+        class="enemy-image"
+        src="../images/battle/monster_battle.png"
+        alt="Enemy monster ready for battle"
+      />
+      <div id="level-screen-stats" class="battle-stats" aria-live="polite">
+        <div class="battle-stat">
+          <span class="stat-label">Accuracy</span>
+          <span class="stat-value accuracy-value">0</span>
+        </div>
+        <div class="battle-stat">
+          <span class="stat-label">Time</span>
+          <span class="stat-value time-value">0</span>
+        </div>
+      </div>
+      <button class="btn-primary battle-btn" type="button">Let's Battle</button>
+    </section>
+  </main>
   <script src="../js/level.js"></script>
 </body>
 </html>
