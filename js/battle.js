@@ -1,5 +1,6 @@
 const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
+const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 
 const readVisitedFlag = (storage, label) => {
   if (!storage) {
@@ -84,19 +85,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const monsterAttackVal = monsterStats.querySelector('.attack .value');
   const monsterHealthVal = monsterStats.querySelector('.health .value');
 
-  const battleMessage = document.getElementById('battle-message');
-  const battleMessageText = battleMessage?.querySelector('p');
-  const battleMessageButton = battleMessage?.querySelector('button');
   const completeMessage = document.getElementById('complete-message');
+  const battleCompleteTitle = completeMessage?.querySelector('#battle-complete-title');
   const completeEnemyImg = completeMessage?.querySelector('.enemy-image');
-  const summaryAccuracyValue = completeMessage?.querySelector('.summary-accuracy');
-  const summaryTimeValue = completeMessage?.querySelector('.summary-time');
+  const summaryAccuracyStat = completeMessage?.querySelector('[data-goal="accuracy"]');
+  const summaryTimeStat = completeMessage?.querySelector('[data-goal="time"]');
+  const summaryAccuracyValue = summaryAccuracyStat?.querySelector('.summary-accuracy');
+  const summaryTimeValue = summaryTimeStat?.querySelector('.summary-time');
   const nextMissionBtn = completeMessage?.querySelector('.next-mission-btn');
+
+  const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
+  const summaryTimeText = ensureStatValueText(summaryTimeValue);
 
   if (bannerAccuracyValue) bannerAccuracyValue.textContent = '0%';
   if (bannerTimeValue) bannerTimeValue.textContent = '0s';
-  if (summaryAccuracyValue) summaryAccuracyValue.textContent = '0%';
-  if (summaryTimeValue) summaryTimeValue.textContent = '0s';
+  if (summaryAccuracyText) summaryAccuracyText.textContent = '0%';
+  if (summaryTimeText) summaryTimeText.textContent = '0s';
 
   let STREAK_GOAL = 5;
   let questions = [];
@@ -106,9 +110,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let streakIconShown = false;
   let correctAnswers = 0;
   let totalAnswers = 0;
-  const battleStart = Date.now();
+  let accuracyGoal = null;
+  let timeGoalSeconds = 0;
+  let timeRemaining = 0;
+  let battleTimerDeadline = null;
   let battleTimerInterval = null;
   let battleEnded = false;
+  let currentBattleLevel = null;
 
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
@@ -137,11 +145,101 @@ document.addEventListener('DOMContentLoaded', () => {
     return arr;
   }
 
+  function ensureStatValueText(valueEl) {
+    if (!valueEl) {
+      return null;
+    }
+    const existing = valueEl.querySelector('.stat-value-text');
+    if (existing) {
+      return existing;
+    }
+    const span = document.createElement('span');
+    span.classList.add('stat-value-text');
+    const initialText = valueEl.textContent ? valueEl.textContent.trim() : '';
+    span.textContent = initialText;
+    valueEl.textContent = '';
+    valueEl.appendChild(span);
+    return span;
+  }
+
+  function applyGoalResult(valueEl, textSpan, text, met) {
+    if (!valueEl || !textSpan) {
+      return;
+    }
+    textSpan.textContent = text;
+    let icon = valueEl.querySelector('.goal-result-icon');
+    if (!icon) {
+      icon = document.createElement('img');
+      icon.classList.add('goal-result-icon');
+      valueEl.insertBefore(icon, textSpan);
+    }
+    icon.src = met
+      ? '../images/complete/correct.svg'
+      : '../images/complete/incorrect.svg';
+    icon.alt = met ? 'Goal met' : 'Goal not met';
+    valueEl.classList.remove('goal-result--met', 'goal-result--missed');
+    valueEl.classList.add(met ? 'goal-result--met' : 'goal-result--missed');
+  }
+
+  function persistProgress(update) {
+    if (!update || typeof update !== 'object') {
+      return;
+    }
+
+    if (window.preloadedData?.variables) {
+      const existingProgress =
+        typeof window.preloadedData.variables.progress === 'object' &&
+        window.preloadedData.variables.progress !== null
+          ? window.preloadedData.variables.progress
+          : {};
+      window.preloadedData.variables.progress = {
+        ...existingProgress,
+        ...update,
+      };
+    }
+
+    try {
+      const storage = window.localStorage;
+      if (!storage) {
+        return;
+      }
+      const raw = storage.getItem(PROGRESS_STORAGE_KEY);
+      let storedProgress = {};
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            storedProgress = parsed;
+          }
+        } catch (error) {
+          storedProgress = {};
+        }
+      }
+      const mergedProgress = { ...storedProgress, ...update };
+      storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(mergedProgress));
+    } catch (error) {
+      console.warn('Unable to save progress.', error);
+    }
+  }
+
+  function advanceBattleLevel() {
+    const baseLevel =
+      typeof currentBattleLevel === 'number'
+        ? currentBattleLevel
+        : typeof window.preloadedData?.variables?.progress?.battleLevel === 'number'
+        ? window.preloadedData.variables.progress.battleLevel
+        : 0;
+    const nextLevel = baseLevel + 1;
+    persistProgress({ battleLevel: nextLevel });
+    currentBattleLevel = nextLevel;
+  }
+
   function loadData() {
     const data = window.preloadedData ?? {};
     const battleData = data.battle ?? {};
     const heroData = data.hero ?? {};
     const enemyData = data.enemy ?? {};
+    const progressData = data.variables?.progress ?? {};
 
     const resolveAssetPath = (path) => {
       if (typeof path !== 'string' || path.trim().length === 0) {
@@ -162,6 +260,39 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return `../${trimmed}`;
     };
+
+    currentBattleLevel =
+      typeof progressData.battleLevel === 'number'
+        ? progressData.battleLevel
+        : typeof data.level?.battleLevel === 'number'
+        ? data.level.battleLevel
+        : null;
+
+    accuracyGoal =
+      typeof battleData.accuracyGoal === 'number' &&
+      Number.isFinite(battleData.accuracyGoal)
+        ? battleData.accuracyGoal
+        : null;
+
+    const parsedTimeGoal = Number(battleData.timeGoalSeconds);
+    timeGoalSeconds =
+      Number.isFinite(parsedTimeGoal) && parsedTimeGoal > 0
+        ? Math.floor(parsedTimeGoal)
+        : 0;
+
+    const storedTime = Number(progressData.timeRemainingSeconds);
+    if (Number.isFinite(storedTime) && storedTime > 0) {
+      timeRemaining = Math.floor(storedTime);
+      if (timeGoalSeconds > 0) {
+        timeRemaining = Math.min(timeRemaining, timeGoalSeconds);
+      }
+    } else {
+      timeRemaining = timeGoalSeconds;
+    }
+
+    if (!Number.isFinite(timeRemaining) || timeRemaining < 0) {
+      timeRemaining = 0;
+    }
 
     STREAK_GOAL = Number(battleData.streakGoal) || STREAK_GOAL;
 
@@ -204,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (heroNameEl) heroNameEl.textContent = hero.name;
     if (monsterNameEl) monsterNameEl.textContent = monster.name;
     if (completeEnemyImg && monster.name) {
-      completeEnemyImg.alt = `${monster.name} defeated in battle`;
+      completeEnemyImg.alt = `${monster.name} ready for battle`;
     }
 
     const loadedQuestions = Array.isArray(data.questions)
@@ -213,6 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     questions = shuffle(loadedQuestions);
 
     updateHealthBars();
+    updateBattleTimeDisplay();
   }
 
   function updateHealthBars() {
@@ -229,18 +361,48 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateAccuracyDisplays() {
     const accuracy = calculateAccuracy();
     if (bannerAccuracyValue) bannerAccuracyValue.textContent = `${accuracy}%`;
-    if (summaryAccuracyValue) summaryAccuracyValue.textContent = `${accuracy}%`;
+    if (summaryAccuracyText) summaryAccuracyText.textContent = `${accuracy}%`;
   }
 
-  function updateBattleTime() {
-    const elapsed = Math.max(0, Math.round((Date.now() - battleStart) / 1000));
-    if (bannerTimeValue) bannerTimeValue.textContent = `${elapsed}s`;
+  function updateBattleTimeDisplay() {
+    const timeValue = Number.isFinite(timeRemaining) ? Math.max(0, Math.floor(timeRemaining)) : 0;
+    if (bannerTimeValue) bannerTimeValue.textContent = `${timeValue}s`;
+    if (summaryTimeText) summaryTimeText.textContent = `${timeValue}s`;
+  }
+
+  function handleBattleTimerTick() {
+    if (battleEnded) {
+      stopBattleTimer();
+      return;
+    }
+    if (!Number.isFinite(battleTimerDeadline)) {
+      stopBattleTimer();
+      return;
+    }
+    const now = Date.now();
+    const secondsLeft = Math.max(0, Math.ceil((battleTimerDeadline - now) / 1000));
+    if (secondsLeft !== timeRemaining) {
+      timeRemaining = secondsLeft;
+      updateBattleTimeDisplay();
+    }
+    if (secondsLeft <= 0) {
+      endBattle(false, { reason: 'timeout' });
+    }
   }
 
   function startBattleTimer() {
     stopBattleTimer();
-    updateBattleTime();
-    battleTimerInterval = setInterval(updateBattleTime, 1000);
+    if (!Number.isFinite(timeRemaining) || timeRemaining <= 0) {
+      timeRemaining = Math.max(0, Number.isFinite(timeRemaining) ? Math.floor(timeRemaining) : 0);
+      updateBattleTimeDisplay();
+      if (timeGoalSeconds > 0 && !battleEnded) {
+        endBattle(false, { reason: 'timeout' });
+      }
+      return;
+    }
+    battleTimerDeadline = Date.now() + timeRemaining * 1000;
+    updateBattleTimeDisplay();
+    battleTimerInterval = window.setInterval(handleBattleTimerTick, 250);
   }
 
   function stopBattleTimer() {
@@ -248,6 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
       clearInterval(battleTimerInterval);
       battleTimerInterval = null;
     }
+    battleTimerDeadline = null;
   }
 
   function showQuestion() {
@@ -512,44 +675,106 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 2000);
     }
   });
-  function endBattle(win) {
+  function endBattle(win, _options = {}) {
     if (battleEnded) {
       return;
     }
     battleEnded = true;
     devControls?.classList.add('battle-dev-controls--hidden');
+    document.dispatchEvent(new Event('close-question'));
     stopBattleTimer();
     updateAccuracyDisplays();
+    updateBattleTimeDisplay();
+
+    const accuracy = calculateAccuracy();
+    const accuracyDisplay = `${accuracy}%`;
+    const accuracyGoalMet =
+      typeof accuracyGoal === 'number' ? accuracy / 100 >= accuracyGoal : true;
+
+    const timeValue = Number.isFinite(timeRemaining)
+      ? Math.max(0, Math.floor(timeRemaining))
+      : 0;
+    const timeDisplay = `${timeValue}s`;
+    const timeGoalMet = timeGoalSeconds > 0 ? timeValue > 0 : true;
+
+    if (summaryAccuracyValue && summaryAccuracyText) {
+      applyGoalResult(
+        summaryAccuracyValue,
+        summaryAccuracyText,
+        accuracyDisplay,
+        accuracyGoalMet
+      );
+    }
+
+    if (summaryTimeValue && summaryTimeText) {
+      applyGoalResult(
+        summaryTimeValue,
+        summaryTimeText,
+        timeDisplay,
+        timeGoalMet
+      );
+    }
+
+    if (completeEnemyImg && monsterImg) {
+      completeEnemyImg.src = monsterImg.src;
+      if (monster.name) {
+        completeEnemyImg.alt = win
+          ? `${monster.name} defeated in battle`
+          : `${monster.name} preparing for the next battle`;
+      }
+    }
+
+    if (battleCompleteTitle) {
+      battleCompleteTitle.textContent = win
+        ? 'Monster Defeated!'
+        : 'Keep Practicing!';
+    }
+
+    if (nextMissionBtn) {
+      nextMissionBtn.textContent = win ? 'Next Mission' : 'Try Again';
+      nextMissionBtn.dataset.action = win ? 'next' : 'retry';
+    }
+
+    if (completeMessage) {
+      completeMessage.classList.add('show');
+      completeMessage.setAttribute('aria-hidden', 'false');
+    }
+
     if (win) {
-      const accuracy = calculateAccuracy();
-      const elapsed = Math.round((Date.now() - battleStart) / 1000);
-      if (summaryAccuracyValue) summaryAccuracyValue.textContent = `${accuracy}%`;
-      if (summaryTimeValue) summaryTimeValue.textContent = `${elapsed}s`;
-      if (bannerTimeValue) bannerTimeValue.textContent = `${elapsed}s`;
-      if (completeEnemyImg) {
-        completeEnemyImg.src = monsterImg.src;
-      }
-      completeMessage?.classList.add('show');
-    } else {
-      if (battleMessageText) {
-        battleMessageText.textContent = 'you lose';
-      }
-      battleMessage?.classList.add('show');
+      advanceBattleLevel();
     }
   }
 
-  battleMessageButton?.addEventListener('click', () => {
-    window.location.reload();
-  });
-
   if (nextMissionBtn) {
     nextMissionBtn.addEventListener('click', () => {
-      window.location.href = '../index.html';
+      const action = nextMissionBtn.dataset.action;
+      if (action === 'retry') {
+        window.location.reload();
+      } else {
+        window.location.href = '../index.html';
+      }
     });
   }
 
   function initBattle() {
     battleEnded = false;
+    if (completeMessage) {
+      completeMessage.classList.remove('show');
+      completeMessage.setAttribute('aria-hidden', 'true');
+    }
+    if (battleCompleteTitle) {
+      battleCompleteTitle.textContent = 'Battle Complete';
+    }
+    if (nextMissionBtn) {
+      nextMissionBtn.textContent = 'Next Mission';
+      nextMissionBtn.dataset.action = 'next';
+    }
+    if (summaryAccuracyValue) {
+      summaryAccuracyValue.classList.remove('goal-result--met', 'goal-result--missed');
+    }
+    if (summaryTimeValue) {
+      summaryTimeValue.classList.remove('goal-result--met', 'goal-result--missed');
+    }
     loadData();
     updateStreak();
     updateAccuracyDisplays();

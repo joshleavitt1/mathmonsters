@@ -1,3 +1,23 @@
+const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
+
+const readStoredProgress = () => {
+  try {
+    const storage = window.localStorage;
+    if (!storage) {
+      return null;
+    }
+    const raw = storage.getItem(PROGRESS_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (error) {
+    console.warn('Stored progress could not be read.', error);
+    return null;
+  }
+};
+
 (async function () {
   try {
     const [varsRes, levelsRes] = await Promise.all([
@@ -15,7 +35,23 @@
     ]);
 
     const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
-    const progress = varsData?.progress ?? {};
+    const storedProgress = readStoredProgress();
+    const baseVariables =
+      varsData && typeof varsData === 'object' ? varsData : {};
+    const baseProgress =
+      baseVariables && typeof baseVariables.progress === 'object'
+        ? baseVariables.progress
+        : {};
+    const progress = { ...baseProgress };
+
+    if (storedProgress && typeof storedProgress === 'object') {
+      if (typeof storedProgress.battleLevel === 'number') {
+        progress.battleLevel = storedProgress.battleLevel;
+      }
+      if (typeof storedProgress.timeRemainingSeconds === 'number') {
+        progress.timeRemainingSeconds = storedProgress.timeRemainingSeconds;
+      }
+    }
     const activeBattleLevel =
       progress.battleLevel ?? levels[0]?.battleLevel ?? null;
 
@@ -48,9 +84,10 @@
     const battle = currentLevel?.battle ?? {};
     const hero = battle?.hero ?? null;
     const enemy = battle?.enemy ?? null;
+    const variables = { ...baseVariables, progress };
 
     window.preloadedData = {
-      variables: varsData ?? {},
+      variables,
       levels,
       level: currentLevel,
       battle,
