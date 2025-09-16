@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reef Rangers</title>
+  <link rel="stylesheet" href="css/battle-card.css" />
   <link rel="stylesheet" href="css/index.css" />
 </head>
 <body>
@@ -30,7 +31,7 @@
       role="button"
       tabindex="0"
       aria-live="polite"
-      aria-controls="level-overlay"
+      aria-controls="battle-overlay"
       aria-expanded="false"
     >
       <div class="message-text">
@@ -43,24 +44,24 @@
         alt="Enemy monster ready for battle"
       />
     </aside>
-    <div id="level-overlay" class="level-overlay" aria-hidden="true">
+    <div id="battle-overlay" class="battle-overlay" aria-hidden="true">
       <div
-        class="level-card"
+        class="battle-card battle-overlay-card"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="level-overlay-battle level-overlay-math"
-        aria-describedby="level-overlay-stats"
+        aria-labelledby="battle-overlay-title battle-overlay-math"
+        aria-describedby="battle-overlay-stats"
       >
-        <div class="level-info">
-          <p id="level-overlay-math" class="math-type">Addition</p>
-          <p id="level-overlay-battle" class="battle-title">Battle 1</p>
+        <div class="battle-info">
+          <p id="battle-overlay-math" class="math-type">Addition</p>
+          <p id="battle-overlay-title" class="battle-title">Battle 1</p>
         </div>
         <img
           class="enemy-image"
           src="images/battle/monster_battle.png"
           alt="Enemy monster ready for battle"
         />
-        <div id="level-overlay-stats" class="battle-stats" aria-live="polite">
+        <div id="battle-overlay-stats" class="battle-stats" aria-live="polite">
           <div class="battle-stat">
             <span class="stat-label">Accuracy</span>
             <span class="stat-value accuracy-value">0</span>
