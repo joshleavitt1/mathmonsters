@@ -1,14 +1,13 @@
 {
   "levels": [
     {
-      "id": 1,
-      "name": "Coral Camp",
+      "battleLevel": 1,
+      "name": "Level 1", 
       "battle": {
         "questionReference": {
-          "file": "questions.json",
-          "setId": "addition_basic"
+          "file": "questions/level_1_questions_.json"
         },
-        "accuracyGoal": 0.7,
+        "accuracyGoal": 0.8,
         "timeGoalSeconds": 120,
         "streakGoal": 3,
         "hero": {
@@ -24,18 +23,17 @@
           "sprite": "images/battle/monster_battle.png",
           "name": "Octomurk",
           "attack": 1,
-          "health": 6,
-          "damage": 1
+          "health": 20,
+          "damage": 0
         }
       }
     },
     {
-      "id": 2,
-      "name": "Kelp Forest Clash",
+      "battleLevel": 2,
+      "name": "Level 2",
       "battle": {
         "questionReference": {
-          "file": "questions.json",
-          "setId": "addition_basic"
+          "file": "questions/level_2_questions_.json"
         },
         "accuracyGoal": 0.8,
         "timeGoalSeconds": 90,
@@ -45,45 +43,16 @@
           "sprite": "images/battle/shellfin_battle.png",
           "name": "Shellfin",
           "attack": 2,
-          "health": 4,
-          "damage": 1
+          "health": 6,
+          "damage": 0
         },
         "enemy": {
           "id": "octomurk",
           "sprite": "images/battle/monster_battle.png",
           "name": "Octomurk",
           "attack": 2,
-          "health": 12,
-          "damage": 2
-        }
-      }
-    },
-    {
-      "id": 3,
-      "name": "Trench Showdown",
-      "battle": {
-        "questionReference": {
-          "file": "questions.json",
-          "setId": "addition_basic"
-        },
-        "accuracyGoal": 0.85,
-        "timeGoalSeconds": 75,
-        "streakGoal": 5,
-        "hero": {
-          "id": "shellfin",
-          "sprite": "images/battle/shellfin_battle.png",
-          "name": "Shellfin",
-          "attack": 3,
-          "health": 5,
-          "damage": 2
-        },
-        "enemy": {
-          "id": "octomurk",
-          "sprite": "images/battle/monster_battle.png",
-          "name": "Octomurk",
-          "attack": 3,
-          "health": 18,
-          "damage": 3
+          "health": 40,
+          "damage": 0
         }
       }
     }
