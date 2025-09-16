@@ -222,7 +222,7 @@
 }
 
 #complete-message .battle-panel {
-  width: min(520px, calc(100% - 32px));
+  width: min(420px, calc(100% - 32px));
   flex-wrap: wrap;
   align-items: stretch;
   row-gap: 24px;
@@ -319,17 +319,4 @@
 .battle-dev-controls__btn:focus-visible {
   outline: 3px solid #00a1ff;
   outline-offset: 2px;
-}
-
-@media (max-width: 640px) {
-  .battle-dev-controls {
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-  }
-
-  .battle-dev-controls__btn {
-    width: 100%;
-    text-align: center;
-  }
 }

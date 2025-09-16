@@ -2,7 +2,7 @@
   display: flex;
   align-items: flex-start;
   gap: 24px;
-  width: min(520px, calc(100% - 32px));
+  width: min(420px, calc(100% - 32px));
   box-sizing: border-box;
   padding: 24px;
   border-radius: 16px;
@@ -50,17 +50,4 @@
 
 .battle-panel--buttony {
   cursor: pointer;
-}
-
-@media (max-width: 600px) {
-  .battle-panel {
-    gap: 16px;
-    width: calc(100% - 24px);
-    padding: 20px;
-  }
-
-  .battle-panel__enemy {
-    transform: translate(32px, -12px);
-    width: min(180px, 40%);
-  }
 }
