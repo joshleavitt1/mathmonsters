@@ -53,7 +53,7 @@
 }
 
 .battle-card {
-  width: min(440px, 100%);
+  max-width: 440px;
   background: #ffffff;
   border-radius: 8px;
   padding: 36px 32px 40px;
