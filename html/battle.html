@@ -14,6 +14,16 @@
   <body>
   <button id="set-streak-btn" type="button">Set Streak 4</button>
   <button id="kill-enemy-btn" type="button">Kill Enemy</button>
+  <div class="battle-stat-banner" aria-live="polite">
+    <div class="stat">
+      <span class="label">Accuracy</span>
+      <span class="value" data-banner-accuracy>0%</span>
+    </div>
+    <div class="stat">
+      <span class="label">Time</span>
+      <span class="value" data-banner-time>0s</span>
+    </div>
+  </div>
   <div id="battle">
     <img id="battle-monster" src="../images/battle/monster_battle.png" alt="Monster" />
     <img id="battle-shellfin" src="../images/battle/shellfin_battle.png" alt="Shellfin" />
@@ -66,29 +76,29 @@
         <button type="button">Submit</button>
       </div>
     </div>
-    <div id="complete-message">
-      <div class="content">
-        <h1>Mission Complete</h1>
-        <div class="enemy-wrapper">
-          <img class="enemy-image" src="../images/battle/monster_battle.png" alt="Enemy" />
-          <img class="check-icon" src="../images/complete/check.svg" alt="Complete" />
+    <div id="complete-message" role="dialog" aria-modal="true" aria-labelledby="battle-complete-title">
+      <section class="level-message battle-complete-card">
+        <div class="level-info">
+          <p class="math-type">Victory</p>
+          <p id="battle-complete-title" class="battle-title">Battle Complete</p>
         </div>
-        <div class="level-box">
-          <p class="level-title">Level 1</p>
-          <div class="progress-bar"><div class="progress-fill"></div></div>
-        </div>
-        <div class="level-boxes">
-          <div class="level-box">
-            <p class="label">Accuracy</p>
-            <p class="value accuracy-value">0%</p>
+        <img
+          class="enemy-image"
+          src="../images/battle/monster_battle.png"
+          alt="Enemy defeated in battle"
+        />
+        <div class="battle-stats">
+          <div class="battle-stat">
+            <span class="stat-label">Accuracy</span>
+            <span class="stat-value summary-accuracy">0%</span>
           </div>
-          <div class="level-box">
-            <p class="label">Speed</p>
-            <p class="value speed-value">0s</p>
+          <div class="battle-stat">
+            <span class="stat-label">Time</span>
+            <span class="stat-value summary-time">0s</span>
           </div>
         </div>
-        <button type="button" class="next-battle-btn">Next Battle</button>
-      </div>
+        <button type="button" class="btn-primary next-mission-btn">Next Mission</button>
+      </section>
     </div>
     <div id="level-message">
       <div class="content">
