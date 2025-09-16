@@ -90,6 +90,7 @@
   margin: 0;
   font-size: 32px;
   font-weight: 700;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   color: #272b34;
 }
 
@@ -125,6 +126,7 @@
 .battle-panel__stats .stat-label {
   font-size: 18px;
   color: #888888;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
 }
 
 .battle-card .stat-value,
@@ -132,6 +134,7 @@
   font-size: 24px;
   font-weight: 700;
   color: #006AFF;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
 }
 
 .btn-primary {
