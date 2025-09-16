@@ -56,7 +56,7 @@
   background: #006AFF;
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 16px;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
 }
@@ -82,7 +82,7 @@
   background: #F1F5FF;
   color: #1D2433;
   border: 2px dashed #006AFF;
-  border-radius: 8px;
+  border-radius: 16px;
   font-size: 16px;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -199,7 +199,7 @@
 
 #question .choice {
   background: #F6F6F6;
-  border-radius: 8px;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;

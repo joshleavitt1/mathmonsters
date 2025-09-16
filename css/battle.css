@@ -36,7 +36,7 @@
   align-items: center;
   padding: 16px;
   gap: 16px;
-  border-radius: 8px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(4px);
 }
@@ -86,7 +86,7 @@
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   background: #00B600;
   color: #FFFFFF;
-  border-radius: 8px;
+  border-radius: 16px;
   padding: 6px 12px;
   opacity: 0;
   transform: scale(0);
@@ -190,7 +190,7 @@
 #battle-message .content {
   background: #fff;
   padding: 24px;
-  border-radius: 8px;
+  border-radius: 16px;
   text-align: center;
 }
 
@@ -284,7 +284,7 @@
   justify-content: center;
   gap: 12px;
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: 16px;
   background: rgba(17, 30, 52, 0.65);
   backdrop-filter: blur(8px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
@@ -299,7 +299,7 @@
   border: 2px dashed #006aff;
   background: #f1f5ff;
   color: #1d2433;
-  border-radius: 8px;
+  border-radius: 16px;
   padding: 10px 16px;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 16px;
