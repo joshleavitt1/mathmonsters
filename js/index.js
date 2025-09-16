@@ -119,6 +119,7 @@ const initLandingInteractions = () => {
     levelOverlay.setAttribute('aria-hidden', 'true');
     messageCard.classList.remove('message-card--hidden');
     messageCard.classList.add('message-card--animating');
+    messageCard.classList.add('message-card--no-delay');
     messageCard.setAttribute('aria-expanded', 'false');
     messageCard.setAttribute('aria-hidden', 'false');
     messageCard.setAttribute('tabindex', defaultTabIndex);
