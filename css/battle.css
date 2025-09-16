@@ -221,30 +221,13 @@
   visibility: visible;
 }
 
-#complete-message .battle-panel {
-  width: min(420px, calc(100% - 32px));
-  flex-wrap: wrap;
-  align-items: stretch;
-  row-gap: 24px;
-}
-
-#complete-message .battle-panel__body {
-  gap: 16px;
-}
-
-#complete-message .battle-panel__enemy {
-  transform: none;
-  width: min(200px, 38%);
-  align-self: center;
-}
-
-#complete-message .battle-panel__stats {
-  width: 100%;
+#complete-message .battle-complete-card {
+  width: min(440px, calc(100% - 32px));
 }
 
 #complete-message .btn-primary {
   width: 100%;
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 .battle-stat-banner {
