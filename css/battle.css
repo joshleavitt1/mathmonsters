@@ -275,18 +275,15 @@
 
 .battle-dev-controls {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 12px;
+  right: 12px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  background: rgba(17, 30, 52, 0.90);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
   z-index: 60;
 }
 
@@ -295,26 +292,20 @@
 }
 
 .battle-dev-controls__btn {
-  border: 2px dashed #006aff;
-  background: #f1f5ff;
+  border: 1px solid #b9c1ce;
+  background: #ffffff;
   color: #1d2433;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 16px;
+  border-radius: 0;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.2;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.battle-dev-controls__btn:hover {
-  background: #e3ecff;
-  color: #0040aa;
-  border-color: #0040aa;
-  transform: translateY(-1px);
+  box-shadow: none;
+  text-transform: none;
 }
 
 .battle-dev-controls__btn:focus-visible {
-  outline: 3px solid #00a1ff;
+  outline: 2px solid #1d2433;
   outline-offset: 2px;
 }
