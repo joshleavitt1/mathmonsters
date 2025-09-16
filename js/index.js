@@ -1,11 +1,21 @@
 const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 
-const markLandingVisited = () => {
-  try {
-    sessionStorage.setItem(LANDING_VISITED_KEY, 'true');
-  } catch (error) {
-    console.warn('Session storage is not available.', error);
+const VISITED_VALUE = 'true';
+
+const setVisitedFlag = (storage, label) => {
+  if (!storage) {
+    return;
   }
+  try {
+    storage.setItem(LANDING_VISITED_KEY, VISITED_VALUE);
+  } catch (error) {
+    console.warn(`${label} storage is not available.`, error);
+  }
+};
+
+const markLandingVisited = () => {
+  setVisitedFlag(sessionStorage, 'Session');
+  setVisitedFlag(localStorage, 'Local');
 };
 
 const randomizeBubbleTimings = () => {
