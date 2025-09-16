@@ -40,7 +40,7 @@ main.landing {
 
 @keyframes hero-float {
   0%   { transform: translateX(-50%) translateY(0); }
-  50%  { transform: translateX(-50%) translateY(-16px); }
+  50%  { transform: translateX(-50%) translateY(-32px); }
   100% { transform: translateX(-50%) translateY(0); }
 }
 
