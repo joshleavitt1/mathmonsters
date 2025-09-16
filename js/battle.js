@@ -1,12 +1,48 @@
 const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
+const VISITED_VALUE = 'true';
+
+const readVisitedFlag = (storage, label) => {
+  if (!storage) {
+    return null;
+  }
+  try {
+    return storage.getItem(LANDING_VISITED_KEY) === VISITED_VALUE;
+  } catch (error) {
+    console.warn(`${label} storage is not available.`, error);
+    return null;
+  }
+};
+
+const setVisitedFlag = (storage, label) => {
+  if (!storage) {
+    return;
+  }
+  try {
+    storage.setItem(LANDING_VISITED_KEY, VISITED_VALUE);
+  } catch (error) {
+    console.warn(`${label} storage is not available.`, error);
+  }
+};
 
 const hasVisitedLanding = () => {
-  try {
-    return sessionStorage.getItem(LANDING_VISITED_KEY) === 'true';
-  } catch (error) {
-    console.warn('Session storage is not available.', error);
+  const sessionVisited = readVisitedFlag(sessionStorage, 'Session');
+  if (sessionVisited === true) {
     return true;
   }
+  if (sessionVisited === null) {
+    return true;
+  }
+
+  const localVisited = readVisitedFlag(localStorage, 'Local');
+  if (localVisited === true) {
+    setVisitedFlag(sessionStorage, 'Session');
+    return true;
+  }
+  if (localVisited === null) {
+    return true;
+  }
+
+  return false;
 };
 
 const landingVisited = hasVisitedLanding();
