@@ -39,17 +39,19 @@
   height: auto;
 }
 
-.battle-card .battle-stats {
+.battle-card .battle-stats,
+.battle-panel__stats {
   width: 100%;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
   padding: 16px 20px;
   background: rgba(0, 48, 120, 0.08);
   border-radius: 12px;
 }
 
-.battle-card .battle-stat {
+.battle-card .battle-stat,
+.battle-panel__stats .battle-stat {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -58,14 +60,16 @@
   min-width: 0;
 }
 
-.battle-card .stat-label {
+.battle-card .stat-label,
+.battle-panel__stats .stat-label {
   font-size: 14px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #7a859b;
 }
 
-.battle-card .stat-value {
+.battle-card .stat-value,
+.battle-panel__stats .stat-value {
   font-size: 28px;
   font-weight: 700;
   color: #1d2433;

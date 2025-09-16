@@ -1,4 +1,24 @@
+const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
+
+const hasVisitedLanding = () => {
+  try {
+    return sessionStorage.getItem(LANDING_VISITED_KEY) === 'true';
+  } catch (error) {
+    console.warn('Session storage is not available.', error);
+    return true;
+  }
+};
+
+const landingVisited = hasVisitedLanding();
+
+if (!landingVisited) {
+  window.location.replace('../index.html');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  if (!landingVisited) {
+    return;
+  }
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
   const monsterHpFill = document.querySelector('#monster-stats .hp-fill');
@@ -18,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const streakIcon = questionBox.querySelector('.streak-icon');
   const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
   const bannerTimeValue = document.querySelector('[data-banner-time]');
+  const setStreakButton = document.querySelector('[data-dev-set-streak]');
+  const endBattleButton = document.querySelector('[data-dev-end-battle]');
+  const devControls = document.querySelector('.battle-dev-controls');
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
   const heroAttackInc = heroStats.querySelector('.attack .increase');
@@ -49,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let totalAnswers = 0;
   const battleStart = Date.now();
   let battleTimerInterval = null;
+  let battleEnded = false;
 
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
@@ -144,6 +168,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showQuestion() {
+    if (battleEnded) {
+      return;
+    }
     const q = questions[currentQuestion];
     if (!q) return;
     questionText.textContent = q.question || q.q || '';
@@ -234,12 +261,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function heroAttack() {
+    if (battleEnded) {
+      return;
+    }
     heroImg.classList.add('attack');
     const handler = (e) => {
       if (e.animationName !== 'hero-attack') return;
       heroImg.classList.remove('attack');
       heroImg.removeEventListener('animationend', handler);
       setTimeout(() => {
+        if (battleEnded) {
+          return;
+        }
         monster.damage += hero.attack;
         updateHealthBars();
         if (streakMaxed) {
@@ -249,6 +282,9 @@ document.addEventListener('DOMContentLoaded', () => {
           updateStreak();
         }
         setTimeout(() => {
+          if (battleEnded) {
+            return;
+          }
           if (monster.damage >= monster.health) {
             endBattle(true);
           } else {
@@ -262,16 +298,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function monsterAttack() {
+    if (battleEnded) {
+      return;
+    }
     setTimeout(() => {
+      if (battleEnded) {
+        return;
+      }
       monsterImg.classList.add('attack');
       const handler = (e) => {
         if (e.animationName !== 'monster-attack') return;
         monsterImg.classList.remove('attack');
         monsterImg.removeEventListener('animationend', handler);
         setTimeout(() => {
+          if (battleEnded) {
+            return;
+          }
           hero.damage += monster.attack;
           updateHealthBars();
           setTimeout(() => {
+            if (battleEnded) {
+              return;
+            }
             if (hero.damage >= hero.health) {
               endBattle(false);
             } else {
@@ -285,7 +333,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 300);
   }
 
+  setStreakButton?.addEventListener('click', () => {
+    if (battleEnded) {
+      return;
+    }
+    const targetStreak = Math.max(0, STREAK_GOAL - 1);
+    streak = targetStreak;
+    streakMaxed = false;
+    updateStreak();
+  });
+
+  endBattleButton?.addEventListener('click', () => {
+    if (battleEnded) {
+      return;
+    }
+    document.dispatchEvent(new Event('close-question'));
+    window.setTimeout(() => {
+      endBattle(true);
+    }, 0);
+  });
+
   document.addEventListener('answer-submitted', (e) => {
+    if (battleEnded) {
+      return;
+    }
     const correct = e.detail.correct;
     totalAnswers++;
     if (correct) correctAnswers++;
@@ -359,6 +430,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   function endBattle(win) {
+    if (battleEnded) {
+      return;
+    }
+    battleEnded = true;
+    devControls?.classList.add('battle-dev-controls--hidden');
     stopBattleTimer();
     updateAccuracyDisplays();
     if (win) {
@@ -390,6 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initBattle() {
+    battleEnded = false;
     loadData();
     updateStreak();
     updateAccuracyDisplays();

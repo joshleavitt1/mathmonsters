@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Battle</title>
     <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/battle-panel.css" />
     <link rel="stylesheet" href="../css/question.css" />
     <link rel="stylesheet" href="../css/battle-card.css" />
     <link rel="stylesheet" href="../css/battle.css" />
@@ -22,6 +23,14 @@
       <span class="label">Time</span>
       <span class="value" data-banner-time>0s</span>
     </div>
+  </div>
+  <div class="battle-dev-controls" role="group" aria-label="Battle test controls">
+    <button type="button" class="battle-dev-controls__btn" data-dev-set-streak>
+      Set Streak 4
+    </button>
+    <button type="button" class="battle-dev-controls__btn" data-dev-end-battle>
+      End Battle
+    </button>
   </div>
   <div id="battle">
     <img id="battle-monster" src="../images/battle/monster_battle.png" alt="Monster" />
@@ -76,27 +85,27 @@
       </div>
     </div>
     <div id="complete-message" role="dialog" aria-modal="true" aria-labelledby="battle-complete-title">
-      <section class="battle-card battle-complete-card">
-        <div class="battle-info">
-          <p class="math-type">Victory</p>
-          <p id="battle-complete-title" class="battle-title">Battle Complete</p>
+      <section class="battle-panel battle-complete-card">
+        <div class="battle-panel__body">
+          <p class="battle-panel__eyebrow math-type">Victory</p>
+          <p id="battle-complete-title" class="battle-panel__title battle-title">Battle Complete</p>
+          <div class="battle-panel__stats battle-stats">
+            <div class="battle-stat">
+              <span class="stat-label">Accuracy</span>
+              <span class="stat-value summary-accuracy">0%</span>
+            </div>
+            <div class="battle-stat">
+              <span class="stat-label">Time</span>
+              <span class="stat-value summary-time">0s</span>
+            </div>
+          </div>
+          <button type="button" class="btn-primary next-mission-btn">Next Mission</button>
         </div>
         <img
-          class="enemy-image"
+          class="battle-panel__enemy enemy-image"
           src="../images/battle/monster_battle.png"
           alt="Enemy defeated in battle"
         />
-        <div class="battle-stats">
-          <div class="battle-stat">
-            <span class="stat-label">Accuracy</span>
-            <span class="stat-value summary-accuracy">0%</span>
-          </div>
-          <div class="battle-stat">
-            <span class="stat-label">Time</span>
-            <span class="stat-value summary-time">0s</span>
-          </div>
-        </div>
-        <button type="button" class="btn-primary next-mission-btn">Next Mission</button>
       </section>
     </div>
     <div id="battle-message">
