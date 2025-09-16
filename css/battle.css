@@ -235,6 +235,7 @@
   left: 0;
   width: 100%;
   height: 100%;
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -249,133 +250,145 @@
   visibility: visible;
 }
 
-#complete-message .content {
-  background: #fff;
-  padding: 24px;
-  border-radius: 8px;
+#complete-message .battle-complete-card {
+  width: min(440px, 90%);
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 16px;
+  padding: 36px 32px 40px;
+  box-shadow: 0 24px 54px rgba(17, 30, 52, 0.35);
   text-align: center;
-  width: 100%;
-  max-width: 400px;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 24px;
+  animation: pop-in 0.4s ease-out;
 }
 
-#complete-message h1 {
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 24px;
-  color: #272B34;
-  margin: 0;
-}
-
-#complete-message .enemy-wrapper {
-  position: relative;
-}
-
-#complete-message .enemy-image {
-  width: 100%;
-  max-width: 200px;
-  height: auto;
-  opacity: 1;
-  filter: saturate(100%);
-  transition: opacity 0.5s ease, filter 0.5s ease;
-}
-
-#complete-message .enemy-image.dimmed {
-  opacity: 0.1;
-  filter: saturate(0%);
-}
-
-#complete-message .check-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-#complete-message .check-icon.show {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-}
-
-#complete-message .level-box {
-  width: 100%;
-  background: #F6F6F6;
-  border-radius: 8px;
-  padding: 16px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-
-#complete-message .level-box .level-title {
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 20px;
-  color: #888888;
-  margin: 0;
-}
-
-#complete-message .level-box .progress-bar {
-  width: 100%;
-  height: 16px;
-  background: #FFFFFF;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-#complete-message .level-box .progress-fill {
-  width: 0%;
-  height: 100%;
-  background: #006AFF;
-  transition: width 0.5s ease-in-out;
-}
-
-#complete-message .level-boxes {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  gap: 16px;
-}
-
-#complete-message .level-boxes .level-box {
-  flex: 1;
-  background: #F6F6F6;
-  border-radius: 8px;
-  padding: 16px;
-  box-sizing: border-box;
+#complete-message .battle-complete-card .level-info {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 6px;
+}
+
+#complete-message .battle-complete-card .math-type {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #778099;
+}
+
+#complete-message .battle-complete-card .battle-title {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 700;
+  color: #272b34;
+}
+
+#complete-message .battle-complete-card .enemy-image {
+  width: min(240px, 65%);
+  height: auto;
+}
+
+#complete-message .battle-complete-card .battle-stats {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(0, 48, 120, 0.08);
+  border-radius: 12px;
+}
+
+#complete-message .battle-complete-card .battle-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+#complete-message .battle-complete-card .stat-label {
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7a859b;
+}
+
+#complete-message .battle-complete-card .stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1d2433;
+}
+
+.btn-primary {
+  width: 100%;
+  height: 64px;
+  background: #006aff;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-primary:focus-visible {
+  outline: 3px solid #00a1ff;
+  outline-offset: 2px;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 106, 255, 0.35);
+}
+
+.btn-primary:disabled {
+  background: #d2d8e2;
+  color: #272b34;
+}
+
+@keyframes pop-in {
+  0% {
+    transform: scale(0.88);
+    opacity: 0;
+  }
+  80% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.battle-stat-banner {
+  margin: 40px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+}
+
+.battle-stat-banner .stat {
+  display: flex;
+  align-items: baseline;
   gap: 8px;
 }
 
-#complete-message .level-boxes .level-box .label {
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 14px;
-  color: #858585;
-  margin: 0;
+.battle-stat-banner .label {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-#complete-message .level-boxes .level-box .value {
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+.battle-stat-banner .value {
   font-size: 24px;
-  color: #006AFF;
-  margin: 0;
-}
-
-#complete-message .content button {
-  width: 100%;
-  height: 64px;
-  background: #006AFF;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 20px;
+  color: #ffffff;
+  text-transform: none;
+  letter-spacing: normal;
 }

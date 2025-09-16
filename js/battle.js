@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const streakIcon = questionBox.querySelector('.streak-icon');
   const testButton = document.getElementById('set-streak-btn');
   const killButton = document.getElementById('kill-enemy-btn');
+  const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
+  const bannerTimeValue = document.querySelector('[data-banner-time]');
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
   const heroAttackInc = heroStats.querySelector('.attack .increase');
@@ -30,12 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelButton = levelMessage.querySelector('button');
   const completeMessage = document.getElementById('complete-message');
   const completeEnemyImg = completeMessage?.querySelector('.enemy-image');
-  const levelTitle = completeMessage?.querySelector('.level-title');
-  const progressFill2 = completeMessage?.querySelector('.progress-fill');
-  const accuracyValue = completeMessage?.querySelector('.accuracy-value');
-  const speedValue = completeMessage?.querySelector('.speed-value');
-  const checkIcon = completeMessage?.querySelector('.check-icon');
-  const nextBattleBtn = completeMessage?.querySelector('.next-battle-btn');
+  const summaryAccuracyValue = completeMessage?.querySelector('.summary-accuracy');
+  const summaryTimeValue = completeMessage?.querySelector('.summary-time');
+  const nextMissionBtn = completeMessage?.querySelector('.next-mission-btn');
+
+  if (bannerAccuracyValue) bannerAccuracyValue.textContent = '0%';
+  if (bannerTimeValue) bannerTimeValue.textContent = '0s';
+  if (summaryAccuracyValue) summaryAccuracyValue.textContent = '0%';
+  if (summaryTimeValue) summaryTimeValue.textContent = '0s';
 
   let STREAK_GOAL = 5;
   let questions = [];
@@ -46,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let correctAnswers = 0;
   let totalAnswers = 0;
   const battleStart = Date.now();
+  let battleTimerInterval = null;
 
   if (testButton) {
     testButton.addEventListener('click', () => {
@@ -126,6 +131,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const monsterPercent = ((monster.health - monster.damage) / monster.health) * 100;
     heroHpFill.style.width = heroPercent + '%';
     monsterHpFill.style.width = monsterPercent + '%';
+  }
+
+  function calculateAccuracy() {
+    return totalAnswers ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+  }
+
+  function updateAccuracyDisplays() {
+    const accuracy = calculateAccuracy();
+    if (bannerAccuracyValue) bannerAccuracyValue.textContent = `${accuracy}%`;
+    if (summaryAccuracyValue) summaryAccuracyValue.textContent = `${accuracy}%`;
+  }
+
+  function updateBattleTime() {
+    const elapsed = Math.max(0, Math.round((Date.now() - battleStart) / 1000));
+    if (bannerTimeValue) bannerTimeValue.textContent = `${elapsed}s`;
+  }
+
+  function startBattleTimer() {
+    stopBattleTimer();
+    updateBattleTime();
+    battleTimerInterval = setInterval(updateBattleTime, 1000);
+  }
+
+  function stopBattleTimer() {
+    if (battleTimerInterval) {
+      clearInterval(battleTimerInterval);
+      battleTimerInterval = null;
+    }
   }
 
   function showQuestion() {
@@ -274,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const correct = e.detail.correct;
     totalAnswers++;
     if (correct) correctAnswers++;
+    updateAccuracyDisplays();
     if (correct) {
       let incEl = null;
       let incText = '';
@@ -346,22 +380,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   function endBattle(win) {
+    stopBattleTimer();
+    updateAccuracyDisplays();
     if (win) {
-      const accuracy = totalAnswers
-        ? Math.round((correctAnswers / totalAnswers) * 100)
-        : 0;
-      const speed = Math.round((Date.now() - battleStart) / 1000);
-      if (accuracyValue) accuracyValue.textContent = `${accuracy}%`;
-      if (speedValue) speedValue.textContent = `${speed}s`;
+      const accuracy = calculateAccuracy();
+      const elapsed = Math.round((Date.now() - battleStart) / 1000);
+      if (summaryAccuracyValue) summaryAccuracyValue.textContent = `${accuracy}%`;
+      if (summaryTimeValue) summaryTimeValue.textContent = `${elapsed}s`;
+      if (bannerTimeValue) bannerTimeValue.textContent = `${elapsed}s`;
       if (completeEnemyImg) {
         completeEnemyImg.src = monsterImg.src;
-        setTimeout(() => {
-          completeEnemyImg.classList.add('dimmed');
-          if (checkIcon) checkIcon.classList.add('show');
-        }, 1000);
       }
-      if (progressFill2) progressFill2.style.width = '100%';
-      if (levelTitle) levelTitle.textContent = 'Level 1';
       completeMessage?.classList.add('show');
     } else {
       levelText.textContent = 'you lose';
@@ -373,8 +402,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.reload();
   });
 
-  if (nextBattleBtn) {
-    nextBattleBtn.addEventListener('click', () => {
+  if (nextMissionBtn) {
+    nextMissionBtn.addEventListener('click', () => {
       window.location.href = '../html/level.html';
     });
   }
@@ -382,6 +411,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function initBattle() {
     loadData();
     updateStreak();
+    updateAccuracyDisplays();
+    startBattleTimer();
     setTimeout(showQuestion, 2000);
   }
 
