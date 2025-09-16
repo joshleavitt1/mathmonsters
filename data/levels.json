@@ -2,10 +2,11 @@
   "levels": [
     {
       "battleLevel": 1,
-      "name": "Level 1", 
+      "name": "Level 1",
+      "mathType": "Addition",
       "battle": {
         "questionReference": {
-          "file": "questions/level_1_questions_.json"
+          "file": "questions/level_1_questions.json"
         },
         "accuracyGoal": 0.8,
         "timeGoalSeconds": 120,
@@ -31,9 +32,10 @@
     {
       "battleLevel": 2,
       "name": "Level 2",
+      "mathType": "Addition",
       "battle": {
         "questionReference": {
-          "file": "questions/level_2_questions_.json"
+          "file": "questions/level_2_questions.json"
         },
         "accuracyGoal": 0.8,
         "timeGoalSeconds": 90,

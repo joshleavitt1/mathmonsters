@@ -102,33 +102,80 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadData() {
-    const data = window.preloadedData;
-    const config = data.config || {};
-    STREAK_GOAL = Number(config.streakGoal) || STREAK_GOAL;
-    const heroData = data.characters?.[config.selectedHero];
-    const monsterData = data.characters?.[config.selectedMonster];
-    if (heroData) {
-      hero.attack = Number(heroData.attack) || hero.attack;
-      hero.health = Number(heroData.health) || hero.health;
-      hero.gems = Number(heroData.gems) || hero.gems;
-      hero.damage = Number(heroData.damage) || hero.damage;
-      hero.name = heroData.name || hero.name;
+    const data = window.preloadedData ?? {};
+    const battleData = data.battle ?? {};
+    const heroData = data.hero ?? {};
+    const enemyData = data.enemy ?? {};
+
+    const resolveAssetPath = (path) => {
+      if (typeof path !== 'string' || path.trim().length === 0) {
+        return null;
+      }
+      const trimmed = path.trim();
+      if (/^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+      }
+      if (trimmed.startsWith('../')) {
+        return trimmed;
+      }
+      if (trimmed.startsWith('./')) {
+        return `../${trimmed.slice(2)}`;
+      }
+      if (trimmed.startsWith('/')) {
+        return `..${trimmed}`;
+      }
+      return `../${trimmed}`;
+    };
+
+    STREAK_GOAL = Number(battleData.streakGoal) || STREAK_GOAL;
+
+    hero.attack = Number(heroData.attack) || hero.attack;
+    hero.health = Number(heroData.health) || hero.health;
+    hero.damage = Number(heroData.damage) || hero.damage;
+    hero.name = heroData.name || hero.name;
+    if (typeof heroData.gems === 'number') {
+      hero.gems = heroData.gems;
     }
-    if (monsterData) {
-      monster.attack = Number(monsterData.attack) || monster.attack;
-      monster.health = Number(monsterData.health) || monster.health;
-      monster.damage = Number(monsterData.damage) || monster.damage;
-      monster.name = monsterData.name || monster.name;
+
+    const heroSprite = resolveAssetPath(heroData.sprite);
+    if (heroSprite && heroImg) {
+      heroImg.src = heroSprite;
     }
-    if (data && data.missions) {
-      questions = shuffle(data.missions.Walkthrough?.questions || []);
+    if (heroImg && hero.name) {
+      heroImg.alt = `${hero.name} ready for battle`;
     }
+
+    monster.attack = Number(enemyData.attack) || monster.attack;
+    monster.health = Number(enemyData.health) || monster.health;
+    monster.damage = Number(enemyData.damage) || monster.damage;
+    monster.name = enemyData.name || monster.name;
+
+    const monsterSprite = resolveAssetPath(enemyData.sprite);
+    if (monsterSprite && monsterImg) {
+      monsterImg.src = monsterSprite;
+    }
+    if (monsterImg && monster.name) {
+      monsterImg.alt = `${monster.name} ready for battle`;
+    }
+    if (monsterSprite && completeEnemyImg) {
+      completeEnemyImg.src = monsterSprite;
+    }
+
     if (heroAttackVal) heroAttackVal.textContent = hero.attack;
     if (heroHealthVal) heroHealthVal.textContent = hero.health;
     if (monsterAttackVal) monsterAttackVal.textContent = monster.attack;
     if (monsterHealthVal) monsterHealthVal.textContent = monster.health;
-    heroNameEl.textContent = hero.name;
-    monsterNameEl.textContent = monster.name;
+    if (heroNameEl) heroNameEl.textContent = hero.name;
+    if (monsterNameEl) monsterNameEl.textContent = monster.name;
+    if (completeEnemyImg && monster.name) {
+      completeEnemyImg.alt = `${monster.name} defeated in battle`;
+    }
+
+    const loadedQuestions = Array.isArray(data.questions)
+      ? data.questions.slice()
+      : [];
+    questions = shuffle(loadedQuestions);
+
     updateHealthBars();
   }
 
