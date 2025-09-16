@@ -103,6 +103,11 @@ main.landing {
     bubble-drift calc(var(--duration) * 0.45) ease-in-out infinite alternate,
     bubble-wobble calc(var(--duration) * 0.38) ease-in-out infinite,
     bubble-spin   calc(var(--duration) * 0.9)  ease-in-out infinite alternate;
+  animation-delay:
+    var(--delay, 0s),
+    var(--delay, 0s),
+    var(--delay, 0s),
+    var(--delay, 0s);
 
   /* Let highlights lift color beneath (gives glass pop) */
   mix-blend-mode: screen; /* harmless if BG is light; looks great on dark/colored scenes */
