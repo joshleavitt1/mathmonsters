@@ -272,13 +272,3 @@ body.battle-overlay-open { overflow: hidden; }
 body.battle-overlay-open .battle-overlay { opacity: 1; transform: translateY(0); pointer-events: auto; }
 body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: translateY(0) scale(1); }
 
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .bubble { animation: none; opacity: 0.35; }
-  .hero { animation: none; transform: translateX(-50%); }
-  .message-card {
-    animation: none;
-    transform: translate(-50%, 0) scale(1);
-    opacity: 1;
-  }
-}

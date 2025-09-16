@@ -241,12 +241,12 @@
 }
 
 .battle-stat-banner .label {
-  font-size: 16px;
+  font-size: 18px;
   color: rgba(255, 255, 255, 0.5);
 }
 
 .battle-stat-banner .value {
-  font-size: 24px;
+  font-size: 18px;
   color: #ffffff;
   text-transform: none;
   letter-spacing: normal;
