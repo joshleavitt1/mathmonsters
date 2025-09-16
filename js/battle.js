@@ -461,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (nextMissionBtn) {
     nextMissionBtn.addEventListener('click', () => {
-      window.location.href = '../html/battle-intro.html';
+      window.location.href = '../index.html';
     });
   }
 
