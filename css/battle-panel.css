@@ -1,0 +1,66 @@
+.battle-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  width: min(520px, calc(100% - 32px));
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+  color: #272b34;
+  text-align: left;
+}
+
+.battle-panel__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.battle-panel__eyebrow {
+  margin: 0;
+  font-size: 20px;
+  color: #888888;
+}
+
+.battle-panel__title {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 700;
+  color: #272b34;
+}
+
+.battle-panel__stats {
+  margin-top: 12px;
+}
+
+.battle-panel__enemy {
+  width: min(220px, 45%);
+  height: auto;
+  transform: translate(60px, -20px);
+}
+
+.battle-panel:focus-visible {
+  outline: 3px solid #006aff;
+  outline-offset: 4px;
+}
+
+.battle-panel--buttony {
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .battle-panel {
+    gap: 16px;
+    width: calc(100% - 24px);
+    padding: 20px;
+  }
+
+  .battle-panel__enemy {
+    transform: translate(32px, -12px);
+    width: min(180px, 40%);
+  }
+}

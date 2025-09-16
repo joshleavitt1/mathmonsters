@@ -10,12 +10,12 @@ const markLandingVisited = () => {
 
 const initLandingInteractions = () => {
   markLandingVisited();
-  const messageCard = document.querySelector('.message-card');
+  const messageCard = document.querySelector('.battle-select-card');
   const battleOverlay = document.getElementById('battle-overlay');
   const battleButton = battleOverlay?.querySelector('.battle-btn');
-  const messageTitle = messageCard?.querySelector('.message-title');
-  const messageSubtitle = messageCard?.querySelector('.message-subtitle');
-  const messageEnemy = messageCard?.querySelector('.message-enemy');
+  const messageTitle = messageCard?.querySelector('[data-battle-math]');
+  const messageSubtitle = messageCard?.querySelector('[data-battle-title]');
+  const messageEnemy = messageCard?.querySelector('[data-battle-enemy]');
   const overlayMath = battleOverlay?.querySelector('.math-type');
   const overlayEnemy = battleOverlay?.querySelector('.enemy-image');
   const overlayBattleTitle = battleOverlay?.querySelector('.battle-title');
@@ -89,7 +89,7 @@ const initLandingInteractions = () => {
     if (
       document.body.classList.contains('battle-overlay-open') ||
       document.body.classList.contains('message-exiting') ||
-      messageCard.classList.contains('message-card--animating')
+      messageCard.classList.contains('battle-select-card--animating')
     ) {
       return;
     }
@@ -98,16 +98,17 @@ const initLandingInteractions = () => {
     window.clearTimeout(messageCardReturnTimeout);
     window.clearTimeout(battleButtonFocusTimeout);
 
-    messageCard.classList.remove('message-card--hidden');
-    messageCard.classList.add('message-card--animating');
+    messageCard.classList.remove('battle-select-card--hidden');
+    messageCard.classList.remove('battle-select-card--no-delay');
+    messageCard.classList.add('battle-select-card--animating');
     document.body.classList.add('message-exiting');
     messageCard.setAttribute('aria-expanded', 'true');
 
     battleOverlayActivationTimeout = window.setTimeout(() => {
       document.body.classList.add('battle-overlay-open');
       battleOverlay.setAttribute('aria-hidden', 'false');
-      messageCard.classList.add('message-card--hidden');
-      messageCard.classList.remove('message-card--animating');
+      messageCard.classList.add('battle-select-card--hidden');
+      messageCard.classList.remove('battle-select-card--animating');
       messageCard.setAttribute('aria-hidden', 'true');
       messageCard.setAttribute('tabindex', '-1');
 
@@ -128,9 +129,9 @@ const initLandingInteractions = () => {
 
     document.body.classList.remove('battle-overlay-open');
     battleOverlay.setAttribute('aria-hidden', 'true');
-    messageCard.classList.remove('message-card--hidden');
-    messageCard.classList.add('message-card--animating');
-    messageCard.classList.add('message-card--no-delay');
+    messageCard.classList.remove('battle-select-card--hidden');
+    messageCard.classList.add('battle-select-card--animating');
+    messageCard.classList.add('battle-select-card--no-delay');
     messageCard.setAttribute('aria-expanded', 'false');
     messageCard.setAttribute('aria-hidden', 'false');
     messageCard.setAttribute('tabindex', defaultTabIndex);
@@ -140,7 +141,7 @@ const initLandingInteractions = () => {
     });
 
     messageCardReturnTimeout = window.setTimeout(() => {
-      messageCard.classList.remove('message-card--animating');
+      messageCard.classList.remove('battle-select-card--animating');
       messageCard.focus({ preventScroll: true });
     }, MESSAGE_CARD_FOCUS_DELAY);
   };

@@ -221,8 +221,30 @@
   visibility: visible;
 }
 
-#complete-message .battle-card {
-  width: min(440px, 90%);
+#complete-message .battle-panel {
+  width: min(520px, calc(100% - 32px));
+  flex-wrap: wrap;
+  align-items: stretch;
+  row-gap: 24px;
+}
+
+#complete-message .battle-panel__body {
+  gap: 16px;
+}
+
+#complete-message .battle-panel__enemy {
+  transform: none;
+  width: min(200px, 38%);
+  align-self: center;
+}
+
+#complete-message .battle-panel__stats {
+  width: 100%;
+}
+
+#complete-message .btn-primary {
+  width: 100%;
+  margin-top: 8px;
 }
 
 .battle-stat-banner {
@@ -250,4 +272,64 @@
   color: #ffffff;
   text-transform: none;
   letter-spacing: normal;
+}
+
+.battle-dev-controls {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(17, 30, 52, 0.65);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  z-index: 60;
+}
+
+.battle-dev-controls--hidden {
+  display: none;
+}
+
+.battle-dev-controls__btn {
+  border: 2px dashed #006aff;
+  background: #f1f5ff;
+  color: #1d2433;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.battle-dev-controls__btn:hover {
+  background: #e3ecff;
+  color: #0040aa;
+  border-color: #0040aa;
+  transform: translateY(-1px);
+}
+
+.battle-dev-controls__btn:focus-visible {
+  outline: 3px solid #00a1ff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .battle-dev-controls {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .battle-dev-controls__btn {
+    width: 100%;
+    text-align: center;
+  }
 }

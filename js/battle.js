@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const bannerTimeValue = document.querySelector('[data-banner-time]');
   const setStreakButton = document.querySelector('[data-dev-set-streak]');
   const endBattleButton = document.querySelector('[data-dev-end-battle]');
+  const devControls = document.querySelector('.battle-dev-controls');
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
   const heroAttackInc = heroStats.querySelector('.attack .increase');
@@ -433,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     battleEnded = true;
+    devControls?.classList.add('battle-dev-controls--hidden');
     stopBattleTimer();
     updateAccuracyDisplays();
     if (win) {
