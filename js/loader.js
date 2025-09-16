@@ -1,4 +1,4 @@
-const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
+const STORAGE_KEY_PROGRESS = 'reefRangersProgress';
 
 const readStoredProgress = () => {
   try {
@@ -6,7 +6,7 @@ const readStoredProgress = () => {
     if (!storage) {
       return null;
     }
-    const raw = storage.getItem(PROGRESS_STORAGE_KEY);
+    const raw = storage.getItem(STORAGE_KEY_PROGRESS);
     if (!raw) {
       return null;
     }
