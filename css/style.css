@@ -145,7 +145,7 @@ html, body {
   background: #006AFF;
   color: #fff;
   border: none;
-  border-radius: 16px;
+  border-radius: 8px;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
 }
@@ -206,7 +206,7 @@ html, body {
 
 #message.win .stat-box {
   background: #F6F6F6;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 16px 16px;
   display: flex;
   flex-direction: column;
@@ -239,7 +239,7 @@ html, body {
   width: 100%;
   height: 16px;
   background: #D9D9D9;
-  border-radius: 16px;
+  border-radius: 8px;
   overflow: visible;
   position: relative;
 }
@@ -250,7 +250,7 @@ html, body {
   top: 0;
   width: 0%;
   height: 100%;
-  border-radius: 16px;
+  border-radius: 8px;
   background: #006AFF;
   transition: width 0.6s linear;
 }
