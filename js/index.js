@@ -1,4 +1,15 @@
+const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
+
+const markLandingVisited = () => {
+  try {
+    sessionStorage.setItem(LANDING_VISITED_KEY, 'true');
+  } catch (error) {
+    console.warn('Session storage is not available.', error);
+  }
+};
+
 const initLandingInteractions = () => {
+  markLandingVisited();
   const messageCard = document.querySelector('.message-card');
   const battleOverlay = document.getElementById('battle-overlay');
   const battleButton = battleOverlay?.querySelector('.battle-btn');
