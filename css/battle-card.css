@@ -19,6 +19,13 @@
   gap: 6px;
 }
 
+.battle-card .battle-goals-title {
+  margin: 0;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 20px;
+  color: #272b34;
+}
+
 .battle-card .math-type {
   margin: 0;
   font-size: 20px;
