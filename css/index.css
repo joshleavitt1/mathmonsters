@@ -242,9 +242,9 @@ body.message-exiting .message-card {
 .message-card:active { transform: translate(-50%, 4px) scale(0.98); }
 .message-card--hidden { visibility: hidden; pointer-events: none; display: none; }
 
-body.level-open { overflow: hidden; }
+body.battle-overlay-open { overflow: hidden; }
 
-.level-overlay {
+.battle-overlay {
   position: fixed;
   inset: 0;
   display: flex;
@@ -259,64 +259,18 @@ body.level-open { overflow: hidden; }
   z-index: 5;
 }
 
-.level-overlay .level-card {
+.battle-overlay .battle-overlay-card {
   width: min(420px, 100%);
   padding: 32px 32px 36px;
-  border-radius: 16px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  box-shadow: 0 24px 54px rgba(17, 30, 52, 0.35);
   transform: translateY(24px) scale(0.95);
   transition: transform 0.6s ease;
+  animation: none;
 }
 
-.level-overlay .level-info { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.level-overlay .math-type { margin: 0; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #778099; }
-.level-overlay .battle-title { margin: 0; font-size: 40px; font-weight: 700; color: #272b34; }
-.level-overlay .enemy-image { width: min(220px, 60%); height: auto; }
+.battle-overlay .enemy-image { width: min(220px, 60%); height: auto; }
 
-.level-overlay .battle-stats {
-  width: 100%;
-  display: flex;
-  gap: 16px;
-}
-
-.level-overlay .battle-stat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 16px 20px;
-  background: rgba(0, 48, 120, 0.08);
-  border-radius: 12px;
-}
-.level-overlay .stat-label { font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: #7a859b; }
-.level-overlay .stat-value { font-size: 28px; font-weight: 700; color: #1d2433; }
-
-.level-overlay .btn-primary {
-  width: 100%;
-  height: 64px;
-  background: #006aff;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  font-size: 20px;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.level-overlay .btn-primary:focus-visible { outline: 3px solid #00a1ff; outline-offset: 2px; }
-.level-overlay .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 106, 255, 0.35); }
-
-body.level-open .level-overlay { opacity: 1; transform: translateY(0); pointer-events: auto; }
-body.level-open .level-overlay .level-card { transform: translateY(0) scale(1); }
+body.battle-overlay-open .battle-overlay { opacity: 1; transform: translateY(0); pointer-events: auto; }
+body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: translateY(0) scale(1); }
 
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
