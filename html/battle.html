@@ -95,16 +95,20 @@
         />
         <p class="battle-goals-title">Battle Goals</p>
         <div class="battle-stats">
-          <div class="battle-stat">
+          <div class="battle-stat" data-goal="accuracy">
             <span class="stat-label">Accuracy</span>
-            <span class="stat-value summary-accuracy">0%</span>
+            <span class="stat-value summary-accuracy">
+              <span class="stat-value-text">0%</span>
+            </span>
           </div>
-          <div class="battle-stat">
+          <div class="battle-stat" data-goal="time">
             <span class="stat-label">Time</span>
-            <span class="stat-value summary-time">0s</span>
+            <span class="stat-value summary-time">
+              <span class="stat-value-text">0s</span>
+            </span>
           </div>
         </div>
-        <button type="button" class="btn-primary next-mission-btn">Next Mission</button>
+        <button type="button" class="btn-primary next-mission-btn" data-action="next">Next Mission</button>
       </section>
     </div>
     <div id="battle-message">

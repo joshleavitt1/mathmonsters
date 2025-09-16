@@ -137,6 +137,26 @@
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
 }
 
+.battle-card .stat-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.battle-card .stat-value.goal-result--met {
+  color: #00B600;
+}
+
+.battle-card .stat-value.goal-result--missed {
+  color: #E20000;
+}
+
+.battle-card .stat-value .goal-result-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
 .btn-primary {
   width: 100%;
   height: 64px;
