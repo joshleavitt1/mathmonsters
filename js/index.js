@@ -1,6 +1,25 @@
 const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 
 const VISITED_VALUE = 'true';
+const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
+
+const readStoredProgress = () => {
+  try {
+    const storage = window.localStorage;
+    if (!storage) {
+      return null;
+    }
+    const raw = storage.getItem(PROGRESS_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (error) {
+    console.warn('Stored progress unavailable.', error);
+    return null;
+  }
+};
 
 const setVisitedFlag = (storage, label) => {
   if (!storage) {
@@ -76,7 +95,28 @@ const initLandingInteractions = () => {
       }
 
       const levelsData = await levelsRes.json();
-      const variablesData = variablesRes.ok ? await variablesRes.json() : {};
+      const rawVariablesData = variablesRes.ok ? await variablesRes.json() : {};
+      const variablesData =
+        rawVariablesData && typeof rawVariablesData === 'object'
+          ? rawVariablesData
+          : {};
+      const storedProgress = readStoredProgress();
+      if (storedProgress && typeof storedProgress === 'object') {
+        const baseProgress =
+          variablesData && typeof variablesData.progress === 'object'
+            ? variablesData.progress
+            : {};
+        const mergedProgress = { ...baseProgress };
+        if (typeof storedProgress.battleLevel === 'number') {
+          mergedProgress.battleLevel = storedProgress.battleLevel;
+        }
+        if (typeof storedProgress.timeRemainingSeconds === 'number') {
+          mergedProgress.timeRemainingSeconds =
+            storedProgress.timeRemainingSeconds;
+        }
+        variablesData.progress = mergedProgress;
+      }
+
       const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
 
       if (!levels.length) {
