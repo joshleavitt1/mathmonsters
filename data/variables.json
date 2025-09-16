@@ -1,12 +1,14 @@
 {
-  "config": {
-    "streakGoal": 5,
-    "selectedHero": "shellfin",
-    "selectedMonster": "octomurk"
-  },
-  "missions": {
-    "Walkthrough": {
-      "questions": []
+  "user": {
+    "battleLevel": 1,
+    "hero": {
+      "id": "shellfin",
+      "sprite": "images/characters/shellfin_level_1.png"
     }
+  },
+  "progress": {
+    "currentStreak": 0,
+    "accuracy": 0.0,
+    "timeRemainingSeconds": null
   }
 }
