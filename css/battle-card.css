@@ -1,23 +1,4 @@
-body {
-  margin: 0;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: url('../images/background/background.png') no-repeat center/cover;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
-  color: #272b34;
-}
-
-main.level-screen {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  padding: 32px 16px;
-  box-sizing: border-box;
-}
-
-.level-message {
+.battle-card {
   width: min(440px, 100%);
   background: rgba(255, 255, 255, 0.96);
   border-radius: 16px;
@@ -31,14 +12,14 @@ main.level-screen {
   animation: pop-in 0.4s ease-out;
 }
 
-.level-message .level-info {
+.battle-card .battle-info {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
 }
 
-.level-message .math-type {
+.battle-card .math-type {
   margin: 0;
   font-size: 18px;
   letter-spacing: 0.12em;
@@ -46,19 +27,19 @@ main.level-screen {
   color: #778099;
 }
 
-.level-message .battle-title {
+.battle-card .battle-title {
   margin: 0;
   font-size: 40px;
   font-weight: 700;
   color: #272b34;
 }
 
-.level-message .enemy-image {
+.battle-card .enemy-image {
   width: min(240px, 65%);
   height: auto;
 }
 
-.level-message .battle-stats {
+.battle-card .battle-stats {
   width: 100%;
   display: flex;
   justify-content: space-between;
@@ -68,22 +49,23 @@ main.level-screen {
   border-radius: 12px;
 }
 
-.level-message .battle-stat {
+.battle-card .battle-stat {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
-.level-message .stat-label {
+.battle-card .stat-label {
   font-size: 14px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #7a859b;
 }
 
-.level-message .stat-value {
+.battle-card .stat-value {
   font-size: 28px;
   font-weight: 700;
   color: #1d2433;

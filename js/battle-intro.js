@@ -9,10 +9,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const res = await fetch('../data/levels.json');
     const data = await res.json();
-    const [current] = data.levels ?? [];
+    const [currentBattle] = data.levels ?? [];
 
-    if (current) {
-      const { id, math, enemySprite } = current;
+    if (currentBattle) {
+      const { id, math, enemySprite } = currentBattle;
 
       if (mathType && typeof math === 'string') {
         mathType.textContent = math;
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       timeValue.textContent = '0';
     }
   } catch (e) {
-    console.error('Failed to load level data', e);
+    console.error('Failed to load battle data', e);
   }
 
   battleButton?.addEventListener('click', () => {

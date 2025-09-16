@@ -16,8 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressFill = questionBox.querySelector('.progress-fill');
   const streakLabel = questionBox.querySelector('.streak-label');
   const streakIcon = questionBox.querySelector('.streak-icon');
-  const testButton = document.getElementById('set-streak-btn');
-  const killButton = document.getElementById('kill-enemy-btn');
   const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
   const bannerTimeValue = document.querySelector('[data-banner-time]');
   const heroAttackVal = heroStats.querySelector('.attack .value');
@@ -27,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const monsterAttackVal = monsterStats.querySelector('.attack .value');
   const monsterHealthVal = monsterStats.querySelector('.health .value');
 
-  const levelMessage = document.getElementById('level-message');
-  const levelText = levelMessage.querySelector('p');
-  const levelButton = levelMessage.querySelector('button');
+  const battleMessage = document.getElementById('battle-message');
+  const battleMessageText = battleMessage?.querySelector('p');
+  const battleMessageButton = battleMessage?.querySelector('button');
   const completeMessage = document.getElementById('complete-message');
   const completeEnemyImg = completeMessage?.querySelector('.enemy-image');
   const summaryAccuracyValue = completeMessage?.querySelector('.summary-accuracy');
@@ -51,22 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let totalAnswers = 0;
   const battleStart = Date.now();
   let battleTimerInterval = null;
-
-  if (testButton) {
-    testButton.addEventListener('click', () => {
-      streak = Math.min(STREAK_GOAL - 1, 4);
-      streakMaxed = false;
-      updateStreak();
-    });
-  }
-
-  if (killButton) {
-    killButton.addEventListener('click', () => {
-      monster.damage = monster.health;
-      updateHealthBars();
-      endBattle(true);
-    });
-  }
 
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
@@ -376,9 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 2000);
     }
   });
-
-
-
   function endBattle(win) {
     stopBattleTimer();
     updateAccuracyDisplays();
@@ -393,18 +372,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       completeMessage?.classList.add('show');
     } else {
-      levelText.textContent = 'you lose';
-      levelMessage.classList.add('show');
+      if (battleMessageText) {
+        battleMessageText.textContent = 'you lose';
+      }
+      battleMessage?.classList.add('show');
     }
   }
 
-  levelButton.addEventListener('click', () => {
+  battleMessageButton?.addEventListener('click', () => {
     window.location.reload();
   });
 
   if (nextMissionBtn) {
     nextMissionBtn.addEventListener('click', () => {
-      window.location.href = '../html/level.html';
+      window.location.href = '../html/battle-intro.html';
     });
   }
 
