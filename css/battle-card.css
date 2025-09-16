@@ -47,6 +47,7 @@
   gap: 12px 16px;
   padding: 16px 20px;
   border-radius: 16px;
+  background-color: #006aff;
 }
 
 .battle-card .battle-stat,
@@ -57,6 +58,7 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+  background-color: white;
 }
 
 .battle-card .stat-label,
