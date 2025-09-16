@@ -56,47 +56,94 @@ const initLandingInteractions = () => {
 
   const loadBattlePreview = async () => {
     try {
-      const response = await fetch('data/levels.json');
-      const data = await response.json();
-      const [firstBattle] = data.levels ?? [];
+      const [levelsRes, variablesRes] = await Promise.all([
+        fetch('data/levels.json'),
+        fetch('data/variables.json'),
+      ]);
 
-      if (!firstBattle) {
+      if (!levelsRes.ok) {
+        throw new Error('Failed to load battle level data.');
+      }
+
+      const levelsData = await levelsRes.json();
+      const variablesData = variablesRes.ok ? await variablesRes.json() : {};
+      const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
+
+      if (!levels.length) {
         return;
       }
 
-      const { id, math, enemySprite } = firstBattle;
-      const enemyPath = typeof enemySprite === 'string' ? `images/${enemySprite}` : '';
+      const progressLevel = variablesData?.progress?.battleLevel;
+      const activeLevel =
+        levels.find((level) => level?.battleLevel === progressLevel) ??
+        levels[0];
 
-      if (messageTitle && typeof math === 'string') {
-        messageTitle.textContent = math;
+      if (!activeLevel) {
+        return;
       }
 
-      if (messageSubtitle && typeof id !== 'undefined') {
-        messageSubtitle.textContent = `Battle ${id}`;
+      const { battleLevel, name, battle } = activeLevel;
+      const mathLabel =
+        activeLevel.mathType ?? battle?.mathType ?? 'Math Mission';
+      const enemy = battle?.enemy ?? {};
+      const enemySprite = typeof enemy.sprite === 'string' ? enemy.sprite : '';
+      const enemyAlt = enemy?.name
+        ? `${enemy.name} ready for battle`
+        : 'Enemy ready for battle';
+
+      if (messageTitle) {
+        messageTitle.textContent = mathLabel;
       }
 
-      if (messageEnemy && enemyPath) {
-        messageEnemy.src = enemyPath;
+      if (messageSubtitle) {
+        const label = name ||
+          (typeof battleLevel === 'number'
+            ? `Battle ${battleLevel}`
+            : 'Upcoming Battle');
+        messageSubtitle.textContent = label;
       }
 
-      if (overlayMath && typeof math === 'string') {
-        overlayMath.textContent = math;
+      if (messageEnemy) {
+        if (enemySprite) {
+          messageEnemy.src = enemySprite;
+        }
+        messageEnemy.alt = enemyAlt;
       }
 
-      if (overlayBattleTitle && typeof id !== 'undefined') {
-        overlayBattleTitle.textContent = `Battle ${id}`;
+      if (overlayMath) {
+        overlayMath.textContent = mathLabel;
       }
 
-      if (overlayEnemy && enemyPath) {
-        overlayEnemy.src = enemyPath;
+      if (overlayBattleTitle) {
+        const label = name ||
+          (typeof battleLevel === 'number'
+            ? `Battle ${battleLevel}`
+            : 'Battle');
+        overlayBattleTitle.textContent = label;
       }
 
+      if (overlayEnemy) {
+        if (enemySprite) {
+          overlayEnemy.src = enemySprite;
+        }
+        overlayEnemy.alt = enemyAlt;
+      }
+
+      const accuracyGoal =
+        typeof battle?.accuracyGoal === 'number'
+          ? Math.round(battle.accuracyGoal * 100)
+          : null;
       if (overlayAccuracy) {
-        overlayAccuracy.textContent = '0';
+        overlayAccuracy.textContent =
+          accuracyGoal !== null ? `${accuracyGoal}%` : '0%';
       }
 
+      const timeGoal =
+        typeof battle?.timeGoalSeconds === 'number'
+          ? `${battle.timeGoalSeconds}s`
+          : null;
       if (overlayTime) {
-        overlayTime.textContent = '0';
+        overlayTime.textContent = timeGoal ?? '0s';
       }
     } catch (error) {
       console.error('Failed to load battle preview', error);
