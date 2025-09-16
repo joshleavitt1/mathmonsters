@@ -2,7 +2,7 @@
   display: flex;
   align-items: flex-start;
   gap: 24px;
-  width: min(420px, calc(100% - 32px));
+  width: 420px;
   box-sizing: border-box;
   padding: 24px;
   border-radius: 8px;
@@ -38,7 +38,7 @@
 }
 
 .battle-panel__enemy {
-  width: min(220px, 45%);
+  width: 220px;
   height: auto;
   transform: translate(60px, -20px);
 }
@@ -53,7 +53,7 @@
 }
 
 .battle-card {
-  max-width: 440px;
+  width: 420px;
   background: #ffffff;
   border-radius: 8px;
   padding: 36px 32px 40px;
