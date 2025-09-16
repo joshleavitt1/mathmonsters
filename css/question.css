@@ -23,7 +23,7 @@
   background: #fff;
   box-sizing: border-box;
   padding: 24px;
-  border-radius: 16px;
+  border-radius: 8px;
   text-align: center;
   width: 100%;
   max-width: 400px;
@@ -56,7 +56,7 @@
   background: #006AFF;
   color: #fff;
   border: none;
-  border-radius: 16px;
+  border-radius: 8px;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
 }
@@ -82,9 +82,8 @@
   background: #F1F5FF;
   color: #1D2433;
   border: 2px dashed #006AFF;
-  border-radius: 16px;
+  border-radius: 8px;
   font-size: 16px;
-  letter-spacing: 0.02em;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
@@ -199,7 +198,7 @@
 
 #question .choice {
   background: #F6F6F6;
-  border-radius: 16px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
