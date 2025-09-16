@@ -8,8 +8,28 @@ const markLandingVisited = () => {
   }
 };
 
+const randomizeBubbleTimings = () => {
+  const bubbles = document.querySelectorAll('.bubble');
+
+  bubbles.forEach((bubble) => {
+    const computedStyles = window.getComputedStyle(bubble);
+    const durationValue = computedStyles.getPropertyValue('--duration').trim();
+    const durationInSeconds = Number.parseFloat(durationValue);
+
+    if (!Number.isFinite(durationInSeconds) || durationInSeconds <= 0) {
+      const fallbackOffset = -(Math.random() * 2);
+      bubble.style.setProperty('--delay', `${fallbackOffset.toFixed(3)}s`);
+      return;
+    }
+
+    const randomOffset = Math.random() * durationInSeconds;
+    bubble.style.setProperty('--delay', `${-randomOffset.toFixed(3)}s`);
+  });
+};
+
 const initLandingInteractions = () => {
   markLandingVisited();
+  randomizeBubbleTimings();
   const messageCard = document.querySelector('.battle-select-card');
   const battleOverlay = document.getElementById('battle-overlay');
   const battleButton = battleOverlay?.querySelector('.battle-btn');
