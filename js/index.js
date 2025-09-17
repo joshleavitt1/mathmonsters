@@ -2,112 +2,54 @@ const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
+const MIN_PRELOAD_DURATION_MS = 2000;
 
-const PRELOADER_TIPS = [
-  { threshold: 0, text: 'Warming the coral reefs...' },
-  { threshold: 12, text: 'Charting the shimmering currents...' },
-  { threshold: 28, text: 'Charging bubble shields...' },
-  { threshold: 48, text: 'Summoning the Reef Rangers...' },
-  { threshold: 72, text: 'Tuning tide-tech gear...' },
-  { threshold: 90, text: 'Securing treasure caches...' },
-];
-
-const PRELOADER_COMPLETE_MESSAGE = 'Dive in — the reef is ready!';
-const PRELOAD_STAGE_ONE_WEIGHT = 0.25;
-const PRELOAD_STAGE_TWO_WEIGHT = 0.75;
+const getNow = () =>
+  typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
 
 const preloaderElement = document.querySelector('[data-preloader]');
-const preloaderProgressValue = preloaderElement?.querySelector(
-  '[data-preloader-progress]'
-);
-const preloaderProgressFill = preloaderElement?.querySelector(
-  '[data-preloader-bar]'
-);
-const preloaderTipElement = preloaderElement?.querySelector('[data-preloader-tip]');
-const preloaderProgressRegion = preloaderElement?.querySelector(
-  '[data-preloader-progress-container]'
-);
-
-let lastPreloaderPercent = 0;
-let currentPreloaderTip =
-  (preloaderTipElement?.textContent || '').trim() || PRELOADER_TIPS[0].text;
+let preloaderStartTime = getNow();
 let preloaderFinished = false;
-
-const clampPercent = (value) => {
-  if (!Number.isFinite(value)) {
-    return 0;
-  }
-  return Math.max(0, Math.min(100, Math.round(value)));
-};
-
-const updatePreloaderProgress = (percentValue) => {
-  const boundedPercent = clampPercent(percentValue);
-  const displayPercent = Math.max(lastPreloaderPercent, boundedPercent);
-  lastPreloaderPercent = displayPercent;
-
-  if (preloaderElement) {
-    if (preloaderProgressValue) {
-      preloaderProgressValue.textContent = `${displayPercent}%`;
-    }
-    if (preloaderProgressFill) {
-      preloaderProgressFill.style.setProperty('--progress', `${displayPercent}%`);
-      preloaderProgressFill.style.width = `${displayPercent}%`;
-    }
-    if (preloaderProgressRegion) {
-      preloaderProgressRegion.setAttribute('aria-valuenow', `${displayPercent}`);
-    }
-    if (preloaderTipElement && PRELOADER_TIPS.length) {
-      let selectedTip = currentPreloaderTip;
-      for (const tip of PRELOADER_TIPS) {
-        if (displayPercent >= tip.threshold) {
-          selectedTip = tip.text;
-        } else {
-          break;
-        }
-      }
-      if (selectedTip && selectedTip !== currentPreloaderTip) {
-        preloaderTipElement.textContent = selectedTip;
-        currentPreloaderTip = selectedTip;
-      }
-    }
-  }
-};
+let preloaderHidePromise = null;
 
 const finishPreloader = () => {
-  if (preloaderFinished) {
-    document.body.classList.remove('is-preloading');
-    return;
-  }
-  preloaderFinished = true;
-  updatePreloaderProgress(100);
-
-  if (!preloaderElement) {
-    document.body.classList.remove('is-preloading');
-    return;
+  if (preloaderHidePromise) {
+    return preloaderHidePromise;
   }
 
-  if (preloaderTipElement) {
-    preloaderTipElement.textContent = PRELOADER_COMPLETE_MESSAGE;
-  }
+  preloaderHidePromise = (async () => {
+    if (preloaderFinished) {
+      document.body.classList.remove('is-preloading');
+      return;
+    }
 
-  preloaderElement.classList.add('preloader--complete');
-  preloaderElement.setAttribute('aria-hidden', 'true');
+    preloaderFinished = true;
+    const elapsed = getNow() - preloaderStartTime;
+    if (elapsed < MIN_PRELOAD_DURATION_MS) {
+      await new Promise((resolve) =>
+        window.setTimeout(resolve, MIN_PRELOAD_DURATION_MS - elapsed)
+      );
+    }
 
-  const releaseLanding = () => {
     document.body.classList.remove('is-preloading');
-  };
 
-  window.requestAnimationFrame(() => {
+    if (!preloaderElement) {
+      return;
+    }
+
+    preloaderElement.setAttribute('aria-hidden', 'true');
     preloaderElement.classList.add('preloader--hidden');
-    releaseLanding();
-  });
 
-  window.setTimeout(releaseLanding, 600);
-  window.setTimeout(() => {
+    await new Promise((resolve) => window.setTimeout(resolve, 400));
+
     if (preloaderElement.parentElement) {
       preloaderElement.parentElement.removeChild(preloaderElement);
     }
-  }, 900);
+  })();
+
+  return preloaderHidePromise;
 };
 
 const readStoredProgress = () => {
@@ -167,6 +109,7 @@ const preloadLandingAssets = async () => {
   const results = { levelsData: null, variablesData: null };
   const imageAssets = new Set(['images/background/background.png']);
   const questionFiles = new Set();
+
   const sanitizeAssetPath = (path) => {
     if (typeof path !== 'string') {
       return null;
@@ -184,6 +127,7 @@ const preloadLandingAssets = async () => {
     }
     return trimmed;
   };
+
   const addImageAsset = (path) => {
     const normalized = sanitizeAssetPath(path);
     if (normalized) {
@@ -195,31 +139,13 @@ const preloadLandingAssets = async () => {
     document.body.classList.add('is-preloading');
   }
 
+  preloaderStartTime = getNow();
+
   document
     .querySelectorAll('img[src]')
     .forEach((img) => addImageAsset(img.getAttribute('src')));
 
-  const stageOneTotal = 2;
-  let stageOneCompleted = 0;
-  let stageTwoCompleted = 0;
-  let stageTwoTotal = 0;
-  let stageTwoRegistered = false;
-
-  const recalcProgress = () => {
-    const stageOneProgress =
-      stageOneTotal > 0 ? stageOneCompleted / stageOneTotal : 1;
-    const stageTwoProgress = stageTwoRegistered
-      ? stageTwoTotal > 0
-        ? stageTwoCompleted / stageTwoTotal
-        : 1
-      : 0;
-    const totalProgress =
-      stageOneProgress * PRELOAD_STAGE_ONE_WEIGHT +
-      stageTwoProgress * PRELOAD_STAGE_TWO_WEIGHT;
-    updatePreloaderProgress(totalProgress * 100);
-  };
-
-  const loadJsonStageOne = async (url) => {
+  const loadJson = async (url) => {
     try {
       const response = await fetch(url);
       if (!response.ok) {
@@ -229,18 +155,13 @@ const preloadLandingAssets = async () => {
     } catch (error) {
       console.error(error);
       return null;
-    } finally {
-      stageOneCompleted += 1;
-      recalcProgress();
     }
   };
 
   try {
-    recalcProgress();
-
     const [levelsData, variablesData] = await Promise.all([
-      loadJsonStageOne('data/levels.json'),
-      loadJsonStageOne('data/variables.json'),
+      loadJson('data/levels.json'),
+      loadJson('data/variables.json'),
     ]);
 
     results.levelsData = levelsData;
@@ -273,20 +194,6 @@ const preloadLandingAssets = async () => {
 
     const imagePaths = Array.from(imageAssets);
     const questionPaths = Array.from(questionFiles);
-    stageTwoTotal = imagePaths.length + questionPaths.length;
-    stageTwoRegistered = true;
-
-    if (stageTwoTotal === 0) {
-      stageTwoTotal = 1;
-      stageTwoCompleted = 1;
-      recalcProgress();
-      return results;
-    }
-
-    const markStageTwoComplete = () => {
-      stageTwoCompleted += 1;
-      recalcProgress();
-    };
 
     const preloadQuestion = async (url) => {
       try {
@@ -297,15 +204,12 @@ const preloadLandingAssets = async () => {
         await response.json();
       } catch (error) {
         console.warn(error);
-      } finally {
-        markStageTwoComplete();
       }
     };
 
     const preloadImage = (src) =>
       new Promise((resolve) => {
         if (!src) {
-          markStageTwoComplete();
           resolve(false);
           return;
         }
@@ -315,7 +219,6 @@ const preloadLandingAssets = async () => {
           if (!success) {
             console.warn(`Failed to preload image: ${src}`);
           }
-          markStageTwoComplete();
           resolve(success);
         };
         image.onload = () => finalize(true);
@@ -327,11 +230,10 @@ const preloadLandingAssets = async () => {
       ...questionPaths.map(preloadQuestion),
       ...imagePaths.map(preloadImage),
     ]);
-    recalcProgress();
   } catch (error) {
     console.error('Failed to preload landing assets.', error);
   } finally {
-    finishPreloader();
+    await finishPreloader();
   }
 
   return results;
@@ -622,7 +524,7 @@ const bootstrapLanding = async () => {
     initLandingInteractions(preloadedData);
   } catch (error) {
     console.error('Failed to initialize the landing experience.', error);
-    finishPreloader();
+    await finishPreloader();
     initLandingInteractions({});
   }
 };
