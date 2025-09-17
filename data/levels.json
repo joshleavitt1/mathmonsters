@@ -71,7 +71,7 @@
         "streakGoal": 4,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_3.png",
+          "sprite": "images/characters/shellfin_level_2.png",
           "name": "Shellfin",
           "attack": 2,
           "health": 6,
@@ -100,7 +100,7 @@
         "streakGoal": 4,
         "hero": {
           "id": "shellfin",
-         "sprite": "images/characters/shellfin_level_4.png",
+          "sprite": "images/characters/shellfin_level_2.png",
           "name": "Shellfin",
           "attack": 2,
           "health": 6,
