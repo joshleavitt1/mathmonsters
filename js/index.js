@@ -12,7 +12,7 @@ const ensureAuthenticated = async () => {
   const supabase = window.supabaseClient;
   if (!supabase) {
     redirectToSignIn();
-    return;
+    return false;
   }
 
   try {
@@ -23,14 +23,30 @@ const ensureAuthenticated = async () => {
 
     if (!data?.session) {
       redirectToSignIn();
+      return false;
     }
+    return true;
   } catch (error) {
     console.warn('Unexpected authentication error', error);
     redirectToSignIn();
+    return false;
   }
 };
 
-ensureAuthenticated();
+const startLandingExperience = () => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrapLanding);
+  } else {
+    bootstrapLanding();
+  }
+};
+
+(async () => {
+  const isAuthenticated = await ensureAuthenticated();
+  if (isAuthenticated) {
+    startLandingExperience();
+  }
+})();
 
 const getNow = () =>
   typeof performance !== 'undefined' && typeof performance.now === 'function'
@@ -662,9 +678,3 @@ const bootstrapLanding = async () => {
     initLandingInteractions({});
   }
 };
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bootstrapLanding);
-} else {
-  bootstrapLanding();
-}
