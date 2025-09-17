@@ -302,9 +302,9 @@ body.battle-overlay-open { overflow: hidden; }
   padding: 24px;
   background: rgba(22, 28, 38, 0.25);
   opacity: 0;
-  transform: translateY(48px);
+  transform: none;
   pointer-events: none;
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition: opacity 0.6s ease;
   z-index: 5;
 }
 
@@ -313,13 +313,17 @@ body.battle-overlay-open { overflow: hidden; }
   padding: 24px;
   transform: translateY(24px) scale(0.95);
   transition: transform 0.6s ease;
+  transition-delay: 0s;
   animation: none;
 }
 
 .battle-overlay .enemy-image { width: min(220px, 60%); height: auto; }
 
-body.battle-overlay-open .battle-overlay { opacity: 1; transform: translateY(0); pointer-events: auto; }
-body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: translateY(0) scale(1); }
+body.battle-overlay-open .battle-overlay { opacity: 1; pointer-events: auto; }
+body.battle-overlay-open .battle-overlay .battle-overlay-card {
+  transform: translateY(0) scale(1);
+  transition-delay: 0.12s;
+}
 
 /* ------------------------------------------------------------------------- */
 /* Immersive preload experience ------------------------------------------- */
