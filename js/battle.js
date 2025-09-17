@@ -820,23 +820,25 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if (win) {
+    const goalsAchieved = win && accuracyGoalMet && timeGoalMet;
+
+    if (win && goalsAchieved) {
       const monsterName =
         typeof monster?.name === 'string' ? monster.name.trim() : '';
       const victoryName = monsterName || 'Monster';
       setBattleCompleteTitleLines(victoryName, 'Defeated!');
     } else {
-      setBattleCompleteTitleLines('Keep Practicing!');
+      setBattleCompleteTitleLines('Keep', 'Practicing!');
     }
 
-    battleGoalsMet = win && accuracyGoalMet && timeGoalMet;
+    battleGoalsMet = goalsAchieved;
     if (battleGoalsMet) {
       advanceBattleLevel();
     }
 
     if (nextMissionBtn) {
-      nextMissionBtn.textContent = win ? 'Next Mission' : 'Try Again';
-      nextMissionBtn.dataset.action = win ? 'next' : 'retry';
+      nextMissionBtn.textContent = battleGoalsMet ? 'Next Mission' : 'Try Again';
+      nextMissionBtn.dataset.action = battleGoalsMet ? 'next' : 'retry';
     }
 
     if (completeMessage) {
