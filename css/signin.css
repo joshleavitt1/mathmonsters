@@ -36,21 +36,26 @@ body {
   padding: 0 24px;
   border: none;
   border-radius: 8px;
-  background-color: #ffffff;
+  background-color: #293f5f;
+  color: #949faf;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
 }
 
 .preloader__field::placeholder {
-  color: #888888;
+  color: #949faf;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
 }
 
 .preloader__field:focus {
-  color:#ffffff;
+  color: #ffffff;
   outline: 3px solid rgba(0, 106, 255, 0.35);
   outline-offset: 0;
+}
+
+.preloader__field:focus::placeholder {
+  color: #ffffff;
 }
 
 .preloader__button {
