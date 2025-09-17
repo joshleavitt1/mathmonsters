@@ -19,7 +19,7 @@
         "battleLevel": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_1.png"
+          "sprite": "images/characters/shellfin_level_2.png"
         }
       },
       {
