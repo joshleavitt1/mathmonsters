@@ -77,12 +77,26 @@
         aria-describedby="battle-overlay-stats"
       >
         <div class="battle-info">
-          <p id="battle-overlay-title" class="battle-title">Battle 1</p>
+          <p
+            id="battle-overlay-math"
+            class="math-type"
+            data-battle-math
+          >
+            Math Mission
+          </p>
+          <p
+            id="battle-overlay-title"
+            class="battle-title"
+            data-battle-title
+          >
+            Battle 1
+          </p>
         </div>
         <img
           class="enemy-image"
           src="images/battle/monster_battle.png"
           alt="Enemy monster ready for battle"
+          data-battle-enemy
         />
         <p class="battle-goals-title">Battle Goals</p>
         <div id="battle-overlay-stats" class="battle-stats" aria-live="polite">

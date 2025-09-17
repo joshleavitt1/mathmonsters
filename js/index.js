@@ -343,12 +343,9 @@ const initLandingInteractions = (preloadedData = {}) => {
   const messageCard = document.querySelector('.battle-select-card');
   const battleOverlay = document.getElementById('battle-overlay');
   const battleButton = battleOverlay?.querySelector('.battle-btn');
-  const messageTitle = messageCard?.querySelector('[data-battle-math]');
-  const messageSubtitle = messageCard?.querySelector('[data-battle-title]');
-  const messageEnemy = messageCard?.querySelector('[data-battle-enemy]');
-  const overlayMath = battleOverlay?.querySelector('.math-type');
-  const overlayEnemy = battleOverlay?.querySelector('.enemy-image');
-  const overlayBattleTitle = battleOverlay?.querySelector('.battle-title');
+  const battleMathElements = document.querySelectorAll('[data-battle-math]');
+  const battleTitleElements = document.querySelectorAll('[data-battle-title]');
+  const battleEnemyElements = document.querySelectorAll('[data-battle-enemy]');
   const overlayAccuracy = battleOverlay?.querySelector('.accuracy-value');
   const overlayTime = battleOverlay?.querySelector('.time-value');
 
@@ -432,51 +429,44 @@ const initLandingInteractions = (preloadedData = {}) => {
       }
 
       const { battleLevel, name, battle } = activeLevel;
-      const mathLabel =
-        activeLevel.mathType ?? battle?.mathType ?? 'Math Mission';
+      const mathLabelSource =
+        typeof activeLevel.mathType === 'string'
+          ? activeLevel.mathType
+          : typeof battle?.mathType === 'string'
+          ? battle.mathType
+          : 'Math Mission';
+      const mathLabel = mathLabelSource.trim() || 'Math Mission';
       const enemy = battle?.enemy ?? {};
       const enemySprite = typeof enemy.sprite === 'string' ? enemy.sprite : '';
-      const enemyAlt = enemy?.name
-        ? `${enemy.name} ready for battle`
+      const enemyName =
+        typeof enemy?.name === 'string' ? enemy.name.trim() : '';
+      const enemyAlt = enemyName
+        ? `${enemyName} ready for battle`
         : 'Enemy ready for battle';
 
-      if (messageTitle) {
-        messageTitle.textContent = mathLabel;
-      }
+      const levelName = typeof name === 'string' ? name.trim() : '';
+      const battleTitleLabel =
+        levelName ||
+        (typeof battleLevel === 'number'
+          ? `Battle ${battleLevel}`
+          : 'Upcoming Battle');
 
-      if (messageSubtitle) {
-        const label = name ||
-          (typeof battleLevel === 'number'
-            ? `Battle ${battleLevel}`
-            : 'Upcoming Battle');
-        messageSubtitle.textContent = label;
-      }
+      battleMathElements.forEach((element) => {
+        element.textContent = mathLabel;
+      });
 
-      if (messageEnemy) {
-        if (enemySprite) {
-          messageEnemy.src = enemySprite;
+      battleTitleElements.forEach((element) => {
+        element.textContent = battleTitleLabel;
+      });
+
+      battleEnemyElements.forEach((element) => {
+        if (element instanceof HTMLImageElement || element.tagName === 'IMG') {
+          if (enemySprite) {
+            element.src = enemySprite;
+          }
+          element.alt = enemyAlt;
         }
-        messageEnemy.alt = enemyAlt;
-      }
-
-      if (overlayMath) {
-        overlayMath.textContent = mathLabel;
-      }
-
-      if (overlayBattleTitle) {
-        const label = name ||
-          (typeof battleLevel === 'number'
-            ? `Battle ${battleLevel}`
-            : 'Battle');
-        overlayBattleTitle.textContent = label;
-      }
-
-      if (overlayEnemy) {
-        if (enemySprite) {
-          overlayEnemy.src = enemySprite;
-        }
-        overlayEnemy.alt = enemyAlt;
-      }
+      });
 
       const accuracyGoal =
         typeof battle?.accuracyGoal === 'number'
