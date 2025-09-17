@@ -150,7 +150,7 @@ const determineBattlePreview = (levelsData, variablesData) => {
   const heroSprite =
     typeof heroData?.sprite === 'string' ? heroData.sprite.trim() : '';
   const heroName = typeof heroData?.name === 'string' ? heroData.name.trim() : '';
-  const heroAlt = heroName ? `${heroName} swimming into view` : 'Hero ready for battle';
+  const heroAlt = heroName ? `${heroName} ready for battle` : 'Hero ready for battle';
 
   const battle = activeLevel?.battle ?? {};
   const mathLabelSource =
@@ -518,21 +518,11 @@ const preloadLandingAssets = async () => {
 const initLandingInteractions = (preloadedData = {}) => {
   markLandingVisited();
   randomizeBubbleTimings();
-  const messageCard = document.querySelector('.battle-select-card');
+
   const battleOverlay = document.getElementById('battle-overlay');
+  const overlayCard = battleOverlay?.querySelector('.battle-overlay-card');
   const battleButton = battleOverlay?.querySelector('.battle-btn');
-
-  if (!messageCard || !battleOverlay) {
-    return;
-  }
-
-  const defaultTabIndex = messageCard.getAttribute('tabindex') ?? '0';
-  let battleOverlayActivationTimeout;
-  let messageCardReturnTimeout;
-  let battleButtonFocusTimeout;
-  const MESSAGE_CARD_EXIT_DURATION = 600;
-  const BATTLE_OVERLAY_FOCUS_DELAY = 400;
-  const MESSAGE_CARD_FOCUS_DELAY = MESSAGE_CARD_EXIT_DURATION;
+  const splatImage = document.querySelector('.battle-splat');
 
   const loadBattlePreview = async () => {
     try {
@@ -578,88 +568,50 @@ const initLandingInteractions = (preloadedData = {}) => {
   };
 
   loadBattlePreview();
+  if (!battleOverlay) {
+    return;
+  }
+
+  const BATTLE_SPLAT_DELAY = 3000;
+  const BATTLE_CARD_DELAY = 2000;
+  let splatTimeoutId;
+  let overlayTimeoutId;
 
   const openOverlay = () => {
-    if (
-      document.body.classList.contains('battle-overlay-open') ||
-      document.body.classList.contains('message-exiting') ||
-      messageCard.classList.contains('battle-select-card--animating')
-    ) {
+    if (document.body.classList.contains('battle-overlay-open')) {
       return;
     }
 
-    window.clearTimeout(battleOverlayActivationTimeout);
-    window.clearTimeout(messageCardReturnTimeout);
-    window.clearTimeout(battleButtonFocusTimeout);
+    document.body.classList.add('battle-overlay-open');
+    battleOverlay.setAttribute('aria-hidden', 'false');
 
-    messageCard.classList.remove('battle-select-card--hidden');
-    messageCard.classList.remove('battle-select-card--no-delay');
-    messageCard.classList.add('battle-select-card--animating');
-    document.body.classList.add('message-exiting');
-    messageCard.setAttribute('aria-expanded', 'true');
+    if (overlayCard) {
+      overlayCard.classList.remove('battle-card--pop');
+      overlayCard.classList.remove('battle-overlay-card--visible');
+      void overlayCard.offsetWidth;
+      overlayCard.classList.add('battle-overlay-card--visible');
+      overlayCard.classList.add('battle-card--pop');
+    }
 
-    battleOverlayActivationTimeout = window.setTimeout(() => {
-      document.body.classList.add('battle-overlay-open');
-      battleOverlay.setAttribute('aria-hidden', 'false');
-      messageCard.classList.add('battle-select-card--hidden');
-      messageCard.classList.remove('battle-select-card--animating');
-      messageCard.setAttribute('aria-hidden', 'true');
-      messageCard.setAttribute('tabindex', '-1');
-
-      battleButtonFocusTimeout = window.setTimeout(() => {
-        battleButton?.focus({ preventScroll: true });
-      }, BATTLE_OVERLAY_FOCUS_DELAY);
-    }, MESSAGE_CARD_EXIT_DURATION);
+    window.setTimeout(() => {
+      battleButton?.focus({ preventScroll: true });
+    }, 200);
   };
 
-  const closeOverlay = () => {
-    if (!document.body.classList.contains('battle-overlay-open')) {
-      return;
-    }
+  const startBattleSequence = () => {
+    window.clearTimeout(splatTimeoutId);
+    window.clearTimeout(overlayTimeoutId);
 
-    window.clearTimeout(battleOverlayActivationTimeout);
-    window.clearTimeout(messageCardReturnTimeout);
-    window.clearTimeout(battleButtonFocusTimeout);
+    splatTimeoutId = window.setTimeout(() => {
+      if (splatImage) {
+        splatImage.classList.add('battle-splat--active');
+      }
 
-    document.body.classList.remove('battle-overlay-open');
-    battleOverlay.setAttribute('aria-hidden', 'true');
-    messageCard.classList.remove('battle-select-card--hidden');
-    messageCard.classList.add('battle-select-card--animating');
-    messageCard.classList.add('battle-select-card--no-delay');
-    messageCard.setAttribute('aria-expanded', 'false');
-    messageCard.setAttribute('aria-hidden', 'false');
-    messageCard.setAttribute('tabindex', defaultTabIndex);
-
-    window.requestAnimationFrame(() => {
-      document.body.classList.remove('message-exiting');
-    });
-
-    messageCardReturnTimeout = window.setTimeout(() => {
-      messageCard.classList.remove('battle-select-card--animating');
-      messageCard.focus({ preventScroll: true });
-    }, MESSAGE_CARD_FOCUS_DELAY);
+      overlayTimeoutId = window.setTimeout(openOverlay, BATTLE_CARD_DELAY);
+    }, BATTLE_SPLAT_DELAY);
   };
 
-  messageCard.addEventListener('click', openOverlay);
-
-  messageCard.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      openOverlay();
-    }
-  });
-
-  battleOverlay.addEventListener('click', (event) => {
-    if (event.target === battleOverlay) {
-      closeOverlay();
-    }
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      closeOverlay();
-    }
-  });
+  startBattleSequence();
 
   if (battleButton) {
     battleButton.addEventListener('click', () => {
