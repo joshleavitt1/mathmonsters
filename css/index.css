@@ -360,7 +360,7 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 8px solid rgba(255, 255, 255, 0.2);
+  border: 4px solid rgba(255, 255, 255, 0.2);
   border-top-color: #ffffff;
   animation: preloader-spin 1s linear infinite;
 }
