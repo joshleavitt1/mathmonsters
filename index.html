@@ -7,7 +7,30 @@
   <link rel="stylesheet" href="css/battle-card.css" />
   <link rel="stylesheet" href="css/index.css" />
 </head>
-<body>
+<body class="is-preloading">
+  <div class="preloader" data-preloader role="status" aria-live="polite">
+    <div class="preloader__card">
+      <p class="preloader__eyebrow">Preparing</p>
+      <h1 class="preloader__title">Reef Rangers</h1>
+      <div class="preloader__spinner" aria-hidden="true">
+        <span class="preloader__spinner-dot"></span>
+      </div>
+      <div
+        class="preloader__progress"
+        data-preloader-progress-container
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+      >
+        <div class="preloader__progress-bar">
+          <span class="preloader__progress-fill" data-preloader-bar></span>
+        </div>
+        <span class="preloader__progress-value" data-preloader-progress>0%</span>
+      </div>
+      <p class="preloader__tip" data-preloader-tip>Warming the coral reefs...</p>
+    </div>
+  </div>
   <main class="landing">
     <div class="bubbles" aria-hidden="true">
       <span class="bubble" style="--size: 18px; --duration: 6.5s; --delay: 0s;"></span>
