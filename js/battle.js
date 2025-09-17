@@ -125,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let battleEnded = false;
   let currentBattleLevel = null;
   let battleStartTime = null;
+  let battleLevelAdvanced = false;
 
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
@@ -207,6 +208,29 @@ document.addEventListener('DOMContentLoaded', () => {
     valueEl.classList.add(met ? 'goal-result--met' : 'goal-result--missed');
   }
 
+  function setBattleCompleteTitleLines(...lines) {
+    if (!battleCompleteTitle) {
+      return;
+    }
+
+    const filteredLines = lines
+      .map((line) => (typeof line === 'string' ? line.trim() : ''))
+      .filter((line) => line.length > 0);
+
+    battleCompleteTitle.replaceChildren();
+
+    if (!filteredLines.length) {
+      return;
+    }
+
+    filteredLines.forEach((line, index) => {
+      battleCompleteTitle.appendChild(document.createTextNode(line));
+      if (index < filteredLines.length - 1) {
+        battleCompleteTitle.appendChild(document.createElement('br'));
+      }
+    });
+  }
+
   function persistProgress(update) {
     if (!update || typeof update !== 'object') {
       return;
@@ -249,6 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function advanceBattleLevel() {
+    if (battleLevelAdvanced) {
+      return;
+    }
     const baseLevel =
       typeof currentBattleLevel === 'number'
         ? currentBattleLevel
@@ -258,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextLevel = baseLevel + 1;
     persistProgress({ battleLevel: nextLevel });
     currentBattleLevel = nextLevel;
+    battleLevelAdvanced = true;
   }
 
   function loadData() {
@@ -783,10 +811,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if (battleCompleteTitle) {
-      battleCompleteTitle.textContent = win
-        ? 'Monster Defeated!'
-        : 'Keep Practicing!';
+    if (win) {
+      const monsterName =
+        typeof monster?.name === 'string' ? monster.name.trim() : '';
+      const victoryName = monsterName || 'Monster';
+      setBattleCompleteTitleLines(victoryName, 'Defeated!');
+      advanceBattleLevel();
+    } else {
+      setBattleCompleteTitleLines('Keep Practicing!');
     }
 
     if (nextMissionBtn) {
@@ -801,10 +833,6 @@ document.addEventListener('DOMContentLoaded', () => {
         completeMessage.focus();
       }
     }
-
-    if (win) {
-      advanceBattleLevel();
-    }
   }
 
   if (nextMissionBtn) {
@@ -813,6 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (action === 'retry') {
         window.location.reload();
       } else {
+        advanceBattleLevel();
         window.location.href = '../index.html';
       }
     });
@@ -829,13 +858,12 @@ document.addEventListener('DOMContentLoaded', () => {
     wrongAnswers = 0;
     battleStartTime = null;
     initialTimeRemaining = 0;
+    battleLevelAdvanced = false;
     if (completeMessage) {
       completeMessage.classList.remove('show');
       completeMessage.setAttribute('aria-hidden', 'true');
     }
-    if (battleCompleteTitle) {
-      battleCompleteTitle.textContent = 'Battle Complete';
-    }
+    setBattleCompleteTitleLines('Battle', 'Complete');
     if (nextMissionBtn) {
       nextMissionBtn.textContent = 'Next Mission';
       nextMissionBtn.dataset.action = 'next';
