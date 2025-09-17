@@ -97,12 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
   const summaryTimeText = ensureStatValueText(summaryTimeValue);
 
-  if (bannerAccuracyValue) bannerAccuracyValue.textContent = '0%';
+  if (bannerAccuracyValue) bannerAccuracyValue.textContent = '100%';
   if (bannerTimeValue) bannerTimeValue.textContent = '0s';
-  if (summaryAccuracyText) summaryAccuracyText.textContent = '0%';
+  if (summaryAccuracyText) summaryAccuracyText.textContent = '100%';
   if (summaryTimeText) summaryTimeText.textContent = '0s';
 
-  let STREAK_GOAL = 5;
+  const MIN_STREAK_GOAL = 1;
+  const MAX_STREAK_GOAL = 5;
+  let STREAK_GOAL = MAX_STREAK_GOAL;
   let questions = [];
   let currentQuestion = 0;
   let streak = 0;
@@ -110,13 +112,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let streakIconShown = false;
   let correctAnswers = 0;
   let totalAnswers = 0;
+  let wrongAnswers = 0;
   let accuracyGoal = null;
   let timeGoalSeconds = 0;
   let timeRemaining = 0;
+  let initialTimeRemaining = 0;
   let battleTimerDeadline = null;
   let battleTimerInterval = null;
   let battleEnded = false;
   let currentBattleLevel = null;
+  let battleStartTime = null;
 
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
@@ -294,7 +299,20 @@ document.addEventListener('DOMContentLoaded', () => {
       timeRemaining = 0;
     }
 
-    STREAK_GOAL = Number(battleData.streakGoal) || STREAK_GOAL;
+    initialTimeRemaining = Number.isFinite(timeRemaining) ? timeRemaining : 0;
+
+    const resolvedStreakGoal = Number(battleData.streakGoal);
+    if (Number.isFinite(resolvedStreakGoal)) {
+      STREAK_GOAL = Math.min(
+        Math.max(Math.round(resolvedStreakGoal), MIN_STREAK_GOAL),
+        MAX_STREAK_GOAL
+      );
+    } else {
+      STREAK_GOAL = Math.min(
+        Math.max(Math.round(STREAK_GOAL), MIN_STREAK_GOAL),
+        MAX_STREAK_GOAL
+      );
+    }
 
     hero.attack = Number(heroData.attack) || hero.attack;
     hero.health = Number(heroData.health) || hero.health;
@@ -355,7 +373,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function calculateAccuracy() {
-    return totalAnswers ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+    if (wrongAnswers === 0) {
+      return 100;
+    }
+    return totalAnswers
+      ? Math.max(0, Math.round((correctAnswers / totalAnswers) * 100))
+      : 100;
   }
 
   function updateAccuracyDisplays() {
@@ -392,6 +415,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function startBattleTimer() {
     stopBattleTimer();
+    if (!battleStartTime) {
+      battleStartTime = Date.now();
+    }
     if (!Number.isFinite(timeRemaining) || timeRemaining <= 0) {
       timeRemaining = Math.max(0, Number.isFinite(timeRemaining) ? Math.floor(timeRemaining) : 0);
       updateBattleTimeDisplay();
@@ -605,7 +631,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const correct = e.detail.correct;
     totalAnswers++;
-    if (correct) correctAnswers++;
+    if (correct) {
+      correctAnswers++;
+    } else {
+      wrongAnswers++;
+    }
     updateAccuracyDisplays();
     if (correct) {
       let incEl = null;
@@ -691,11 +721,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const accuracyGoalMet =
       typeof accuracyGoal === 'number' ? accuracy / 100 >= accuracyGoal : true;
 
-    const timeValue = Number.isFinite(timeRemaining)
-      ? Math.max(0, Math.floor(timeRemaining))
+    const now = Date.now();
+    const elapsedByTimer = initialTimeRemaining > 0
+      ? Math.max(0, Math.round(initialTimeRemaining - timeRemaining))
       : 0;
-    const timeDisplay = `${timeValue}s`;
-    const timeGoalMet = timeGoalSeconds > 0 ? timeValue > 0 : true;
+    const elapsedByClock = battleStartTime
+      ? Math.max(0, Math.round((now - battleStartTime) / 1000))
+      : 0;
+    const elapsedSeconds = initialTimeRemaining > 0
+      ? Math.max(elapsedByTimer, elapsedByClock)
+      : elapsedByClock;
+    const timeDisplay = `${elapsedSeconds}s`;
+    const timeGoalMet =
+      timeGoalSeconds > 0 ? elapsedSeconds <= timeGoalSeconds : true;
 
     if (summaryAccuracyValue && summaryAccuracyText) {
       applyGoalResult(
@@ -758,6 +796,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initBattle() {
     battleEnded = false;
+    streak = 0;
+    streakMaxed = false;
+    streakIconShown = false;
+    currentQuestion = 0;
+    correctAnswers = 0;
+    totalAnswers = 0;
+    wrongAnswers = 0;
+    battleStartTime = null;
+    initialTimeRemaining = 0;
     if (completeMessage) {
       completeMessage.classList.remove('show');
       completeMessage.setAttribute('aria-hidden', 'true');

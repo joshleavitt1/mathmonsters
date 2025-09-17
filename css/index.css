@@ -236,16 +236,19 @@ body:not(.is-preloading) main.landing {
 .battle-select-card {
   position: absolute;
   left: 50%;
-  bottom: 16px;
-  transform: translate(-50%, calc(100% + 16px)) scale(0.9);
+  bottom: 24px;
+  transform: translate(-50%, 32px) scale(0.92);
   width: min(420px, calc(100% - 32px));
   max-height: 120px;
   overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
   animation: message-pop 0.5s ease-out forwards;
   animation-delay: var(--battle-select-delay, 2.2s);
+  animation-fill-mode: both;
   z-index: 3;
   transition: transform 0.6s ease, opacity 0.6s ease;
-  visibility: visible;
 }
 
 .battle-select-card--no-delay {
@@ -264,9 +267,24 @@ body.message-exiting .battle-select-card {
 }
 
 @keyframes message-pop {
-  0%   { transform: translate(-50%, calc(100% + 16px)) scale(0.8); opacity: 0; }
-  60%  { transform: translate(-50%, -8px) scale(1.05); opacity: 1; }
-  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  0% {
+    transform: translate(-50%, 32px) scale(0.86);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  60% {
+    transform: translate(-50%, -8px) scale(1.05);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
 }
 
 .battle-select-card:focus-visible { outline: 3px solid #006aff; outline-offset: 4px; }
@@ -314,12 +332,12 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
   justify-content: center;
   padding: clamp(24px, 6vw, 48px);
   background: radial-gradient(
-      120% 120% at 50% 50%,
-      rgba(6, 28, 48, 0.98) 0%,
-      rgba(5, 18, 33, 0.94) 45%,
-      rgba(2, 10, 22, 0.92) 100%
+      125% 125% at 50% 50%,
+      #001b41 0%,
+      #001334 52%,
+      #000b24 100%
     );
-  color: #f0fdff;
+  color: #f5f8ff;
   z-index: 10;
   isolation: isolate;
   overflow: hidden;
@@ -339,25 +357,25 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
 
 .preloader::before {
   background: conic-gradient(
-    from 45deg,
-    rgba(98, 237, 255, 0.28) 0deg,
-    rgba(82, 123, 255, 0.18) 120deg,
-    rgba(111, 255, 233, 0.26) 240deg,
-    rgba(98, 237, 255, 0.28) 360deg
+    from 30deg,
+    rgba(255, 255, 255, 0.2) 0deg,
+    rgba(0, 106, 255, 0.35) 120deg,
+    rgba(255, 255, 255, 0.22) 240deg,
+    rgba(0, 106, 255, 0.35) 360deg
   );
-  filter: blur(90px);
+  filter: blur(95px);
   animation: preloader-glow 22s linear infinite;
 }
 
 .preloader::after {
   background: radial-gradient(
-      40% 40% at 20% 20%,
-      rgba(111, 255, 233, 0.25),
+      38% 40% at 18% 20%,
+      rgba(255, 255, 255, 0.2),
       transparent
     ),
-    radial-gradient(50% 60% at 80% 80%, rgba(94, 179, 255, 0.22), transparent);
-  filter: blur(60px);
-  transform: rotate(12deg);
+    radial-gradient(52% 60% at 78% 80%, rgba(0, 106, 255, 0.28), transparent);
+  filter: blur(68px);
+  transform: rotate(10deg);
 }
 
 .preloader__card {
@@ -367,14 +385,14 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
   border-radius: 26px;
   text-align: center;
   background: linear-gradient(
-      140deg,
-      rgba(18, 73, 92, 0.88),
-      rgba(22, 33, 58, 0.82)
+      150deg,
+      rgba(0, 34, 76, 0.92),
+      rgba(0, 20, 54, 0.88)
     );
   box-shadow:
-    0 26px 60px rgba(2, 10, 24, 0.55),
-    0 0 0 1px rgba(111, 255, 233, 0.18);
-  border: 1px solid rgba(111, 255, 233, 0.2);
+    0 26px 60px rgba(0, 7, 20, 0.6),
+    0 0 0 1px rgba(0, 106, 255, 0.28);
+  border: 1px solid rgba(0, 106, 255, 0.32);
   overflow: hidden;
 }
 
@@ -385,21 +403,21 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
   border-radius: inherit;
   background: linear-gradient(
       160deg,
-      rgba(111, 255, 233, 0.18) 0%,
-      rgba(255, 255, 255, 0) 40%,
-      rgba(98, 217, 255, 0.1) 100%
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0) 42%,
+      rgba(0, 106, 255, 0.2) 100%
     );
   mix-blend-mode: screen;
-  opacity: 0.7;
+  opacity: 0.75;
   pointer-events: none;
 }
 
 @supports ((-webkit-backdrop-filter: blur(12px)) or (backdrop-filter: blur(12px))) {
   .preloader__card {
     background: linear-gradient(
-        140deg,
-        rgba(18, 73, 92, 0.68),
-        rgba(22, 33, 58, 0.62)
+        150deg,
+        rgba(0, 34, 76, 0.72),
+        rgba(0, 20, 54, 0.66)
       );
     -webkit-backdrop-filter: blur(22px) saturate(150%);
             backdrop-filter: blur(22px) saturate(150%);
@@ -411,15 +429,15 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
   font-size: 0.7rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: rgba(111, 255, 233, 0.85);
+  color: rgba(0, 106, 255, 0.75);
 }
 
 .preloader__title {
   margin: 0;
   font-size: clamp(2rem, 5vw, 2.6rem);
   letter-spacing: 0.04em;
-  color: #f5feff;
-  text-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  color: #ffffff;
+  text-shadow: 0 10px 28px rgba(0, 6, 20, 0.55);
 }
 
 .preloader__spinner {
@@ -428,8 +446,8 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
   height: clamp(76px, 12vw, 108px);
   margin: clamp(24px, 4vw, 32px) auto;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, rgba(111, 255, 233, 0.55), transparent 65%);
-  filter: drop-shadow(0 0 24px rgba(111, 255, 233, 0.4));
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.45), transparent 65%);
+  filter: drop-shadow(0 0 28px rgba(0, 106, 255, 0.45));
 }
 
 .preloader__spinner::before,
@@ -443,15 +461,15 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
 
 .preloader__spinner::before {
   border: 3px solid rgba(255, 255, 255, 0.18);
-  border-top-color: rgba(111, 255, 233, 0.82);
-  border-right-color: rgba(96, 198, 255, 0.76);
+  border-top-color: rgba(0, 106, 255, 0.82);
+  border-right-color: rgba(0, 122, 255, 0.76);
   animation: preloader-spin 1.25s linear infinite;
 }
 
 .preloader__spinner::after {
   inset: 18%;
-  border: 2px solid rgba(111, 255, 233, 0.45);
-  opacity: 0.6;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  opacity: 0.55;
   filter: blur(0.8px);
 }
 
@@ -463,8 +481,8 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
   height: 12px;
   margin-left: -6px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6fffe9, #70d2ff);
-  box-shadow: 0 0 18px rgba(111, 255, 233, 0.75);
+  background: linear-gradient(135deg, #ffffff, #006aff);
+  box-shadow: 0 0 18px rgba(0, 106, 255, 0.75);
   transform-origin: center calc(50% + 32px);
   animation: preloader-orbit 1.8s ease-in-out infinite;
 }
@@ -482,7 +500,7 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
   width: 100%;
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.18);
   overflow: hidden;
 }
 
@@ -492,21 +510,21 @@ body.battle-overlay-open .battle-overlay .battle-overlay-card { transform: trans
   width: var(--progress);
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, rgba(111, 255, 233, 0.95), rgba(112, 208, 255, 0.92));
-  box-shadow: 0 0 16px rgba(111, 255, 233, 0.55);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), rgba(0, 106, 255, 0.9));
+  box-shadow: 0 0 18px rgba(0, 106, 255, 0.5);
   transition: width 0.35s ease;
 }
 
 .preloader__progress-value {
   font-size: 0.95rem;
   letter-spacing: 0.08em;
-  color: rgba(245, 254, 255, 0.96);
+  color: rgba(245, 249, 255, 0.96);
 }
 
 .preloader__tip {
   margin: clamp(18px, 3vw, 26px) 0 0;
   font-size: clamp(0.95rem, 2.4vw, 1.1rem);
-  color: rgba(213, 244, 255, 0.88);
+  color: rgba(212, 224, 255, 0.85);
   letter-spacing: 0.01em;
 }
 
