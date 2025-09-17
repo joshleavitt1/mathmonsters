@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In | Reef Rangers</title>
+    <link rel="stylesheet" href="css/battle-card.css" />
+    <link rel="stylesheet" href="css/signin.css" />
+  </head>
+  <body>
+    <div class="preloader">
+      <img
+        class="preloader__logo"
+        src="images/brand/logo.png"
+        alt="Reef Rangers logo"
+        width="300"
+        height="300"
+      />
+      <form class="preloader__form" action="#" method="post">
+        <label class="visually-hidden" for="signin-email">Email</label>
+        <input
+          class="preloader__field"
+          type="email"
+          id="signin-email"
+          name="email"
+          placeholder="Email"
+          autocomplete="email"
+          required
+        />
+        <label class="visually-hidden" for="signin-password">Password</label>
+        <input
+          class="preloader__field"
+          type="password"
+          id="signin-password"
+          name="password"
+          placeholder="Password"
+          autocomplete="current-password"
+          required
+        />
+        <button class="btn-primary preloader__button" type="submit">Sign In</button>
+      </form>
+    </div>
+  </body>
+</html>
