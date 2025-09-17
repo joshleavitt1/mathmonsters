@@ -95,8 +95,8 @@
 }
 
 .battle-card .enemy-image {
-  width: min(240px, 65%);
-  height: auto;
+  width: 220px;
+  height: 220px;
 }
 
 .battle-card .battle-stats,
