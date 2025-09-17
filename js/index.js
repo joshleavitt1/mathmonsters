@@ -346,6 +346,7 @@ const initLandingInteractions = (preloadedData = {}) => {
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
   const battleTitleElements = document.querySelectorAll('[data-battle-title]');
   const battleEnemyElements = document.querySelectorAll('[data-battle-enemy]');
+  const heroImage = document.querySelector('.hero');
   const overlayAccuracy = battleOverlay?.querySelector('.accuracy-value');
   const overlayTime = battleOverlay?.querySelector('.time-value');
 
@@ -426,6 +427,41 @@ const initLandingInteractions = (preloadedData = {}) => {
 
       if (!activeLevel) {
         return;
+      }
+
+      const userBattles = Array.isArray(variablesData?.user?.battles)
+        ? variablesData.user.battles
+        : [];
+      const findUserBattle = (level) => {
+        if (typeof level !== 'number') {
+          return null;
+        }
+        return (
+          userBattles.find(
+            (entry) => typeof entry?.battleLevel === 'number' && entry.battleLevel === level
+          ) ?? null
+        );
+      };
+
+      const activeUserBattle =
+        findUserBattle(activeLevel?.battleLevel) ?? userBattles[0] ?? null;
+      const levelHero = activeLevel?.battle?.hero ?? {};
+      const heroData = {
+        ...levelHero,
+        ...(activeUserBattle?.hero ?? {}),
+      };
+
+      if (heroImage) {
+        const heroSprite =
+          typeof heroData?.sprite === 'string' ? heroData.sprite.trim() : '';
+        if (heroSprite) {
+          heroImage.src = heroSprite;
+        }
+        const heroName =
+          typeof heroData?.name === 'string' ? heroData.name.trim() : '';
+        heroImage.alt = heroName
+          ? `${heroName} swimming into view`
+          : 'Hero ready for battle';
       }
 
       const { battleLevel, name, battle } = activeLevel;

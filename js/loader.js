@@ -42,6 +42,9 @@ const readStoredProgress = () => {
       baseVariables && typeof baseVariables.progress === 'object'
         ? baseVariables.progress
         : {};
+    const userBattles = Array.isArray(baseVariables?.user?.battles)
+      ? baseVariables.user.battles
+      : [];
     const progress = { ...baseProgress };
 
     if (storedProgress && typeof storedProgress === 'object') {
@@ -81,8 +84,26 @@ const readStoredProgress = () => {
       }
     }
 
-    const battle = currentLevel?.battle ?? {};
-    const hero = battle?.hero ?? null;
+    const resolveUserBattle = (level) => {
+      if (typeof level !== 'number') {
+        return null;
+      }
+      return (
+        userBattles.find(
+          (entry) => typeof entry?.battleLevel === 'number' && entry.battleLevel === level
+        ) ?? null
+      );
+    };
+
+    const activeUserBattle =
+      resolveUserBattle(activeBattleLevel) ?? userBattles[0] ?? null;
+
+    const levelBattle = currentLevel?.battle ?? {};
+    const hero = {
+      ...(levelBattle?.hero ?? {}),
+      ...(activeUserBattle?.hero ?? {}),
+    };
+    const battle = { ...levelBattle, hero };
     const enemy = battle?.enemy ?? null;
     const variables = { ...baseVariables, progress };
 
