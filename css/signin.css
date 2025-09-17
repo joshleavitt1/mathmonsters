@@ -24,11 +24,10 @@ body {
 }
 
 .preloader__form {
-  width: 100%;
   max-width: 420px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .preloader__field {
@@ -37,10 +36,10 @@ body {
   padding: 0 24px;
   border: none;
   border-radius: 8px;
-  background-color: #ffffff;
+  background-color: #ffffff24;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
-  color: #272b34;
+  color: #ffffff50;
 }
 
 .preloader__field::placeholder {
@@ -50,6 +49,7 @@ body {
 }
 
 .preloader__field:focus {
+  color:#ffffff;
   outline: 3px solid rgba(0, 106, 255, 0.35);
   outline-offset: 0;
 }
