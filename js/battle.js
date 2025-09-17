@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const setStreakButton = document.querySelector('[data-dev-set-streak]');
   const endBattleButton = document.querySelector('[data-dev-end-battle]');
   const resetLevelButton = document.querySelector('[data-dev-reset-level]');
+  const logOutButton = document.querySelector('[data-dev-log-out]');
   const devControls = document.querySelector('.battle-dev-controls');
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
@@ -681,6 +682,23 @@ document.addEventListener('DOMContentLoaded', () => {
     currentBattleLevel = 1;
     battleLevelAdvanced = false;
     battleGoalsMet = false;
+  });
+
+  logOutButton?.addEventListener('click', async () => {
+    const supabase = window.supabaseClient;
+
+    if (supabase?.auth?.signOut) {
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.warn('Supabase sign out failed', error);
+        }
+      } catch (error) {
+        console.warn('Unexpected error during sign out', error);
+      }
+    }
+
+    window.location.replace('../signin.html');
   });
 
   document.addEventListener('answer-submitted', (e) => {
