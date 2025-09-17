@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
+  const prefersReducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  ).matches;
   const monsterHpFill = document.querySelector('#monster-stats .hp-fill');
   const heroHpFill = document.querySelector('#shellfin-stats .hp-fill');
   const monsterNameEl = document.querySelector('#monster-stats .name');
@@ -126,21 +129,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
 
-  heroImg.classList.add('slide-in');
-  monsterImg.classList.add('slide-in');
-  heroStats.classList.add('show');
-  monsterStats.classList.add('show');
+  const markBattleReady = (img) => {
+    if (!img) {
+      return;
+    }
+    img.classList.remove('slide-in');
+    img.classList.add('battle-ready');
+  };
 
-  heroImg.addEventListener(
-    'animationend',
-    () => heroImg.classList.remove('slide-in'),
-    { once: true }
-  );
-  monsterImg.addEventListener(
-    'animationend',
-    () => monsterImg.classList.remove('slide-in'),
-    { once: true }
-  );
+  if (prefersReducedMotion) {
+    markBattleReady(heroImg);
+    markBattleReady(monsterImg);
+  } else {
+    if (heroImg) {
+      heroImg.classList.add('slide-in');
+      heroImg.addEventListener('animationend', () => markBattleReady(heroImg), {
+        once: true,
+      });
+      window.setTimeout(() => markBattleReady(heroImg), 1400);
+    }
+
+    if (monsterImg) {
+      monsterImg.classList.add('slide-in');
+      monsterImg.addEventListener('animationend', () => markBattleReady(monsterImg), {
+        once: true,
+      });
+      window.setTimeout(() => markBattleReady(monsterImg), 1400);
+    }
+  }
+
+  window.requestAnimationFrame(() => {
+    heroStats?.classList.add('show');
+    monsterStats?.classList.add('show');
+  });
 
   function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
