@@ -57,24 +57,52 @@ body:not(.is-preloading) main.landing {
   left: 50%;
   max-width: 300px;
   max-height: 300px;
-  transform: translateX(150%);
-  animation: hero-slide 1.35s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
-    hero-float 3.5s ease-in-out 1.35s infinite;
+  transform: translate(-50%, 0);
+  animation: hero-float 3.5s ease-in-out infinite;
   image-rendering: auto;
   z-index: 2;
   pointer-events: none;
 }
 
-@keyframes hero-slide {
-  0% { transform: translateX(150%); }
-  80% { transform: translateX(-54%); }
-  100% { transform: translateX(-50%); }
+@keyframes hero-float {
+  0%   { transform: translate(-50%, 0) translateY(0); }
+  50%  { transform: translate(-50%, 0) translateY(-32px); }
+  100% { transform: translate(-50%, 0) translateY(0); }
 }
 
-@keyframes hero-float {
-  0%   { transform: translateX(-50%) translateY(0); }
-  50%  { transform: translateX(-50%) translateY(-32px); }
-  100% { transform: translateX(-50%) translateY(0); }
+.battle-splat {
+  position: absolute;
+  bottom: calc(32vh - 16px);
+  left: 50%;
+  width: clamp(220px, 42vw, 420px);
+  max-width: 420px;
+  transform: translate(-50%, 0) scale(0.1);
+  transform-origin: center;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.battle-splat--active {
+  animation: battle-splat-pop 0.6s cubic-bezier(0.24, 1.4, 0.4, 1) forwards;
+}
+
+@keyframes battle-splat-pop {
+  0% {
+    transform: translate(-50%, 0) scale(0.1) rotate(-4deg);
+    opacity: 0;
+    filter: blur(2px);
+  }
+  60% {
+    transform: translate(-50%, -12px) scale(1.08) rotate(3deg);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1) rotate(0deg);
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
 /* Bubble field */
@@ -232,65 +260,6 @@ body:not(.is-preloading) main.landing {
   100% { --rot: 3deg; }
 }
 
-/* Message card & overlay (unchanged) */
-.battle-select-card {
-  position: absolute;
-  left: 50%;
-  bottom: 24px;
-  transform: translate(-50%, 32px) scale(0.92);
-  width: min(420px, calc(100% - 32px));
-  max-height: 120px;
-  overflow: hidden;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  animation: message-pop 0.5s ease-out forwards;
-  animation-delay: var(--battle-select-delay, 2.2s);
-  animation-fill-mode: both;
-  z-index: 3;
-  transition: transform 0.6s ease, opacity 0.6s ease;
-}
-
-.battle-select-card--no-delay {
-  --battle-select-delay: 0s;
-}
-
-/* Prevent rapid re-triggering while the card is animating */
-.battle-select-card--animating {
-  pointer-events: none;
-}
-
-body.message-exiting .battle-select-card {
-  transform: translate(-50%, -40vh) scale(1.2);
-  opacity: 0;
-  pointer-events: none;
-}
-
-@keyframes message-pop {
-  0% {
-    transform: translate(-50%, 32px) scale(0.86);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-  60% {
-    transform: translate(-50%, -8px) scale(1.05);
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-  100% {
-    transform: translate(-50%, 0) scale(1);
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-}
-
-.battle-select-card:focus-visible { outline: 3px solid #006aff; outline-offset: 4px; }
-.battle-select-card:active { transform: translate(-50%, 4px) scale(0.98); }
-.battle-select-card--hidden { visibility: hidden; pointer-events: none; display: none; }
-
 body.battle-overlay-open { overflow: hidden; }
 
 .battle-overlay {
@@ -311,18 +280,17 @@ body.battle-overlay-open { overflow: hidden; }
 .battle-overlay .battle-overlay-card {
   width: 420px;
   padding: 24px;
+  opacity: 0;
   transform: translateY(24px) scale(0.95);
-  transition: transform 0.6s ease;
-  transition-delay: 0s;
-  animation: none;
 }
 
 .battle-overlay .enemy-image { width: min(220px, 60%); height: auto; }
 
 body.battle-overlay-open .battle-overlay { opacity: 1; pointer-events: auto; }
-body.battle-overlay-open .battle-overlay .battle-overlay-card {
+
+.battle-overlay-card--visible {
+  opacity: 1;
   transform: translateY(0) scale(1);
-  transition-delay: 0.12s;
 }
 
 /* ------------------------------------------------------------------------- */
