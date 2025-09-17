@@ -9,6 +9,229 @@ const getNow = () =>
     ? performance.now()
     : Date.now();
 
+const sanitizeAssetPath = (path) => {
+  if (typeof path !== 'string') {
+    return null;
+  }
+  let trimmed = path.trim();
+  if (!trimmed || trimmed.startsWith('data:')) {
+    return null;
+  }
+  while (trimmed.startsWith('./') || trimmed.startsWith('../')) {
+    if (trimmed.startsWith('./')) {
+      trimmed = trimmed.slice(2);
+    } else if (trimmed.startsWith('../')) {
+      trimmed = trimmed.slice(3);
+    }
+  }
+  return trimmed;
+};
+
+const mergeVariablesWithProgress = (rawVariablesData) => {
+  const variables =
+    rawVariablesData && typeof rawVariablesData === 'object'
+      ? { ...rawVariablesData }
+      : {};
+
+  const storedProgress = readStoredProgress();
+
+  if (storedProgress && typeof storedProgress === 'object') {
+    const baseProgress =
+      rawVariablesData && typeof rawVariablesData.progress === 'object'
+        ? rawVariablesData.progress
+        : {};
+    const mergedProgress = { ...baseProgress };
+
+    if (typeof storedProgress.battleLevel === 'number') {
+      mergedProgress.battleLevel = storedProgress.battleLevel;
+    }
+
+    if (typeof storedProgress.timeRemainingSeconds === 'number') {
+      mergedProgress.timeRemainingSeconds =
+        storedProgress.timeRemainingSeconds;
+    }
+
+    variables.progress = mergedProgress;
+  } else if (
+    rawVariablesData &&
+    typeof rawVariablesData.progress === 'object' &&
+    !variables.progress
+  ) {
+    variables.progress = { ...rawVariablesData.progress };
+  }
+
+  return variables;
+};
+
+const determineBattlePreview = (levelsData, variablesData) => {
+  const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
+  const variables = mergeVariablesWithProgress(variablesData);
+
+  if (!levels.length) {
+    return { levels, variables, preview: null };
+  }
+
+  const progressLevel = variables?.progress?.battleLevel;
+  const activeLevel =
+    levels.find((level) => level?.battleLevel === progressLevel) ?? levels[0];
+
+  if (!activeLevel) {
+    return { levels, variables, preview: null };
+  }
+
+  const userBattles = Array.isArray(variables?.user?.battles)
+    ? variables.user.battles
+    : [];
+
+  const findUserBattle = (level) => {
+    if (typeof level !== 'number') {
+      return null;
+    }
+    return (
+      userBattles.find(
+        (entry) => typeof entry?.battleLevel === 'number' && entry.battleLevel === level
+      ) ?? null
+    );
+  };
+
+  const activeUserBattle =
+    findUserBattle(activeLevel?.battleLevel) ?? userBattles[0] ?? null;
+
+  const levelHero = activeLevel?.battle?.hero ?? {};
+  const heroData = {
+    ...levelHero,
+    ...(activeUserBattle?.hero ?? {}),
+  };
+
+  const heroSprite =
+    typeof heroData?.sprite === 'string' ? heroData.sprite.trim() : '';
+  const heroName = typeof heroData?.name === 'string' ? heroData.name.trim() : '';
+  const heroAlt = heroName ? `${heroName} swimming into view` : 'Hero ready for battle';
+
+  const battle = activeLevel?.battle ?? {};
+  const mathLabelSource =
+    typeof activeLevel.mathType === 'string'
+      ? activeLevel.mathType
+      : typeof battle?.mathType === 'string'
+      ? battle.mathType
+      : 'Math Mission';
+  const mathLabel = mathLabelSource.trim() || 'Math Mission';
+
+  const enemyData = battle?.enemy ?? {};
+  const enemySprite =
+    typeof enemyData?.sprite === 'string' ? enemyData.sprite.trim() : '';
+  const enemyName =
+    typeof enemyData?.name === 'string' ? enemyData.name.trim() : '';
+  const enemyAlt = enemyName ? `${enemyName} ready for battle` : 'Enemy ready for battle';
+
+  const levelName = typeof activeLevel?.name === 'string' ? activeLevel.name.trim() : '';
+  const battleTitleLabel =
+    levelName ||
+    (typeof activeLevel?.battleLevel === 'number'
+      ? `Battle ${activeLevel.battleLevel}`
+      : 'Upcoming Battle');
+
+  const accuracyGoal =
+    typeof battle?.accuracyGoal === 'number'
+      ? Math.round(battle.accuracyGoal * 100)
+      : null;
+
+  const timeGoal =
+    typeof battle?.timeGoalSeconds === 'number' ? battle.timeGoalSeconds : null;
+
+  return {
+    levels,
+    variables,
+    preview: {
+      activeLevel,
+      battleLevel: activeLevel?.battleLevel ?? null,
+      mathLabel,
+      battleTitleLabel,
+      hero: { ...heroData, sprite: heroSprite },
+      heroAlt,
+      enemy: { ...enemyData, sprite: enemySprite },
+      enemyAlt,
+      overlayAccuracyText: accuracyGoal !== null ? `${accuracyGoal}%` : '0%',
+      overlayTimeText: timeGoal !== null ? `${timeGoal}s` : '0s',
+    },
+  };
+};
+
+const applyBattlePreview = (previewData = {}) => {
+  const heroImage = document.querySelector('.hero');
+  const battleMathElements = document.querySelectorAll('[data-battle-math]');
+  const battleTitleElements = document.querySelectorAll('[data-battle-title]');
+  const battleEnemyElements = document.querySelectorAll('[data-battle-enemy]');
+  const overlayAccuracy = document.querySelector('.accuracy-value');
+  const overlayTime = document.querySelector('.time-value');
+
+  if (heroImage) {
+    const heroSprite =
+      typeof previewData?.hero?.sprite === 'string' ? previewData.hero.sprite : '';
+    if (heroSprite) {
+      heroImage.src = heroSprite;
+    }
+    heroImage.alt =
+      typeof previewData?.heroAlt === 'string' && previewData.heroAlt.trim()
+        ? previewData.heroAlt
+        : 'Hero ready for battle';
+  }
+
+  battleMathElements.forEach((element) => {
+    if (!element) {
+      return;
+    }
+    element.textContent =
+      typeof previewData?.mathLabel === 'string' && previewData.mathLabel.trim()
+        ? previewData.mathLabel
+        : 'Math Mission';
+  });
+
+  battleTitleElements.forEach((element) => {
+    if (!element) {
+      return;
+    }
+    element.textContent =
+      typeof previewData?.battleTitleLabel === 'string' &&
+      previewData.battleTitleLabel.trim()
+        ? previewData.battleTitleLabel
+        : 'Upcoming Battle';
+  });
+
+  battleEnemyElements.forEach((element) => {
+    if (!element) {
+      return;
+    }
+    const enemySprite =
+      typeof previewData?.enemy?.sprite === 'string'
+        ? previewData.enemy.sprite
+        : '';
+    if (enemySprite && (element instanceof HTMLImageElement || element.tagName === 'IMG')) {
+      element.src = enemySprite;
+    }
+    if (element instanceof HTMLImageElement || element.tagName === 'IMG') {
+      element.alt =
+        typeof previewData?.enemyAlt === 'string' && previewData.enemyAlt.trim()
+          ? previewData.enemyAlt
+          : 'Enemy ready for battle';
+    }
+  });
+
+  if (overlayAccuracy) {
+    overlayAccuracy.textContent =
+      typeof previewData?.overlayAccuracyText === 'string'
+        ? previewData.overlayAccuracyText
+        : '0%';
+  }
+
+  if (overlayTime) {
+    overlayTime.textContent =
+      typeof previewData?.overlayTimeText === 'string'
+        ? previewData.overlayTimeText
+        : '0s';
+  }
+};
+
 const preloaderElement = document.querySelector('[data-preloader]');
 let preloaderStartTime = getNow();
 let preloaderFinished = false;
@@ -106,27 +329,9 @@ const randomizeBubbleTimings = () => {
 };
 
 const preloadLandingAssets = async () => {
-  const results = { levelsData: null, variablesData: null };
+  const results = { levelsData: null, variablesData: null, previewData: null };
   const imageAssets = new Set(['images/background/background.png']);
   const questionFiles = new Set();
-
-  const sanitizeAssetPath = (path) => {
-    if (typeof path !== 'string') {
-      return null;
-    }
-    let trimmed = path.trim();
-    if (!trimmed || trimmed.startsWith('data:')) {
-      return null;
-    }
-    while (trimmed.startsWith('./') || trimmed.startsWith('../')) {
-      if (trimmed.startsWith('./')) {
-        trimmed = trimmed.slice(2);
-      } else if (trimmed.startsWith('../')) {
-        trimmed = trimmed.slice(3);
-      }
-    }
-    return trimmed;
-  };
 
   const addImageAsset = (path) => {
     const normalized = sanitizeAssetPath(path);
@@ -159,16 +364,25 @@ const preloadLandingAssets = async () => {
   };
 
   try {
-    const [levelsData, variablesData] = await Promise.all([
+    const [levelsData, rawVariablesData] = await Promise.all([
       loadJson('data/levels.json'),
       loadJson('data/variables.json'),
     ]);
 
-    results.levelsData = levelsData;
-    results.variablesData = variablesData;
+    const { levels, variables, preview } = determineBattlePreview(
+      levelsData,
+      rawVariablesData
+    );
 
-    if (Array.isArray(levelsData?.levels)) {
-      levelsData.levels.forEach((level) => {
+    results.levelsData =
+      levelsData && typeof levelsData === 'object'
+        ? { ...levelsData, levels }
+        : { levels };
+    results.variablesData = variables;
+    results.previewData = preview;
+
+    if (levels.length) {
+      levels.forEach((level) => {
         const battle = level?.battle ?? {};
         addImageAsset(battle?.hero?.sprite);
         addImageAsset(battle?.enemy?.sprite);
@@ -186,13 +400,27 @@ const preloadLandingAssets = async () => {
       });
     }
 
-    if (Array.isArray(variablesData?.user?.battles)) {
-      variablesData.user.battles.forEach((battleEntry) => {
+    if (Array.isArray(variables?.user?.battles)) {
+      variables.user.battles.forEach((battleEntry) => {
         addImageAsset(battleEntry?.hero?.sprite);
       });
     }
 
-    const imagePaths = Array.from(imageAssets);
+    const prioritizedImages = [];
+    const heroSprite = sanitizeAssetPath(preview?.hero?.sprite) || preview?.hero?.sprite;
+    const enemySprite =
+      sanitizeAssetPath(preview?.enemy?.sprite) || preview?.enemy?.sprite;
+
+    if (heroSprite) {
+      prioritizedImages.push(heroSprite);
+    }
+    if (enemySprite) {
+      prioritizedImages.push(enemySprite);
+    }
+
+    const imagePaths = Array.from(
+      new Set([...prioritizedImages.filter(Boolean), ...imageAssets])
+    );
     const questionPaths = Array.from(questionFiles);
 
     const preloadQuestion = async (url) => {
@@ -230,6 +458,10 @@ const preloadLandingAssets = async () => {
       ...questionPaths.map(preloadQuestion),
       ...imagePaths.map(preloadImage),
     ]);
+
+    if (preview) {
+      applyBattlePreview(preview);
+    }
   } catch (error) {
     console.error('Failed to preload landing assets.', error);
   } finally {
@@ -245,12 +477,6 @@ const initLandingInteractions = (preloadedData = {}) => {
   const messageCard = document.querySelector('.battle-select-card');
   const battleOverlay = document.getElementById('battle-overlay');
   const battleButton = battleOverlay?.querySelector('.battle-btn');
-  const battleMathElements = document.querySelectorAll('[data-battle-math]');
-  const battleTitleElements = document.querySelectorAll('[data-battle-title]');
-  const battleEnemyElements = document.querySelectorAll('[data-battle-enemy]');
-  const heroImage = document.querySelector('.hero');
-  const overlayAccuracy = battleOverlay?.querySelector('.accuracy-value');
-  const overlayTime = battleOverlay?.querySelector('.time-value');
 
   if (!messageCard || !battleOverlay) {
     return;
@@ -268,6 +494,7 @@ const initLandingInteractions = (preloadedData = {}) => {
     try {
       let levelsData = preloadedData?.levelsData ?? null;
       let variablesData = preloadedData?.variablesData ?? null;
+      let previewData = preloadedData?.previewData ?? null;
 
       if (!levelsData) {
         const levelsRes = await fetch('data/levels.json');
@@ -288,139 +515,18 @@ const initLandingInteractions = (preloadedData = {}) => {
         }
       }
 
-      const rawVariablesData =
-        variablesData && typeof variablesData === 'object' ? variablesData : {};
-      const mergedVariables = { ...rawVariablesData };
-      const storedProgress = readStoredProgress();
-      if (storedProgress && typeof storedProgress === 'object') {
-        const baseProgress =
-          rawVariablesData && typeof rawVariablesData.progress === 'object'
-            ? rawVariablesData.progress
-            : {};
-        const mergedProgress = { ...baseProgress };
-        if (typeof storedProgress.battleLevel === 'number') {
-          mergedProgress.battleLevel = storedProgress.battleLevel;
-        }
-        if (typeof storedProgress.timeRemainingSeconds === 'number') {
-          mergedProgress.timeRemainingSeconds =
-            storedProgress.timeRemainingSeconds;
-        }
-        mergedVariables.progress = mergedProgress;
-      } else if (
-        rawVariablesData &&
-        typeof rawVariablesData.progress === 'object' &&
-        !mergedVariables.progress
-      ) {
-        mergedVariables.progress = { ...rawVariablesData.progress };
+      if (!previewData) {
+        const previewResult = determineBattlePreview(levelsData, variablesData);
+        levelsData =
+          levelsData && typeof levelsData === 'object'
+            ? { ...levelsData, levels: previewResult.levels }
+            : { levels: previewResult.levels };
+        variablesData = previewResult.variables;
+        previewData = previewResult.preview;
       }
 
-      variablesData = mergedVariables;
-
-      const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
-
-      if (!levels.length) {
-        return;
-      }
-
-      const progressLevel = variablesData?.progress?.battleLevel;
-      const activeLevel =
-        levels.find((level) => level?.battleLevel === progressLevel) ??
-        levels[0];
-
-      if (!activeLevel) {
-        return;
-      }
-
-      const userBattles = Array.isArray(variablesData?.user?.battles)
-        ? variablesData.user.battles
-        : [];
-      const findUserBattle = (level) => {
-        if (typeof level !== 'number') {
-          return null;
-        }
-        return (
-          userBattles.find(
-            (entry) => typeof entry?.battleLevel === 'number' && entry.battleLevel === level
-          ) ?? null
-        );
-      };
-
-      const activeUserBattle =
-        findUserBattle(activeLevel?.battleLevel) ?? userBattles[0] ?? null;
-      const levelHero = activeLevel?.battle?.hero ?? {};
-      const heroData = {
-        ...levelHero,
-        ...(activeUserBattle?.hero ?? {}),
-      };
-
-      if (heroImage) {
-        const heroSprite =
-          typeof heroData?.sprite === 'string' ? heroData.sprite.trim() : '';
-        if (heroSprite) {
-          heroImage.src = heroSprite;
-        }
-        const heroName =
-          typeof heroData?.name === 'string' ? heroData.name.trim() : '';
-        heroImage.alt = heroName
-          ? `${heroName} swimming into view`
-          : 'Hero ready for battle';
-      }
-
-      const { battleLevel, name, battle } = activeLevel;
-      const mathLabelSource =
-        typeof activeLevel.mathType === 'string'
-          ? activeLevel.mathType
-          : typeof battle?.mathType === 'string'
-          ? battle.mathType
-          : 'Math Mission';
-      const mathLabel = mathLabelSource.trim() || 'Math Mission';
-      const enemy = battle?.enemy ?? {};
-      const enemySprite = typeof enemy.sprite === 'string' ? enemy.sprite : '';
-      const enemyName =
-        typeof enemy?.name === 'string' ? enemy.name.trim() : '';
-      const enemyAlt = enemyName
-        ? `${enemyName} ready for battle`
-        : 'Enemy ready for battle';
-
-      const levelName = typeof name === 'string' ? name.trim() : '';
-      const battleTitleLabel =
-        levelName ||
-        (typeof battleLevel === 'number'
-          ? `Battle ${battleLevel}`
-          : 'Upcoming Battle');
-
-      battleMathElements.forEach((element) => {
-        element.textContent = mathLabel;
-      });
-
-      battleTitleElements.forEach((element) => {
-        element.textContent = battleTitleLabel;
-      });
-
-      battleEnemyElements.forEach((element) => {
-        if (element instanceof HTMLImageElement || element.tagName === 'IMG') {
-          if (enemySprite) {
-            element.src = enemySprite;
-          }
-          element.alt = enemyAlt;
-        }
-      });
-
-      const accuracyGoal =
-        typeof battle?.accuracyGoal === 'number'
-          ? Math.round(battle.accuracyGoal * 100)
-          : null;
-      if (overlayAccuracy) {
-        overlayAccuracy.textContent =
-          accuracyGoal !== null ? `${accuracyGoal}%` : '0%';
-      }
-
-      const timeGoal =
-        typeof battle?.timeGoalSeconds === 'number'
-          ? `${battle.timeGoalSeconds}s`
-          : null;
-      if (overlayTime) {
-        overlayTime.textContent = timeGoal ?? '0s';
+      if (previewData) {
+        applyBattlePreview(previewData);
       }
     } catch (error) {
       console.error('Failed to load battle preview', error);
