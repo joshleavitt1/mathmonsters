@@ -13,7 +13,7 @@
         "streakGoal": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/battle/shellfin_battle_1.png",
+          "sprite": "images/characters/shellfin_level_1.png",
           "name": "Shellfin",
           "attack": 1,
           "health": 3,
@@ -42,7 +42,7 @@
         "streakGoal": 4,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/battle/shellfin_battle_2.png",
+          "sprite": "images/characters/shellfin_level_2.png",
           "name": "Shellfin",
           "attack": 2,
           "health": 6,
@@ -71,7 +71,7 @@
         "streakGoal": 4,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/battle/shellfin_battle_2.png",
+          "sprite": "images/characters/shellfin_level_3.png",
           "name": "Shellfin",
           "attack": 2,
           "health": 6,
@@ -100,7 +100,7 @@
         "streakGoal": 4,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/battle/shellfin_battle_2.png",
+         "sprite": "images/characters/shellfin_level_4.png",
           "name": "Shellfin",
           "attack": 2,
           "health": 6,
