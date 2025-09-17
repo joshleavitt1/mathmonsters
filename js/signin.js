@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       submitButton.classList.toggle('is-loading', Boolean(isLoading));
       submitButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
       if (submitButtonLabel) {
-        submitButtonLabel.textContent = isLoading ? 'Signing In…' : 'Sign In';
+        submitButtonLabel.textContent = isLoading ? '' : 'Sign In';
       }
     }
   };
