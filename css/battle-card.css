@@ -1,57 +1,3 @@
-.battle-panel {
-  display: flex;
-  align-items: flex-start;
-  gap: 24px;
-  width: 420px;
-  box-sizing: border-box;
-  padding: 24px;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
-  color: #272b34;
-  text-align: left;
-}
-
-.battle-panel__body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.battle-panel__eyebrow {
-  margin: 0;
-  font-size: 20px;
-  color: #888888;
-}
-
-.battle-panel__title {
-  margin: 0;
-  font-size: 32px;
-  font-weight: 700;
-  color: #272b34;
-}
-
-.battle-panel__stats {
-  margin-top: 12px;
-}
-
-.battle-panel__enemy {
-  width: 220px;
-  height: auto;
-  transform: translate(60px, -20px);
-}
-
-.battle-panel:focus-visible {
-  outline: 3px solid #006aff;
-  outline-offset: 4px;
-}
-
-.battle-panel--buttony {
-  cursor: pointer;
-}
-
 .battle-card {
   width: 420px;
   background: #ffffff;
@@ -64,7 +10,10 @@
   flex-direction: column;
   align-items: center;
   gap: 24px;
-  animation: pop-in 0.4s ease-out;
+}
+
+.battle-card--pop {
+  animation: pop-in 0.4s ease-out forwards;
 }
 
 .battle-card .battle-info {
@@ -100,8 +49,7 @@
   height: 220px;
 }
 
-.battle-card .battle-stats,
-.battle-panel__stats {
+.battle-card .battle-stats {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -110,8 +58,7 @@
   background-color: transparent;
 }
 
-.battle-card .battle-stat,
-.battle-panel__stats .battle-stat {
+.battle-card .battle-stat {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -123,15 +70,13 @@
   background-color: #F4F6FA;
 }
 
-.battle-card .stat-label,
-.battle-panel__stats .stat-label {
+.battle-card .stat-label {
   font-size: 18px;
   color: #888888;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
 }
 
-.battle-card .stat-value,
-.battle-panel__stats .stat-value {
+.battle-card .stat-value {
   font-size: 24px;
   font-weight: 700;
   color: #006AFF;
