@@ -75,7 +75,8 @@ body:not(.is-preloading) main.landing {
   bottom: calc(32vh - 16px);
   left: 50%;
   width: clamp(220px, 42vw, 420px);
-  max-width: 420px;
+  width: 300px;
+  height: 300px;
   transform: translate(-50%, 0) scale(0.1);
   transform-origin: center;
   opacity: 0;
