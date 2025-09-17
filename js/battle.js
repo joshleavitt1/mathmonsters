@@ -776,6 +776,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (completeMessage) {
       completeMessage.classList.add('show');
       completeMessage.setAttribute('aria-hidden', 'false');
+      if (typeof completeMessage.focus === 'function') {
+        completeMessage.focus();
+      }
     }
 
     if (win) {
