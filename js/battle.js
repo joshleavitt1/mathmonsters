@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const bannerTimeValue = document.querySelector('[data-banner-time]');
   const setStreakButton = document.querySelector('[data-dev-set-streak]');
   const endBattleButton = document.querySelector('[data-dev-end-battle]');
+  const resetLevelButton = document.querySelector('[data-dev-reset-level]');
   const devControls = document.querySelector('.battle-dev-controls');
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
@@ -126,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentBattleLevel = null;
   let battleStartTime = null;
   let battleLevelAdvanced = false;
+  let battleGoalsMet = false;
 
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
@@ -674,6 +676,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 0);
   });
 
+  resetLevelButton?.addEventListener('click', () => {
+    persistProgress({ battleLevel: 1 });
+    currentBattleLevel = 1;
+    battleLevelAdvanced = false;
+    battleGoalsMet = false;
+  });
+
   document.addEventListener('answer-submitted', (e) => {
     if (battleEnded) {
       return;
@@ -816,9 +825,13 @@ document.addEventListener('DOMContentLoaded', () => {
         typeof monster?.name === 'string' ? monster.name.trim() : '';
       const victoryName = monsterName || 'Monster';
       setBattleCompleteTitleLines(victoryName, 'Defeated!');
-      advanceBattleLevel();
     } else {
       setBattleCompleteTitleLines('Keep Practicing!');
+    }
+
+    battleGoalsMet = win && accuracyGoalMet && timeGoalMet;
+    if (battleGoalsMet) {
+      advanceBattleLevel();
     }
 
     if (nextMissionBtn) {
@@ -841,7 +854,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (action === 'retry') {
         window.location.reload();
       } else {
-        advanceBattleLevel();
+        if (battleGoalsMet && !battleLevelAdvanced) {
+          advanceBattleLevel();
+        }
         window.location.href = '../index.html';
       }
     });
@@ -859,6 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
     battleStartTime = null;
     initialTimeRemaining = 0;
     battleLevelAdvanced = false;
+    battleGoalsMet = false;
     if (completeMessage) {
       completeMessage.classList.remove('show');
       completeMessage.setAttribute('aria-hidden', 'true');
