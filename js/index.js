@@ -3,6 +3,113 @@ const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 
+const PRELOADER_TIPS = [
+  { threshold: 0, text: 'Warming the coral reefs...' },
+  { threshold: 12, text: 'Charting the shimmering currents...' },
+  { threshold: 28, text: 'Charging bubble shields...' },
+  { threshold: 48, text: 'Summoning the Reef Rangers...' },
+  { threshold: 72, text: 'Tuning tide-tech gear...' },
+  { threshold: 90, text: 'Securing treasure caches...' },
+];
+
+const PRELOADER_COMPLETE_MESSAGE = 'Dive in — the reef is ready!';
+const PRELOAD_STAGE_ONE_WEIGHT = 0.25;
+const PRELOAD_STAGE_TWO_WEIGHT = 0.75;
+
+const preloaderElement = document.querySelector('[data-preloader]');
+const preloaderProgressValue = preloaderElement?.querySelector(
+  '[data-preloader-progress]'
+);
+const preloaderProgressFill = preloaderElement?.querySelector(
+  '[data-preloader-bar]'
+);
+const preloaderTipElement = preloaderElement?.querySelector('[data-preloader-tip]');
+const preloaderProgressRegion = preloaderElement?.querySelector(
+  '[data-preloader-progress-container]'
+);
+
+let lastPreloaderPercent = 0;
+let currentPreloaderTip =
+  (preloaderTipElement?.textContent || '').trim() || PRELOADER_TIPS[0].text;
+let preloaderFinished = false;
+
+const clampPercent = (value) => {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(100, Math.round(value)));
+};
+
+const updatePreloaderProgress = (percentValue) => {
+  const boundedPercent = clampPercent(percentValue);
+  const displayPercent = Math.max(lastPreloaderPercent, boundedPercent);
+  lastPreloaderPercent = displayPercent;
+
+  if (preloaderElement) {
+    if (preloaderProgressValue) {
+      preloaderProgressValue.textContent = `${displayPercent}%`;
+    }
+    if (preloaderProgressFill) {
+      preloaderProgressFill.style.setProperty('--progress', `${displayPercent}%`);
+      preloaderProgressFill.style.width = `${displayPercent}%`;
+    }
+    if (preloaderProgressRegion) {
+      preloaderProgressRegion.setAttribute('aria-valuenow', `${displayPercent}`);
+    }
+    if (preloaderTipElement && PRELOADER_TIPS.length) {
+      let selectedTip = currentPreloaderTip;
+      for (const tip of PRELOADER_TIPS) {
+        if (displayPercent >= tip.threshold) {
+          selectedTip = tip.text;
+        } else {
+          break;
+        }
+      }
+      if (selectedTip && selectedTip !== currentPreloaderTip) {
+        preloaderTipElement.textContent = selectedTip;
+        currentPreloaderTip = selectedTip;
+      }
+    }
+  }
+};
+
+const finishPreloader = () => {
+  if (preloaderFinished) {
+    document.body.classList.remove('is-preloading');
+    return;
+  }
+  preloaderFinished = true;
+  updatePreloaderProgress(100);
+
+  if (!preloaderElement) {
+    document.body.classList.remove('is-preloading');
+    return;
+  }
+
+  if (preloaderTipElement) {
+    preloaderTipElement.textContent = PRELOADER_COMPLETE_MESSAGE;
+  }
+
+  preloaderElement.classList.add('preloader--complete');
+  preloaderElement.setAttribute('aria-hidden', 'true');
+
+  const releaseLanding = () => {
+    document.body.classList.remove('is-preloading');
+  };
+
+  window.requestAnimationFrame(() => {
+    preloaderElement.classList.add('preloader--hidden');
+    releaseLanding();
+  });
+
+  window.setTimeout(releaseLanding, 600);
+  window.setTimeout(() => {
+    if (preloaderElement.parentElement) {
+      preloaderElement.parentElement.removeChild(preloaderElement);
+    }
+  }, 900);
+};
+
 const readStoredProgress = () => {
   try {
     const storage = window.localStorage;
@@ -56,7 +163,181 @@ const randomizeBubbleTimings = () => {
   });
 };
 
-const initLandingInteractions = () => {
+const preloadLandingAssets = async () => {
+  const results = { levelsData: null, variablesData: null };
+  const imageAssets = new Set(['images/background/background.png']);
+  const questionFiles = new Set();
+  const sanitizeAssetPath = (path) => {
+    if (typeof path !== 'string') {
+      return null;
+    }
+    let trimmed = path.trim();
+    if (!trimmed || trimmed.startsWith('data:')) {
+      return null;
+    }
+    while (trimmed.startsWith('./') || trimmed.startsWith('../')) {
+      if (trimmed.startsWith('./')) {
+        trimmed = trimmed.slice(2);
+      } else if (trimmed.startsWith('../')) {
+        trimmed = trimmed.slice(3);
+      }
+    }
+    return trimmed;
+  };
+  const addImageAsset = (path) => {
+    const normalized = sanitizeAssetPath(path);
+    if (normalized) {
+      imageAssets.add(normalized);
+    }
+  };
+
+  if (!document.body.classList.contains('is-preloading')) {
+    document.body.classList.add('is-preloading');
+  }
+
+  document
+    .querySelectorAll('img[src]')
+    .forEach((img) => addImageAsset(img.getAttribute('src')));
+
+  const stageOneTotal = 2;
+  let stageOneCompleted = 0;
+  let stageTwoCompleted = 0;
+  let stageTwoTotal = 0;
+  let stageTwoRegistered = false;
+
+  const recalcProgress = () => {
+    const stageOneProgress =
+      stageOneTotal > 0 ? stageOneCompleted / stageOneTotal : 1;
+    const stageTwoProgress = stageTwoRegistered
+      ? stageTwoTotal > 0
+        ? stageTwoCompleted / stageTwoTotal
+        : 1
+      : 0;
+    const totalProgress =
+      stageOneProgress * PRELOAD_STAGE_ONE_WEIGHT +
+      stageTwoProgress * PRELOAD_STAGE_TWO_WEIGHT;
+    updatePreloaderProgress(totalProgress * 100);
+  };
+
+  const loadJsonStageOne = async (url) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to preload ${url}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error(error);
+      return null;
+    } finally {
+      stageOneCompleted += 1;
+      recalcProgress();
+    }
+  };
+
+  try {
+    recalcProgress();
+
+    const [levelsData, variablesData] = await Promise.all([
+      loadJsonStageOne('data/levels.json'),
+      loadJsonStageOne('data/variables.json'),
+    ]);
+
+    results.levelsData = levelsData;
+    results.variablesData = variablesData;
+
+    if (Array.isArray(levelsData?.levels)) {
+      levelsData.levels.forEach((level) => {
+        const battle = level?.battle ?? {};
+        addImageAsset(battle?.hero?.sprite);
+        addImageAsset(battle?.enemy?.sprite);
+
+        const questionFile = battle?.questionReference?.file;
+        if (typeof questionFile === 'string') {
+          const sanitizedFile = sanitizeAssetPath(questionFile);
+          if (sanitizedFile) {
+            const normalized = sanitizedFile.startsWith('data/')
+              ? sanitizedFile
+              : `data/${sanitizedFile.replace(/^\/+/, '')}`;
+            questionFiles.add(normalized);
+          }
+        }
+      });
+    }
+
+    if (Array.isArray(variablesData?.user?.battles)) {
+      variablesData.user.battles.forEach((battleEntry) => {
+        addImageAsset(battleEntry?.hero?.sprite);
+      });
+    }
+
+    const imagePaths = Array.from(imageAssets);
+    const questionPaths = Array.from(questionFiles);
+    stageTwoTotal = imagePaths.length + questionPaths.length;
+    stageTwoRegistered = true;
+
+    if (stageTwoTotal === 0) {
+      stageTwoTotal = 1;
+      stageTwoCompleted = 1;
+      recalcProgress();
+      return results;
+    }
+
+    const markStageTwoComplete = () => {
+      stageTwoCompleted += 1;
+      recalcProgress();
+    };
+
+    const preloadQuestion = async (url) => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to preload ${url}`);
+        }
+        await response.json();
+      } catch (error) {
+        console.warn(error);
+      } finally {
+        markStageTwoComplete();
+      }
+    };
+
+    const preloadImage = (src) =>
+      new Promise((resolve) => {
+        if (!src) {
+          markStageTwoComplete();
+          resolve(false);
+          return;
+        }
+        const image = new Image();
+        image.decoding = 'async';
+        const finalize = (success) => {
+          if (!success) {
+            console.warn(`Failed to preload image: ${src}`);
+          }
+          markStageTwoComplete();
+          resolve(success);
+        };
+        image.onload = () => finalize(true);
+        image.onerror = () => finalize(false);
+        image.src = src;
+      });
+
+    await Promise.allSettled([
+      ...questionPaths.map(preloadQuestion),
+      ...imagePaths.map(preloadImage),
+    ]);
+    recalcProgress();
+  } catch (error) {
+    console.error('Failed to preload landing assets.', error);
+  } finally {
+    finishPreloader();
+  }
+
+  return results;
+};
+
+const initLandingInteractions = (preloadedData = {}) => {
   markLandingVisited();
   randomizeBubbleTimings();
   const messageCard = document.querySelector('.battle-select-card');
@@ -85,26 +366,36 @@ const initLandingInteractions = () => {
 
   const loadBattlePreview = async () => {
     try {
-      const [levelsRes, variablesRes] = await Promise.all([
-        fetch('data/levels.json'),
-        fetch('data/variables.json'),
-      ]);
+      let levelsData = preloadedData?.levelsData ?? null;
+      let variablesData = preloadedData?.variablesData ?? null;
 
-      if (!levelsRes.ok) {
-        throw new Error('Failed to load battle level data.');
+      if (!levelsData) {
+        const levelsRes = await fetch('data/levels.json');
+        if (!levelsRes.ok) {
+          throw new Error('Failed to load battle level data.');
+        }
+        levelsData = await levelsRes.json();
       }
 
-      const levelsData = await levelsRes.json();
-      const rawVariablesData = variablesRes.ok ? await variablesRes.json() : {};
-      const variablesData =
-        rawVariablesData && typeof rawVariablesData === 'object'
-          ? rawVariablesData
-          : {};
+      if (!variablesData) {
+        try {
+          const variablesRes = await fetch('data/variables.json');
+          if (variablesRes.ok) {
+            variablesData = await variablesRes.json();
+          }
+        } catch (error) {
+          console.warn('Unable to load battle variables.', error);
+        }
+      }
+
+      const rawVariablesData =
+        variablesData && typeof variablesData === 'object' ? variablesData : {};
+      const mergedVariables = { ...rawVariablesData };
       const storedProgress = readStoredProgress();
       if (storedProgress && typeof storedProgress === 'object') {
         const baseProgress =
-          variablesData && typeof variablesData.progress === 'object'
-            ? variablesData.progress
+          rawVariablesData && typeof rawVariablesData.progress === 'object'
+            ? rawVariablesData.progress
             : {};
         const mergedProgress = { ...baseProgress };
         if (typeof storedProgress.battleLevel === 'number') {
@@ -114,8 +405,16 @@ const initLandingInteractions = () => {
           mergedProgress.timeRemainingSeconds =
             storedProgress.timeRemainingSeconds;
         }
-        variablesData.progress = mergedProgress;
+        mergedVariables.progress = mergedProgress;
+      } else if (
+        rawVariablesData &&
+        typeof rawVariablesData.progress === 'object' &&
+        !mergedVariables.progress
+      ) {
+        mergedVariables.progress = { ...rawVariablesData.progress };
       }
+
+      variablesData = mergedVariables;
 
       const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
 
@@ -291,8 +590,19 @@ const initLandingInteractions = () => {
   }
 };
 
+const bootstrapLanding = async () => {
+  try {
+    const preloadedData = await preloadLandingAssets();
+    initLandingInteractions(preloadedData);
+  } catch (error) {
+    console.error('Failed to initialize the landing experience.', error);
+    finishPreloader();
+    initLandingInteractions({});
+  }
+};
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initLandingInteractions);
+  document.addEventListener('DOMContentLoaded', bootstrapLanding);
 } else {
-  initLandingInteractions();
+  bootstrapLanding();
 }
