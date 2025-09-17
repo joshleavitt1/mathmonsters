@@ -31,15 +31,14 @@ body {
 }
 
 .preloader__field {
-  width: 100%;
+  width: 420px;
   height: 64px;
   padding: 0 24px;
   border: none;
   border-radius: 8px;
-  background-color: #ffffff24;
+  background-color: #ffffff;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
-  color: #ffffff50;
 }
 
 .preloader__field::placeholder {
