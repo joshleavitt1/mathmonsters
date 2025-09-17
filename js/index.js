@@ -4,6 +4,34 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const MIN_PRELOAD_DURATION_MS = 2000;
 
+const redirectToSignIn = () => {
+  window.location.replace('signin.html');
+};
+
+const ensureAuthenticated = async () => {
+  const supabase = window.supabaseClient;
+  if (!supabase) {
+    redirectToSignIn();
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn('Authentication session lookup failed', error);
+    }
+
+    if (!data?.session) {
+      redirectToSignIn();
+    }
+  } catch (error) {
+    console.warn('Unexpected authentication error', error);
+    redirectToSignIn();
+  }
+};
+
+ensureAuthenticated();
+
 const getNow = () =>
   typeof performance !== 'undefined' && typeof performance.now === 'function'
     ? performance.now()
