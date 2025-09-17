@@ -201,28 +201,22 @@
 }
 
 #complete-message {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  width: 420px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+  text-align: center;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease;
-  z-index: 40;
+  gap: 24px;
+  animation: pop-in 0.4s ease-out;
 }
 
 #complete-message.show {
   opacity: 1;
   visibility: visible;
-}
-
-#complete-message .battle-complete-card {
-  width: 420px;
 }
 
 #complete-message .btn-primary {
