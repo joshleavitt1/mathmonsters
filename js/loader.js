@@ -63,6 +63,55 @@ const readStoredProgress = () => {
       levels[0] ??
       null;
 
+    if (
+      currentLevel &&
+      typeof currentLevel.battleLevel === 'number' &&
+      progress.battleLevel !== currentLevel.battleLevel
+    ) {
+      progress.battleLevel = currentLevel.battleLevel;
+    }
+
+    const resolveAssetPath = (path) => {
+      if (typeof path !== 'string') {
+        return null;
+      }
+      const trimmed = path.trim();
+      if (!trimmed) {
+        return null;
+      }
+      if (/^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+      }
+      if (trimmed.startsWith('../')) {
+        return trimmed;
+      }
+      if (trimmed.startsWith('./')) {
+        return `../${trimmed.slice(2)}`;
+      }
+      if (trimmed.startsWith('/')) {
+        return `..${trimmed}`;
+      }
+      return `../${trimmed}`;
+    };
+
+    const preloadImage = (path) =>
+      new Promise((resolve) => {
+        if (!path || typeof Image === 'undefined') {
+          resolve();
+          return;
+        }
+
+        const img = new Image();
+        const cleanup = () => {
+          img.onload = null;
+          img.onerror = null;
+          resolve();
+        };
+        img.onload = cleanup;
+        img.onerror = cleanup;
+        img.src = path;
+      });
+
     let questions = [];
     const questionFile = currentLevel?.battle?.questionReference?.file;
 
@@ -104,8 +153,32 @@ const readStoredProgress = () => {
       ...(activeUserBattle?.hero ?? {}),
     };
     const battle = { ...levelBattle, hero };
-    const enemy = battle?.enemy ?? null;
+    let enemy = battle?.enemy ?? null;
+
+    const heroSprite = resolveAssetPath(hero?.sprite);
+    if (heroSprite) {
+      hero.sprite = heroSprite;
+    }
+
+    const enemySprite = resolveAssetPath(enemy?.sprite);
+    if (enemySprite) {
+      enemy = { ...(enemy ?? {}), sprite: enemySprite };
+      battle.enemy = enemy;
+    }
+
+    const assetsToPreload = [];
+    if (heroSprite) {
+      assetsToPreload.push(heroSprite);
+    }
+    if (enemySprite) {
+      assetsToPreload.push(enemySprite);
+    }
     const variables = { ...baseVariables, progress };
+
+    if (assetsToPreload.length) {
+      const uniqueAssets = Array.from(new Set(assetsToPreload));
+      await Promise.all(uniqueAssets.map(preloadImage));
+    }
 
     window.preloadedData = {
       variables,
