@@ -7,7 +7,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Battle</title>
-    <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/question.css" />
     <link rel="stylesheet" href="../css/battle-card.css" />
     <link rel="stylesheet" href="../css/battle.css" />
@@ -33,10 +32,17 @@
     <button type="button" class="battle-dev-controls__btn" data-dev-reset-level>
       Reset Level 1
     </button>
+    <button type="button" class="battle-dev-controls__btn" data-dev-log-out>
+      Log Out
+    </button>
   </div>
   <div id="battle">
-    <img id="battle-monster" src="../images/battle/monster_battle.png" alt="Monster" />
-    <img id="battle-shellfin" src="../images/battle/shellfin_battle.png" alt="Shellfin" />
+    <img id="battle-monster" src="../images/battle/monster_battle_1.png" alt="Monster" />
+    <img
+      id="battle-shellfin"
+      src="../images/characters/shellfin_level_1.png"
+      alt="Shellfin"
+    />
     <div id="monster-stats" class="stat-box">
       <div class="name"></div>
       <div class="stats">
@@ -100,7 +106,7 @@
         </div>
         <img
           class="enemy-image"
-          src="../images/battle/monster_battle.png"
+          src="../images/battle/monster_battle_1.png"
           alt="Enemy defeated in battle"
         />
         <p class="battle-goals-title">Battle Goals</p>
