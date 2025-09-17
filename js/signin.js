@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const emailField = document.getElementById('signin-email');
   const passwordField = document.getElementById('signin-password');
   const submitButton = form?.querySelector('button[type="submit"]');
+  const submitButtonLabel = submitButton?.querySelector(
+    '.preloader__button-label'
+  );
   const errorMessage = document.querySelector('[data-signin-error]');
   const supabase = window.supabaseClient;
 
@@ -33,7 +36,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     setFieldState(passwordField, isLoading);
     if (submitButton) {
       submitButton.disabled = Boolean(isLoading);
-      submitButton.textContent = isLoading ? 'Signing In…' : 'Sign In';
+      submitButton.classList.toggle('is-loading', Boolean(isLoading));
+      submitButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+      if (submitButtonLabel) {
+        submitButtonLabel.textContent = isLoading ? 'Signing In…' : 'Sign In';
+      }
     }
   };
 
