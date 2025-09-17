@@ -57,6 +57,64 @@
           "damage": 0
         }
       }
+    },
+    {
+      "battleLevel": 3,
+      "name": "Level 3",
+      "mathType": "Addition",
+      "battle": {
+        "questionReference": {
+          "file": "questions/level_3_questions.json"
+        },
+        "accuracyGoal": 0.8,
+        "timeGoalSeconds": 90,
+        "streakGoal": 4,
+        "hero": {
+          "id": "shellfin",
+          "sprite": "images/battle/shellfin_battle_2.png",
+          "name": "Shellfin",
+          "attack": 2,
+          "health": 6,
+          "damage": 0
+        },
+        "enemy": {
+          "id": "octomurk",
+          "sprite": "images/battle/monster_battle_2.png",
+          "name": "Octomurk",
+          "attack": 2,
+          "health": 40,
+          "damage": 0
+        }
+      }
+    },
+    {
+      "battleLevel": 4,
+      "name": "Level 4",
+      "mathType": "Addition",
+      "battle": {
+        "questionReference": {
+          "file": "questions/level_4_questions.json"
+        },
+        "accuracyGoal": 0.8,
+        "timeGoalSeconds": 90,
+        "streakGoal": 4,
+        "hero": {
+          "id": "shellfin",
+          "sprite": "images/battle/shellfin_battle_2.png",
+          "name": "Shellfin",
+          "attack": 2,
+          "health": 6,
+          "damage": 0
+        },
+        "enemy": {
+          "id": "octomurk",
+          "sprite": "images/battle/monster_battle_2.png",
+          "name": "Octomurk",
+          "attack": 2,
+          "health": 40,
+          "damage": 0
+        }
+      }
     }
   ]
 }

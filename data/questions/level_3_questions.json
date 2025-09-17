@@ -1,0 +1,26 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "Level 3: What is 5 + 8?",
+      "options": [
+        1,
+        13,
+        12,
+        2
+      ],
+      "answer": 13
+    },
+    {
+      "id": 2,
+      "question": "Level 3: What is 7 + 8?",
+      "options": [
+        7,
+        15,
+        12,
+        18
+      ],
+      "answer": 15
+    }
+  ]
+}
