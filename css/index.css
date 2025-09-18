@@ -276,7 +276,7 @@ body.battle-overlay-open { overflow: hidden; }
   transform: none;
   pointer-events: none;
   transition: opacity 0.6s ease;
-  z-index: 5;
+  z-index: 10;
 }
 
 .battle-overlay .battle-overlay-card {
