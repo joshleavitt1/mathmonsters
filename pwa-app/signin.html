@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a3d62" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Sign In | Reef Rangers</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="300x300" href="../images/brand/logo.png" />
+    <link rel="stylesheet" href="css/battle-card.css" />
+    <link rel="stylesheet" href="css/signin.css" />
+  </head>
+  <body>
+    <div class="preloader">
+      <img
+        class="preloader__logo"
+        src="../images/brand/logo.png"
+        alt="Reef Rangers logo"
+        width="300"
+        height="300"
+      />
+      <form class="preloader__form" action="#" method="post" novalidate>
+        <label class="visually-hidden" for="signin-email">Email</label>
+        <input
+          class="preloader__field"
+          type="email"
+          id="signin-email"
+          name="email"
+          placeholder="Email"
+          autocomplete="email"
+          required
+        />
+        <label class="visually-hidden" for="signin-password">Password</label>
+        <input
+          class="preloader__field"
+          type="password"
+          id="signin-password"
+          name="password"
+          placeholder="Password"
+          autocomplete="current-password"
+          required
+        />
+        <button class="btn-primary preloader__button" type="submit">
+          <span class="preloader__button-label">Sign In</span>
+          <span class="preloader__spinner" aria-hidden="true"></span>
+        </button>
+      </form>
+      <p class="preloader__error" data-signin-error role="alert" hidden></p>
+    </div>
+    <script>
+      window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
+      window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bHhwdW1jb2loZmFwbXJzYXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjE3MDcsImV4cCI6MjA3Mjk5NzcwN30.PJiDPZ_Dqli_42isJexeYgsf0ebWbCSOwHtR7lsQTN0';
+    </script>
+    <script src="js/pwa.js" defer data-pwa-root="."></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="js/supabaseClient.js" defer></script>
+    <script src="js/signin.js" defer></script>
+  </body>
+</html>
