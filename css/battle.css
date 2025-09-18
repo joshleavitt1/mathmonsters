@@ -9,6 +9,8 @@ body {
   overflow: hidden;
   background: url('/mathmonsters/images/background/background.png') no-repeat center/cover;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 #battle {

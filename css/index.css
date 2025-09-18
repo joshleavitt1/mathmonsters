@@ -4,6 +4,7 @@
 
 body {
   margin: 0;
+  padding: 16px;
   min-height: 100vh;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   color: #272B34;
