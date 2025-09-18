@@ -55,6 +55,10 @@ body {
   font-size: 20px;
 }
 
+.preloader__field:not(:placeholder-shown) {
+  color: #ffffff;
+}
+
 .preloader__field::placeholder {
   color: #949faf;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
@@ -81,14 +85,20 @@ body {
   box-sizing: border-box;
 }
 
+.preloader__button:hover,
+.preloader__button:focus-visible {
+  background: linear-gradient(rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0.24)), #006aff;
+}
+
 .preloader__link {
   color: #ffffff;
   font-size: 20px;
   text-decoration: underline;
+  margin-top: 8px;
+  display: inline-block;
 }
 
-.preloader__link:focus-visible,
-.preloader__link:hover {
+.preloader__link:focus-visible {
   text-decoration: none;
 }
 
