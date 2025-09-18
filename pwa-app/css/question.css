@@ -1,0 +1,227 @@
+#question {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+  z-index: 20;
+}
+
+#question.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+#question .content {
+  background: #fff;
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 8px;
+  text-align: center;
+  width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  gap: 40px;
+}
+
+#question h1 {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 16px;
+  color: #888888;
+}
+
+#question .question-text {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 24px;
+  margin: 0;
+  padding: 0;
+  color: #272B34;
+  width: 100%;
+  padding-top: 16px;
+}
+
+#question button {
+  width: 100%;
+  height: 64px;
+  background: #006AFF;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 20px;
+}
+
+#question button:disabled {
+  background: #D2D8E2;
+  color: #272B34;
+}
+
+#question .top-bar {
+  width: 100%;
+  align-items: center;
+  display: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#question .top-bar.show {
+  display: flex;
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#question .top-bar.show + .question-text {
+  padding-top: 0;
+}
+
+#question .progress-wrap {
+  flex: 1;
+  position: relative;
+}
+
+#question .progress-bar {
+  width: 100%;
+  height: 16px;
+  background: #F4F6FA;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0;
+  margin-right: 0;
+}
+
+#question .progress-bar.with-label {
+  margin-right: 0px;
+}
+
+#question .progress-fill {
+  width: 0%;
+  height: 100%;
+  background: #006AFF;
+  transition: width 0.5s ease-in-out;
+}
+
+#question .streak-label {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 20px;
+  color: #006AFF;
+  opacity: 1;
+  transform: scale(1);
+  white-space: nowrap;
+  display: block;
+  padding-bottom: 16px;
+}
+
+#question .streak-label.show {
+  animation: streak-pop 0.6s forwards;
+}
+
+#question .streak-icon {
+  width: 56px;
+  height: 56px;
+  position: absolute;
+  top: -45px;
+  left: 174px;
+  opacity: 0;
+  transform: scale(0);
+  z-index: 1;
+  display: block;
+}
+
+#question .streak-icon.show {
+  animation: streak-pop-icon 0.6s forwards;
+}
+
+@keyframes streak-pop {
+  0% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes streak-pop-icon {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(2.8); }
+  100% { opacity: 1; transform: scale(2.5); }
+}
+
+#question .choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+#question .choice {
+  background: #F4F6FA;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  padding: 16px;
+  box-sizing: border-box;
+  height: 64px;
+}
+
+#question .choice.selected {
+  background: #EBF3FF;
+  border-color: #006AFF;
+}
+
+#question .choice.correct-choice {
+  border-color: #00B600;
+  background: rgba(0, 182, 0, 0.08);
+}
+
+#question .choice.wrong-choice {
+  border-color: #E20000;
+  background: rgba(226, 0, 0, 0.08);
+}
+
+#question .choice img {
+  width: 50%;
+  height: auto;
+  object-fit: contain;
+}
+
+#question .choice p {
+  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+  font-size: 24px;
+  color: #272B34;
+  margin: 0;
+  text-align: center;
+}
+
+#question button.result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  transition: background 0.3s;
+}
+
+#question button.result img {
+  margin-right: 8px;
+}
+
+#question button.correct {
+  background: #00AC06;
+}
+
+#question button.incorrect {
+  background: #E20000;
+}
