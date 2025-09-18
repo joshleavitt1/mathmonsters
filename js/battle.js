@@ -424,6 +424,65 @@ document.addEventListener('DOMContentLoaded', () => {
     monsterHpFill.style.width = monsterPercent + '%';
   }
 
+  function waitForHealthDrain(fillEl) {
+    return new Promise((resolve) => {
+      if (!fillEl || typeof fillEl.addEventListener !== 'function') {
+        resolve();
+        return;
+      }
+
+      const widthIsEmpty = () => {
+        const rectWidth = fillEl.getBoundingClientRect().width;
+        if (!Number.isFinite(rectWidth)) {
+          return true;
+        }
+        if (rectWidth <= 0.5) {
+          return true;
+        }
+        const computedWidth = parseFloat(window.getComputedStyle(fillEl).width);
+        return Number.isFinite(computedWidth) ? computedWidth <= 0.5 : false;
+      };
+
+      if (widthIsEmpty()) {
+        resolve();
+        return;
+      }
+
+      let resolved = false;
+      const settle = () => {
+        if (resolved) {
+          return;
+        }
+        resolved = true;
+        fillEl.removeEventListener('transitionend', handleTransitionEnd);
+        resolve();
+      };
+
+      const handleTransitionEnd = (event) => {
+        if (event.propertyName === 'width' && widthIsEmpty()) {
+          settle();
+        }
+      };
+
+      fillEl.addEventListener('transitionend', handleTransitionEnd);
+
+      const startTime = Date.now();
+      const poll = () => {
+        if (widthIsEmpty()) {
+          settle();
+          return;
+        }
+        if (Date.now() - startTime > 1200) {
+          settle();
+          return;
+        }
+        window.setTimeout(poll, 100);
+      };
+
+      window.setTimeout(poll, 100);
+    });
+  }
+
   function calculateAccuracy() {
     if (wrongAnswers === 0) {
       return 100;
@@ -610,7 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           if (monster.damage >= monster.health) {
-            endBattle(true);
+            endBattle(true, { waitForHpDrain: monsterHpFill });
           } else {
             currentQuestion++;
             showQuestion();
@@ -645,7 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
               return;
             }
             if (hero.damage >= hero.health) {
-              endBattle(false);
+              endBattle(false, { waitForHpDrain: heroHpFill });
             } else {
               currentQuestion++;
               showQuestion();
@@ -859,12 +918,28 @@ document.addEventListener('DOMContentLoaded', () => {
       nextMissionBtn.dataset.action = battleGoalsMet ? 'next' : 'retry';
     }
 
-    if (completeMessage) {
+    const showCompleteMessage = () => {
+      if (!completeMessage) {
+        return;
+      }
       completeMessage.classList.add('show');
       completeMessage.setAttribute('aria-hidden', 'false');
       if (typeof completeMessage.focus === 'function') {
         completeMessage.focus();
       }
+    };
+
+    const waitForHpDrainEl =
+      _options && typeof _options.waitForHpDrain?.addEventListener === 'function'
+        ? _options.waitForHpDrain
+        : null;
+
+    if (waitForHpDrainEl) {
+      waitForHealthDrain(waitForHpDrainEl).then(() => {
+        showCompleteMessage();
+      });
+    } else {
+      showCompleteMessage();
     }
   }
 
