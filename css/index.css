@@ -7,7 +7,7 @@ body {
   min-height: 100vh;
   font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   color: #272B34;
-  background: url('/images/background/background.png') no-repeat center/cover;
+  background: url('/mathmonsters/images/background/background.png') no-repeat center/cover;
   position: relative;
   overflow: hidden;
 }

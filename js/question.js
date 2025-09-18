@@ -36,8 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     button.classList.add('result', isCorrect ? 'correct' : 'incorrect');
     button.innerHTML = isCorrect
-      ? '<img src="/images/questions/button/correct.svg" alt="Correct icon" /> Correct'
-      : '<img src="/images/questions/button/incorrect.svg" alt="Incorrect icon" /> Incorrect';
+      ? '<img src="/mathmonsters/images/questions/button/correct.svg" alt="Correct icon" /> Correct'
+      : '<img src="/mathmonsters/images/questions/button/incorrect.svg" alt="Incorrect icon" /> Incorrect';
 
     document.dispatchEvent(
       new CustomEvent('answer-submitted', { detail: { correct: isCorrect } })

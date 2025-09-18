@@ -204,8 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
       valueEl.insertBefore(icon, textSpan);
     }
     icon.src = met
-      ? '/images/complete/correct.svg'
-      : '/images/complete/incorrect.svg';
+      ? '/mathmonsters/images/complete/correct.svg'
+      : '/mathmonsters/images/complete/incorrect.svg';
     icon.alt = met ? 'Goal met' : 'Goal not met';
     valueEl.classList.remove('goal-result--met', 'goal-result--missed');
     valueEl.classList.add(met ? 'goal-result--met' : 'goal-result--missed');
@@ -570,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
       div.dataset.correct = !!choice.correct;
       if (choice.image) {
         const img = document.createElement('img');
-        img.src = `/images/questions/${choice.image}`;
+        img.src = `/mathmonsters/images/questions/${choice.image}`;
         img.alt = choice.name || '';
         div.appendChild(img);
       }
