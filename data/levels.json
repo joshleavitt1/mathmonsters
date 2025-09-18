@@ -13,7 +13,7 @@
         "streakGoal": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_1.png",
+          "sprite": "/images/characters/shellfin_level_1.png",
           "name": "Shellfin",
           "attack": 1,
           "health": 3,
@@ -21,7 +21,7 @@
         },
         "enemy": {
           "id": "octomurk",
-          "sprite": "images/battle/monster_battle_1.png",
+          "sprite": "/images/battle/monster_battle_1.png",
           "name": "Octomurk",
           "attack": 1,
           "health": 20,
@@ -42,7 +42,7 @@
         "streakGoal": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_2.png",
+          "sprite": "/images/characters/shellfin_level_2.png",
           "name": "Shellfin",
           "attack": 2,
           "health": 6,
@@ -50,7 +50,7 @@
         },
         "enemy": {
           "id": "octomurk",
-          "sprite": "images/battle/monster_battle_2.png",
+          "sprite": "/images/battle/monster_battle_2.png",
           "name": "Octomurk",
           "attack": 2,
           "health": 40,
@@ -71,7 +71,7 @@
         "streakGoal": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_2.png",
+          "sprite": "/images/characters/shellfin_level_2.png",
           "name": "Shellfin",
           "attack": 3,
           "health": 9,
@@ -79,7 +79,7 @@
         },
         "enemy": {
           "id": "octomurk",
-          "sprite": "images/battle/monster_battle_2.png",
+          "sprite": "/images/battle/monster_battle_2.png",
           "name": "Octomurk",
           "attack": 3,
           "health": 60,
@@ -100,7 +100,7 @@
         "streakGoal": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_2.png",
+          "sprite": "/images/characters/shellfin_level_2.png",
           "name": "Shellfin",
           "attack": 4,
           "health": 12,
@@ -108,7 +108,7 @@
         },
         "enemy": {
           "id": "octomurk",
-          "sprite": "images/battle/monster_battle_2.png",
+          "sprite": "/images/battle/monster_battle_2.png",
           "name": "Octomurk",
           "attack": 4,
           "health": 80,
@@ -129,7 +129,7 @@
         "streakGoal": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_2.png",
+          "sprite": "/images/characters/shellfin_level_2.png",
           "name": "Shellfin",
           "attack": 5,
           "health": 15,
@@ -137,7 +137,7 @@
         },
         "enemy": {
           "id": "octomurk",
-          "sprite": "images/battle/monster_battle_2.png",
+          "sprite": "/images/battle/monster_battle_2.png",
           "name": "Octomurk",
           "attack": 5,
           "health": 100,
@@ -158,7 +158,7 @@
         "streakGoal": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_6.png",
+          "sprite": "/images/characters/shellfin_level_6.png",
           "name": "Shellfin",
           "attack": 6,
           "health": 18,
@@ -166,7 +166,7 @@
         },
         "enemy": {
           "id": "octomurk",
-          "sprite": "images/battle/monster_battle_6.png",
+          "sprite": "/images/battle/monster_battle_6.png",
           "name": "Octomurk",
           "attack": 6,
           "health": 120,
