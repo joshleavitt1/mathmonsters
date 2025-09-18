@@ -87,7 +87,7 @@ body {
 
 .preloader__button:hover,
 .preloader__button:focus-visible {
-  background: linear-gradient(rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0.24)), #006aff;
+  background: #ffffff24;
 }
 
 .preloader__link {
