@@ -19,14 +19,28 @@
         "battleLevel": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_2.png"
+          "sprite": "images/characters/shellfin_level_3.png"
         }
       },
       {
         "battleLevel": 4,
         "hero": {
           "id": "shellfin",
-          "sprite": "images/characters/shellfin_level_2.png"
+          "sprite": "images/characters/shellfin_level_4.png"
+        }
+      },
+      {
+        "battleLevel": 5,
+        "hero": {
+          "id": "shellfin",
+          "sprite": "images/characters/shellfin_level_5.png"
+        }
+      },
+      {
+        "battleLevel": 6,
+        "hero": {
+          "id": "shellfin",
+          "sprite": "images/characters/shellfin_level_6.png"
         }
       }
     ]
