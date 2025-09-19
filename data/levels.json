@@ -19,7 +19,7 @@
           "damage": 0
         },
         "enemy1": {
-          "id": "octomurk",
+          "id": "1",
           "sprite": "/mathmonsters/images/battle/monster_battle_1_1.png",
           "name": "Octomurk",
           "attack": 1,
@@ -27,7 +27,7 @@
           "damage": 0
         },
         "enemy2": {
-          "id": "octomurk",
+          "id": "2",
           "sprite": "/mathmonsters/images/battle/monster_battle_1_2.png",
           "name": "Octomurk",
           "attack": 1,
@@ -35,7 +35,7 @@
           "damage": 0
         },
         "enemy3": {
-          "id": "octomurk",
+          "id": "3",
           "sprite": "/mathmonsters/images/battle/monster_battle_1_3.png",
           "name": "Octomurk",
           "attack": 1,
@@ -63,7 +63,7 @@
           "damage": 0
         },
         "enemy1": {
-          "id": "octomurk",
+          "id": "1",
           "sprite": "/mathmonsters/images/battle/monster_battle_1_1.png",
           "name": "Octomurk",
           "attack": 1,
@@ -71,7 +71,7 @@
           "damage": 0
         },
         "enemy2": {
-          "id": "octomurk",
+          "id": "2",
           "sprite": "/mathmonsters/images/battle/monster_battle_1_2.png",
           "name": "Octomurk",
           "attack": 1,
@@ -79,7 +79,7 @@
           "damage": 0
         },
         "enemy3": {
-          "id": "octomurk",
+          "id": "3",
           "sprite": "/mathmonsters/images/battle/monster_battle_1_3.png",
           "name": "Octomurk",
           "attack": 1,
