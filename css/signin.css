@@ -1,7 +1,6 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   padding: 16px;
   box-sizing: border-box;
 }
@@ -51,7 +50,6 @@ body {
   border-radius: 8px;
   background-color: #293f5f;
   color: #949faf;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
 }
 
@@ -61,7 +59,6 @@ body {
 
 .preloader__field::placeholder {
   color: #949faf;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
 }
 
