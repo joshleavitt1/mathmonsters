@@ -3,7 +3,8 @@ const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const MIN_PRELOAD_DURATION_MS = 2000;
-const SPLAT_SEQUENCE_DURATION_MS = 1600;
+const BATTLE_INTRO_DELAY_MS = 2000;
+const BATTLE_INTRO_VISIBLE_DURATION_MS = 2000;
 
 const redirectToSignIn = () => {
   window.location.replace('signin.html');
@@ -42,9 +43,9 @@ const startLandingExperience = () => {
   }
 };
 
-const runSplatSequence = () => {
-  const overlay = document.querySelector('[data-splat-overlay]');
-  if (!overlay) {
+const runBattleIntroSequence = () => {
+  const intro = document.querySelector('[data-battle-intro]');
+  if (!intro) {
     return Promise.resolve(false);
   }
 
@@ -52,22 +53,17 @@ const runSplatSequence = () => {
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  if (prefersReducedMotion) {
-    return Promise.resolve(false);
-  }
-
-  const durationAttr = Number.parseFloat(
-    overlay.getAttribute('data-splat-duration') ?? ''
-  );
-  const duration = Number.isFinite(durationAttr)
-    ? Math.max(0, durationAttr)
-    : SPLAT_SEQUENCE_DURATION_MS;
-
-  overlay.classList.add('is-active');
-  overlay.setAttribute('aria-hidden', 'false');
+  intro.classList.toggle('is-reduced-motion', prefersReducedMotion);
+  intro.classList.remove('is-visible');
+  intro.setAttribute('aria-hidden', 'true');
 
   return new Promise((resolve) => {
-    window.setTimeout(() => resolve(true), duration);
+    window.setTimeout(() => {
+      intro.classList.add('is-visible');
+      intro.setAttribute('aria-hidden', 'false');
+
+      window.setTimeout(() => resolve(true), BATTLE_INTRO_VISIBLE_DURATION_MS);
+    }, BATTLE_INTRO_DELAY_MS);
   });
 };
 
@@ -385,7 +381,10 @@ const randomizeBubbleTimings = () => {
 
 const preloadLandingAssets = async () => {
   const results = { levelsData: null, variablesData: null, previewData: null };
-  const imageAssets = new Set(['/mathmonsters/images/background/background.png']);
+  const imageAssets = new Set([
+    '/mathmonsters/images/background/background.png',
+    '/mathmonsters/images/battle/battle.png',
+  ]);
   const questionFiles = new Set();
 
   const addImageAsset = (path) => {
@@ -587,7 +586,7 @@ const initLandingInteractions = (preloadedData = {}) => {
       battleButton.disabled = true;
       battleButton.setAttribute('aria-disabled', 'true');
       try {
-        await runSplatSequence();
+        await runBattleIntroSequence();
       } finally {
         window.location.href = 'html/battle.html';
       }
