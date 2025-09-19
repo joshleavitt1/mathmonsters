@@ -1,3 +1,4 @@
+(() => {
 const STORAGE_KEY_PROGRESS = 'reefRangersProgress';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
 
@@ -343,4 +344,5 @@ const readStoredProgress = () => {
     window.preloadedData = {};
     document.dispatchEvent(new Event('data-loaded'));
   }
+})();
 })();
