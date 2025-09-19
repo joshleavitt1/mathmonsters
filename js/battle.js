@@ -1,3 +1,4 @@
+(() => {
 const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
@@ -1116,3 +1117,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('data-loaded', initBattle, { once: true });
   }
 });
+})();
