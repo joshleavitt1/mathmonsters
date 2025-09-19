@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="../css/signin.css" />
   </head>
   <body>
-    <div class="preloader app-safe-area">
+    <main class="preloader app-safe-area" role="main">
       <img
         class="preloader__logo"
         src="/mathmonsters/images/brand/logo.png"
@@ -32,8 +32,30 @@
         width="300"
         height="300"
       />
-      <h1 class="preloader__headline">Register</h1>
-      <form class="preloader__form" action="#" method="post" novalidate>
+      <h1 class="preloader__headline title">Register</h1>
+      <p class="preloader__tagline subtitle">
+        Create your Reef Rangers account to track progress and earn rewards.
+      </p>
+      <form
+        class="preloader__form"
+        action="#"
+        method="post"
+        novalidate
+        autocomplete="on"
+      >
+        <label class="visually-hidden" for="register-name">Name</label>
+        <input
+          class="preloader__field"
+          type="text"
+          id="register-name"
+          name="name"
+          placeholder="Name"
+          autocomplete="name"
+          inputmode="text"
+          autocapitalize="words"
+          spellcheck="false"
+          required
+        />
         <label class="visually-hidden" for="register-email">Email</label>
         <input
           class="preloader__field"
@@ -42,6 +64,9 @@
           name="email"
           placeholder="Email"
           autocomplete="email"
+          inputmode="email"
+          autocapitalize="none"
+          spellcheck="false"
           required
         />
         <label class="visually-hidden" for="register-password">Password</label>
@@ -55,13 +80,19 @@
           required
         />
         <button class="btn-primary preloader__button" type="submit">
-          <span class="preloader__button-label">Submit</span>
+          <span class="preloader__button-label">Register</span>
           <span class="preloader__spinner" aria-hidden="true"></span>
         </button>
       </form>
       <a class="preloader__link" href="signin.html">Sign In</a>
-      <p class="preloader__error" data-register-error role="alert" hidden></p>
-    </div>
+      <p
+        class="preloader__error"
+        data-register-error
+        role="alert"
+        aria-live="polite"
+        hidden
+      ></p>
+    </main>
     <script>
       window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
       window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bHhwdW1jb2loZmFwbXJzYXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjE3MDcsImV4cCI6MjA3Mjk5NzcwN30.PJiDPZ_Dqli_42isJexeYgsf0ebWbCSOwHtR7lsQTN0';

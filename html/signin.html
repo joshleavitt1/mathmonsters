@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="../css/signin.css" />
   </head>
   <body>
-    <div class="preloader app-safe-area">
+    <main class="preloader app-safe-area" role="main">
       <img
         class="preloader__logo"
         src="/mathmonsters/images/brand/logo.png"
@@ -25,8 +25,17 @@
         width="300"
         height="300"
       />
-      <h1 class="preloader__headline">Sign In</h1>
-      <form class="preloader__form" action="#" method="post" novalidate>
+      <h1 class="preloader__headline title">Sign In</h1>
+      <p class="preloader__tagline subtitle">
+        Continue your underwater adventure by signing in to your account.
+      </p>
+      <form
+        class="preloader__form"
+        action="#"
+        method="post"
+        novalidate
+        autocomplete="on"
+      >
         <label class="visually-hidden" for="signin-email">Email</label>
         <input
           class="preloader__field"
@@ -35,6 +44,9 @@
           name="email"
           placeholder="Email"
           autocomplete="email"
+          inputmode="email"
+          autocapitalize="none"
+          spellcheck="false"
           required
         />
         <label class="visually-hidden" for="signin-password">Password</label>
@@ -45,16 +57,23 @@
           name="password"
           placeholder="Password"
           autocomplete="current-password"
+          inputmode="text"
           required
         />
         <button class="btn-primary preloader__button" type="submit">
-          <span class="preloader__button-label">Submit</span>
+          <span class="preloader__button-label">Sign In</span>
           <span class="preloader__spinner" aria-hidden="true"></span>
         </button>
       </form>
       <a class="preloader__link" href="register.html">Register</a>
-      <p class="preloader__error" data-signin-error role="alert" hidden></p>
-    </div>
+      <p
+        class="preloader__error"
+        data-signin-error
+        role="alert"
+        aria-live="polite"
+        hidden
+      ></p>
+    </main>
     <script>
       window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
       window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bHhwdW1jb2loZmFwbXJzYXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjE3MDcsImV4cCI6MjA3Mjk5NzcwN30.PJiDPZ_Dqli_42isJexeYgsf0ebWbCSOwHtR7lsQTN0';
