@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (data?.session) {
       clearGuestSessionFlag();
-      window.location.replace('index.html');
+      window.location.replace('../index.html');
       return;
     }
   } catch (error) {
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       clearGuestSessionFlag();
-      window.location.replace('index.html');
+      window.location.replace('../index.html');
     } catch (error) {
       console.error('Unexpected error during sign in', error);
       showError('An unexpected error occurred. Please try again.');

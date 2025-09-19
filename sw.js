@@ -2,8 +2,9 @@ const CACHE_NAME = 'reef-rangers-cache-v1';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
-  './welcome.html',
-  './signin.html',
+  './html/welcome.html',
+  './html/signin.html',
+  './html/register.html',
   './html/battle.html',
   './manifest.webmanifest',
   './css/index.css',
