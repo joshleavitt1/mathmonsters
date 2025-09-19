@@ -203,6 +203,80 @@ body:not(.is-preloading) main.landing {
   100% { --ty: -110vh;              --sx: 1.06; --sy: 1.06; opacity: 0; }
 }
 
+.splat-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 61, 98, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  z-index: 12;
+}
+
+.splat-overlay.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.splat-overlay__letters {
+  display: flex;
+  gap: clamp(12px, 3vw, 32px);
+  font-family: var(--font-heading, 'Baloo 2', system-ui, sans-serif);
+  font-size: clamp(56px, 18vw, 164px);
+  letter-spacing: clamp(4px, 1vw, 12px);
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.splat-letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(32px) scale(0.6);
+  animation: splat-letter-pop 0.6s cubic-bezier(0.25, 0.9, 0.35, 1.4) forwards;
+  animation-delay: calc(var(--index, 0) * 0.12s);
+  animation-play-state: paused;
+}
+
+.splat-overlay.is-active .splat-letter {
+  animation-play-state: running;
+}
+
+@keyframes splat-letter-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(32px) scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splat-overlay {
+    transition: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .splat-letter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Organic horizontal meander tied to --drift */
 @keyframes bubble-drift {
   0%   { --tx: calc(var(--drift) * -1); }

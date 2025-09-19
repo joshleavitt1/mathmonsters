@@ -47,35 +47,33 @@
     />
     <div id="monster-stats" class="stat-box">
       <div class="name"></div>
-      <div class="stats">
-        <div class="stat attack">
-          <img src="/mathmonsters/images/questions/sword.svg" alt="Attack" />
-          <span class="value"></span>
-          <span class="increase"></span>
-        </div>
-        <div class="stat health">
-          <img src="/mathmonsters/images/questions/shield.svg" alt="Health" />
-          <span class="value"></span>
-          <span class="increase"></span>
-        </div>
+      <div
+        class="progress progress--orange stat-box__progress"
+        data-hp-progress
+        data-hp-target="monster"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="100"
+        style="--progress-value: 1"
+      >
+        <span class="progress__fill"></span>
       </div>
-      <div class="hp-bar"><div class="hp-fill"></div></div>
     </div>
     <div id="shellfin-stats" class="stat-box">
       <div class="name"></div>
-      <div class="stats">
-        <div class="stat attack">
-          <img src="/mathmonsters/images/questions/sword.svg" alt="Attack" />
-          <span class="value"></span>
-          <span class="increase"></span>
-        </div>
-        <div class="stat health">
-          <img src="/mathmonsters/images/questions/shield.svg" alt="Health" />
-          <span class="value"></span>
-          <span class="increase"></span>
-        </div>
+      <div
+        class="progress progress--orange stat-box__progress"
+        data-hp-progress
+        data-hp-target="hero"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="100"
+        style="--progress-value: 1"
+      >
+        <span class="progress__fill"></span>
       </div>
-      <div class="hp-bar"><div class="hp-fill"></div></div>
     </div>
   </div>
     <div id="question">
