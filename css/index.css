@@ -220,9 +220,9 @@ body:not(.is-preloading) main.landing {
 
 .battle-intro {
   position: absolute;
-  left: 50%;
-  bottom: 32vh;
-  transform: translate(-50%, 0);
+  left: var(--battle-intro-left, 50%);
+  top: var(--battle-intro-top, 48%);
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -233,9 +233,9 @@ body:not(.is-preloading) main.landing {
 }
 
 .battle-intro__image {
-  width: clamp(220px, 48vw, 420px);
-  max-width: 90vw;
-  height: auto;
+  width: min(300px, 90vw);
+  height: min(300px, 90vw);
+  object-fit: contain;
   transform: scale(0.2);
   transform-origin: center;
 }

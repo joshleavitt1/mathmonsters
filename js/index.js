@@ -3,7 +3,7 @@ const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const MIN_PRELOAD_DURATION_MS = 2000;
-const BATTLE_INTRO_DELAY_MS = 2000;
+const BATTLE_INTRO_DELAY_MS = 1000;
 const BATTLE_INTRO_VISIBLE_DURATION_MS = 2000;
 
 // Gentle idle motion caps (pixels)
@@ -239,6 +239,7 @@ const determineBattlePreview = (levelsData, variablesData) => {
 const updateHeroFloat = () => {
   const heroImage = document.querySelector('.hero');
   const battleCard = document.querySelector('[data-battle-card]');
+  const battleIntro = document.querySelector('[data-battle-intro]');
 
   if (!heroImage || !battleCard) return;
 
@@ -255,10 +256,23 @@ const updateHeroFloat = () => {
       Math.max(HERO_FLOAT_MIN_PX, rawRange)
     );
 
-    const topOffset = Math.max(0, Math.min(clampedSpace, 24));
+    const topOffset = Math.max(0, Math.min(clampedSpace, 72));
 
     heroImage.style.setProperty('--hero-top', `${topOffset}px`);
     heroImage.style.setProperty('--hero-float-range', `${floatRange}px`);
+
+    if (battleIntro) {
+      const scrollX =
+        typeof window === 'undefined' ? 0 : window.scrollX || window.pageXOffset || 0;
+      const scrollY =
+        typeof window === 'undefined' ? 0 : window.scrollY || window.pageYOffset || 0;
+      const heroCenterX = heroRect.left + heroRect.width / 2 + scrollX;
+      const heroCenterY = heroRect.top + heroRect.height / 2 + scrollY;
+
+      battleIntro.style.setProperty('--battle-intro-left', `${heroCenterX}px`);
+      battleIntro.style.setProperty('--battle-intro-top', `${heroCenterY}px`);
+    }
+
   };
 
   if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
