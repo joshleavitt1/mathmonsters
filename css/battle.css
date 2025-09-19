@@ -282,7 +282,7 @@ body {
   right: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   padding: 0;
   background: none;
   border: none;
@@ -295,20 +295,17 @@ body {
 }
 
 .battle-dev-controls__btn {
-  --btn-gradient-start: #0095ff;
-  --btn-gradient-end: #006aff;
-  --btn-hover-gradient-start: #33aaff;
-  --btn-hover-gradient-end: #1a73ff;
-
-  min-width: 180px;
-  padding: 10px 16px;
+  min-width: 0;
+  padding: 4px 8px;
   font: inherit;
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 12px;
+  line-height: 1.1;
   text-transform: none;
   letter-spacing: normal;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #f5f7fb;
+  background: rgba(0, 18, 45, 0.65);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: none;
 }
 

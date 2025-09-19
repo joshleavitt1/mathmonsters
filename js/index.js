@@ -400,15 +400,8 @@ const updateHeroFloat = () => {
     heroImage.style.setProperty('--hero-float-range', `${floatRange}px`);
 
     if (battleIntro) {
-      const scrollX =
-        typeof window === 'undefined' ? 0 : window.scrollX || window.pageXOffset || 0;
-      const scrollY =
-        typeof window === 'undefined' ? 0 : window.scrollY || window.pageYOffset || 0;
-      const heroCenterX = heroRect.left + heroRect.width / 2 + scrollX;
-      const heroCenterY = heroRect.top + heroRect.height / 2 + scrollY;
-
-      battleIntro.style.setProperty('--battle-intro-left', `${heroCenterX}px`);
-      battleIntro.style.setProperty('--battle-intro-top', `${heroCenterY}px`);
+      battleIntro.style.removeProperty('--battle-intro-left');
+      battleIntro.style.removeProperty('--battle-intro-top');
     }
 
   };
