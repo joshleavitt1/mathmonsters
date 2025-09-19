@@ -544,7 +544,6 @@ document.addEventListener('DOMContentLoaded', () => {
     questions = shuffle(loadedQuestions);
 
     updateHealthBars();
-    updateBattleTimeDisplay();
   }
 
   function updateHealthBars() {
