@@ -221,7 +221,7 @@ body:not(.is-preloading) main.landing {
 .battle-intro {
   position: absolute;
   left: var(--battle-intro-left, 50%);
-  top: var(--battle-intro-top, 48%);
+  top: var(--battle-intro-top, 45%);
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
