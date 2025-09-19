@@ -134,3 +134,147 @@ button:disabled {
   --progress-gradient-start: #ffbf00;
   --progress-gradient-end: #ff6a00;
 }
+
+.card {
+  width: 420px;
+  max-width: 100%;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  box-sizing: border-box;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.card--pop {
+  animation: pop-in 0.4s ease-out forwards;
+}
+
+.card .battle-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.card .battle-goals-title {
+  margin: 0;
+  font-size: 20px;
+  color: #272b34;
+}
+
+.card .math-type {
+  margin: 0;
+  font-size: var(--subtitle-font-size);
+  font-weight: var(--subtitle-font-weight);
+  color: var(--subtitle-color);
+}
+
+.card .battle-title {
+  margin: 0;
+  font-size: var(--title-font-size);
+  font-weight: var(--title-font-weight);
+  color: var(--title-color);
+}
+
+.card .enemy-image {
+  width: 220px;
+  height: 220px;
+}
+
+.card .battle-stats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  border-radius: 8px;
+  background-color: transparent;
+}
+
+.card .battle-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px 16px;
+  border-radius: 8px;
+  background-color: #f4f6fa;
+}
+
+.card .stat-label {
+  font-size: 18px;
+  color: #888888;
+}
+
+.card .stat-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #006aff;
+}
+
+.card .stat-value.goal-result--met {
+  color: #00b600;
+}
+
+.card .stat-value.goal-result--missed {
+  color: #e20000;
+}
+
+.card .stat-value .goal-result-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.card .btn-primary {
+  width: 100%;
+  min-height: 64px;
+}
+
+.card--home {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: min(420px, calc(100% - 32px));
+  margin: 0;
+  padding: 24px 28px 28px;
+  gap: 20px;
+  z-index: 6;
+}
+
+.card--home .battle-info {
+  gap: 4px;
+}
+
+.card--home .progress {
+  margin-inline: auto;
+}
+
+.card--home .battle-btn {
+  width: 100%;
+}
+
+@keyframes pop-in {
+  0% {
+    transform: scale(0.88);
+    opacity: 0;
+  }
+  80% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

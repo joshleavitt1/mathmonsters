@@ -6,7 +6,6 @@ const OFFLINE_ASSETS = [
   './html/battle.html',
   './manifest.webmanifest',
   './css/index.css',
-  './css/battle-card.css',
   './css/battle.css',
   './css/question.css',
   './css/signin.css',
