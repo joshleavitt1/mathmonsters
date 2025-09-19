@@ -1,7 +1,8 @@
 .battle-card {
   width: 420px;
+  max-width: 100%;
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 20px;
   padding: 24px;
   box-sizing: border-box;
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
@@ -31,15 +32,16 @@
 
 .battle-card .math-type {
   margin: 0;
-  font-size: 20px;
-  color: #778099;
+  font-size: var(--subtitle-font-size);
+  font-weight: var(--subtitle-font-weight);
+  color: var(--subtitle-color);
 }
 
 .battle-card .battle-title {
   margin: 0;
-  font-size: 32px;
-  font-weight: 700;
-  color: #272b34;
+  font-size: var(--title-font-size);
+  font-weight: var(--title-font-weight);
+  color: var(--title-color);
 }
 
 .battle-card .enemy-image {
@@ -101,14 +103,31 @@
 
 .btn-primary {
   width: 100%;
-  height: 64px;
-  background: #006aff;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 20px;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 64px;
+}
+
+.battle-card--home {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: min(420px, calc(100% - 32px));
+  margin: 0;
+  padding: 24px 28px 28px;
+  gap: 20px;
+  z-index: 6;
+}
+
+.battle-card--home .battle-info {
+  gap: 4px;
+}
+
+.battle-card--home .progress {
+  margin-inline: auto;
+}
+
+.battle-card--home .battle-btn {
+  width: 100%;
 }
 
 @keyframes pop-in {

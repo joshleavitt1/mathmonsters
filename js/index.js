@@ -175,10 +175,10 @@ const determineBattlePreview = (levelsData, variablesData) => {
       ? `Battle ${activeLevel.battleLevel}`
       : 'Upcoming Battle');
 
+  const accuracyGoalRaw =
+    typeof battle?.accuracyGoal === 'number' ? battle.accuracyGoal : null;
   const accuracyGoal =
-    typeof battle?.accuracyGoal === 'number'
-      ? Math.round(battle.accuracyGoal * 100)
-      : null;
+    accuracyGoalRaw !== null ? Math.round(accuracyGoalRaw * 100) : null;
 
   const timeGoal =
     typeof battle?.timeGoalSeconds === 'number' ? battle.timeGoalSeconds : null;
@@ -197,6 +197,10 @@ const determineBattlePreview = (levelsData, variablesData) => {
       enemyAlt,
       overlayAccuracyText: accuracyGoal !== null ? `${accuracyGoal}%` : '0%',
       overlayTimeText: timeGoal !== null ? `${timeGoal}s` : '0s',
+      progressAccuracy:
+        accuracyGoalRaw !== null
+          ? Math.min(Math.max(accuracyGoalRaw, 0), 1)
+          : null,
     },
   };
 };
@@ -205,9 +209,7 @@ const applyBattlePreview = (previewData = {}) => {
   const heroImage = document.querySelector('.hero');
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
   const battleTitleElements = document.querySelectorAll('[data-battle-title]');
-  const battleEnemyElements = document.querySelectorAll('[data-battle-enemy]');
-  const overlayAccuracy = document.querySelector('.accuracy-value');
-  const overlayTime = document.querySelector('.time-value');
+  const progressElement = document.querySelector('[data-battle-progress]');
 
   if (heroImage) {
     const heroSprite =
@@ -242,37 +244,16 @@ const applyBattlePreview = (previewData = {}) => {
         : 'Upcoming Battle';
   });
 
-  battleEnemyElements.forEach((element) => {
-    if (!element) {
-      return;
-    }
-    const enemySprite =
-      typeof previewData?.enemy?.sprite === 'string'
-        ? previewData.enemy.sprite
-        : '';
-    if (enemySprite && (element instanceof HTMLImageElement || element.tagName === 'IMG')) {
-      element.src = enemySprite;
-    }
-    if (element instanceof HTMLImageElement || element.tagName === 'IMG') {
-      element.alt =
-        typeof previewData?.enemyAlt === 'string' && previewData.enemyAlt.trim()
-          ? previewData.enemyAlt
-          : 'Enemy ready for battle';
-    }
-  });
-
-  if (overlayAccuracy) {
-    overlayAccuracy.textContent =
-      typeof previewData?.overlayAccuracyText === 'string'
-        ? previewData.overlayAccuracyText
-        : '0%';
-  }
-
-  if (overlayTime) {
-    overlayTime.textContent =
-      typeof previewData?.overlayTimeText === 'string'
-        ? previewData.overlayTimeText
-        : '0s';
+  if (progressElement) {
+    const progressValue = Number.isFinite(previewData?.progressAccuracy)
+      ? Math.min(Math.max(previewData.progressAccuracy, 0), 1)
+      : 0;
+    progressElement.style.setProperty('--progress-value', progressValue);
+    progressElement.setAttribute('aria-valuenow', `${Math.round(progressValue * 100)}`);
+    progressElement.setAttribute(
+      'aria-valuetext',
+      `${Math.round(progressValue * 100)}% complete`
+    );
   }
 };
 
@@ -519,10 +500,8 @@ const initLandingInteractions = (preloadedData = {}) => {
   markLandingVisited();
   randomizeBubbleTimings();
 
-  const battleOverlay = document.getElementById('battle-overlay');
-  const overlayCard = battleOverlay?.querySelector('.battle-overlay-card');
-  const battleButton = battleOverlay?.querySelector('.battle-btn');
-  const splatImage = document.querySelector('.battle-splat');
+  const battleCard = document.querySelector('[data-battle-card]');
+  const battleButton = document.querySelector('[data-battle-button]');
 
   const loadBattlePreview = async () => {
     try {
@@ -567,51 +546,16 @@ const initLandingInteractions = (preloadedData = {}) => {
     }
   };
 
-  loadBattlePreview();
-  if (!battleOverlay) {
-    return;
-  }
-
-  const BATTLE_SPLAT_DELAY = 3000;
-  const BATTLE_CARD_DELAY = 2000;
-  let splatTimeoutId;
-  let overlayTimeoutId;
-
-  const openOverlay = () => {
-    if (document.body.classList.contains('battle-overlay-open')) {
+  const animateCard = () => {
+    if (!battleCard) {
       return;
     }
-
-    document.body.classList.add('battle-overlay-open');
-    battleOverlay.setAttribute('aria-hidden', 'false');
-
-    if (overlayCard) {
-      overlayCard.classList.remove('battle-card--pop');
-      overlayCard.classList.remove('battle-overlay-card--visible');
-      void overlayCard.offsetWidth;
-      overlayCard.classList.add('battle-overlay-card--visible');
-      overlayCard.classList.add('battle-card--pop');
-    }
-
-    window.setTimeout(() => {
-      battleButton?.focus({ preventScroll: true });
-    }, 200);
+    battleCard.classList.remove('battle-card--pop');
+    void battleCard.offsetWidth;
+    battleCard.classList.add('battle-card--pop');
   };
 
-  const startBattleSequence = () => {
-    window.clearTimeout(splatTimeoutId);
-    window.clearTimeout(overlayTimeoutId);
-
-    splatTimeoutId = window.setTimeout(() => {
-      if (splatImage) {
-        splatImage.classList.add('battle-splat--active');
-      }
-
-      overlayTimeoutId = window.setTimeout(openOverlay, BATTLE_CARD_DELAY);
-    }, BATTLE_SPLAT_DELAY);
-  };
-
-  startBattleSequence();
+  loadBattlePreview().then(animateCard);
 
   if (battleButton) {
     battleButton.addEventListener('click', () => {
