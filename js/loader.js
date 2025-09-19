@@ -1,4 +1,62 @@
 const STORAGE_KEY_PROGRESS = 'reefRangersProgress';
+const ASSET_BASE_PATH = '/mathmonsters';
+
+const normalizeAssetPath = (inputPath) => {
+  if (typeof inputPath !== 'string') {
+    return null;
+  }
+
+  let trimmed = inputPath.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith(ASSET_BASE_PATH)) {
+    return trimmed;
+  }
+
+  let suffix = '';
+  const suffixIndex = trimmed.search(/[?#]/);
+  if (suffixIndex !== -1) {
+    suffix = trimmed.slice(suffixIndex);
+    trimmed = trimmed.slice(0, suffixIndex);
+  }
+
+  while (trimmed.startsWith('./')) {
+    trimmed = trimmed.slice(2);
+  }
+
+  while (trimmed.startsWith('../')) {
+    trimmed = trimmed.slice(3);
+  }
+
+  trimmed = trimmed.replace(/^\/+/, '');
+
+  const base = ASSET_BASE_PATH.endsWith('/')
+    ? ASSET_BASE_PATH.slice(0, -1)
+    : ASSET_BASE_PATH;
+
+  return trimmed ? `${base}/${trimmed}${suffix}` : `${base}${suffix}`;
+};
+
+const resolveDataPath = (path) => {
+  const trimmed = typeof path === 'string' ? path.trim() : '';
+  if (!trimmed) {
+    return normalizeAssetPath('data');
+  }
+
+  const normalized = trimmed.startsWith('data/')
+    ? trimmed
+    : trimmed.startsWith('/data/')
+    ? trimmed.slice(1)
+    : `data/${trimmed.replace(/^\/+/, '')}`;
+
+  return normalizeAssetPath(normalized);
+};
 
 const readStoredProgress = () => {
   try {
@@ -21,8 +79,8 @@ const readStoredProgress = () => {
 (async function () {
   try {
     const [varsRes, levelsRes] = await Promise.all([
-      fetch('../data/variables.json'),
-      fetch('../data/levels.json'),
+      fetch(resolveDataPath('variables.json')),
+      fetch(resolveDataPath('levels.json')),
     ]);
 
     if (!varsRes.ok || !levelsRes.ok) {
@@ -71,28 +129,7 @@ const readStoredProgress = () => {
       progress.battleLevel = currentLevel.battleLevel;
     }
 
-    const resolveAssetPath = (path) => {
-      if (typeof path !== 'string') {
-        return null;
-      }
-      const trimmed = path.trim();
-      if (!trimmed) {
-        return null;
-      }
-      if (/^https?:\/\//i.test(trimmed)) {
-        return trimmed;
-      }
-      if (trimmed.startsWith('../')) {
-        return trimmed;
-      }
-      if (trimmed.startsWith('./')) {
-        return `../${trimmed.slice(2)}`;
-      }
-      if (trimmed.startsWith('/')) {
-        return `..${trimmed}`;
-      }
-      return `../${trimmed}`;
-    };
+    const resolveAssetPath = (path) => normalizeAssetPath(path);
 
     const preloadImage = (path) =>
       new Promise((resolve) => {
@@ -117,16 +154,21 @@ const readStoredProgress = () => {
 
     if (questionFile) {
       try {
-        const questionsRes = await fetch(`../data/${questionFile}`);
-        if (questionsRes.ok) {
-          const questionsJson = await questionsRes.json();
-          if (Array.isArray(questionsJson)) {
-            questions = questionsJson;
-          } else if (Array.isArray(questionsJson?.questions)) {
-            questions = questionsJson.questions;
-          }
-        } else {
+        const questionPath = resolveDataPath(questionFile);
+        if (!questionPath) {
           console.warn(`Questions file not found: ${questionFile}`);
+        } else {
+          const questionsRes = await fetch(questionPath);
+          if (questionsRes.ok) {
+            const questionsJson = await questionsRes.json();
+            if (Array.isArray(questionsJson)) {
+              questions = questionsJson;
+            } else if (Array.isArray(questionsJson?.questions)) {
+              questions = questionsJson.questions;
+            }
+          } else {
+            console.warn(`Questions file not found: ${questionFile}`);
+          }
         }
       } catch (error) {
         console.error('Failed to load questions data', error);
