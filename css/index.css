@@ -52,21 +52,36 @@ body:not(.is-preloading) main.landing {
 
 .hero {
   position: absolute;
-  bottom: 32vh;
   left: 50%;
+  top: var(--hero-top, clamp(72px, 18vh, 240px));
   max-width: 300px;
   max-height: 300px;
-  transform: translate(-50%, 0);
-  animation: hero-float 3.5s ease-in-out infinite;
+  transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
+  animation: hero-float var(--hero-float-duration, 3.5s) ease-in-out infinite;
+  --hero-float-range: 32px;
+  --hero-float-duration: 3.5s;
   image-rendering: auto;
   z-index: 2;
   pointer-events: none;
 }
 
 @keyframes hero-float {
-  0%   { transform: translate(-50%, 0) translateY(0); }
-  50%  { transform: translate(-50%, 0) translateY(-32px); }
-  100% { transform: translate(-50%, 0) translateY(0); }
+  0% {
+    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
+  }
+  50% {
+    transform: translate(-50%, var(--hero-float-range, 32px));
+  }
+  100% {
+    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    animation: none;
+    transform: translate(-50%, 0);
+  }
 }
 
 /* Bubble field */

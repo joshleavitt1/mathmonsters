@@ -232,6 +232,33 @@ const determineBattlePreview = (levelsData, variablesData) => {
   };
 };
 
+const updateHeroFloat = () => {
+  const heroImage = document.querySelector('.hero');
+  const battleCard = document.querySelector('[data-battle-card]');
+
+  if (!heroImage || !battleCard) {
+    return;
+  }
+
+  const applyLayout = () => {
+    const cardRect = battleCard.getBoundingClientRect();
+    const heroRect = heroImage.getBoundingClientRect();
+
+    const availableSpace = cardRect.top - heroRect.height;
+    const clampedSpace = Math.max(0, availableSpace);
+    const floatOffset = clampedSpace / 2;
+
+    heroImage.style.setProperty('--hero-top', `${floatOffset}px`);
+    heroImage.style.setProperty('--hero-float-range', `${floatOffset}px`);
+  };
+
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(applyLayout);
+  } else {
+    applyLayout();
+  }
+};
+
 const applyBattlePreview = (previewData = {}) => {
   const heroImage = document.querySelector('.hero');
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
@@ -284,6 +311,8 @@ const applyBattlePreview = (previewData = {}) => {
     progressElement.setAttribute('aria-valuenow', `${Math.round(progressValue * 100)}`);
     progressElement.setAttribute('aria-valuetext', `${progressText} experience`);
   }
+
+  updateHeroFloat();
 };
 
 const preloaderElement = document.querySelector('[data-preloader]');
@@ -534,6 +563,7 @@ const initLandingInteractions = (preloadedData = {}) => {
 
   const battleCard = document.querySelector('[data-battle-card]');
   const battleButton = document.querySelector('[data-battle-button]');
+  const heroImage = document.querySelector('.hero');
 
   const loadBattlePreview = async () => {
     try {
@@ -579,6 +609,16 @@ const initLandingInteractions = (preloadedData = {}) => {
   };
 
   loadBattlePreview();
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', updateHeroFloat);
+  }
+
+  if (heroImage) {
+    heroImage.addEventListener('load', updateHeroFloat);
+  }
+
+  updateHeroFloat();
 
   if (battleButton) {
     battleButton.addEventListener('click', async (event) => {
