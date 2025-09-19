@@ -79,7 +79,6 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  background: rgba(12, 36, 64, 0.52);
   opacity: 0;
   transform: translateY(24px) scale(0.95);
   filter: blur(12px);
