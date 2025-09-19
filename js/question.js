@@ -1,7 +1,23 @@
+const getAssetBasePath = () => {
+  const fallback = '/mathmonsters';
+  const globalBase =
+    typeof window.mathMonstersAssetBase === 'string'
+      ? window.mathMonstersAssetBase.trim()
+      : '';
+  if (globalBase) {
+    return globalBase;
+  }
+  return fallback;
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const choicesContainer = questionBox.querySelector('.choices');
   const button = questionBox.querySelector('button');
+  const assetBase = getAssetBasePath();
+  const trimmedBase = assetBase.endsWith('/')
+    ? assetBase.slice(0, -1)
+    : assetBase;
 
   button.disabled = true;
 
@@ -35,9 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     button.classList.add('result', isCorrect ? 'correct' : 'incorrect');
-    button.innerHTML = isCorrect
-      ? '<img src="/mathmonsters/images/questions/button/correct.svg" alt="Correct icon" /> Correct'
-      : '<img src="/mathmonsters/images/questions/button/incorrect.svg" alt="Incorrect icon" /> Incorrect';
+    const iconType = isCorrect ? 'correct' : 'incorrect';
+    const iconPath = `${trimmedBase}/images/questions/button/${iconType}.svg`;
+    button.innerHTML =
+      `<img src="${iconPath}" alt="${isCorrect ? 'Correct' : 'Incorrect'} icon" /> ` +
+      (isCorrect ? 'Correct' : 'Incorrect');
 
     document.dispatchEvent(
       new CustomEvent('answer-submitted', { detail: { correct: isCorrect } })
