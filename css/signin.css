@@ -4,6 +4,10 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(16px + env(safe-area-inset-left, 0px));
+  padding-right: calc(16px + env(safe-area-inset-right, 0px));
   box-sizing: border-box;
   background-color: #001b41;
 }
