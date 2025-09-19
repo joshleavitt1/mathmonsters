@@ -124,7 +124,7 @@ button:disabled {
 .progress__fill::after {
   content: '';
   position: absolute;
-  inset: 2px, 4px, 0px, 4px;
+  inset: 2px 4px 0 4px;
   height: 4px;
   border-radius: 999px;
   background-color: rgba(255, 255, 255, 0.3);
@@ -135,7 +135,8 @@ button:disabled {
   --progress-gradient-end: #ff6a00;
 }
 
-.card {
+.card,
+.battle-card {
   width: 420px;
   max-width: 100%;
   background: #ffffff;
@@ -149,44 +150,50 @@ button:disabled {
   align-items: center;
   gap: 24px;
 }
-
-.card--pop {
+.card--pop,
+.battle-card--pop {
   animation: pop-in 0.4s ease-out forwards;
 }
 
-.card .battle-info {
+.card .battle-info,
+.battle-card .battle-info {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
 }
 
-.card .battle-goals-title {
+.card .battle-goals-title,
+.battle-card .battle-goals-title {
   margin: 0;
   font-size: 20px;
   color: #272b34;
 }
 
-.card .math-type {
+.card .math-type,
+.battle-card .math-type {
   margin: 0;
   font-size: var(--subtitle-font-size);
   font-weight: var(--subtitle-font-weight);
   color: var(--subtitle-color);
 }
 
-.card .battle-title {
+.card .battle-title,
+.battle-card .battle-title {
   margin: 0;
   font-size: var(--title-font-size);
   font-weight: var(--title-font-weight);
   color: var(--title-color);
 }
 
-.card .enemy-image {
+.card .enemy-image,
+.battle-card .enemy-image {
   width: 220px;
   height: 220px;
 }
 
-.card .battle-stats {
+.card .battle-stats,
+.battle-card .battle-stats {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -194,25 +201,27 @@ button:disabled {
   border-radius: 8px;
   background-color: transparent;
 }
-
-.card .battle-stat {
+.card .battle-stat,
+.battle-card .battle-stat {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   min-width: 0;
-  padding: 16px 16px;
+  padding: 16px;
   border-radius: 8px;
   background-color: #f4f6fa;
 }
 
-.card .stat-label {
+.card .stat-label,
+.battle-card .stat-label {
   font-size: 18px;
   color: #888888;
 }
 
-.card .stat-value {
+.card .stat-value,
+.battle-card .stat-value {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -221,26 +230,31 @@ button:disabled {
   color: #006aff;
 }
 
-.card .stat-value.goal-result--met {
+.card .stat-value.goal-result--met,
+.battle-card .stat-value.goal-result--met {
   color: #00b600;
 }
 
-.card .stat-value.goal-result--missed {
+.card .stat-value.goal-result--missed,
+.battle-card .stat-value.goal-result--missed {
   color: #e20000;
 }
 
-.card .stat-value .goal-result-icon {
+.card .stat-value .goal-result-icon,
+.battle-card .stat-value .goal-result-icon {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
 }
 
-.card .btn-primary {
+.card .btn-primary,
+.battle-card .btn-primary {
   width: 100%;
   min-height: 64px;
 }
 
-.card--home {
+.card--home,
+.battle-card--home {
   position: absolute;
   left: 50%;
   bottom: 16px;
@@ -251,16 +265,18 @@ button:disabled {
   gap: 20px;
   z-index: 6;
 }
-
-.card--home .battle-info {
+.card--home .battle-info,
+.battle-card--home .battle-info {
   gap: 4px;
 }
 
-.card--home .progress {
+.card--home .progress,
+.battle-card--home .progress {
   margin-inline: auto;
 }
 
-.card--home .battle-btn {
+.card--home .battle-btn,
+.battle-card--home .battle-btn {
   width: 100%;
 }
 
