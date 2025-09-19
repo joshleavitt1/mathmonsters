@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a3d62" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Welcome | Reef Rangers</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="300x300" href="/mathmonsters/images/brand/logo.png" />
+    <link rel="stylesheet" href="css/global.css" />
+    <link rel="stylesheet" href="css/signin.css" />
+  </head>
+  <body>
+    <div class="preloader">
+      <img
+        class="preloader__logo"
+        src="/mathmonsters/images/brand/logo.png"
+        alt="Reef Rangers logo"
+        width="300"
+        height="300"
+      />
+      <h1 class="preloader__headline">Welcome</h1>
+      <p class="preloader__tagline">Turn math into an epic adventure!</p>
+      <button class="preloader__button btn-primary" type="button" data-new-game>
+        New Game
+      </button>
+      <a class="preloader__secondary-button" href="signin.html">Sign In</a>
+    </div>
+    <script>
+      window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
+      window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bHhwdW1jb2loZmFwbXJzYXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjE3MDcsImV4cCI6MjA3Mjk5NzcwN30.PJiDPZ_Dqli_42isJexeYgsf0ebWbCSOwHtR7lsQTN0';
+    </script>
+    <script src="js/pwa.js" defer data-pwa-root="."></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="js/supabaseClient.js" defer></script>
+    <script src="js/welcome.js" defer></script>
+  </body>
+</html>
