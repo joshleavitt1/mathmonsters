@@ -13,9 +13,40 @@
   --button-hover-gradient-end: #1a73ff;
 }
 
-html,
+html {
+  height: 100%;
+}
+
 body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
   font-family: var(--font-family-rounded);
+  color: #272b34;
+  background-color: #001b41;
+}
+
+@supports (-webkit-touch-callout: none) {
+  body {
+    min-height: -webkit-fill-available;
+  }
+}
+
+.app-safe-area {
+  --app-safe-area-padding: 0px;
+  padding: var(--app-safe-area-padding, 0px);
+  padding-top: calc(
+    var(--app-safe-area-padding, 0px) + env(safe-area-inset-top, 0px)
+  );
+  padding-bottom: calc(
+    var(--app-safe-area-padding, 0px) + env(safe-area-inset-bottom, 0px)
+  );
+  padding-left: calc(
+    var(--app-safe-area-padding, 0px) + env(safe-area-inset-left, 0px)
+  );
+  padding-right: calc(
+    var(--app-safe-area-padding, 0px) + env(safe-area-inset-right, 0px)
+  );
 }
 
 button,
