@@ -126,37 +126,46 @@ const setVisitedFlag = (storage, label) => {
   }
 };
 
-const hasVisitedLanding = () => {
+const getLandingVisitState = () => {
   const sessionVisited = readVisitedFlag(sessionStorage, 'Session');
   if (sessionVisited === true) {
-    return true;
+    return { visited: true, shouldRedirect: false };
   }
   if (sessionVisited === null) {
-    return true;
+    return { visited: true, shouldRedirect: false };
   }
 
   const localVisited = readVisitedFlag(localStorage, 'Local');
   if (localVisited === true) {
     setVisitedFlag(sessionStorage, 'Session');
-    return true;
+    return { visited: true, shouldRedirect: false };
   }
   if (localVisited === null) {
-    return true;
+    return { visited: true, shouldRedirect: false };
   }
 
-  return false;
+  return { visited: false, shouldRedirect: true };
 };
 
-const landingVisited = hasVisitedLanding();
-
-if (!landingVisited) {
-  window.location.replace(`${ASSET_BASE_PATH}/index.html`);
-}
+const landingVisitState = getLandingVisitState();
+const landingVisited = landingVisitState.visited || landingVisitState.shouldRedirect;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!landingVisited) {
     return;
   }
+  let redirectScheduled = false;
+  const scheduleLandingRedirect = () => {
+    if (!landingVisitState.shouldRedirect || redirectScheduled) {
+      return;
+    }
+    redirectScheduled = true;
+    setVisitedFlag(sessionStorage, 'Session');
+    setVisitedFlag(localStorage, 'Local');
+    window.requestAnimationFrame(() => {
+      window.location.replace(`${ASSET_BASE_PATH}/index.html`);
+    });
+  };
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
   const prefersReducedMotion = window.matchMedia(
@@ -1098,6 +1107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     updateStreak();
     setTimeout(showQuestion, 2000);
+    scheduleLandingRedirect();
   }
 
   if (window.preloadedData) {
