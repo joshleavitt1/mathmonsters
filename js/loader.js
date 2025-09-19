@@ -109,10 +109,15 @@ const readStoredProgress = () => {
       if (typeof storedProgress.battleLevel === 'number') {
         progress.battleLevel = storedProgress.battleLevel;
       }
-      if (typeof storedProgress.timeRemainingSeconds === 'number') {
-        progress.timeRemainingSeconds = storedProgress.timeRemainingSeconds;
+      if (typeof storedProgress.currentExperience === 'number') {
+        progress.currentExperience = storedProgress.currentExperience;
       }
     }
+
+    if (typeof progress.currentExperience !== 'number') {
+      progress.currentExperience = 0;
+    }
+
     const activeBattleLevel =
       progress.battleLevel ?? levels[0]?.battleLevel ?? null;
 
@@ -190,12 +195,56 @@ const readStoredProgress = () => {
       resolveUserBattle(activeBattleLevel) ?? userBattles[0] ?? null;
 
     const levelBattle = currentLevel?.battle ?? {};
+
+    const getLevelEnemy = (experienceValue) => {
+      const candidates = Object.entries(levelBattle)
+        .filter(([key, value]) =>
+          /^enemy/i.test(key) && value && typeof value === 'object'
+        )
+        .map(([, value]) => value);
+
+      if (candidates.length === 0) {
+        return levelBattle?.enemy ?? null;
+      }
+
+      const experienceString = String(experienceValue);
+      const matchedEnemy = candidates.find((candidate) => {
+        const candidateId = candidate?.id;
+        if (candidateId === undefined || candidateId === null) {
+          return false;
+        }
+        if (
+          typeof candidateId === 'number' &&
+          Number.isFinite(candidateId) &&
+          typeof experienceValue === 'number' &&
+          Number.isFinite(experienceValue)
+        ) {
+          return candidateId === experienceValue;
+        }
+        return String(candidateId) === experienceString;
+      });
+
+      if (matchedEnemy) {
+        return matchedEnemy;
+      }
+
+      if (typeof experienceValue === 'number' && Number.isFinite(experienceValue)) {
+        const boundedIndex = Math.min(
+          Math.max(Math.floor(experienceValue), 0),
+          candidates.length - 1
+        );
+        return candidates[boundedIndex];
+      }
+
+      return candidates[0];
+    };
+
     const hero = {
       ...(levelBattle?.hero ?? {}),
       ...(activeUserBattle?.hero ?? {}),
     };
     const battle = { ...levelBattle, hero };
-    let enemy = battle?.enemy ?? null;
+    let enemy = getLevelEnemy(progress.currentExperience);
 
     const heroSprite = resolveAssetPath(hero?.sprite);
     if (heroSprite) {

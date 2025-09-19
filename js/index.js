@@ -116,9 +116,8 @@ const mergeVariablesWithProgress = (rawVariablesData) => {
       mergedProgress.battleLevel = storedProgress.battleLevel;
     }
 
-    if (typeof storedProgress.timeRemainingSeconds === 'number') {
-      mergedProgress.timeRemainingSeconds =
-        storedProgress.timeRemainingSeconds;
+    if (typeof storedProgress.currentExperience === 'number') {
+      mergedProgress.currentExperience = storedProgress.currentExperience;
     }
 
     variables.progress = mergedProgress;
@@ -201,13 +200,19 @@ const determineBattlePreview = (levelsData, variablesData) => {
       ? `Battle ${activeLevel.battleLevel}`
       : 'Upcoming Battle');
 
-  const accuracyGoalRaw =
-    typeof battle?.accuracyGoal === 'number' ? battle.accuracyGoal : null;
-  const accuracyGoal =
-    accuracyGoalRaw !== null ? Math.round(accuracyGoalRaw * 100) : null;
-
-  const timeGoal =
-    typeof battle?.timeGoalSeconds === 'number' ? battle.timeGoalSeconds : null;
+  const totalExperienceRaw = Number(activeLevel?.totalExperience);
+  const totalExperience = Number.isFinite(totalExperienceRaw)
+    ? Math.max(0, Math.round(totalExperienceRaw))
+    : 0;
+  const currentExperienceRaw = Number(variables?.progress?.currentExperience);
+  const currentExperience = Number.isFinite(currentExperienceRaw)
+    ? Math.max(0, Math.round(currentExperienceRaw))
+    : 0;
+  const progressRatio =
+    totalExperience > 0
+      ? Math.min(Math.max(currentExperience / totalExperience, 0), 1)
+      : 0;
+  const experienceText = `${Math.min(currentExperience, totalExperience)} of ${totalExperience}`;
 
   return {
     levels,
@@ -221,12 +226,8 @@ const determineBattlePreview = (levelsData, variablesData) => {
       heroAlt,
       enemy: { ...enemyData, sprite: enemySprite },
       enemyAlt,
-      overlayAccuracyText: accuracyGoal !== null ? `${accuracyGoal}%` : '0%',
-      overlayTimeText: timeGoal !== null ? `${timeGoal}s` : '0s',
-      progressAccuracy:
-        accuracyGoalRaw !== null
-          ? Math.min(Math.max(accuracyGoalRaw, 0), 1)
-          : null,
+      progressExperience: progressRatio,
+      progressExperienceText: experienceText,
     },
   };
 };
@@ -271,15 +272,17 @@ const applyBattlePreview = (previewData = {}) => {
   });
 
   if (progressElement) {
-    const progressValue = Number.isFinite(previewData?.progressAccuracy)
-      ? Math.min(Math.max(previewData.progressAccuracy, 0), 1)
+    const progressValue = Number.isFinite(previewData?.progressExperience)
+      ? Math.min(Math.max(previewData.progressExperience, 0), 1)
       : 0;
+    const progressText =
+      typeof previewData?.progressExperienceText === 'string' &&
+      previewData.progressExperienceText.trim()
+        ? previewData.progressExperienceText.trim()
+        : '0 of 0';
     progressElement.style.setProperty('--progress-value', progressValue);
     progressElement.setAttribute('aria-valuenow', `${Math.round(progressValue * 100)}`);
-    progressElement.setAttribute(
-      'aria-valuetext',
-      `${Math.round(progressValue * 100)}% complete`
-    );
+    progressElement.setAttribute('aria-valuetext', `${progressText} experience`);
   }
 };
 

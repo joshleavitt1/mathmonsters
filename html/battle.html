@@ -14,16 +14,6 @@
     <link rel="stylesheet" href="/mathmonsters/css/battle.css" />
   </head>
   <body>
-  <div class="battle-stat-banner" aria-live="polite">
-    <div class="stat">
-      <span class="label">Accuracy</span>
-      <span class="value" data-banner-accuracy>0%</span>
-    </div>
-    <div class="stat">
-      <span class="label">Time</span>
-      <span class="value" data-banner-time>0s</span>
-    </div>
-  </div>
   <div class="battle-dev-controls" role="group" aria-label="Battle test controls">
     <button type="button" class="battle-dev-controls__btn" data-dev-set-streak>
       Set Streak 4
@@ -109,21 +99,16 @@
           src="/mathmonsters/images/battle/monster_battle_1.png"
           alt="Enemy defeated in battle"
         />
-        <p class="battle-goals-title">Battle Goals</p>
+        <p class="battle-goals-title">Battle Rewards</p>
         <div class="battle-stats">
-          <div class="battle-stat" data-goal="accuracy">
-            <span class="stat-label">Accuracy</span>
-            <span class="stat-value summary-accuracy">
-              <span class="stat-value-text">0%</span>
-            </span>
-          </div>
-          <div class="battle-stat" data-goal="time">
-            <span class="stat-label">Time</span>
-            <span class="stat-value summary-time">
-              <span class="stat-value-text">0s</span>
+          <div class="battle-stat" data-goal="experience">
+            <span class="stat-label">Experience</span>
+            <span class="stat-value summary-experience">
+              <span class="stat-value-text">+0</span>
             </span>
           </div>
         </div>
+        <p class="battle-progress" data-level-progress>Level Progress: 0 / 0</p>
         <button type="button" class="btn-primary next-mission-btn" data-action="next">Next Mission</button>
       </section>
     </div>
