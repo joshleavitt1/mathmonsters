@@ -404,7 +404,6 @@ body.battle-overlay-open .battle-overlay { opacity: 1; pointer-events: auto; }
 
 .pwa-install__link {
   color: #0a3d62;
-  font-weight: 600;
   text-decoration: none;
 }
 
