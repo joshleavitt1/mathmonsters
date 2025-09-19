@@ -36,7 +36,14 @@ body {
 .preloader__headline {
   margin: 0;
   color: #ffffff;
-  font-size: 32px;
+}
+
+.preloader__actions {
+  width: 420px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .preloader__field {

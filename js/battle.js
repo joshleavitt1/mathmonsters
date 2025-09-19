@@ -949,6 +949,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    try {
+      window.localStorage?.clear();
+    } catch (error) {
+      console.warn('Unable to clear local storage.', error);
+    }
+
+    try {
+      window.sessionStorage?.clear();
+    } catch (error) {
+      console.warn('Unable to clear session storage.', error);
+    }
+
     window.location.replace(`${ASSET_BASE_PATH}/html/signin.html`);
   });
 
