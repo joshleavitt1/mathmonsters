@@ -286,9 +286,9 @@ body:not(.is-preloading) main.landing {
 }
 
 .battle-intro {
-  position: absolute;
+  position: fixed;
   left: var(--battle-intro-left, 50%);
-  top: var(--battle-intro-top, 45%);
+  top: var(--battle-intro-top, 50%);
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;

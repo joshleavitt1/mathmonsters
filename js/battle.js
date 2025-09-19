@@ -508,8 +508,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadData() {
     const data = window.preloadedData ?? {};
     const battleData = data.battle ?? {};
-    const heroData = data.hero ?? {};
-    const enemyData = data.enemy ?? {};
+    const heroData = {
+      ...(battleData?.hero ?? {}),
+      ...(data.hero ?? {}),
+    };
+    const enemyData = {
+      ...(battleData?.enemy ?? {}),
+      ...(data.enemy ?? {}),
+    };
     const progressData = data.variables?.progress ?? {};
 
     currentBattleLevel =
@@ -568,8 +574,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const heroSprite = resolveAssetPath(heroData.sprite);
-    if (heroSprite && heroImg) {
-      heroImg.src = heroSprite;
+    if (heroImg) {
+      if (heroSprite) {
+        heroImg.src = heroSprite;
+      } else {
+        const fallbackHeroSprite = resolveAssetPath(battleData?.hero?.sprite);
+        if (fallbackHeroSprite) {
+          heroImg.src = fallbackHeroSprite;
+        }
+      }
     }
     if (heroImg && hero.name) {
       heroImg.alt = `${hero.name} ready for battle`;
