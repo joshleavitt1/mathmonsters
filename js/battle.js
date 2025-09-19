@@ -125,8 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressFill = questionBox.querySelector('.progress-fill');
   const streakLabel = questionBox.querySelector('.streak-label');
   const streakIcon = questionBox.querySelector('.streak-icon');
-  const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
-  const bannerTimeValue = document.querySelector('[data-banner-time]');
   const setStreakButton = document.querySelector('[data-dev-set-streak]');
   const endBattleButton = document.querySelector('[data-dev-end-battle]');
   const resetLevelButton = document.querySelector('[data-dev-reset-level]');
@@ -135,14 +133,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const completeMessage = document.getElementById('complete-message');
   const battleCompleteTitle = completeMessage?.querySelector('#battle-complete-title');
   const completeEnemyImg = completeMessage?.querySelector('.enemy-image');
-  const summaryAccuracyStat = completeMessage?.querySelector('[data-goal="accuracy"]');
-  const summaryTimeStat = completeMessage?.querySelector('[data-goal="time"]');
-  const summaryAccuracyValue = summaryAccuracyStat?.querySelector('.summary-accuracy');
-  const summaryTimeValue = summaryTimeStat?.querySelector('.summary-time');
+  const summaryExperienceStat = completeMessage?.querySelector(
+    '[data-goal="experience"]'
+  );
+  const summaryExperienceValue = summaryExperienceStat?.querySelector(
+    '.summary-experience'
+  );
+  const levelProgressEl = completeMessage?.querySelector('[data-level-progress]');
   const nextMissionBtn = completeMessage?.querySelector('.next-mission-btn');
 
-  const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
-  const summaryTimeText = ensureStatValueText(summaryTimeValue);
+  const summaryExperienceText = ensureStatValueText(summaryExperienceValue);
 
   if (heroHpProgress && !heroHpProgress.hasAttribute('aria-label')) {
     heroHpProgress.setAttribute('aria-label', 'Hero health');
@@ -151,10 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
     monsterHpProgress.setAttribute('aria-label', 'Monster health');
   }
 
-  if (bannerAccuracyValue) bannerAccuracyValue.textContent = '100%';
-  if (bannerTimeValue) bannerTimeValue.textContent = '0s';
-  if (summaryAccuracyText) summaryAccuracyText.textContent = '100%';
-  if (summaryTimeText) summaryTimeText.textContent = '0s';
+  if (summaryExperienceText) summaryExperienceText.textContent = '+0';
+  if (levelProgressEl) levelProgressEl.textContent = 'Level Progress: 0 / 0';
 
   const MIN_STREAK_GOAL = 1;
   const MAX_STREAK_GOAL = 5;
@@ -164,20 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let streak = 0;
   let streakMaxed = false;
   let streakIconShown = false;
-  let correctAnswers = 0;
-  let totalAnswers = 0;
-  let wrongAnswers = 0;
-  let accuracyGoal = null;
-  let timeGoalSeconds = 0;
-  let timeRemaining = 0;
-  let initialTimeRemaining = 0;
-  let battleTimerDeadline = null;
-  let battleTimerInterval = null;
+  let currentExperience = 0;
+  let levelTotalExperience = 0;
   let battleEnded = false;
   let currentBattleLevel = null;
-  let battleStartTime = null;
-  let battleLevelAdvanced = false;
-  let battleGoalsMet = false;
 
   const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
@@ -324,20 +312,126 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function advanceBattleLevel() {
-    if (battleLevelAdvanced) {
+  const findLevelByNumber = (levelNumber) => {
+    if (
+      typeof levelNumber !== 'number' ||
+      !Array.isArray(window.preloadedData?.levels)
+    ) {
+      return null;
+    }
+    return (
+      window.preloadedData.levels.find(
+        (level) =>
+          typeof level?.battleLevel === 'number' && level.battleLevel === levelNumber
+      ) ?? null
+    );
+  };
+
+  const getTotalExperienceForLevel = (levelNumber) => {
+    const levelEntry = findLevelByNumber(levelNumber);
+    if (!levelEntry) {
+      return null;
+    }
+    const raw = Number(levelEntry.totalExperience);
+    if (!Number.isFinite(raw) || raw < 0) {
+      return null;
+    }
+    return Math.max(0, Math.round(raw));
+  };
+
+  const normalizeExperienceValue = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric < 0) {
+      return 0;
+    }
+    return Math.round(numeric);
+  };
+
+  function updateLevelProgressDisplay(
+    experienceValue = currentExperience,
+    totalOverride = null
+  ) {
+    if (!levelProgressEl) {
       return;
     }
+    const total = Number.isFinite(totalOverride)
+      ? Math.max(0, Math.round(totalOverride))
+      : Number.isFinite(levelTotalExperience)
+      ? Math.max(levelTotalExperience, 0)
+      : 0;
+    const clampedExperience =
+      total > 0
+        ? Math.min(Math.max(experienceValue, 0), total)
+        : Math.max(experienceValue, 0);
+    levelProgressEl.textContent = `Level Progress: ${clampedExperience} / ${total}`;
+  }
+
+  function recordBattleProgress(win) {
     const baseLevel =
       typeof currentBattleLevel === 'number'
         ? currentBattleLevel
         : typeof window.preloadedData?.variables?.progress?.battleLevel === 'number'
         ? window.preloadedData.variables.progress.battleLevel
-        : 0;
-    const nextLevel = baseLevel + 1;
-    persistProgress({ battleLevel: nextLevel });
-    currentBattleLevel = nextLevel;
-    battleLevelAdvanced = true;
+        : typeof window.preloadedData?.level?.battleLevel === 'number'
+        ? window.preloadedData.level.battleLevel
+        : 1;
+    const normalizedTotal = Number.isFinite(levelTotalExperience)
+      ? Math.max(levelTotalExperience, 0)
+      : 0;
+    const previousExperience = normalizeExperienceValue(currentExperience);
+
+    if (!win) {
+      persistProgress({
+        battleLevel: baseLevel,
+        currentExperience: previousExperience,
+      });
+      currentBattleLevel = baseLevel;
+      currentExperience = previousExperience;
+      return {
+        earned: 0,
+        leveledUp: false,
+        experience: previousExperience,
+        total: normalizedTotal,
+      };
+    }
+
+    const earned = 1;
+    let newExperience = previousExperience + earned;
+    let newLevel = baseLevel;
+    let leveledUp = false;
+
+    if (normalizedTotal > 0 && newExperience >= normalizedTotal) {
+      leveledUp = true;
+      newLevel = baseLevel + 1;
+      newExperience = 0;
+    }
+
+    persistProgress({
+      battleLevel: newLevel,
+      currentExperience: newExperience,
+    });
+
+    currentBattleLevel = newLevel;
+    currentExperience = newExperience;
+
+    let nextLevelTotal = normalizedTotal;
+    if (leveledUp) {
+      const resolvedTotal = getTotalExperienceForLevel(newLevel);
+      if (resolvedTotal !== null) {
+        levelTotalExperience = resolvedTotal;
+        nextLevelTotal = resolvedTotal;
+      } else {
+        levelTotalExperience = 0;
+        nextLevelTotal = 0;
+      }
+    }
+
+    return {
+      earned,
+      leveledUp,
+      experience: newExperience,
+      total: leveledUp ? nextLevelTotal : normalizedTotal,
+    };
   }
 
   function loadData() {
@@ -356,33 +450,32 @@ document.addEventListener('DOMContentLoaded', () => {
         ? data.level.battleLevel
         : null;
 
-    accuracyGoal =
-      typeof battleData.accuracyGoal === 'number' &&
-      Number.isFinite(battleData.accuracyGoal)
-        ? battleData.accuracyGoal
-        : null;
-
-    const parsedTimeGoal = Number(battleData.timeGoalSeconds);
-    timeGoalSeconds =
-      Number.isFinite(parsedTimeGoal) && parsedTimeGoal > 0
-        ? Math.floor(parsedTimeGoal)
-        : 0;
-
-    const storedTime = Number(progressData.timeRemainingSeconds);
-    if (Number.isFinite(storedTime) && storedTime > 0) {
-      timeRemaining = Math.floor(storedTime);
-      if (timeGoalSeconds > 0) {
-        timeRemaining = Math.min(timeRemaining, timeGoalSeconds);
+    const resolvedLevelExperience = () => {
+      const directValue = Number(data.level?.totalExperience);
+      if (Number.isFinite(directValue) && directValue >= 0) {
+        return Math.max(0, Math.round(directValue));
       }
-    } else {
-      timeRemaining = timeGoalSeconds;
+      if (typeof currentBattleLevel === 'number') {
+        const levelValue = getTotalExperienceForLevel(currentBattleLevel);
+        if (levelValue !== null) {
+          return levelValue;
+        }
+      }
+      return 0;
+    };
+
+    levelTotalExperience = resolvedLevelExperience();
+
+    currentExperience = normalizeExperienceValue(progressData.currentExperience);
+    if (
+      Number.isFinite(levelTotalExperience) &&
+      levelTotalExperience > 0 &&
+      currentExperience > levelTotalExperience
+    ) {
+      currentExperience = levelTotalExperience;
     }
 
-    if (!Number.isFinite(timeRemaining) || timeRemaining < 0) {
-      timeRemaining = 0;
-    }
-
-    initialTimeRemaining = Number.isFinite(timeRemaining) ? timeRemaining : 0;
+    updateLevelProgressDisplay(currentExperience);
 
     const resolvedStreakGoal = Number(battleData.streakGoal);
     if (Number.isFinite(resolvedStreakGoal)) {
@@ -553,71 +646,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function calculateAccuracy() {
-    if (wrongAnswers === 0) {
-      return 100;
-    }
-    return totalAnswers
-      ? Math.max(0, Math.round((correctAnswers / totalAnswers) * 100))
-      : 100;
-  }
-
-  function updateAccuracyDisplays() {
-    const accuracy = calculateAccuracy();
-    if (bannerAccuracyValue) bannerAccuracyValue.textContent = `${accuracy}%`;
-    if (summaryAccuracyText) summaryAccuracyText.textContent = `${accuracy}%`;
-  }
-
-  function updateBattleTimeDisplay() {
-    const timeValue = Number.isFinite(timeRemaining) ? Math.max(0, Math.floor(timeRemaining)) : 0;
-    if (bannerTimeValue) bannerTimeValue.textContent = `${timeValue}s`;
-    if (summaryTimeText) summaryTimeText.textContent = `${timeValue}s`;
-  }
-
-  function handleBattleTimerTick() {
-    if (battleEnded) {
-      stopBattleTimer();
+  function updateSummaryExperience(result) {
+    if (!result || typeof result !== 'object') {
       return;
     }
-    if (!Number.isFinite(battleTimerDeadline)) {
-      stopBattleTimer();
-      return;
+    const earned = Number(result.earned) > 0 ? Math.round(result.earned) : 0;
+    const displayText = earned > 0 ? `+${earned}` : '+0';
+    if (summaryExperienceValue && summaryExperienceText) {
+      applyGoalResult(summaryExperienceValue, summaryExperienceText, displayText, earned > 0);
+    } else if (summaryExperienceText) {
+      summaryExperienceText.textContent = displayText;
     }
-    const now = Date.now();
-    const secondsLeft = Math.max(0, Math.ceil((battleTimerDeadline - now) / 1000));
-    if (secondsLeft !== timeRemaining) {
-      timeRemaining = secondsLeft;
-      updateBattleTimeDisplay();
-    }
-    if (secondsLeft <= 0) {
-      endBattle(false, { reason: 'timeout' });
-    }
-  }
 
-  function startBattleTimer() {
-    stopBattleTimer();
-    if (!battleStartTime) {
-      battleStartTime = Date.now();
-    }
-    if (!Number.isFinite(timeRemaining) || timeRemaining <= 0) {
-      timeRemaining = Math.max(0, Number.isFinite(timeRemaining) ? Math.floor(timeRemaining) : 0);
-      updateBattleTimeDisplay();
-      if (timeGoalSeconds > 0 && !battleEnded) {
-        endBattle(false, { reason: 'timeout' });
-      }
-      return;
-    }
-    battleTimerDeadline = Date.now() + timeRemaining * 1000;
-    updateBattleTimeDisplay();
-    battleTimerInterval = window.setInterval(handleBattleTimerTick, 250);
-  }
-
-  function stopBattleTimer() {
-    if (battleTimerInterval) {
-      clearInterval(battleTimerInterval);
-      battleTimerInterval = null;
-    }
-    battleTimerDeadline = null;
+    const total = Number.isFinite(result.total) ? Math.max(result.total, 0) : null;
+    const experienceValue = Number.isFinite(result.experience)
+      ? Math.max(result.experience, 0)
+      : currentExperience;
+    updateLevelProgressDisplay(experienceValue, total);
   }
 
   function showQuestion() {
@@ -796,10 +841,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   resetLevelButton?.addEventListener('click', () => {
-    persistProgress({ battleLevel: 1 });
+    persistProgress({ battleLevel: 1, currentExperience: 0 });
     currentBattleLevel = 1;
-    battleLevelAdvanced = false;
-    battleGoalsMet = false;
+    currentExperience = 0;
+    const resetTotal = getTotalExperienceForLevel(1);
+    if (resetTotal !== null) {
+      levelTotalExperience = resetTotal;
+    } else {
+      levelTotalExperience = 0;
+    }
+    updateLevelProgressDisplay(currentExperience);
   });
 
   logOutButton?.addEventListener('click', async () => {
@@ -824,13 +875,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const correct = e.detail.correct;
-    totalAnswers++;
-    if (correct) {
-      correctAnswers++;
-    } else {
-      wrongAnswers++;
-    }
-    updateAccuracyDisplays();
     if (correct) {
       let rewardType = '';
       if (!streakMaxed) {
@@ -892,46 +936,9 @@ document.addEventListener('DOMContentLoaded', () => {
     battleEnded = true;
     devControls?.classList.add('battle-dev-controls--hidden');
     document.dispatchEvent(new Event('close-question'));
-    stopBattleTimer();
-    updateAccuracyDisplays();
-    updateBattleTimeDisplay();
 
-    const accuracy = calculateAccuracy();
-    const accuracyDisplay = `${accuracy}%`;
-    const accuracyGoalMet =
-      typeof accuracyGoal === 'number' ? accuracy / 100 >= accuracyGoal : true;
-
-    const now = Date.now();
-    const elapsedByTimer = initialTimeRemaining > 0
-      ? Math.max(0, Math.round(initialTimeRemaining - timeRemaining))
-      : 0;
-    const elapsedByClock = battleStartTime
-      ? Math.max(0, Math.round((now - battleStartTime) / 1000))
-      : 0;
-    const elapsedSeconds = initialTimeRemaining > 0
-      ? Math.max(elapsedByTimer, elapsedByClock)
-      : elapsedByClock;
-    const timeDisplay = `${elapsedSeconds}s`;
-    const timeGoalMet =
-      timeGoalSeconds > 0 ? elapsedSeconds <= timeGoalSeconds : true;
-
-    if (summaryAccuracyValue && summaryAccuracyText) {
-      applyGoalResult(
-        summaryAccuracyValue,
-        summaryAccuracyText,
-        accuracyDisplay,
-        accuracyGoalMet
-      );
-    }
-
-    if (summaryTimeValue && summaryTimeText) {
-      applyGoalResult(
-        summaryTimeValue,
-        summaryTimeText,
-        timeDisplay,
-        timeGoalMet
-      );
-    }
+    const progressResult = recordBattleProgress(win);
+    updateSummaryExperience(progressResult);
 
     if (completeEnemyImg && monsterImg) {
       completeEnemyImg.src = monsterImg.src;
@@ -942,25 +949,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    const goalsAchieved = win && accuracyGoalMet && timeGoalMet;
-
-    if (win && goalsAchieved) {
-      const monsterName =
-        typeof monster?.name === 'string' ? monster.name.trim() : '';
-      const victoryName = monsterName || 'Monster';
-      setBattleCompleteTitleLines(victoryName, 'Defeated!');
+    if (win) {
+      if (progressResult?.leveledUp) {
+        setBattleCompleteTitleLines('Level', 'Up!');
+      } else {
+        const monsterName =
+          typeof monster?.name === 'string' ? monster.name.trim() : '';
+        const victoryName = monsterName || 'Victory';
+        setBattleCompleteTitleLines(victoryName, 'Defeated!');
+      }
     } else {
       setBattleCompleteTitleLines('Keep', 'Practicing!');
-    }
-
-    battleGoalsMet = goalsAchieved;
-    if (battleGoalsMet) {
-      advanceBattleLevel();
-    }
-
-    if (nextMissionBtn) {
-      nextMissionBtn.textContent = battleGoalsMet ? 'Next Mission' : 'Try Again';
-      nextMissionBtn.dataset.action = battleGoalsMet ? 'next' : 'retry';
     }
 
     const showCompleteMessage = () => {
@@ -994,9 +993,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (action === 'retry') {
         window.location.reload();
       } else {
-        if (battleGoalsMet && !battleLevelAdvanced) {
-          advanceBattleLevel();
-        }
         window.location.href = `${ASSET_BASE_PATH}/index.html`;
       }
     });
@@ -1008,13 +1004,6 @@ document.addEventListener('DOMContentLoaded', () => {
     streakMaxed = false;
     streakIconShown = false;
     currentQuestion = 0;
-    correctAnswers = 0;
-    totalAnswers = 0;
-    wrongAnswers = 0;
-    battleStartTime = null;
-    initialTimeRemaining = 0;
-    battleLevelAdvanced = false;
-    battleGoalsMet = false;
     if (completeMessage) {
       completeMessage.classList.remove('show');
       completeMessage.setAttribute('aria-hidden', 'true');
@@ -1024,16 +1013,18 @@ document.addEventListener('DOMContentLoaded', () => {
       nextMissionBtn.textContent = 'Next Mission';
       nextMissionBtn.dataset.action = 'next';
     }
-    if (summaryAccuracyValue) {
-      summaryAccuracyValue.classList.remove('goal-result--met', 'goal-result--missed');
+    if (summaryExperienceValue) {
+      summaryExperienceValue.classList.remove('goal-result--met', 'goal-result--missed');
+      const existingIcon = summaryExperienceValue.querySelector('.goal-result-icon');
+      if (existingIcon?.parentElement) {
+        existingIcon.parentElement.removeChild(existingIcon);
+      }
     }
-    if (summaryTimeValue) {
-      summaryTimeValue.classList.remove('goal-result--met', 'goal-result--missed');
+    if (summaryExperienceText) {
+      summaryExperienceText.textContent = '+0';
     }
     loadData();
     updateStreak();
-    updateAccuracyDisplays();
-    startBattleTimer();
     setTimeout(showQuestion, 2000);
   }
 
