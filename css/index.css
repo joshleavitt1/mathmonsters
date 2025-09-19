@@ -53,11 +53,11 @@ body:not(.is-preloading) main.landing {
 .hero {
   position: absolute;
   left: 50%;
-  top: var(--hero-top, clamp(72px, 18vh, 240px));
+  top: var(--hero-top, 0px);
+  animation: hero-float 3.5s ease-in-out 1.35s infinite;
   max-width: 300px;
   max-height: 300px;
   transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
-  animation: hero-float var(--hero-float-duration, 3.5s) ease-in-out infinite;
   --hero-float-range: 32px;
   --hero-float-duration: 3.5s;
   image-rendering: auto;
