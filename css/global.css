@@ -1,0 +1,15 @@
+:root {
+  --font-family-rounded: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
+}
+
+html,
+body {
+  font-family: var(--font-family-rounded);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}

@@ -8,7 +8,6 @@ body {
   min-height: 100%;
   overflow: hidden;
   background: url('/mathmonsters/images/background/background.png') no-repeat center/cover;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   padding: 16px;
   box-sizing: border-box;
 }
@@ -93,7 +92,6 @@ body {
 }
 
 .stat-box .name {
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
   color: #fff;
 }
@@ -108,7 +106,6 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 20px;
   color: #fff;
 }
@@ -124,7 +121,6 @@ body {
   top: -7px;
   right: -5px;
   font-size: 20px;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   background: #00B600;
   color: #FFFFFF;
   border-radius: 8px;
@@ -276,7 +272,6 @@ body {
 }
 
 #battle-message .content p {
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 24px;
   margin: 0 0 16px;
 }
@@ -315,7 +310,6 @@ body {
   align-items: center;
   justify-content: center;
   gap: 48px;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
 }
 
 .battle-stat-banner .stat {

@@ -6,7 +6,6 @@ body {
   margin: 0;
   padding: 16px;
   min-height: 100vh;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   color: #272B34;
   background: url('/mathmonsters/images/background/background.png') no-repeat center/cover;
   position: relative;
@@ -322,7 +321,6 @@ body.battle-overlay-open .battle-overlay { opacity: 1; pointer-events: auto; }
 
 .preloader__text {
   margin: 0;
-  font-family: 'Arial Rounded MT Bold', 'Arial Rounded', Arial, sans-serif;
   font-size: 32px;
   color: #ffffff;
 }
