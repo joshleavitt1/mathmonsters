@@ -12,7 +12,7 @@ const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
 const HERO_FLOAT_MAX_PX = 7;  // prevents big bobbing
 
 const redirectToWelcome = () => {
-  window.location.replace('welcome.html');
+  window.location.replace('html/welcome.html');
 };
 
 const isGuestModeActive = () => {

@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (data?.session) {
       clearGuestSessionFlag();
-      window.location.replace('index.html');
+      window.location.replace('../index.html');
       return;
     }
   } catch (error) {
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (data?.session) {
         clearGuestSessionFlag();
-        window.location.replace('index.html');
+        window.location.replace('../index.html');
         return;
       }
 

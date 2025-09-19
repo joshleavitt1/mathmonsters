@@ -948,7 +948,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    window.location.replace(`${ASSET_BASE_PATH}/signin.html`);
+    window.location.replace(`${ASSET_BASE_PATH}/html/signin.html`);
   });
 
   document.addEventListener('answer-submitted', (e) => {
