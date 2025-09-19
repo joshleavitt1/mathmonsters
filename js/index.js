@@ -546,16 +546,7 @@ const initLandingInteractions = (preloadedData = {}) => {
     }
   };
 
-  const animateCard = () => {
-    if (!battleCard) {
-      return;
-    }
-    battleCard.classList.remove('battle-card--pop');
-    void battleCard.offsetWidth;
-    battleCard.classList.add('battle-card--pop');
-  };
-
-  loadBattlePreview().then(animateCard);
+  loadBattlePreview();
 
   if (battleButton) {
     battleButton.addEventListener('click', () => {
