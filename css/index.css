@@ -233,8 +233,8 @@ body:not(.is-preloading) main.landing {
 }
 
 .battle-intro__image {
-  width: min(300px, 90vw);
-  height: min(300px, 90vw);
+  width: min(350px, 90vw);
+  height: min(350px, 90vw);
   object-fit: contain;
   transform: scale(0.2);
   transform-origin: center;
