@@ -12,6 +12,54 @@ const BATTLE_INTRO_WAIT_AFTER_VISIBLE_MS = 1000;
 const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
 const HERO_FLOAT_MAX_PX = 7;  // prevents big bobbing
 
+const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
+
+const updateViewportOffsetVariable = () => {
+  const root = document.documentElement;
+  if (!root) {
+    return;
+  }
+
+  const viewport = window.visualViewport;
+  if (!viewport) {
+    root.style.setProperty(CSS_VIEWPORT_OFFSET_VAR, '0px');
+    return;
+  }
+
+  const layoutViewportHeight = window.innerHeight || viewport.height;
+  const bottomOverlap =
+    layoutViewportHeight - (viewport.height + viewport.offsetTop);
+  const safeOffset = Math.max(0, Math.round(bottomOverlap));
+  root.style.setProperty(CSS_VIEWPORT_OFFSET_VAR, `${safeOffset}px`);
+};
+
+const initViewportOffsetWatcher = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  updateViewportOffsetVariable();
+
+  const viewport = window.visualViewport;
+  if (viewport) {
+    viewport.addEventListener('resize', updateViewportOffsetVariable, {
+      passive: true,
+    });
+    viewport.addEventListener('scroll', updateViewportOffsetVariable, {
+      passive: true,
+    });
+  }
+
+  window.addEventListener('resize', updateViewportOffsetVariable, {
+    passive: true,
+  });
+  window.addEventListener('orientationchange', updateViewportOffsetVariable, {
+    passive: true,
+  });
+};
+
+initViewportOffsetWatcher();
+
 const redirectToWelcome = () => {
   window.location.replace('html/welcome.html');
 };

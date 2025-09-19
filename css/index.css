@@ -16,6 +16,7 @@ main.landing {
   position: relative;
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   opacity: 1;
   transform: translate3d(0, 0, 0);
   filter: none;
@@ -145,7 +146,23 @@ body:not(.is-preloading) main.landing {
   justify-content: center;
   gap: clamp(24px, 8vw, 72px);
   width: min(720px, 100%);
-  padding: 0 16px clamp(120px, 22vh, 200px);
+  padding: 0 16px
+    calc(
+      clamp(120px, 22vh, 200px) +
+      var(--viewport-bottom-offset, 0px)
+    );
+  padding: 0 16px
+    calc(
+      clamp(120px, 22vh, 200px) +
+      var(--viewport-bottom-offset, 0px) +
+      constant(safe-area-inset-bottom)
+    );
+  padding: 0 16px
+    calc(
+      clamp(120px, 22vh, 200px) +
+      var(--viewport-bottom-offset, 0px) +
+      env(safe-area-inset-bottom, 0px)
+    );
   overflow: visible;
   pointer-events: none;
   z-index: 1;
@@ -418,7 +435,9 @@ body:not(.is-preloading) main.landing {
 .pwa-install {
   position: relative;
   z-index: 7;
-  margin: clamp(16px, 4vw, 32px) auto clamp(40px, 8vh, 96px);
+  margin: clamp(16px, 4vw, 32px)
+    auto
+    calc(clamp(40px, 8vh, 96px) + env(safe-area-inset-bottom, 0px));
   padding: clamp(16px, 4vw, 32px);
   max-width: min(420px, 90%);
   border-radius: 28px;
@@ -475,7 +494,7 @@ body:not(.is-preloading) main.landing {
 @media (min-width: 768px) {
   .pwa-install {
     position: absolute;
-    bottom: clamp(32px, 5vh, 72px);
+    bottom: calc(clamp(32px, 5vh, 72px) + env(safe-area-inset-bottom, 0px));
     right: clamp(32px, 6vw, 96px);
     margin: 0;
     text-align: left;

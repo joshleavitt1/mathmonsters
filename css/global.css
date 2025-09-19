@@ -257,10 +257,22 @@ button:focus-visible {
   min-height: 64px;
 }
 
+:root {
+  --viewport-bottom-offset: 0px;
+}
+
 .card--home {
   position: absolute;
   left: 50%;
-  bottom: 16px;
+  bottom: calc(16px + var(--viewport-bottom-offset, 0px));
+  bottom: calc(
+    16px + var(--viewport-bottom-offset, 0px) +
+    constant(safe-area-inset-bottom)
+  );
+  bottom: calc(
+    16px + var(--viewport-bottom-offset, 0px) +
+    env(safe-area-inset-bottom, 0px)
+  );
   transform: translateX(-50%);
   width: min(420px, calc(100% - 32px));
   margin: 0;
