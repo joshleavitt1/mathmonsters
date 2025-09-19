@@ -7,8 +7,8 @@ const BATTLE_INTRO_DELAY_MS = 2000;
 const BATTLE_INTRO_VISIBLE_DURATION_MS = 2000;
 
 // Gentle idle motion caps (pixels)
-const HERO_FLOAT_MIN_PX = 2;   // tiny but visible
-const HERO_FLOAT_MAX_PX = 10;  // prevents big bobbing
+const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
+const HERO_FLOAT_MAX_PX = 7;  // prevents big bobbing
 
 const redirectToSignIn = () => {
   window.location.replace('signin.html');
