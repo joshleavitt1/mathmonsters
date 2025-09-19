@@ -82,12 +82,6 @@ button:focus-visible {
   outline-offset: 3px;
 }
 
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-  box-shadow: none;
-}
-
 .progress {
   --progress-value: 0;
   --progress-gradient-start: #36dc36;
