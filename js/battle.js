@@ -61,8 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const prefersReducedMotion = window.matchMedia(
     '(prefers-reduced-motion: reduce)'
   ).matches;
-  const monsterHpFill = document.querySelector('#monster-stats .hp-fill');
-  const heroHpFill = document.querySelector('#shellfin-stats .hp-fill');
+  const monsterHpProgress = document.querySelector(
+    '#monster-stats [data-hp-progress]'
+  );
+  const heroHpProgress = document.querySelector(
+    '#shellfin-stats [data-hp-progress]'
+  );
+  const monsterHpFill = monsterHpProgress?.querySelector('.progress__fill');
+  const heroHpFill = heroHpProgress?.querySelector('.progress__fill');
   const monsterNameEl = document.querySelector('#monster-stats .name');
   const heroNameEl = document.querySelector('#shellfin-stats .name');
   const monsterStats = document.getElementById('monster-stats');
@@ -83,13 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetLevelButton = document.querySelector('[data-dev-reset-level]');
   const logOutButton = document.querySelector('[data-dev-log-out]');
   const devControls = document.querySelector('.battle-dev-controls');
-  const heroAttackVal = heroStats.querySelector('.attack .value');
-  const heroHealthVal = heroStats.querySelector('.health .value');
-  const heroAttackInc = heroStats.querySelector('.attack .increase');
-  const heroHealthInc = heroStats.querySelector('.health .increase');
-  const monsterAttackVal = monsterStats.querySelector('.attack .value');
-  const monsterHealthVal = monsterStats.querySelector('.health .value');
-
   const completeMessage = document.getElementById('complete-message');
   const battleCompleteTitle = completeMessage?.querySelector('#battle-complete-title');
   const completeEnemyImg = completeMessage?.querySelector('.enemy-image');
@@ -101,6 +100,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
   const summaryTimeText = ensureStatValueText(summaryTimeValue);
+
+  if (heroHpProgress && !heroHpProgress.hasAttribute('aria-label')) {
+    heroHpProgress.setAttribute('aria-label', 'Hero health');
+  }
+  if (monsterHpProgress && !monsterHpProgress.hasAttribute('aria-label')) {
+    monsterHpProgress.setAttribute('aria-label', 'Monster health');
+  }
 
   if (bannerAccuracyValue) bannerAccuracyValue.textContent = '100%';
   if (bannerTimeValue) bannerTimeValue.textContent = '0s';
@@ -398,14 +404,20 @@ document.addEventListener('DOMContentLoaded', () => {
       completeEnemyImg.src = monsterSprite;
     }
 
-    if (heroAttackVal) heroAttackVal.textContent = hero.attack;
-    if (heroHealthVal) heroHealthVal.textContent = hero.health;
-    if (monsterAttackVal) monsterAttackVal.textContent = monster.attack;
-    if (monsterHealthVal) monsterHealthVal.textContent = monster.health;
     if (heroNameEl) heroNameEl.textContent = hero.name;
     if (monsterNameEl) monsterNameEl.textContent = monster.name;
     if (completeEnemyImg && monster.name) {
       completeEnemyImg.alt = `${monster.name} ready for battle`;
+    }
+    if (heroHpProgress) {
+      const heroLabel = hero.name ? `${hero.name} health` : 'Hero health';
+      heroHpProgress.setAttribute('aria-label', heroLabel);
+    }
+    if (monsterHpProgress) {
+      const monsterLabel = monster.name
+        ? `${monster.name} health`
+        : 'Monster health';
+      monsterHpProgress.setAttribute('aria-label', monsterLabel);
     }
 
     const loadedQuestions = Array.isArray(data.questions)
@@ -418,10 +430,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateHealthBars() {
-    const heroPercent = ((hero.health - hero.damage) / hero.health) * 100;
-    const monsterPercent = ((monster.health - monster.damage) / monster.health) * 100;
-    heroHpFill.style.width = heroPercent + '%';
-    monsterHpFill.style.width = monsterPercent + '%';
+    const heroPercentRaw =
+      hero.health > 0
+        ? ((hero.health - hero.damage) / hero.health) * 100
+        : 0;
+    const monsterPercentRaw =
+      monster.health > 0
+        ? ((monster.health - monster.damage) / monster.health) * 100
+        : 0;
+
+    const heroPercent = Number.isFinite(heroPercentRaw) ? heroPercentRaw : 0;
+    const monsterPercent = Number.isFinite(monsterPercentRaw)
+      ? monsterPercentRaw
+      : 0;
+
+    const clampedHero = Math.max(0, Math.min(heroPercent, 100));
+    const clampedMonster = Math.max(0, Math.min(monsterPercent, 100));
+
+    if (heroHpProgress) {
+      heroHpProgress.style.setProperty(
+        '--progress-value',
+        (clampedHero || 0) / 100
+      );
+      heroHpProgress.setAttribute(
+        'aria-valuenow',
+        String(Math.round(clampedHero))
+      );
+    }
+    if (monsterHpProgress) {
+      monsterHpProgress.style.setProperty(
+        '--progress-value',
+        (clampedMonster || 0) / 100
+      );
+      monsterHpProgress.setAttribute(
+        'aria-valuenow',
+        String(Math.round(clampedMonster))
+      );
+    }
   }
 
   function waitForHealthDrain(fillEl) {
@@ -632,17 +677,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function showIncrease(el, text) {
-    if (!el) return;
-    el.classList.remove('show');
-    el.textContent = text;
-    void el.offsetWidth;
-    el.classList.add('show');
-    setTimeout(() => {
-      el.classList.remove('show');
-    }, 2000);
-  }
-
   function heroAttack() {
     if (battleEnded) {
       return;
@@ -773,30 +807,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateAccuracyDisplays();
     if (correct) {
-      let incEl = null;
-      let incText = '';
+      let rewardType = '';
       if (!streakMaxed) {
         streak++;
         if (streak >= STREAK_GOAL) {
           streak = STREAK_GOAL;
           streakMaxed = true;
           hero.attack *= 2;
-          if (heroAttackVal) heroAttackVal.textContent = hero.attack;
-          incEl = heroAttackInc;
-          incText = 'x2';
+          rewardType = 'double';
         } else {
           const stats = ['attack', 'health'];
           const stat = stats[Math.floor(Math.random() * stats.length)];
           if (stat === 'attack') {
             hero.attack++;
-            if (heroAttackVal) heroAttackVal.textContent = hero.attack;
-            incEl = heroAttackInc;
-            incText = '+1';
+            rewardType = 'attack';
           } else {
             hero.health++;
-            if (heroHealthVal) heroHealthVal.textContent = hero.health;
-            incEl = heroHealthInc;
-            incText = '+1';
+            rewardType = 'health';
             updateHealthBars();
           }
         }
@@ -805,14 +832,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const stat = stats[Math.floor(Math.random() * stats.length)];
         if (stat === 'attack') {
           hero.attack++;
-          if (heroAttackVal) heroAttackVal.textContent = hero.attack;
-          incEl = heroAttackInc;
-          incText = '+1';
+          rewardType = 'attack';
         } else {
           hero.health++;
-          if (heroHealthVal) heroHealthVal.textContent = hero.health;
-          incEl = heroHealthInc;
-          incText = '+1';
+          rewardType = 'health';
           updateHealthBars();
         }
       }
@@ -822,13 +845,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // Keep the question visible briefly so the player can
       // see the result and streak progress before it closes.
       // If the streak just hit the goal (x2), linger a bit longer.
-      const lingerTime = incText === 'x2' ? 3000 : 2000;
+      const lingerTime = rewardType === 'double' ? 3000 : 2000;
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
-        setTimeout(() => {
-          showIncrease(incEl, incText);
-          setTimeout(heroAttack, 1000);
-        }, 300);
+        setTimeout(heroAttack, 1300);
       }, lingerTime);
     } else {
       streak = 0;

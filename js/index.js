@@ -3,6 +3,7 @@ const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const MIN_PRELOAD_DURATION_MS = 2000;
+const SPLAT_SEQUENCE_DURATION_MS = 1600;
 
 const redirectToSignIn = () => {
   window.location.replace('signin.html');
@@ -39,6 +40,35 @@ const startLandingExperience = () => {
   } else {
     bootstrapLanding();
   }
+};
+
+const runSplatSequence = () => {
+  const overlay = document.querySelector('[data-splat-overlay]');
+  if (!overlay) {
+    return Promise.resolve(false);
+  }
+
+  const prefersReducedMotion =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (prefersReducedMotion) {
+    return Promise.resolve(false);
+  }
+
+  const durationAttr = Number.parseFloat(
+    overlay.getAttribute('data-splat-duration') ?? ''
+  );
+  const duration = Number.isFinite(durationAttr)
+    ? Math.max(0, durationAttr)
+    : SPLAT_SEQUENCE_DURATION_MS;
+
+  overlay.classList.add('is-active');
+  overlay.setAttribute('aria-hidden', 'false');
+
+  return new Promise((resolve) => {
+    window.setTimeout(() => resolve(true), duration);
+  });
 };
 
 (async () => {
@@ -549,8 +579,18 @@ const initLandingInteractions = (preloadedData = {}) => {
   loadBattlePreview();
 
   if (battleButton) {
-    battleButton.addEventListener('click', () => {
-      window.location.href = 'html/battle.html';
+    battleButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      if (battleButton.disabled) {
+        return;
+      }
+      battleButton.disabled = true;
+      battleButton.setAttribute('aria-disabled', 'true');
+      try {
+        await runSplatSequence();
+      } finally {
+        window.location.href = 'html/battle.html';
+      }
     });
   }
 };
