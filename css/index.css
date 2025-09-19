@@ -147,7 +147,22 @@ body:not(.is-preloading) main.landing {
   gap: clamp(24px, 8vw, 72px);
   width: min(720px, 100%);
   padding: 0 16px
-    calc(clamp(120px, 22vh, 200px) + env(safe-area-inset-bottom, 0px));
+    calc(
+      clamp(120px, 22vh, 200px) +
+      var(--viewport-bottom-offset, 0px)
+    );
+  padding: 0 16px
+    calc(
+      clamp(120px, 22vh, 200px) +
+      var(--viewport-bottom-offset, 0px) +
+      constant(safe-area-inset-bottom)
+    );
+  padding: 0 16px
+    calc(
+      clamp(120px, 22vh, 200px) +
+      var(--viewport-bottom-offset, 0px) +
+      env(safe-area-inset-bottom, 0px)
+    );
   overflow: visible;
   pointer-events: none;
   z-index: 1;
