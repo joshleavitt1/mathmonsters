@@ -203,77 +203,68 @@ body:not(.is-preloading) main.landing {
   100% { --ty: -110vh;              --sx: 1.06; --sy: 1.06; opacity: 0; }
 }
 
-.splat-overlay {
-  position: fixed;
-  inset: 0;
+.battle-intro {
+  position: absolute;
+  left: 50%;
+  bottom: 32vh;
+  transform: translate(-50%, 0);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(10, 61, 98, 0.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.35s ease;
-  z-index: 12;
+  z-index: 3;
 }
 
-.splat-overlay.is-active {
+.battle-intro__image {
+  width: clamp(220px, 48vw, 420px);
+  max-width: 90vw;
+  height: auto;
+  transform: scale(0.2);
+  transform-origin: center;
+}
+
+.battle-intro.is-visible {
   opacity: 1;
   visibility: visible;
-  pointer-events: auto;
 }
 
-.splat-overlay__letters {
-  display: flex;
-  gap: clamp(12px, 3vw, 32px);
-  font-family: var(--font-heading, 'Baloo 2', system-ui, sans-serif);
-  font-size: clamp(56px, 18vw, 164px);
-  letter-spacing: clamp(4px, 1vw, 12px);
-  color: #ffffff;
-  text-transform: uppercase;
+.battle-intro.is-visible .battle-intro__image {
+  animation: battle-intro-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.splat-letter {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(32px) scale(0.6);
-  animation: splat-letter-pop 0.6s cubic-bezier(0.25, 0.9, 0.35, 1.4) forwards;
-  animation-delay: calc(var(--index, 0) * 0.12s);
-  animation-play-state: paused;
+.battle-intro.is-reduced-motion .battle-intro__image {
+  transform: scale(1);
 }
 
-.splat-overlay.is-active .splat-letter {
-  animation-play-state: running;
+.battle-intro.is-reduced-motion.is-visible .battle-intro__image {
+  animation: none;
 }
 
-@keyframes splat-letter-pop {
+@keyframes battle-intro-pop {
   0% {
-    opacity: 0;
-    transform: translateY(32px) scale(0.6);
+    transform: scale(0.2);
   }
   60% {
-    opacity: 1;
-    transform: translateY(-8px) scale(1.12);
+    transform: scale(1.12);
   }
   100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .splat-overlay {
+  .battle-intro {
     transition: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 
-  .splat-letter {
+  .battle-intro__image {
+    transform: scale(1);
+  }
+
+  .battle-intro.is-visible .battle-intro__image {
     animation: none;
-    opacity: 1;
-    transform: none;
   }
 }
 
