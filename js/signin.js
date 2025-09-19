@@ -1,3 +1,13 @@
+const GUEST_SESSION_KEY = 'reefRangersGuestSession';
+
+const clearGuestSessionFlag = () => {
+  try {
+    window.localStorage?.removeItem(GUEST_SESSION_KEY);
+  } catch (error) {
+    console.warn('Unable to clear guest session flag.', error);
+  }
+};
+
 const setElementVisibility = (element, shouldShow) => {
   if (!element) {
     return;
@@ -60,6 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.warn('Failed to fetch existing session', error);
     }
     if (data?.session) {
+      clearGuestSessionFlag();
       window.location.replace('index.html');
       return;
     }
@@ -93,6 +104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
+      clearGuestSessionFlag();
       window.location.replace('index.html');
     } catch (error) {
       console.error('Unexpected error during sign in', error);

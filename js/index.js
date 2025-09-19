@@ -2,6 +2,7 @@ const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
+const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const BATTLE_INTRO_DELAY_MS = 1000;
 const BATTLE_INTRO_VISIBLE_DURATION_MS = 2000;
@@ -10,14 +11,39 @@ const BATTLE_INTRO_VISIBLE_DURATION_MS = 2000;
 const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
 const HERO_FLOAT_MAX_PX = 7;  // prevents big bobbing
 
-const redirectToSignIn = () => {
-  window.location.replace('signin.html');
+const redirectToWelcome = () => {
+  window.location.replace('welcome.html');
+};
+
+const isGuestModeActive = () => {
+  try {
+    const storage = window.localStorage;
+    if (!storage) {
+      return false;
+    }
+    return storage.getItem(GUEST_SESSION_KEY) === 'true';
+  } catch (error) {
+    console.warn('Guest mode detection failed.', error);
+    return false;
+  }
+};
+
+const clearGuestMode = () => {
+  try {
+    window.localStorage?.removeItem(GUEST_SESSION_KEY);
+  } catch (error) {
+    console.warn('Unable to clear guest mode flag.', error);
+  }
 };
 
 const ensureAuthenticated = async () => {
+  if (isGuestModeActive()) {
+    return true;
+  }
+
   const supabase = window.supabaseClient;
   if (!supabase) {
-    redirectToSignIn();
+    redirectToWelcome();
     return false;
   }
 
@@ -28,13 +54,14 @@ const ensureAuthenticated = async () => {
     }
 
     if (!data?.session) {
-      redirectToSignIn();
+      redirectToWelcome();
       return false;
     }
+    clearGuestMode();
     return true;
   } catch (error) {
     console.warn('Unexpected authentication error', error);
-    redirectToSignIn();
+    redirectToWelcome();
     return false;
   }
 };

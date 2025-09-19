@@ -81,6 +81,42 @@ body {
   box-sizing: border-box;
 }
 
+.preloader__tagline {
+  margin: 0;
+  max-width: 420px;
+  color: #ffffff;
+  font-size: 20px;
+}
+
+.preloader__secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 420px;
+  max-width: 100%;
+  min-height: 64px;
+  margin: 0;
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 20px;
+  font-weight: 700;
+  background-color: transparent;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.preloader__secondary-button:hover {
+  transform: translateY(-2px);
+}
+
+.preloader__secondary-button:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 3px;
+}
+
 .preloader__link {
   color: #ffffff;
   font-size: 20px;
