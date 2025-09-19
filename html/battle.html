@@ -7,11 +7,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Battle</title>
-    <link rel="manifest" href="/mathmonsters/manifest.webmanifest" />
-    <link rel="apple-touch-icon" sizes="300x300" href="/mathmonsters/images/brand/logo.png" />
-    <link rel="stylesheet" href="/mathmonsters/css/global.css" />
-    <link rel="stylesheet" href="/mathmonsters/css/question.css" />
-    <link rel="stylesheet" href="/mathmonsters/css/battle.css" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="300x300" href="../images/brand/logo.png" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/question.css" />
+    <link rel="stylesheet" href="../css/battle.css" />
   </head>
   <body>
   <div class="battle-dev-controls" role="group" aria-label="Battle test controls">
@@ -29,10 +29,10 @@
     </button>
   </div>
   <div id="battle">
-    <img id="battle-monster" src="/mathmonsters/images/battle/monster_battle_1.png" alt="Monster" />
+    <img id="battle-monster" src="../images/battle/monster_battle_1_1.png" alt="Monster" />
     <img
       id="battle-shellfin"
-      src="/mathmonsters/images/characters/shellfin_level_1.png"
+      src="../images/characters/shellfin_level_1.png"
       alt="Shellfin"
     />
     <div id="monster-stats" class="stat-box">
@@ -68,7 +68,7 @@
   </div>
     <div id="question">
       <div class="content">
-        <img class="streak-icon" src="/mathmonsters/images/questions/streak.svg" alt="Streak" />
+        <img class="streak-icon" src="../images/questions/streak.svg" alt="Streak" />
         <div class="top-bar">
           <div class="progress-wrap">
             <div class="streak-label"></div>
@@ -96,7 +96,7 @@
         </div>
         <img
           class="enemy-image"
-          src="/mathmonsters/images/battle/monster_battle_1.png"
+          src="../images/battle/monster_battle_1_1.png"
           alt="Enemy defeated in battle"
         />
         <p class="battle-goals-title">Battle Rewards</p>
@@ -118,11 +118,11 @@
         <button type="button" class="btn-primary">Try Again</button>
       </div>
     </div>
-    <script src="/mathmonsters/js/pwa.js" defer data-pwa-root="/mathmonsters"></script>
+    <script src="../js/pwa.js" defer data-pwa-root=".."></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/mathmonsters/js/supabaseClient.js"></script>
-    <script src="/mathmonsters/js/loader.js"></script>
-    <script src="/mathmonsters/js/battle.js"></script>
-    <script src="/mathmonsters/js/question.js"></script>
+    <script src="../js/supabaseClient.js"></script>
+    <script src="../js/loader.js" data-asset-base=".."></script>
+    <script src="../js/battle.js" data-asset-base=".."></script>
+    <script src="../js/question.js" data-asset-base=".."></script>
   </body>
 </html>

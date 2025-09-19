@@ -1,5 +1,52 @@
 const STORAGE_KEY_PROGRESS = 'reefRangersProgress';
-const ASSET_BASE_PATH = '/mathmonsters';
+const FALLBACK_ASSET_BASE = '/mathmonsters';
+
+const determineAssetBasePath = () => {
+  const fallbackBase = FALLBACK_ASSET_BASE;
+  const doc = typeof document !== 'undefined' ? document : null;
+  const currentScript = doc?.currentScript;
+  const scriptedBase =
+    typeof currentScript?.dataset?.assetBase === 'string'
+      ? currentScript.dataset.assetBase.trim()
+      : '';
+  if (scriptedBase) {
+    if (typeof window !== 'undefined') {
+      window.mathMonstersAssetBase = scriptedBase;
+    }
+    return scriptedBase;
+  }
+
+  if (doc) {
+    const taggedScript = doc.querySelector('script[data-asset-base]');
+    const taggedBase =
+      typeof taggedScript?.dataset?.assetBase === 'string'
+        ? taggedScript.dataset.assetBase.trim()
+        : '';
+    if (taggedBase) {
+      if (typeof window !== 'undefined') {
+        window.mathMonstersAssetBase = taggedBase;
+      }
+      return taggedBase;
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const globalBase =
+      typeof window.mathMonstersAssetBase === 'string'
+        ? window.mathMonstersAssetBase.trim()
+        : '';
+    if (globalBase) {
+      return globalBase;
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    window.mathMonstersAssetBase = fallbackBase;
+  }
+  return fallbackBase;
+};
+
+const ASSET_BASE_PATH = determineAssetBasePath();
 
 const normalizeAssetPath = (inputPath) => {
   if (typeof inputPath !== 'string') {
@@ -35,6 +82,15 @@ const normalizeAssetPath = (inputPath) => {
   }
 
   trimmed = trimmed.replace(/^\/+/, '');
+
+  const fallbackNormalized = FALLBACK_ASSET_BASE.replace(/^\/+/, '');
+  if (
+    fallbackNormalized &&
+    ASSET_BASE_PATH !== FALLBACK_ASSET_BASE &&
+    trimmed.startsWith(`${fallbackNormalized}/`)
+  ) {
+    trimmed = trimmed.slice(fallbackNormalized.length + 1);
+  }
 
   const base = ASSET_BASE_PATH.endsWith('/')
     ? ASSET_BASE_PATH.slice(0, -1)

@@ -1,7 +1,54 @@
 const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
-const ASSET_BASE_PATH = '/mathmonsters';
+const FALLBACK_ASSET_BASE = '/mathmonsters';
+
+const determineAssetBasePath = () => {
+  const fallbackBase = FALLBACK_ASSET_BASE;
+  const doc = typeof document !== 'undefined' ? document : null;
+  const currentScript = doc?.currentScript;
+  const scriptedBase =
+    typeof currentScript?.dataset?.assetBase === 'string'
+      ? currentScript.dataset.assetBase.trim()
+      : '';
+  if (scriptedBase) {
+    if (typeof window !== 'undefined') {
+      window.mathMonstersAssetBase = scriptedBase;
+    }
+    return scriptedBase;
+  }
+
+  if (doc) {
+    const taggedScript = doc.querySelector('script[data-asset-base]');
+    const taggedBase =
+      typeof taggedScript?.dataset?.assetBase === 'string'
+        ? taggedScript.dataset.assetBase.trim()
+        : '';
+    if (taggedBase) {
+      if (typeof window !== 'undefined') {
+        window.mathMonstersAssetBase = taggedBase;
+      }
+      return taggedBase;
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const globalBase =
+      typeof window.mathMonstersAssetBase === 'string'
+        ? window.mathMonstersAssetBase.trim()
+        : '';
+    if (globalBase) {
+      return globalBase;
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    window.mathMonstersAssetBase = fallbackBase;
+  }
+  return fallbackBase;
+};
+
+const ASSET_BASE_PATH = determineAssetBasePath();
 
 const normalizeAssetPath = (inputPath) => {
   if (typeof inputPath !== 'string') {
@@ -38,12 +85,23 @@ const normalizeAssetPath = (inputPath) => {
 
   trimmed = trimmed.replace(/^\/+/, '');
 
+  const fallbackNormalized = FALLBACK_ASSET_BASE.replace(/^\/+/, '');
+  if (
+    fallbackNormalized &&
+    ASSET_BASE_PATH !== FALLBACK_ASSET_BASE &&
+    trimmed.startsWith(`${fallbackNormalized}/`)
+  ) {
+    trimmed = trimmed.slice(fallbackNormalized.length + 1);
+  }
+
   const base = ASSET_BASE_PATH.endsWith('/')
     ? ASSET_BASE_PATH.slice(0, -1)
     : ASSET_BASE_PATH;
 
   return trimmed ? `${base}/${trimmed}${suffix}` : `${base}${suffix}`;
 };
+
+const resolveAssetPath = (path) => normalizeAssetPath(path);
 
 const readVisitedFlag = (storage, label) => {
   if (!storage) {
@@ -240,9 +298,12 @@ document.addEventListener('DOMContentLoaded', () => {
       icon.classList.add('goal-result-icon');
       valueEl.insertBefore(icon, textSpan);
     }
-    icon.src = met
-      ? '/mathmonsters/images/complete/correct.svg'
-      : '/mathmonsters/images/complete/incorrect.svg';
+    const iconPath = met
+      ? resolveAssetPath('images/complete/correct.svg')
+      : resolveAssetPath('images/complete/incorrect.svg');
+    if (iconPath) {
+      icon.src = iconPath;
+    }
     icon.alt = met ? 'Goal met' : 'Goal not met';
     valueEl.classList.remove('goal-result--met', 'goal-result--missed');
     valueEl.classList.add(met ? 'goal-result--met' : 'goal-result--missed');
@@ -440,8 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const heroData = data.hero ?? {};
     const enemyData = data.enemy ?? {};
     const progressData = data.variables?.progress ?? {};
-
-    const resolveAssetPath = (path) => normalizeAssetPath(path);
 
     currentBattleLevel =
       typeof progressData.battleLevel === 'number'
@@ -683,10 +742,24 @@ document.addEventListener('DOMContentLoaded', () => {
       div.classList.add('choice');
       div.dataset.correct = !!choice.correct;
       if (choice.image) {
-        const img = document.createElement('img');
-        img.src = `/mathmonsters/images/questions/${choice.image}`;
-        img.alt = choice.name || '';
-        div.appendChild(img);
+        const rawImage =
+          typeof choice.image === 'string' ? choice.image.trim() : '';
+        if (rawImage) {
+          const hasProtocol = /^https?:\/\//i.test(rawImage) || rawImage.startsWith('data:');
+          let imagePath = rawImage.replace(/^\/+/, '');
+          if (!hasProtocol && !imagePath.startsWith('images/')) {
+            if (!imagePath.includes('/')) {
+              imagePath = `images/questions/${imagePath}`;
+            }
+          }
+          const resolvedImage = resolveAssetPath(imagePath);
+          if (resolvedImage) {
+            const img = document.createElement('img');
+            img.src = resolvedImage;
+            img.alt = choice.name || '';
+            div.appendChild(img);
+          }
+        }
       }
       const p = document.createElement('p');
       p.textContent = choice.name || '';
