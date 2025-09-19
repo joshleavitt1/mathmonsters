@@ -1,6 +1,49 @@
 const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
+const ASSET_BASE_PATH = '/mathmonsters';
+
+const normalizeAssetPath = (inputPath) => {
+  if (typeof inputPath !== 'string') {
+    return null;
+  }
+
+  let trimmed = inputPath.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith(ASSET_BASE_PATH)) {
+    return trimmed;
+  }
+
+  let suffix = '';
+  const suffixIndex = trimmed.search(/[?#]/);
+  if (suffixIndex !== -1) {
+    suffix = trimmed.slice(suffixIndex);
+    trimmed = trimmed.slice(0, suffixIndex);
+  }
+
+  while (trimmed.startsWith('./')) {
+    trimmed = trimmed.slice(2);
+  }
+
+  while (trimmed.startsWith('../')) {
+    trimmed = trimmed.slice(3);
+  }
+
+  trimmed = trimmed.replace(/^\/+/, '');
+
+  const base = ASSET_BASE_PATH.endsWith('/')
+    ? ASSET_BASE_PATH.slice(0, -1)
+    : ASSET_BASE_PATH;
+
+  return trimmed ? `${base}/${trimmed}${suffix}` : `${base}${suffix}`;
+};
 
 const readVisitedFlag = (storage, label) => {
   if (!storage) {
@@ -49,7 +92,7 @@ const hasVisitedLanding = () => {
 const landingVisited = hasVisitedLanding();
 
 if (!landingVisited) {
-  window.location.replace('../index.html');
+  window.location.replace(`${ASSET_BASE_PATH}/index.html`);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -304,25 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const enemyData = data.enemy ?? {};
     const progressData = data.variables?.progress ?? {};
 
-    const resolveAssetPath = (path) => {
-      if (typeof path !== 'string' || path.trim().length === 0) {
-        return null;
-      }
-      const trimmed = path.trim();
-      if (/^https?:\/\//i.test(trimmed)) {
-        return trimmed;
-      }
-      if (trimmed.startsWith('../')) {
-        return trimmed;
-      }
-      if (trimmed.startsWith('./')) {
-        return `../${trimmed.slice(2)}`;
-      }
-      if (trimmed.startsWith('/')) {
-        return `..${trimmed}`;
-      }
-      return `../${trimmed}`;
-    };
+    const resolveAssetPath = (path) => normalizeAssetPath(path);
 
     currentBattleLevel =
       typeof progressData.battleLevel === 'number'
@@ -791,7 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    window.location.replace('../signin.html');
+    window.location.replace(`${ASSET_BASE_PATH}/signin.html`);
   });
 
   document.addEventListener('answer-submitted', (e) => {
@@ -972,7 +997,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (battleGoalsMet && !battleLevelAdvanced) {
           advanceBattleLevel();
         }
-        window.location.href = '../index.html';
+        window.location.href = `${ASSET_BASE_PATH}/index.html`;
       }
     });
   }
