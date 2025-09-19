@@ -48,6 +48,8 @@
   "progress": {
     "currentStreak": 0,
     "currentExperience": 0,
-    "battleLevel": 1
+    "battleLevel": 1,
+    "basicAttack": 1,
+    "superAttack": 1
   }
 }
