@@ -111,7 +111,6 @@ body:not(.is-preloading) main.landing {
 }
 
 .card--home.is-battle-transition {
-  animation: card-pop-out 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
 }
 
