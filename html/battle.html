@@ -2,22 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
-    />
-    <meta name="theme-color" content="#001b41" />
-    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0a3d62" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Battle</title>
     <link rel="manifest" href="../manifest.webmanifest" />
-    <link rel="apple-touch-icon" sizes="300x300" href="../images/brand/logo.png" />
+    <link rel="apple-touch-icon" sizes="300x300" href="/mathmonsters/images/brand/logo.png" />
     <link rel="stylesheet" href="../css/global.css" />
     <link rel="stylesheet" href="../css/question.css" />
+    <link rel="stylesheet" href="../css/battle-card.css" />
     <link rel="stylesheet" href="../css/battle.css" />
   </head>
-  <body class="app-safe-area">
+  <body>
+  <div class="battle-stat-banner" aria-live="polite">
+    <div class="stat">
+      <span class="label">Accuracy</span>
+      <span class="value" data-banner-accuracy>0%</span>
+    </div>
+    <div class="stat">
+      <span class="label">Time</span>
+      <span class="value" data-banner-time>0s</span>
+    </div>
+  </div>
   <div class="battle-dev-controls" role="group" aria-label="Battle test controls">
     <button type="button" class="battle-dev-controls__btn" data-dev-set-streak>
       Set Streak 4
@@ -33,46 +40,48 @@
     </button>
   </div>
   <div id="battle">
-    <img id="battle-monster" src="../images/battle/monster_battle_1_1.png" alt="Monster" />
+    <img id="battle-monster" src="/mathmonsters/images/battle/monster_battle_1.png" alt="Monster" />
     <img
       id="battle-shellfin"
-      src="../images/characters/shellfin_level_1.png"
+      src="/mathmonsters/images/characters/shellfin_level_1.png"
       alt="Shellfin"
     />
     <div id="monster-stats" class="stat-box">
       <div class="name"></div>
-      <div
-        class="progress progress--orange stat-box__progress"
-        data-hp-progress
-        data-hp-target="monster"
-        role="progressbar"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow="100"
-        style="--progress-value: 1"
-      >
-        <span class="progress__fill"></span>
+      <div class="stats">
+        <div class="stat attack">
+          <img src="/mathmonsters/images/questions/sword.svg" alt="Attack" />
+          <span class="value"></span>
+          <span class="increase"></span>
+        </div>
+        <div class="stat health">
+          <img src="/mathmonsters/images/questions/shield.svg" alt="Health" />
+          <span class="value"></span>
+          <span class="increase"></span>
+        </div>
       </div>
+      <div class="hp-bar"><div class="hp-fill"></div></div>
     </div>
     <div id="shellfin-stats" class="stat-box">
       <div class="name"></div>
-      <div
-        class="progress progress--orange stat-box__progress"
-        data-hp-progress
-        data-hp-target="hero"
-        role="progressbar"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow="100"
-        style="--progress-value: 1"
-      >
-        <span class="progress__fill"></span>
+      <div class="stats">
+        <div class="stat attack">
+          <img src="/mathmonsters/images/questions/sword.svg" alt="Attack" />
+          <span class="value"></span>
+          <span class="increase"></span>
+        </div>
+        <div class="stat health">
+          <img src="/mathmonsters/images/questions/shield.svg" alt="Health" />
+          <span class="value"></span>
+          <span class="increase"></span>
+        </div>
       </div>
+      <div class="hp-bar"><div class="hp-fill"></div></div>
     </div>
   </div>
     <div id="question">
       <div class="content">
-        <img class="streak-icon" src="../images/questions/streak.svg" alt="Streak" />
+        <img class="streak-icon" src="/mathmonsters/images/questions/streak.svg" alt="Streak" />
         <div class="top-bar">
           <div class="progress-wrap">
             <div class="streak-label"></div>
@@ -94,25 +103,30 @@
       aria-hidden="true"
       tabindex="-1"
     >
-      <section class="card card--pop battle-complete-card">
+      <section class="battle-card battle-card--pop battle-complete-card">
         <div class="battle-info">
           <p id="battle-complete-title" class="battle-title">Battle<br />Complete</p>
         </div>
         <img
           class="enemy-image"
-          src="../images/battle/monster_battle_1_1.png"
+          src="/mathmonsters/images/battle/monster_battle_1.png"
           alt="Enemy defeated in battle"
         />
-        <p class="battle-goals-title">Battle Rewards</p>
+        <p class="battle-goals-title">Battle Goals</p>
         <div class="battle-stats">
-          <div class="battle-stat" data-goal="experience">
-            <span class="stat-label">Experience</span>
-            <span class="stat-value summary-experience">
-              <span class="stat-value-text">+0</span>
+          <div class="battle-stat" data-goal="accuracy">
+            <span class="stat-label">Accuracy</span>
+            <span class="stat-value summary-accuracy">
+              <span class="stat-value-text">0%</span>
+            </span>
+          </div>
+          <div class="battle-stat" data-goal="time">
+            <span class="stat-label">Time</span>
+            <span class="stat-value summary-time">
+              <span class="stat-value-text">0s</span>
             </span>
           </div>
         </div>
-        <p class="battle-progress" data-level-progress>Level Progress: 0 / 0</p>
         <button type="button" class="btn-primary next-mission-btn" data-action="next">Next Mission</button>
       </section>
     </div>
@@ -125,8 +139,8 @@
     <script src="../js/pwa.js" defer data-pwa-root=".."></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../js/supabaseClient.js"></script>
-    <script src="../js/loader.js" data-asset-base=".."></script>
-    <script src="../js/battle.js" data-asset-base=".."></script>
-    <script src="../js/question.js" data-asset-base=".."></script>
+    <script src="../js/loader.js"></script>
+    <script src="../js/battle.js"></script>
+    <script src="../js/question.js"></script>
   </body>
 </html>
