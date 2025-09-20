@@ -22,7 +22,7 @@ const OFFLINE_ASSETS = [
   'images/brand/logo.png',
   'images/characters/shellfin_level_1.png',
   'images/battle/battle.png',
-  'images/battle/monster_battle_1.png',
+  'images/battle/monster_battle_1_1.png',
   'images/questions/sword.svg',
   'images/questions/shield.svg',
   'images/questions/streak.svg',
