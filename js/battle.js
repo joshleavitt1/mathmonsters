@@ -48,49 +48,6 @@ const hasVisitedLanding = () => {
 
 const landingVisited = hasVisitedLanding();
 
-const getAssetBasePath = () => {
-  const fallback = '/mathmonsters';
-  const globalBase =
-    typeof window.mathMonstersAssetBase === 'string'
-      ? window.mathMonstersAssetBase.trim()
-      : '';
-  return globalBase || fallback;
-};
-
-const createAssetPathResolver = () => {
-  const assetBase = getAssetBasePath();
-  const trimmedBase = assetBase.endsWith('/')
-    ? assetBase.slice(0, -1)
-    : assetBase;
-
-  return (inputPath) => {
-    if (typeof inputPath !== 'string') {
-      return trimmedBase;
-    }
-
-    let normalized = inputPath.trim();
-    if (!normalized) {
-      return trimmedBase;
-    }
-
-    if (/^https?:\/\//i.test(normalized) || normalized.startsWith('data:')) {
-      return normalized;
-    }
-
-    while (normalized.startsWith('./')) {
-      normalized = normalized.slice(2);
-    }
-
-    while (normalized.startsWith('../')) {
-      normalized = normalized.slice(3);
-    }
-
-    normalized = normalized.replace(/^\/+/, '');
-
-    return normalized ? `${trimmedBase}/${normalized}` : trimmedBase;
-  };
-};
-
 if (!landingVisited) {
   window.location.replace('../index.html');
 }
@@ -99,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!landingVisited) {
     return;
   }
-  const resolveAssetPath = createAssetPathResolver();
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
   const prefersReducedMotion = window.matchMedia(
@@ -115,12 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionText = questionBox.querySelector('.question-text');
   const choicesEl = questionBox.querySelector('.choices');
-  if (choicesEl) {
-    choicesEl.setAttribute('role', 'radiogroup');
-  }
   const topBar = questionBox.querySelector('.top-bar');
-  const progressBar = questionBox.querySelector('.progress');
-  const progressFill = questionBox.querySelector('.progress__fill');
+  const progressBar = questionBox.querySelector('.progress-bar');
+  const progressFill = questionBox.querySelector('.progress-fill');
   const streakLabel = questionBox.querySelector('.streak-label');
   const streakIcon = questionBox.querySelector('.streak-icon');
   const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
@@ -250,10 +203,9 @@ document.addEventListener('DOMContentLoaded', () => {
       icon.classList.add('goal-result-icon');
       valueEl.insertBefore(icon, textSpan);
     }
-    const iconPath = met
-      ? 'images/complete/correct.svg'
-      : 'images/complete/incorrect.svg';
-    icon.src = resolveAssetPath(iconPath);
+    icon.src = met
+      ? '/mathmonsters/images/complete/correct.svg'
+      : '/mathmonsters/images/complete/incorrect.svg';
     icon.alt = met ? 'Goal met' : 'Goal not met';
     valueEl.classList.remove('goal-result--met', 'goal-result--missed');
     valueEl.classList.add(met ? 'goal-result--met' : 'goal-result--missed');
@@ -615,13 +567,10 @@ document.addEventListener('DOMContentLoaded', () => {
     (choices || []).forEach((choice) => {
       const div = document.createElement('div');
       div.classList.add('choice');
-      div.setAttribute('role', 'radio');
-      div.setAttribute('tabindex', '0');
-      div.setAttribute('aria-checked', 'false');
       div.dataset.correct = !!choice.correct;
       if (choice.image) {
         const img = document.createElement('img');
-        img.src = resolveAssetPath(`images/questions/${choice.image}`);
+        img.src = `/mathmonsters/images/questions/${choice.image}`;
         img.alt = choice.name || '';
         div.appendChild(img);
       }
@@ -631,7 +580,6 @@ document.addEventListener('DOMContentLoaded', () => {
       choicesEl.appendChild(div);
     });
     questionBox.classList.add('show');
-    document.dispatchEvent(new Event('question-opened'));
     updateStreak();
   }
 
@@ -639,20 +587,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const percent = Math.min(streak / STREAK_GOAL, 1) * 100;
     if (streak > 0) {
       topBar?.classList.add('show');
-      progressBar?.setAttribute('aria-valuenow', String(Math.round(percent)));
-      if (progressFill) {
-        void progressFill.offsetWidth;
-        progressFill.style.width = percent + '%';
-      }
+      progressBar.classList.add('with-label');
+      void progressFill.offsetWidth;
+      progressFill.style.width = percent + '%';
       if (streakMaxed) {
-        progressBar?.classList?.add('progress--orange');
+        progressFill.style.background = '#FF6A00';
         streakLabel.textContent = '2x Attack';
         streakLabel.style.color = '#FF6A00';
         streakLabel.classList.remove('show');
         void streakLabel.offsetWidth;
         streakLabel.classList.add('show');
         if (streakIcon && !streakIconShown) {
-          progressFill?.addEventListener(
+          progressFill.addEventListener(
             'transitionend',
             () => {
               streakIcon.classList.add('show');
@@ -662,8 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
           streakIconShown = true;
         }
       } else {
-        progressBar?.classList?.remove('progress--orange');
-        streakLabel.style.color = '#00B600';
+        progressFill.style.background = '#006AFF';
+        streakLabel.style.color = '#006AFF';
         streakLabel.textContent = `${streak} in a row`;
         streakLabel.classList.remove('show');
         void streakLabel.offsetWidth;
@@ -675,11 +621,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       topBar?.classList.remove('show');
-      progressBar?.classList?.remove('progress--orange');
-      progressBar?.setAttribute('aria-valuenow', '0');
-      if (progressFill) {
-        progressFill.style.width = '0%';
-      }
+      progressBar.classList.remove('with-label');
+      progressFill.style.width = '0%';
+      progressFill.style.background = '#006AFF';
       streakLabel.classList.remove('show');
       if (streakIcon) {
         streakIcon.classList.remove('show');
@@ -799,92 +743,12 @@ document.addEventListener('DOMContentLoaded', () => {
     battleGoalsMet = false;
   });
 
-  const clearLocalAndSessionStorage = () => {
-    try {
-      window.localStorage?.clear();
-    } catch (error) {
-      console.warn('Unable to clear localStorage during sign out.', error);
-    }
-
-    try {
-      window.sessionStorage?.clear();
-    } catch (error) {
-      console.warn('Unable to clear sessionStorage during sign out.', error);
-    }
-  };
-
-  const deleteIndexedDbDatabases = async () => {
-    if (typeof indexedDB === 'undefined') {
-      return;
-    }
-
-    const deleteDatabase = (name) =>
-      new Promise((resolve) => {
-        if (!name) {
-          resolve();
-          return;
-        }
-
-        let request;
-        try {
-          request = indexedDB.deleteDatabase(name);
-        } catch (error) {
-          console.warn(`Unable to delete IndexedDB database "${name}".`, error);
-          resolve();
-          return;
-        }
-
-        const finalize = () => {
-          resolve();
-        };
-
-        if (!request) {
-          resolve();
-          return;
-        }
-
-        request.onsuccess = finalize;
-        request.onerror = finalize;
-        request.onblocked = finalize;
-      });
-
-    if (typeof indexedDB.databases === 'function') {
-      try {
-        const databases = await indexedDB.databases();
-        await Promise.all(
-          databases
-            .map((db) => db?.name)
-            .filter(Boolean)
-            .map((name) => deleteDatabase(name))
-        );
-      } catch (error) {
-        console.warn('Unable to enumerate IndexedDB databases during sign out.', error);
-      }
-      return;
-    }
-
-    await deleteDatabase('supabase-auth-token');
-  };
-
-  const clearCaches = async () => {
-    if (typeof caches === 'undefined' || typeof caches.keys !== 'function') {
-      return;
-    }
-
-    try {
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
-    } catch (error) {
-      console.warn('Unable to clear caches during sign out.', error);
-    }
-  };
-
   logOutButton?.addEventListener('click', async () => {
     const supabase = window.supabaseClient;
 
     if (supabase?.auth?.signOut) {
       try {
-        const { error } = await supabase.auth.signOut({ scope: 'global' });
+        const { error } = await supabase.auth.signOut();
         if (error) {
           console.warn('Supabase sign out failed', error);
         }
@@ -893,10 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    clearLocalAndSessionStorage();
-    await Promise.all([deleteIndexedDbDatabases(), clearCaches()]);
-
-    window.location.replace('../index.html');
+    window.location.replace('../signin.html');
   });
 
   document.addEventListener('answer-submitted', (e) => {
