@@ -1259,7 +1259,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Unable to clear session storage.', error);
     }
 
-    window.location.replace(`${ASSET_BASE_PATH}/html/signin.html`);
+    window.location.replace(`${ASSET_BASE_PATH}/index.html`);
   });
 
   document.addEventListener('answer-submitted', (e) => {
