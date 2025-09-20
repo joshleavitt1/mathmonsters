@@ -375,7 +375,7 @@ body:not(.is-preloading) main.landing {
 /* Simple preload experience ---------------------------------------------- */
 
 .preloader {
-  --app-safe-area-padding: 32px;
+  --app-safe-area-padding: clamp(24px, 6vw, 48px);
   position: fixed;
   inset: 0;
   display: flex;
@@ -387,6 +387,19 @@ body:not(.is-preloading) main.landing {
   z-index: 10;
   text-align: center;
   transition: opacity 0.4s ease;
+  padding-top: calc(
+    var(--app-safe-area-padding) + env(safe-area-inset-top, 0px)
+  );
+  padding-bottom: calc(
+    var(--app-safe-area-padding) + env(safe-area-inset-bottom, 0px)
+  );
+  padding-left: calc(
+    var(--app-safe-area-padding) + env(safe-area-inset-left, 0px)
+  );
+  padding-right: calc(
+    var(--app-safe-area-padding) + env(safe-area-inset-right, 0px)
+  );
+  box-sizing: border-box;
 }
 
 .preloader__logo {
