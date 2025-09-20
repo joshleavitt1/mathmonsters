@@ -97,9 +97,7 @@ body {
 }
 
 .stat-box .stats {
-  display: flex;
-  gap: 16px;
-  align-items: center;
+  display: none;
 }
 
 .stat-box .stat {
@@ -304,30 +302,6 @@ body {
   margin-top: 0;
 }
 
-.battle-stat-banner {
-  margin: 40px auto 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 48px;
-}
-
-.battle-stat-banner .stat {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.battle-stat-banner .label {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.battle-stat-banner .value {
-  font-size: 18px;
-  color: #ffffff;
-  text-transform: none;
-}
 
 .battle-dev-controls {
   position: fixed;
