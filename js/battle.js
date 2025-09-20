@@ -757,7 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    window.location.replace('../signin.html');
+    window.location.replace('../index.html');
   });
 
   document.addEventListener('answer-submitted', (e) => {
