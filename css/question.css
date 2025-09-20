@@ -1,13 +1,15 @@
 #question {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-end;
+  padding: 32px 16px;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease;
@@ -19,18 +21,18 @@
   visibility: visible;
 }
 
-#question .content {
-  background: #fff;
-  box-sizing: border-box;
-  padding: 24px;
-  border-radius: 8px;
-  text-align: center;
-  width: 420px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+#question .card--question {
   position: relative;
-  gap: 40px;
+  width: min(420px, 100%);
+  text-align: left;
+  align-items: stretch;
+  gap: 24px;
+  padding: 24px;
+}
+
+#question .card--question .title {
+  width: 100%;
+  text-align: left;
 }
 
 #question h1 {
@@ -41,30 +43,24 @@
 #question .question-text {
   font-size: 24px;
   margin: 0;
-  padding: 0;
-  color: #272B34;
+  color: #272b34;
   width: 100%;
   padding-top: 16px;
 }
 
 #question button {
   width: 100%;
-  height: 64px;
-  background: #006AFF;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 20px;
 }
 
 #question button:disabled {
-  background: #D2D8E2;
-  color: #272B34;
+  --btn-gradient-start: #d2d8e2;
+  --btn-gradient-end: #d2d8e2;
+  --btn-text-color: #272b34;
+  cursor: not-allowed;
 }
 
 #question .top-bar {
   width: 100%;
-  align-items: center;
   display: none;
   visibility: hidden;
   opacity: 0;
@@ -74,6 +70,7 @@
 
 #question .top-bar.show {
   display: flex;
+  align-items: flex-start;
   visibility: visible;
   opacity: 1;
   transform: translateY(0);
@@ -84,39 +81,32 @@
 }
 
 #question .progress-wrap {
-  flex: 1;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
 }
 
-#question .progress-bar {
+#question .progress {
+  --progress-gradient-start: #36dc36;
+  --progress-gradient-end: #00b600;
+
   width: 100%;
   height: 16px;
-  background: #F4F6FA;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 0;
-  margin-right: 0;
 }
 
-#question .progress-bar.with-label {
-  margin-right: 0px;
-}
-
-#question .progress-fill {
+#question .progress__fill {
   width: 0%;
-  height: 100%;
-  background: #006AFF;
   transition: width 0.5s ease-in-out;
 }
 
 #question .streak-label {
   font-size: 20px;
-  color: #006AFF;
+  color: #00b600;
   opacity: 1;
   transform: scale(1);
   white-space: nowrap;
-  display: block;
-  padding-bottom: 16px;
+  margin: 0;
 }
 
 #question .streak-label.show {
@@ -128,9 +118,9 @@
   height: 56px;
   position: absolute;
   top: -45px;
-  left: 174px;
+  left: 50%;
   opacity: 0;
-  transform: scale(0);
+  transform: translateX(-50%) scale(0);
   z-index: 1;
   display: block;
 }
@@ -146,9 +136,9 @@
 }
 
 @keyframes streak-pop-icon {
-  0% { opacity: 0; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(2.8); }
-  100% { opacity: 1; transform: scale(2.5); }
+  0% { opacity: 0; transform: translateX(-50%) scale(0.8); }
+  50% { opacity: 1; transform: translateX(-50%) scale(2.8); }
+  100% { opacity: 1; transform: translateX(-50%) scale(2.5); }
 }
 
 #question .choices {
@@ -201,22 +191,16 @@
   text-align: center;
 }
 
-#question button.result {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  transition: background 0.3s;
-}
-
-#question button.result img {
-  margin-right: 8px;
-}
-
 #question button.correct {
-  background: #00AC06;
+  --btn-gradient-start: #00ac06;
+  --btn-gradient-end: #00ac06;
+  --btn-hover-gradient-start: #00ac06;
+  --btn-hover-gradient-end: #00ac06;
 }
 
 #question button.incorrect {
-  background: #E20000;
+  --btn-gradient-start: #e20000;
+  --btn-gradient-end: #e20000;
+  --btn-hover-gradient-start: #e20000;
+  --btn-hover-gradient-end: #e20000;
 }
