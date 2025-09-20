@@ -4,12 +4,61 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const MIN_PRELOAD_DURATION_MS = 2000;
-const BATTLE_INTRO_DELAY_MS = 1000;
-const BATTLE_INTRO_VISIBLE_DURATION_MS = 2000;
+const HERO_CARD_POP_DURATION_MS = 450;
+const BATTLE_INTRO_POP_DURATION_MS = 600;
+const BATTLE_INTRO_WAIT_AFTER_VISIBLE_MS = 1000;
 
 // Gentle idle motion caps (pixels)
 const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
 const HERO_FLOAT_MAX_PX = 7;  // prevents big bobbing
+
+const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
+
+const updateViewportOffsetVariable = () => {
+  const root = document.documentElement;
+  if (!root) {
+    return;
+  }
+
+  const viewport = window.visualViewport;
+  if (!viewport) {
+    root.style.setProperty(CSS_VIEWPORT_OFFSET_VAR, '0px');
+    return;
+  }
+
+  const layoutViewportHeight = window.innerHeight || viewport.height;
+  const bottomOverlap =
+    layoutViewportHeight - (viewport.height + viewport.offsetTop);
+  const safeOffset = Math.max(0, Math.round(bottomOverlap));
+  root.style.setProperty(CSS_VIEWPORT_OFFSET_VAR, `${safeOffset}px`);
+};
+
+const initViewportOffsetWatcher = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  updateViewportOffsetVariable();
+
+  const viewport = window.visualViewport;
+  if (viewport) {
+    viewport.addEventListener('resize', updateViewportOffsetVariable, {
+      passive: true,
+    });
+    viewport.addEventListener('scroll', updateViewportOffsetVariable, {
+      passive: true,
+    });
+  }
+
+  window.addEventListener('resize', updateViewportOffsetVariable, {
+    passive: true,
+  });
+  window.addEventListener('orientationchange', updateViewportOffsetVariable, {
+    passive: true,
+  });
+};
+
+initViewportOffsetWatcher();
 
 const redirectToWelcome = () => {
   window.location.replace('html/welcome.html');
@@ -74,12 +123,20 @@ const startLandingExperience = () => {
   }
 };
 
+const wait = (ms) =>
+  new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+
 const runBattleIntroSequence = () => {
   const intro = document.querySelector('[data-battle-intro]');
+  const battleCard = document.querySelector('[data-battle-card]');
+  const heroImage = document.querySelector('.hero');
   if (!intro) {
     return Promise.resolve(false);
   }
 
+  const introImage = intro.querySelector('.battle-intro__image');
   const prefersReducedMotion =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -88,13 +145,67 @@ const runBattleIntroSequence = () => {
   intro.classList.remove('is-visible');
   intro.setAttribute('aria-hidden', 'true');
 
-  return new Promise((resolve) => {
-    window.setTimeout(() => {
-      intro.classList.add('is-visible');
-      intro.setAttribute('aria-hidden', 'false');
+  const triggerPopAnimation = (element) => {
+    if (!element) {
+      return Promise.resolve(false);
+    }
 
-      window.setTimeout(() => resolve(true), BATTLE_INTRO_VISIBLE_DURATION_MS);
-    }, BATTLE_INTRO_DELAY_MS);
+    const animationClass = 'is-battle-transition';
+    if (prefersReducedMotion) {
+      element.classList.add(animationClass);
+      return Promise.resolve(true);
+    }
+
+    return new Promise((resolve) => {
+      const handleAnimationEnd = (event) => {
+        if (event.target !== element) {
+          return;
+        }
+        element.removeEventListener('animationend', handleAnimationEnd);
+        resolve(true);
+      };
+
+      element.addEventListener('animationend', handleAnimationEnd);
+
+      // Force layout before toggling class to ensure animation runs consistently.
+      void element.offsetWidth;
+      element.classList.add(animationClass);
+
+      window.setTimeout(() => {
+        element.removeEventListener('animationend', handleAnimationEnd);
+        resolve(true);
+      }, HERO_CARD_POP_DURATION_MS + 100);
+    });
+  };
+
+  return Promise.all([
+    triggerPopAnimation(heroImage),
+    triggerPopAnimation(battleCard),
+  ]).then(() => {
+    intro.classList.add('is-visible');
+    intro.setAttribute('aria-hidden', 'false');
+
+    if (prefersReducedMotion || !introImage) {
+      return wait(BATTLE_INTRO_WAIT_AFTER_VISIBLE_MS).then(() => true);
+    }
+
+    return new Promise((resolve) => {
+      const finishAfterWait = () => {
+        wait(BATTLE_INTRO_WAIT_AFTER_VISIBLE_MS).then(() => resolve(true));
+      };
+
+      const handleIntroEnd = () => {
+        introImage.removeEventListener('animationend', handleIntroEnd);
+        finishAfterWait();
+      };
+
+      introImage.addEventListener('animationend', handleIntroEnd);
+
+      window.setTimeout(() => {
+        introImage.removeEventListener('animationend', handleIntroEnd);
+        finishAfterWait();
+      }, BATTLE_INTRO_POP_DURATION_MS + 100);
+    });
   });
 };
 
@@ -289,15 +400,8 @@ const updateHeroFloat = () => {
     heroImage.style.setProperty('--hero-float-range', `${floatRange}px`);
 
     if (battleIntro) {
-      const scrollX =
-        typeof window === 'undefined' ? 0 : window.scrollX || window.pageXOffset || 0;
-      const scrollY =
-        typeof window === 'undefined' ? 0 : window.scrollY || window.pageYOffset || 0;
-      const heroCenterX = heroRect.left + heroRect.width / 2 + scrollX;
-      const heroCenterY = heroRect.top + heroRect.height / 2 + scrollY;
-
-      battleIntro.style.setProperty('--battle-intro-left', `${heroCenterX}px`);
-      battleIntro.style.setProperty('--battle-intro-top', `${heroCenterY}px`);
+      battleIntro.style.removeProperty('--battle-intro-left');
+      battleIntro.style.removeProperty('--battle-intro-top');
     }
 
   };

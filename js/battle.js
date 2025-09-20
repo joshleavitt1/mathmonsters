@@ -4,6 +4,41 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
 
+const deriveBaseFromLocation = (fallbackBase) => {
+  if (typeof window === 'undefined') {
+    return fallbackBase || '.';
+  }
+
+  const rawFallback =
+    typeof fallbackBase === 'string' ? fallbackBase.trim() : '';
+  const locationPath =
+    typeof window.location?.pathname === 'string'
+      ? window.location.pathname
+      : '';
+
+  if (rawFallback && locationPath.startsWith(rawFallback)) {
+    return fallbackBase;
+  }
+
+  const withoutQuery = locationPath.replace(/[?#].*$/, '');
+  const trimmedPath = withoutQuery.replace(/\/+$/, '');
+  const segments = trimmedPath.split('/').filter(Boolean);
+
+  if (segments.length === 0) {
+    return '.';
+  }
+
+  const lastSegment = segments[segments.length - 1] || '';
+  const treatAsDirectory = lastSegment && !lastSegment.includes('.');
+  const depth = treatAsDirectory ? segments.length : segments.length - 1;
+
+  if (depth <= 0) {
+    return '.';
+  }
+
+  return Array(depth).fill('..').join('/');
+};
+
 const determineAssetBasePath = () => {
   const fallbackBase = FALLBACK_ASSET_BASE;
   const doc = typeof document !== 'undefined' ? document : null;
@@ -43,10 +78,11 @@ const determineAssetBasePath = () => {
     }
   }
 
-  if (typeof window !== 'undefined') {
-    window.mathMonstersAssetBase = fallbackBase;
+  const derivedBase = deriveBaseFromLocation(fallbackBase);
+  if (typeof window !== 'undefined' && derivedBase) {
+    window.mathMonstersAssetBase = derivedBase;
   }
-  return fallbackBase;
+  return derivedBase || fallbackBase;
 };
 
 const ASSET_BASE_PATH = determineAssetBasePath();
@@ -246,6 +282,58 @@ document.addEventListener('DOMContentLoaded', () => {
     img.classList.add('battle-ready');
   };
 
+  const applySpriteFallback = (img, fallbackSrc) => {
+    if (!img || !fallbackSrc) {
+      return;
+    }
+
+    const fallbackUrl = fallbackSrc;
+    const useFallback = () => {
+      if (!img || img.dataset?.fallbackApplied === 'true') {
+        return;
+      }
+      img.dataset.fallbackApplied = 'true';
+      img.src = fallbackUrl;
+    };
+
+    img.addEventListener('error', useFallback);
+
+    if (img.complete && typeof img.naturalWidth === 'number' && img.naturalWidth === 0) {
+      useFallback();
+    }
+  };
+
+  const ensureSpriteVisibility = (img) => {
+    if (!img) {
+      return;
+    }
+
+    const reveal = () => {
+      if (!img.classList.contains('battle-ready')) {
+        img.classList.remove('slide-in');
+        img.classList.add('battle-ready');
+      }
+    };
+
+    const scheduleReveal = () => {
+      window.setTimeout(reveal, 1600);
+    };
+
+    if (img.complete && typeof img.naturalWidth === 'number' && img.naturalWidth > 0) {
+      scheduleReveal();
+    } else {
+      img.addEventListener('load', scheduleReveal, { once: true });
+    }
+  };
+
+  const heroDefaultSprite =
+    heroImg?.getAttribute('src') || resolveAssetPath('images/characters/shellfin_level_1.png');
+  const monsterDefaultSprite =
+    monsterImg?.getAttribute('src') || resolveAssetPath('images/battle/monster_battle_1_1.png');
+
+  applySpriteFallback(heroImg, heroDefaultSprite);
+  applySpriteFallback(monsterImg, monsterDefaultSprite);
+
   if (prefersReducedMotion) {
     markBattleReady(heroImg);
     markBattleReady(monsterImg);
@@ -266,6 +354,9 @@ document.addEventListener('DOMContentLoaded', () => {
       window.setTimeout(() => markBattleReady(monsterImg), 1400);
     }
   }
+
+  ensureSpriteVisibility(heroImg);
+  ensureSpriteVisibility(monsterImg);
 
   window.requestAnimationFrame(() => {
     heroStats?.classList.add('show');
@@ -418,6 +509,83 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.round(numeric);
   };
 
+  const isPlainObject = (value) =>
+    value !== null && typeof value === 'object' && !Array.isArray(value);
+
+  const hasCharacterDetails = (character) => {
+    if (!isPlainObject(character)) {
+      return false;
+    }
+    const name =
+      typeof character.name === 'string' ? character.name.trim() : '';
+    const sprite =
+      typeof character.sprite === 'string' ? character.sprite.trim() : '';
+    const attack = Number(character.attack);
+    const health = Number(character.health);
+    const damage = Number(character.damage);
+    return (
+      Boolean(name) ||
+      Boolean(sprite) ||
+      Number.isFinite(attack) ||
+      Number.isFinite(health) ||
+      Number.isFinite(damage)
+    );
+  };
+
+  const collectBattleEnemyCandidates = (battleSource) => {
+    if (!isPlainObject(battleSource)) {
+      return [];
+    }
+    return Object.entries(battleSource)
+      .filter(
+        ([key, value]) => /^enemy/i.test(key) && isPlainObject(value)
+      )
+      .map(([, value]) => value);
+  };
+
+  const selectEnemyFromBattle = (battleSource, experienceValue) => {
+    if (!isPlainObject(battleSource)) {
+      return null;
+    }
+
+    const candidates = collectBattleEnemyCandidates(battleSource);
+    if (candidates.length === 0) {
+      return isPlainObject(battleSource.enemy) ? battleSource.enemy : null;
+    }
+
+    const numericExperience = Number(experienceValue);
+    const experienceString = String(experienceValue);
+
+    const matchedEnemy = candidates.find((candidate) => {
+      const candidateId = candidate?.id;
+      if (candidateId === undefined || candidateId === null) {
+        return false;
+      }
+      if (
+        typeof candidateId === 'number' &&
+        Number.isFinite(candidateId) &&
+        Number.isFinite(numericExperience)
+      ) {
+        return candidateId === numericExperience;
+      }
+      return String(candidateId) === experienceString;
+    });
+
+    if (matchedEnemy) {
+      return matchedEnemy;
+    }
+
+    if (Number.isFinite(numericExperience)) {
+      const boundedIndex = Math.min(
+        Math.max(Math.floor(numericExperience), 0),
+        candidates.length - 1
+      );
+      return candidates[boundedIndex];
+    }
+
+    return candidates[0] ?? null;
+  };
+
   function updateLevelProgressDisplay(
     experienceValue = currentExperience,
     totalOverride = null
@@ -507,10 +675,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function loadData() {
     const data = window.preloadedData ?? {};
-    const battleData = data.battle ?? {};
-    const heroData = data.hero ?? {};
-    const enemyData = data.enemy ?? {};
-    const progressData = data.variables?.progress ?? {};
+    const battleData = isPlainObject(data.battle) ? data.battle : {};
+    const progressData =
+      isPlainObject(data.variables?.progress) && data.variables.progress
+        ? data.variables.progress
+        : {};
+    const levels = Array.isArray(data.levels) ? data.levels : [];
 
     currentBattleLevel =
       typeof progressData.battleLevel === 'number'
@@ -518,6 +688,109 @@ document.addEventListener('DOMContentLoaded', () => {
         : typeof data.level?.battleLevel === 'number'
         ? data.level.battleLevel
         : null;
+
+    const findLevelByBattleNumber = (levelNumber) => {
+      if (typeof levelNumber !== 'number') {
+        return null;
+      }
+      return (
+        levels.find(
+          (level) =>
+            typeof level?.battleLevel === 'number' &&
+            level.battleLevel === levelNumber
+        ) ?? null
+      );
+    };
+
+    const currentLevel =
+      findLevelByBattleNumber(currentBattleLevel) ??
+      (isPlainObject(data.level) ? data.level : null) ??
+      levels[0] ??
+      null;
+
+    if (
+      currentLevel &&
+      typeof currentLevel.battleLevel === 'number' &&
+      currentBattleLevel !== currentLevel.battleLevel
+    ) {
+      currentBattleLevel = currentLevel.battleLevel;
+    }
+
+    const levelBattle =
+      currentLevel && isPlainObject(currentLevel.battle)
+        ? currentLevel.battle
+        : {};
+    const mergedBattleSource = { ...levelBattle, ...battleData };
+
+    const normalizedExperience = normalizeExperienceValue(
+      progressData.currentExperience
+    );
+
+    let heroData = {};
+    [levelBattle?.hero, battleData?.hero, data.hero].forEach((source) => {
+      if (isPlainObject(source)) {
+        heroData = { ...heroData, ...source };
+      }
+    });
+
+    if (!hasCharacterDetails(heroData)) {
+      const fallbackHero = levels
+        .map((level) => (isPlainObject(level?.battle?.hero) ? level?.battle?.hero : null))
+        .find((entry) => isPlainObject(entry));
+      if (isPlainObject(fallbackHero)) {
+        heroData = { ...fallbackHero, ...heroData };
+      }
+    }
+
+    let enemyData = {};
+    const baseEnemy = selectEnemyFromBattle(
+      mergedBattleSource,
+      normalizedExperience
+    );
+    if (isPlainObject(baseEnemy)) {
+      enemyData = { ...baseEnemy };
+    }
+    [battleData?.enemy, data.enemy].forEach((source) => {
+      if (isPlainObject(source)) {
+        enemyData = { ...enemyData, ...source };
+      }
+    });
+
+    if (!hasCharacterDetails(enemyData)) {
+      const fallbackEnemy = levels
+        .map((level) => selectEnemyFromBattle(level?.battle ?? {}, normalizedExperience))
+        .find((entry) => isPlainObject(entry));
+      if (isPlainObject(fallbackEnemy)) {
+        enemyData = { ...fallbackEnemy, ...enemyData };
+      }
+    }
+
+    if (window.preloadedData) {
+      if (hasCharacterDetails(heroData)) {
+        window.preloadedData.hero = { ...heroData };
+        window.preloadedData.battle = isPlainObject(window.preloadedData.battle)
+          ? window.preloadedData.battle
+          : {};
+        window.preloadedData.battle.hero = {
+          ...(isPlainObject(window.preloadedData.battle?.hero)
+            ? window.preloadedData.battle.hero
+            : {}),
+          ...heroData,
+        };
+      }
+      if (hasCharacterDetails(enemyData)) {
+        window.preloadedData.enemy = { ...enemyData };
+        window.preloadedData.battle = isPlainObject(window.preloadedData.battle)
+          ? window.preloadedData.battle
+          : {};
+        window.preloadedData.battle.enemy = {
+          ...(isPlainObject(window.preloadedData.battle?.enemy)
+            ? window.preloadedData.battle.enemy
+            : {}),
+          ...enemyData,
+        };
+      }
+    }
 
     const resolvedLevelExperience = () => {
       const directValue = Number(data.level?.totalExperience);
@@ -530,12 +803,16 @@ document.addEventListener('DOMContentLoaded', () => {
           return levelValue;
         }
       }
+      const levelExperience = Number(currentLevel?.totalExperience);
+      if (Number.isFinite(levelExperience) && levelExperience >= 0) {
+        return Math.max(0, Math.round(levelExperience));
+      }
       return 0;
     };
 
     levelTotalExperience = resolvedLevelExperience();
 
-    currentExperience = normalizeExperienceValue(progressData.currentExperience);
+    currentExperience = normalizedExperience;
     if (
       Number.isFinite(levelTotalExperience) &&
       levelTotalExperience > 0 &&
@@ -546,10 +823,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateLevelProgressDisplay(currentExperience);
 
-    const resolvedStreakGoal = Number(battleData.streakGoal);
-    if (Number.isFinite(resolvedStreakGoal)) {
+    let resolvedStreakGoalRaw = Number(battleData.streakGoal);
+    if (!Number.isFinite(resolvedStreakGoalRaw)) {
+      resolvedStreakGoalRaw = Number(mergedBattleSource.streakGoal);
+    }
+    if (Number.isFinite(resolvedStreakGoalRaw)) {
       STREAK_GOAL = Math.min(
-        Math.max(Math.round(resolvedStreakGoal), MIN_STREAK_GOAL),
+        Math.max(Math.round(resolvedStreakGoalRaw), MIN_STREAK_GOAL),
         MAX_STREAK_GOAL
       );
     } else {
@@ -568,8 +848,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const heroSprite = resolveAssetPath(heroData.sprite);
-    if (heroSprite && heroImg) {
-      heroImg.src = heroSprite;
+    if (heroImg) {
+      if (heroSprite) {
+        heroImg.src = heroSprite;
+      } else {
+        const fallbackHeroSprite = resolveAssetPath(mergedBattleSource?.hero?.sprite);
+        if (fallbackHeroSprite) {
+          heroImg.src = fallbackHeroSprite;
+        }
+      }
     }
     if (heroImg && hero.name) {
       heroImg.alt = `${hero.name} ready for battle`;
@@ -581,21 +868,32 @@ document.addEventListener('DOMContentLoaded', () => {
     monster.name = enemyData.name || monster.name;
 
     const monsterSprite = resolveAssetPath(enemyData.sprite);
-    if (monsterSprite && monsterImg) {
-      monsterImg.src = monsterSprite;
+    let fallbackMonsterSprite = null;
+    if (monsterImg) {
+      if (monsterSprite) {
+        monsterImg.src = monsterSprite;
+      } else {
+        fallbackMonsterSprite = resolveAssetPath(
+          mergedBattleSource?.enemy?.sprite
+        );
+        if (fallbackMonsterSprite) {
+          monsterImg.src = fallbackMonsterSprite;
+        }
+      }
     }
     if (monsterImg && monster.name) {
       monsterImg.alt = `${monster.name} ready for battle`;
     }
-    if (monsterSprite && completeEnemyImg) {
-      completeEnemyImg.src = monsterSprite;
+    const finalMonsterSprite = monsterSprite || fallbackMonsterSprite;
+    if (finalMonsterSprite && completeEnemyImg) {
+      completeEnemyImg.src = finalMonsterSprite;
+    }
+    if (completeEnemyImg && monster.name) {
+      completeEnemyImg.alt = `${monster.name} ready for battle`;
     }
 
     if (heroNameEl) heroNameEl.textContent = hero.name;
     if (monsterNameEl) monsterNameEl.textContent = monster.name;
-    if (completeEnemyImg && monster.name) {
-      completeEnemyImg.alt = `${monster.name} ready for battle`;
-    }
     if (heroHpProgress) {
       const heroLabel = hero.name ? `${hero.name} health` : 'Hero health';
       heroHpProgress.setAttribute('aria-label', heroLabel);
@@ -949,7 +1247,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    window.location.replace(`${ASSET_BASE_PATH}/html/signin.html`);
+    try {
+      window.localStorage?.clear();
+    } catch (error) {
+      console.warn('Unable to clear local storage.', error);
+    }
+
+    try {
+      window.sessionStorage?.clear();
+    } catch (error) {
+      console.warn('Unable to clear session storage.', error);
+    }
+
+    window.location.replace(`${ASSET_BASE_PATH}/index.html`);
   });
 
   document.addEventListener('answer-submitted', (e) => {

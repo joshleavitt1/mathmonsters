@@ -5,6 +5,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   color: #272B34;
   background: url('/mathmonsters/images/background/background.png') no-repeat center/cover;
   position: relative;
@@ -15,6 +16,7 @@ main.landing {
   position: relative;
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   opacity: 1;
   transform: translate3d(0, 0, 0);
   filter: none;
@@ -65,6 +67,11 @@ body:not(.is-preloading) main.landing {
   pointer-events: none;
 }
 
+.hero.is-battle-transition {
+  animation: hero-pop-out 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
 @keyframes hero-float {
   0% {
     transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
@@ -82,6 +89,50 @@ body:not(.is-preloading) main.landing {
     animation: none;
     transform: translate(-50%, 0);
   }
+
+  .hero.is-battle-transition {
+    opacity: 0;
+  }
+}
+
+@keyframes hero-pop-out {
+  0% {
+    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(1);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(1.14);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(1.28);
+    opacity: 0;
+  }
+}
+
+.card--home.is-battle-transition {
+  animation: card-pop-out 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes card-pop-out {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  55% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card--home.is-battle-transition {
+    opacity: 0;
+  }
 }
 
 /* Bubble field */
@@ -95,7 +146,23 @@ body:not(.is-preloading) main.landing {
   justify-content: center;
   gap: clamp(24px, 8vw, 72px);
   width: min(720px, 100%);
-  padding: 0 16px clamp(120px, 22vh, 200px);
+  padding: 0 16px
+    calc(
+      clamp(120px, 22vh, 200px) +
+      var(--viewport-bottom-offset, 0px)
+    );
+  padding: 0 16px
+    calc(
+      clamp(120px, 22vh, 200px) +
+      var(--viewport-bottom-offset, 0px) +
+      constant(safe-area-inset-bottom)
+    );
+  padding: 0 16px
+    calc(
+      clamp(120px, 22vh, 200px) +
+      var(--viewport-bottom-offset, 0px) +
+      env(safe-area-inset-bottom, 0px)
+    );
   overflow: visible;
   pointer-events: none;
   z-index: 1;
@@ -219,9 +286,9 @@ body:not(.is-preloading) main.landing {
 }
 
 .battle-intro {
-  position: absolute;
+  position: fixed;
   left: var(--battle-intro-left, 50%);
-  top: var(--battle-intro-top, 45%);
+  top: var(--battle-intro-top, 50%);
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
@@ -308,6 +375,7 @@ body:not(.is-preloading) main.landing {
 /* Simple preload experience ---------------------------------------------- */
 
 .preloader {
+  --app-safe-area-padding: clamp(24px, 6vw, 48px);
   position: fixed;
   inset: 0;
   display: flex;
@@ -315,11 +383,23 @@ body:not(.is-preloading) main.landing {
   align-items: center;
   justify-content: center;
   gap: 24px;
-  padding: 32px;
   background-color: #001b41;
   z-index: 10;
   text-align: center;
   transition: opacity 0.4s ease;
+  padding-top: calc(
+    var(--app-safe-area-padding) + env(safe-area-inset-top, 0px)
+  );
+  padding-bottom: calc(
+    var(--app-safe-area-padding) + env(safe-area-inset-bottom, 0px)
+  );
+  padding-left: calc(
+    var(--app-safe-area-padding) + env(safe-area-inset-left, 0px)
+  );
+  padding-right: calc(
+    var(--app-safe-area-padding) + env(safe-area-inset-right, 0px)
+  );
+  box-sizing: border-box;
 }
 
 .preloader__logo {
@@ -368,7 +448,9 @@ body:not(.is-preloading) main.landing {
 .pwa-install {
   position: relative;
   z-index: 7;
-  margin: clamp(16px, 4vw, 32px) auto clamp(40px, 8vh, 96px);
+  margin: clamp(16px, 4vw, 32px)
+    auto
+    calc(clamp(40px, 8vh, 96px) + env(safe-area-inset-bottom, 0px));
   padding: clamp(16px, 4vw, 32px);
   max-width: min(420px, 90%);
   border-radius: 28px;
@@ -425,7 +507,7 @@ body:not(.is-preloading) main.landing {
 @media (min-width: 768px) {
   .pwa-install {
     position: absolute;
-    bottom: clamp(32px, 5vh, 72px);
+    bottom: calc(clamp(32px, 5vh, 72px) + env(safe-area-inset-bottom, 0px));
     right: clamp(32px, 6vw, 96px);
     margin: 0;
     text-align: left;
