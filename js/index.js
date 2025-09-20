@@ -392,8 +392,9 @@ const determineBattlePreview = (levelsData, variablesData) => {
     ...(activeUserBattle?.hero ?? {}),
   };
 
-  const heroSprite =
+  const rawHeroSprite =
     typeof heroData?.sprite === 'string' ? heroData.sprite.trim() : '';
+  const heroSprite = sanitizeAssetPath(rawHeroSprite) || rawHeroSprite;
   const heroName = typeof heroData?.name === 'string' ? heroData.name.trim() : '';
   const heroAlt = heroName ? `${heroName} ready for battle` : 'Hero ready for battle';
 
@@ -407,8 +408,9 @@ const determineBattlePreview = (levelsData, variablesData) => {
   const mathLabel = mathLabelSource.trim() || 'Math Mission';
 
   const enemyData = battle?.enemy ?? {};
-  const enemySprite =
+  const rawEnemySprite =
     typeof enemyData?.sprite === 'string' ? enemyData.sprite.trim() : '';
+  const enemySprite = sanitizeAssetPath(rawEnemySprite) || rawEnemySprite;
   const enemyName =
     typeof enemyData?.name === 'string' ? enemyData.name.trim() : '';
   const enemyAlt = enemyName ? `${enemyName} ready for battle` : 'Enemy ready for battle';
