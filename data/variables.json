@@ -5,51 +5,50 @@
         "battleLevel": 1,
         "hero": {
           "id": "shellfin",
-          "sprite": "../images/characters/shellfin_level_1.png"
+          "sprite": "/mathmonsters/images/characters/shellfin_level_1.png"
         }
       },
       {
         "battleLevel": 2,
         "hero": {
           "id": "shellfin",
-          "sprite": "../images/characters/shellfin_level_1.png"
+          "sprite": "/mathmonsters/images/characters/shellfin_level_2.png"
         }
       },
       {
         "battleLevel": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "../image/characters/shellfin_level_2.png"
+          "sprite": "/mathmonsters/images/characters/shellfin_level_3.png"
         }
       },
       {
         "battleLevel": 4,
         "hero": {
           "id": "shellfin",
-          "sprite": "../image/characters/shellfin_level_2.png"
+          "sprite": "/mathmonsters/images/characters/shellfin_level_4.png"
         }
       },
       {
         "battleLevel": 5,
         "hero": {
           "id": "shellfin",
-          "sprite": "../image/characters/shellfin_level_2.png"
+          "sprite": "/mathmonsters/images/characters/shellfin_level_5.png"
         }
       },
       {
         "battleLevel": 6,
         "hero": {
           "id": "shellfin",
-          "sprite": "../image/characters/shellfin_level_2.png"
+          "sprite": "/mathmonsters/images/characters/shellfin_level_6.png"
         }
       }
     ]
   },
   "progress": {
     "currentStreak": 0,
-    "currentExperience": 0,
-    "currentLevel": 1,
-    "basicAttack": 1,
-    "superAttack": 1
+    "accuracy": 0.0,
+    "timeRemainingSeconds": null,
+    "battleLevel": 1
   }
 }
