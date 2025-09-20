@@ -121,11 +121,7 @@ const normalizeAssetPath = (inputPath) => {
   trimmed = trimmed.replace(/^\/+/, '');
 
   const fallbackNormalized = FALLBACK_ASSET_BASE.replace(/^\/+/, '');
-  if (
-    fallbackNormalized &&
-    ASSET_BASE_PATH !== FALLBACK_ASSET_BASE &&
-    trimmed.startsWith(`${fallbackNormalized}/`)
-  ) {
+  if (fallbackNormalized && trimmed.startsWith(`${fallbackNormalized}/`)) {
     trimmed = trimmed.slice(fallbackNormalized.length + 1);
   }
 
