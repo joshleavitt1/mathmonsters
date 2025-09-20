@@ -4,6 +4,41 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
 
+const deriveBaseFromLocation = (fallbackBase) => {
+  if (typeof window === 'undefined') {
+    return fallbackBase || '.';
+  }
+
+  const rawFallback =
+    typeof fallbackBase === 'string' ? fallbackBase.trim() : '';
+  const locationPath =
+    typeof window.location?.pathname === 'string'
+      ? window.location.pathname
+      : '';
+
+  if (rawFallback && locationPath.startsWith(rawFallback)) {
+    return fallbackBase;
+  }
+
+  const withoutQuery = locationPath.replace(/[?#].*$/, '');
+  const trimmedPath = withoutQuery.replace(/\/+$/, '');
+  const segments = trimmedPath.split('/').filter(Boolean);
+
+  if (segments.length === 0) {
+    return '.';
+  }
+
+  const lastSegment = segments[segments.length - 1] || '';
+  const treatAsDirectory = lastSegment && !lastSegment.includes('.');
+  const depth = treatAsDirectory ? segments.length : segments.length - 1;
+
+  if (depth <= 0) {
+    return '.';
+  }
+
+  return Array(depth).fill('..').join('/');
+};
+
 const determineAssetBasePath = () => {
   const fallbackBase = FALLBACK_ASSET_BASE;
   const doc = typeof document !== 'undefined' ? document : null;
@@ -43,10 +78,11 @@ const determineAssetBasePath = () => {
     }
   }
 
-  if (typeof window !== 'undefined') {
-    window.mathMonstersAssetBase = fallbackBase;
+  const derivedBase = deriveBaseFromLocation(fallbackBase);
+  if (typeof window !== 'undefined' && derivedBase) {
+    window.mathMonstersAssetBase = derivedBase;
   }
-  return fallbackBase;
+  return derivedBase || fallbackBase;
 };
 
 const ASSET_BASE_PATH = determineAssetBasePath();
