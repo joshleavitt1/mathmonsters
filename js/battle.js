@@ -115,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionText = questionBox.querySelector('.question-text');
   const choicesEl = questionBox.querySelector('.choices');
+  if (choicesEl) {
+    choicesEl.setAttribute('role', 'radiogroup');
+  }
   const topBar = questionBox.querySelector('.top-bar');
   const progressBar = questionBox.querySelector('.progress-bar');
   const progressFill = questionBox.querySelector('.progress-fill');
@@ -612,6 +615,9 @@ document.addEventListener('DOMContentLoaded', () => {
     (choices || []).forEach((choice) => {
       const div = document.createElement('div');
       div.classList.add('choice');
+      div.setAttribute('role', 'radio');
+      div.setAttribute('tabindex', '0');
+      div.setAttribute('aria-checked', 'false');
       div.dataset.correct = !!choice.correct;
       if (choice.image) {
         const img = document.createElement('img');
@@ -625,6 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
       choicesEl.appendChild(div);
     });
     questionBox.classList.add('show');
+    document.dispatchEvent(new Event('question-opened'));
     updateStreak();
   }
 
@@ -788,12 +795,92 @@ document.addEventListener('DOMContentLoaded', () => {
     battleGoalsMet = false;
   });
 
+  const clearLocalAndSessionStorage = () => {
+    try {
+      window.localStorage?.clear();
+    } catch (error) {
+      console.warn('Unable to clear localStorage during sign out.', error);
+    }
+
+    try {
+      window.sessionStorage?.clear();
+    } catch (error) {
+      console.warn('Unable to clear sessionStorage during sign out.', error);
+    }
+  };
+
+  const deleteIndexedDbDatabases = async () => {
+    if (typeof indexedDB === 'undefined') {
+      return;
+    }
+
+    const deleteDatabase = (name) =>
+      new Promise((resolve) => {
+        if (!name) {
+          resolve();
+          return;
+        }
+
+        let request;
+        try {
+          request = indexedDB.deleteDatabase(name);
+        } catch (error) {
+          console.warn(`Unable to delete IndexedDB database "${name}".`, error);
+          resolve();
+          return;
+        }
+
+        const finalize = () => {
+          resolve();
+        };
+
+        if (!request) {
+          resolve();
+          return;
+        }
+
+        request.onsuccess = finalize;
+        request.onerror = finalize;
+        request.onblocked = finalize;
+      });
+
+    if (typeof indexedDB.databases === 'function') {
+      try {
+        const databases = await indexedDB.databases();
+        await Promise.all(
+          databases
+            .map((db) => db?.name)
+            .filter(Boolean)
+            .map((name) => deleteDatabase(name))
+        );
+      } catch (error) {
+        console.warn('Unable to enumerate IndexedDB databases during sign out.', error);
+      }
+      return;
+    }
+
+    await deleteDatabase('supabase-auth-token');
+  };
+
+  const clearCaches = async () => {
+    if (typeof caches === 'undefined' || typeof caches.keys !== 'function') {
+      return;
+    }
+
+    try {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+    } catch (error) {
+      console.warn('Unable to clear caches during sign out.', error);
+    }
+  };
+
   logOutButton?.addEventListener('click', async () => {
     const supabase = window.supabaseClient;
 
     if (supabase?.auth?.signOut) {
       try {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut({ scope: 'global' });
         if (error) {
           console.warn('Supabase sign out failed', error);
         }
@@ -801,6 +888,9 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Unexpected error during sign out', error);
       }
     }
+
+    clearLocalAndSessionStorage();
+    await Promise.all([deleteIndexedDbDatabases(), clearCaches()]);
 
     window.location.replace('../index.html');
   });

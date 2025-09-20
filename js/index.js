@@ -157,29 +157,33 @@ const runBattleIntroSequence = async () => {
       return true;
     }
 
-    if (element.classList.contains(className)) {
-      return true;
-    }
-
     return new Promise((resolve) => {
-      const handleAnimationEnd = (event) => {
-        if (event.target !== element) {
+      let resolved = false;
+      const cleanup = () => {
+        if (resolved) {
           return;
         }
+        resolved = true;
         element.removeEventListener('animationend', handleAnimationEnd);
         resolve(true);
       };
 
+      const handleAnimationEnd = (event) => {
+        if (event.target !== element) {
+          return;
+        }
+        cleanup();
+      };
+
       element.addEventListener('animationend', handleAnimationEnd);
 
+      element.classList.remove(className);
       // Force layout before toggling class to ensure animation runs consistently.
       void element.offsetWidth;
       element.classList.add(className);
 
-      window.setTimeout(() => {
-        element.removeEventListener('animationend', handleAnimationEnd);
-        resolve(true);
-      }, durationMs + 100);
+      const timeoutDuration = Number.isFinite(durationMs) ? durationMs : 0;
+      window.setTimeout(cleanup, timeoutDuration + 100);
     });
   };
 
