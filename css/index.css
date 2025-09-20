@@ -7,7 +7,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   color: #272B34;
-  background: url('/mathmonsters/images/background/background.png') no-repeat center/cover;
+  background: url('../images/background/background.png') no-repeat center/cover;
   position: relative;
   overflow: hidden;
 }

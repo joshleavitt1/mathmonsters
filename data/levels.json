@@ -12,7 +12,7 @@
         "streakGoal": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_1.png",
+          "sprite": "images/characters/shellfin_level_1.png",
           "name": "Shellfin",
           "attack": 1,
           "health": 3,
@@ -20,7 +20,7 @@
         },
         "enemy1": {
           "id": "1",
-          "sprite": "/mathmonsters/images/battle/monster_battle_1_1.png",
+          "sprite": "images/battle/monster_battle_1_1.png",
           "name": "Octomurk",
           "attack": 1,
           "health": 20,
@@ -28,7 +28,7 @@
         },
         "enemy2": {
           "id": "2",
-          "sprite": "/mathmonsters/images/battle/monster_battle_1_2.png",
+          "sprite": "images/battle/monster_battle_1_2.png",
           "name": "Octomurk",
           "attack": 1,
           "health": 20,
@@ -36,7 +36,7 @@
         },
         "enemy3": {
           "id": "3",
-          "sprite": "/mathmonsters/images/battle/monster_battle_1_3.png",
+          "sprite": "images/battle/monster_battle_1_3.png",
           "name": "Octomurk",
           "attack": 1,
           "health": 20,
@@ -56,7 +56,7 @@
         "streakGoal": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_1.png",
+          "sprite": "images/characters/shellfin_level_1.png",
           "name": "Shellfin",
           "attack": 1,
           "health": 3,
@@ -64,7 +64,7 @@
         },
         "enemy1": {
           "id": "1",
-          "sprite": "/mathmonsters/images/battle/monster_battle_1_1.png",
+          "sprite": "images/battle/monster_battle_1_1.png",
           "name": "Octomurk",
           "attack": 1,
           "health": 20,
@@ -72,7 +72,7 @@
         },
         "enemy2": {
           "id": "2",
-          "sprite": "/mathmonsters/images/battle/monster_battle_1_2.png",
+          "sprite": "images/battle/monster_battle_1_2.png",
           "name": "Octomurk",
           "attack": 1,
           "health": 20,
@@ -80,7 +80,7 @@
         },
         "enemy3": {
           "id": "3",
-          "sprite": "/mathmonsters/images/battle/monster_battle_1_3.png",
+          "sprite": "images/battle/monster_battle_1_3.png",
           "name": "Octomurk",
           "attack": 1,
           "health": 20,
