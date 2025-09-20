@@ -282,6 +282,58 @@ document.addEventListener('DOMContentLoaded', () => {
     img.classList.add('battle-ready');
   };
 
+  const applySpriteFallback = (img, fallbackSrc) => {
+    if (!img || !fallbackSrc) {
+      return;
+    }
+
+    const fallbackUrl = fallbackSrc;
+    const useFallback = () => {
+      if (!img || img.dataset?.fallbackApplied === 'true') {
+        return;
+      }
+      img.dataset.fallbackApplied = 'true';
+      img.src = fallbackUrl;
+    };
+
+    img.addEventListener('error', useFallback);
+
+    if (img.complete && typeof img.naturalWidth === 'number' && img.naturalWidth === 0) {
+      useFallback();
+    }
+  };
+
+  const ensureSpriteVisibility = (img) => {
+    if (!img) {
+      return;
+    }
+
+    const reveal = () => {
+      if (!img.classList.contains('battle-ready')) {
+        img.classList.remove('slide-in');
+        img.classList.add('battle-ready');
+      }
+    };
+
+    const scheduleReveal = () => {
+      window.setTimeout(reveal, 1600);
+    };
+
+    if (img.complete && typeof img.naturalWidth === 'number' && img.naturalWidth > 0) {
+      scheduleReveal();
+    } else {
+      img.addEventListener('load', scheduleReveal, { once: true });
+    }
+  };
+
+  const heroDefaultSprite =
+    heroImg?.getAttribute('src') || resolveAssetPath('images/characters/shellfin_level_1.png');
+  const monsterDefaultSprite =
+    monsterImg?.getAttribute('src') || resolveAssetPath('images/battle/monster_battle_1_1.png');
+
+  applySpriteFallback(heroImg, heroDefaultSprite);
+  applySpriteFallback(monsterImg, monsterDefaultSprite);
+
   if (prefersReducedMotion) {
     markBattleReady(heroImg);
     markBattleReady(monsterImg);
@@ -302,6 +354,9 @@ document.addEventListener('DOMContentLoaded', () => {
       window.setTimeout(() => markBattleReady(monsterImg), 1400);
     }
   }
+
+  ensureSpriteVisibility(heroImg);
+  ensureSpriteVisibility(monsterImg);
 
   window.requestAnimationFrame(() => {
     heroStats?.classList.add('show');
