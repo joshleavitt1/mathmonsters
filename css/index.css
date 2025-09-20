@@ -316,11 +316,19 @@ body:not(.is-preloading) main.landing {
   animation: battle-intro-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.battle-intro.is-hiding .battle-intro__image {
+  animation: battle-intro-pop-out 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .battle-intro.is-reduced-motion .battle-intro__image {
   transform: scale(1);
 }
 
 .battle-intro.is-reduced-motion.is-visible .battle-intro__image {
+  animation: none;
+}
+
+.battle-intro.is-reduced-motion.is-hiding .battle-intro__image {
   animation: none;
 }
 
@@ -333,6 +341,20 @@ body:not(.is-preloading) main.landing {
   }
   100% {
     transform: scale(1);
+  }
+}
+
+@keyframes battle-intro-pop-out {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  45% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(0.2);
+    opacity: 0;
   }
 }
 

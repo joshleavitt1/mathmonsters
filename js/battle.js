@@ -271,7 +271,22 @@ document.addEventListener('DOMContentLoaded', () => {
   let battleEnded = false;
   let currentBattleLevel = null;
 
-  const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
+  const DEFAULT_HERO = {
+    attack: 1,
+    health: 3,
+    damage: 0,
+    gems: 0,
+    name: 'Shellfin',
+    sprite: resolveAssetPath('images/characters/shellfin_level_1.png'),
+  };
+
+  const hero = {
+    attack: Number.isFinite(DEFAULT_HERO.attack) ? DEFAULT_HERO.attack : 1,
+    health: Number.isFinite(DEFAULT_HERO.health) ? DEFAULT_HERO.health : 5,
+    gems: Number.isFinite(DEFAULT_HERO.gems) ? DEFAULT_HERO.gems : 0,
+    damage: Number.isFinite(DEFAULT_HERO.damage) ? DEFAULT_HERO.damage : 0,
+    name: DEFAULT_HERO.name || 'Hero',
+  };
   const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
 
   const markBattleReady = (img) => {
@@ -327,7 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const heroDefaultSprite =
-    heroImg?.getAttribute('src') || resolveAssetPath('images/characters/shellfin_level_1.png');
+    heroImg?.getAttribute('src') ||
+    DEFAULT_HERO.sprite ||
+    resolveAssetPath('images/characters/shellfin_level_1.png');
   const monsterDefaultSprite =
     monsterImg?.getAttribute('src') || resolveAssetPath('images/battle/monster_battle_1_1.png');
 
@@ -742,6 +759,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    if (!hasCharacterDetails(heroData)) {
+      heroData = { ...DEFAULT_HERO, ...heroData };
+    } else if (!heroData?.sprite && DEFAULT_HERO.sprite) {
+      heroData = { ...heroData, sprite: DEFAULT_HERO.sprite };
+    }
+
     let enemyData = {};
     const baseEnemy = selectEnemyFromBattle(
       mergedBattleSource,
@@ -762,33 +785,6 @@ document.addEventListener('DOMContentLoaded', () => {
         .find((entry) => isPlainObject(entry));
       if (isPlainObject(fallbackEnemy)) {
         enemyData = { ...fallbackEnemy, ...enemyData };
-      }
-    }
-
-    if (window.preloadedData) {
-      if (hasCharacterDetails(heroData)) {
-        window.preloadedData.hero = { ...heroData };
-        window.preloadedData.battle = isPlainObject(window.preloadedData.battle)
-          ? window.preloadedData.battle
-          : {};
-        window.preloadedData.battle.hero = {
-          ...(isPlainObject(window.preloadedData.battle?.hero)
-            ? window.preloadedData.battle.hero
-            : {}),
-          ...heroData,
-        };
-      }
-      if (hasCharacterDetails(enemyData)) {
-        window.preloadedData.enemy = { ...enemyData };
-        window.preloadedData.battle = isPlainObject(window.preloadedData.battle)
-          ? window.preloadedData.battle
-          : {};
-        window.preloadedData.battle.enemy = {
-          ...(isPlainObject(window.preloadedData.battle?.enemy)
-            ? window.preloadedData.battle.enemy
-            : {}),
-          ...enemyData,
-        };
       }
     }
 
@@ -839,27 +835,86 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
 
-    hero.attack = Number(heroData.attack) || hero.attack;
-    hero.health = Number(heroData.health) || hero.health;
-    hero.damage = Number(heroData.damage) || hero.damage;
-    hero.name = heroData.name || hero.name;
-    if (typeof heroData.gems === 'number') {
-      hero.gems = heroData.gems;
+    const resolvedHeroAttack = Number(heroData.attack);
+    hero.attack = Number.isFinite(resolvedHeroAttack)
+      ? resolvedHeroAttack
+      : Number.isFinite(DEFAULT_HERO.attack)
+      ? DEFAULT_HERO.attack
+      : hero.attack;
+
+    const resolvedHeroHealth = Number(heroData.health);
+    hero.health = Number.isFinite(resolvedHeroHealth)
+      ? resolvedHeroHealth
+      : Number.isFinite(DEFAULT_HERO.health)
+      ? DEFAULT_HERO.health
+      : hero.health;
+
+    const resolvedHeroDamage = Number(heroData.damage);
+    hero.damage = Number.isFinite(resolvedHeroDamage)
+      ? resolvedHeroDamage
+      : Number.isFinite(DEFAULT_HERO.damage)
+      ? DEFAULT_HERO.damage
+      : hero.damage;
+
+    const resolvedHeroGems = Number(heroData.gems);
+    if (Number.isFinite(resolvedHeroGems)) {
+      hero.gems = resolvedHeroGems;
+    } else if (Number.isFinite(DEFAULT_HERO.gems)) {
+      hero.gems = DEFAULT_HERO.gems;
     }
 
-    const heroSprite = resolveAssetPath(heroData.sprite);
-    if (heroImg) {
-      if (heroSprite) {
-        heroImg.src = heroSprite;
-      } else {
-        const fallbackHeroSprite = resolveAssetPath(mergedBattleSource?.hero?.sprite);
-        if (fallbackHeroSprite) {
-          heroImg.src = fallbackHeroSprite;
-        }
+    const resolvedHeroName =
+      (typeof heroData.name === 'string' && heroData.name.trim()) ||
+      DEFAULT_HERO.name ||
+      hero.name;
+    hero.name = resolvedHeroName;
+
+    const resolvedHeroSprite =
+      resolveAssetPath(heroData.sprite) ||
+      resolveAssetPath(mergedBattleSource?.hero?.sprite) ||
+      DEFAULT_HERO.sprite ||
+      heroDefaultSprite;
+    if (resolvedHeroSprite) {
+      heroData = { ...heroData, sprite: resolvedHeroSprite };
+      if (heroImg) {
+        heroImg.src = resolvedHeroSprite;
       }
     }
-    if (heroImg && hero.name) {
-      heroImg.alt = `${hero.name} ready for battle`;
+    if (heroImg) {
+      const heroAltName = hero.name || DEFAULT_HERO.name || 'Hero';
+      heroImg.alt = `${heroAltName} ready for battle`;
+    }
+
+    if (window.preloadedData) {
+      if (hasCharacterDetails(heroData)) {
+        const mergedHeroData = {
+          ...(isPlainObject(window.preloadedData.hero) ? window.preloadedData.hero : {}),
+          ...DEFAULT_HERO,
+          ...heroData,
+        };
+        window.preloadedData.hero = mergedHeroData;
+        window.preloadedData.battle = isPlainObject(window.preloadedData.battle)
+          ? window.preloadedData.battle
+          : {};
+        window.preloadedData.battle.hero = {
+          ...(isPlainObject(window.preloadedData.battle?.hero)
+            ? window.preloadedData.battle.hero
+            : {}),
+          ...mergedHeroData,
+        };
+      }
+      if (hasCharacterDetails(enemyData)) {
+        window.preloadedData.enemy = { ...enemyData };
+        window.preloadedData.battle = isPlainObject(window.preloadedData.battle)
+          ? window.preloadedData.battle
+          : {};
+        window.preloadedData.battle.enemy = {
+          ...(isPlainObject(window.preloadedData.battle?.enemy)
+            ? window.preloadedData.battle.enemy
+            : {}),
+          ...enemyData,
+        };
+      }
     }
 
     monster.attack = Number(enemyData.attack) || monster.attack;
@@ -892,11 +947,11 @@ document.addEventListener('DOMContentLoaded', () => {
       completeEnemyImg.alt = `${monster.name} ready for battle`;
     }
 
-    if (heroNameEl) heroNameEl.textContent = hero.name;
+    if (heroNameEl) heroNameEl.textContent = hero.name || DEFAULT_HERO.name || 'Hero';
     if (monsterNameEl) monsterNameEl.textContent = monster.name;
     if (heroHpProgress) {
-      const heroLabel = hero.name ? `${hero.name} health` : 'Hero health';
-      heroHpProgress.setAttribute('aria-label', heroLabel);
+      const heroLabelName = hero.name || DEFAULT_HERO.name || 'Hero';
+      heroHpProgress.setAttribute('aria-label', `${heroLabelName} health`);
     }
     if (monsterHpProgress) {
       const monsterLabel = monster.name
