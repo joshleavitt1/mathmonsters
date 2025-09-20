@@ -305,6 +305,7 @@ body:not(.is-preloading) main.landing {
   object-fit: contain;
   transform: scale(0.2);
   transform-origin: center;
+  opacity: 0;
 }
 
 .battle-intro.is-visible {
@@ -312,27 +313,41 @@ body:not(.is-preloading) main.landing {
   visibility: visible;
 }
 
-.battle-intro.is-visible .battle-intro__image {
+.battle-intro__image.is-pop-in {
   animation: battle-intro-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.battle-intro.is-reduced-motion .battle-intro__image {
-  transform: scale(1);
-}
-
-.battle-intro.is-reduced-motion.is-visible .battle-intro__image {
-  animation: none;
+.battle-intro__image.is-pop-out {
+  animation: battle-intro-pop-out 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes battle-intro-pop {
   0% {
     transform: scale(0.2);
+    opacity: 0;
   }
   60% {
     transform: scale(1.12);
+    opacity: 1;
   }
   100% {
     transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes battle-intro-pop-out {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.2);
+    opacity: 0;
   }
 }
 
@@ -343,10 +358,7 @@ body:not(.is-preloading) main.landing {
 
   .battle-intro__image {
     transform: scale(1);
-  }
-
-  .battle-intro.is-visible .battle-intro__image {
-    animation: none;
+    opacity: 1;
   }
 }
 

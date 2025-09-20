@@ -5,8 +5,9 @@ const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const HERO_CARD_POP_DURATION_MS = 450;
-const BATTLE_INTRO_POP_DURATION_MS = 600;
-const BATTLE_INTRO_WAIT_AFTER_VISIBLE_MS = 1000;
+const BATTLE_INTRO_POP_IN_DURATION_MS = 600;
+const BATTLE_INTRO_POP_OUT_DURATION_MS = 450;
+const BATTLE_TRANSITION_PAUSE_MS = 1000;
 
 // Gentle idle motion caps (pixels)
 const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
@@ -128,12 +129,13 @@ const wait = (ms) =>
     window.setTimeout(resolve, ms);
   });
 
-const runBattleIntroSequence = () => {
+const runBattleIntroSequence = async () => {
   const intro = document.querySelector('[data-battle-intro]');
   const battleCard = document.querySelector('[data-battle-card]');
   const heroImage = document.querySelector('.hero');
+
   if (!intro) {
-    return Promise.resolve(false);
+    return false;
   }
 
   const introImage = intro.querySelector('.battle-intro__image');
@@ -145,15 +147,18 @@ const runBattleIntroSequence = () => {
   intro.classList.remove('is-visible');
   intro.setAttribute('aria-hidden', 'true');
 
-  const triggerPopAnimation = (element) => {
+  const playAnimationClass = async (element, className, durationMs) => {
     if (!element) {
-      return Promise.resolve(false);
+      return false;
     }
 
-    const animationClass = 'is-battle-transition';
     if (prefersReducedMotion) {
-      element.classList.add(animationClass);
-      return Promise.resolve(true);
+      element.classList.add(className);
+      return true;
+    }
+
+    if (element.classList.contains(className)) {
+      return true;
     }
 
     return new Promise((resolve) => {
@@ -169,44 +174,117 @@ const runBattleIntroSequence = () => {
 
       // Force layout before toggling class to ensure animation runs consistently.
       void element.offsetWidth;
-      element.classList.add(animationClass);
+      element.classList.add(className);
 
       window.setTimeout(() => {
         element.removeEventListener('animationend', handleAnimationEnd);
         resolve(true);
-      }, HERO_CARD_POP_DURATION_MS + 100);
+      }, durationMs + 100);
     });
   };
 
-  return Promise.all([
-    triggerPopAnimation(heroImage),
-    triggerPopAnimation(battleCard),
-  ]).then(() => {
-    intro.classList.add('is-visible');
-    intro.setAttribute('aria-hidden', 'false');
+  const pause = () => wait(BATTLE_TRANSITION_PAUSE_MS);
 
-    if (prefersReducedMotion || !introImage) {
-      return wait(BATTLE_INTRO_WAIT_AFTER_VISIBLE_MS).then(() => true);
+  const heroAnimated = await playAnimationClass(
+    heroImage,
+    'is-battle-transition',
+    HERO_CARD_POP_DURATION_MS
+  );
+
+  if (heroAnimated) {
+    await pause();
+  }
+
+  const cardAnimated = await playAnimationClass(
+    battleCard,
+    'is-battle-transition',
+    HERO_CARD_POP_DURATION_MS
+  );
+
+  if (cardAnimated) {
+    await pause();
+  }
+
+  intro.classList.add('is-visible');
+  intro.setAttribute('aria-hidden', 'false');
+
+  const playIntroImageAnimation = async (mode) => {
+    if (!introImage) {
+      return false;
     }
 
+    if (prefersReducedMotion) {
+      if (mode === 'in') {
+        introImage.style.transform = 'scale(1)';
+        introImage.style.opacity = '1';
+      } else {
+        introImage.style.transform = 'scale(0.2)';
+        introImage.style.opacity = '0';
+      }
+      return true;
+    }
+
+    const className = mode === 'in' ? 'is-pop-in' : 'is-pop-out';
+    const durationMs =
+      mode === 'in'
+        ? BATTLE_INTRO_POP_IN_DURATION_MS
+        : BATTLE_INTRO_POP_OUT_DURATION_MS;
+
     return new Promise((resolve) => {
-      const finishAfterWait = () => {
-        wait(BATTLE_INTRO_WAIT_AFTER_VISIBLE_MS).then(() => resolve(true));
+      const handleAnimationEnd = (event) => {
+        if (event.target !== introImage) {
+          return;
+        }
+        introImage.removeEventListener('animationend', handleAnimationEnd);
+        if (mode === 'out') {
+          introImage.classList.remove(className);
+        }
+        resolve(true);
       };
 
-      const handleIntroEnd = () => {
-        introImage.removeEventListener('animationend', handleIntroEnd);
-        finishAfterWait();
+      const finalize = () => {
+        introImage.removeEventListener('animationend', handleAnimationEnd);
+        if (mode === 'out') {
+          introImage.classList.remove(className);
+        }
+        resolve(true);
       };
 
-      introImage.addEventListener('animationend', handleIntroEnd);
+      introImage.addEventListener('animationend', handleAnimationEnd);
 
-      window.setTimeout(() => {
-        introImage.removeEventListener('animationend', handleIntroEnd);
-        finishAfterWait();
-      }, BATTLE_INTRO_POP_DURATION_MS + 100);
+      if (mode === 'out') {
+        introImage.classList.remove('is-pop-in');
+      } else {
+        introImage.classList.remove('is-pop-out');
+      }
+
+      void introImage.offsetWidth;
+      introImage.classList.add(className);
+
+      window.setTimeout(finalize, durationMs + 100);
     });
-  });
+  };
+
+  const introAnimatedIn = await playIntroImageAnimation('in');
+
+  if (introAnimatedIn) {
+    await pause();
+  }
+
+  await playIntroImageAnimation('out');
+
+  intro.classList.remove('is-visible');
+  intro.setAttribute('aria-hidden', 'true');
+
+  if (introImage) {
+    introImage.classList.remove('is-pop-in', 'is-pop-out');
+    if (prefersReducedMotion) {
+      introImage.style.removeProperty('transform');
+      introImage.style.removeProperty('opacity');
+    }
+  }
+
+  return true;
 };
 
 (async () => {
