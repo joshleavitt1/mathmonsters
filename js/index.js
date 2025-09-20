@@ -646,8 +646,8 @@ const randomizeBubbleTimings = () => {
 const preloadLandingAssets = async () => {
   const results = { levelsData: null, variablesData: null, previewData: null };
   const imageAssets = new Set([
-    'images/background/background.png',
-    'images/battle/battle.png',
+    '../images/background/background.png',
+    '../images/battle/battle.png',
   ]);
   const questionFiles = new Set();
 
