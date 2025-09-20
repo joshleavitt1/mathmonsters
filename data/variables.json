@@ -5,42 +5,42 @@
         "battleLevel": 1,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_1.png"
+          "sprite": "images/characters/shellfin_level_1.png"
         }
       },
       {
         "battleLevel": 2,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_1.png"
+          "sprite": "images/characters/shellfin_level_1.png"
         }
       },
       {
         "battleLevel": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_2.png"
+          "sprite": "images/characters/shellfin_level_2.png"
         }
       },
       {
         "battleLevel": 4,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_2.png"
+          "sprite": "images/characters/shellfin_level_2.png"
         }
       },
       {
         "battleLevel": 5,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_2.png"
+          "sprite": "images/characters/shellfin_level_2.png"
         }
       },
       {
         "battleLevel": 6,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_2.png"
+          "sprite": "images/characters/shellfin_level_2.png"
         }
       }
     ]

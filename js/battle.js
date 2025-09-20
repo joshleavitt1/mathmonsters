@@ -48,6 +48,49 @@ const hasVisitedLanding = () => {
 
 const landingVisited = hasVisitedLanding();
 
+const getAssetBasePath = () => {
+  const fallback = '/mathmonsters';
+  const globalBase =
+    typeof window.mathMonstersAssetBase === 'string'
+      ? window.mathMonstersAssetBase.trim()
+      : '';
+  return globalBase || fallback;
+};
+
+const createAssetPathResolver = () => {
+  const assetBase = getAssetBasePath();
+  const trimmedBase = assetBase.endsWith('/')
+    ? assetBase.slice(0, -1)
+    : assetBase;
+
+  return (inputPath) => {
+    if (typeof inputPath !== 'string') {
+      return trimmedBase;
+    }
+
+    let normalized = inputPath.trim();
+    if (!normalized) {
+      return trimmedBase;
+    }
+
+    if (/^https?:\/\//i.test(normalized) || normalized.startsWith('data:')) {
+      return normalized;
+    }
+
+    while (normalized.startsWith('./')) {
+      normalized = normalized.slice(2);
+    }
+
+    while (normalized.startsWith('../')) {
+      normalized = normalized.slice(3);
+    }
+
+    normalized = normalized.replace(/^\/+/, '');
+
+    return normalized ? `${trimmedBase}/${normalized}` : trimmedBase;
+  };
+};
+
 if (!landingVisited) {
   window.location.replace('../index.html');
 }
@@ -56,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!landingVisited) {
     return;
   }
+  const resolveAssetPath = createAssetPathResolver();
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
   const prefersReducedMotion = window.matchMedia(
@@ -203,9 +247,10 @@ document.addEventListener('DOMContentLoaded', () => {
       icon.classList.add('goal-result-icon');
       valueEl.insertBefore(icon, textSpan);
     }
-    icon.src = met
-      ? '/mathmonsters/images/complete/correct.svg'
-      : '/mathmonsters/images/complete/incorrect.svg';
+    const iconPath = met
+      ? 'images/complete/correct.svg'
+      : 'images/complete/incorrect.svg';
+    icon.src = resolveAssetPath(iconPath);
     icon.alt = met ? 'Goal met' : 'Goal not met';
     valueEl.classList.remove('goal-result--met', 'goal-result--missed');
     valueEl.classList.add(met ? 'goal-result--met' : 'goal-result--missed');
@@ -570,7 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
       div.dataset.correct = !!choice.correct;
       if (choice.image) {
         const img = document.createElement('img');
-        img.src = `/mathmonsters/images/questions/${choice.image}`;
+        img.src = resolveAssetPath(`images/questions/${choice.image}`);
         img.alt = choice.name || '';
         div.appendChild(img);
       }
