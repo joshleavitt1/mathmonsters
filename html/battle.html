@@ -70,20 +70,26 @@
     </div>
   </div>
     <div id="question">
-      <div class="content">
+      <section class="card card--question">
         <img class="streak-icon" src="../images/questions/streak.svg" alt="Streak" />
         <div class="top-bar">
           <div class="progress-wrap">
-            <div class="streak-label"></div>
-            <div class="progress-bar">
-              <div class="progress-fill"></div>
+            <p class="streak-label"></p>
+            <div
+              class="progress"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
+              <span class="progress__fill" aria-hidden="true"></span>
             </div>
           </div>
         </div>
-        <p class="question-text"></p>
+        <p class="title question-text"></p>
         <div class="choices"></div>
         <button type="button">Submit</button>
-      </div>
+      </section>
     </div>
     <div
       id="complete-message"
