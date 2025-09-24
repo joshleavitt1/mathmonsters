@@ -18,7 +18,7 @@
         },
         "enemy": {
           "id": "octomurk",
-          "sprite": "/mathmonsters/images/battle/monster_battle_1.png",
+          "sprite": "/mathmonsters/images/battle/monster_battle_1_1.png",
           "name": "Octomurk",
           "attack": 1,
           "health": 20,
@@ -44,13 +44,132 @@
         },
         "enemy": {
           "id": "octomurk",
-          "sprite": "/mathmonsters/images/battle/monster_battle_2.png",
+          "sprite": "/mathmonsters/images/battle/monster_battle_1_2.png",
           "name": "Octomurk",
           "attack": 2,
           "health": 40,
           "damage": 0
         }
       }
+<<<<<<< HEAD
+=======
+    },
+    {
+      "battleLevel": 3,
+      "name": "Level 3",
+      "mathType": "Addition",
+      "battle": {
+        "questionReference": {
+          "file": "questions/level_3_questions.json"
+        },
+        "accuracyGoal": 0.8,
+        "timeGoalSeconds": 180,
+        "streakGoal": 3,
+        "hero": {
+          "id": "shellfin",
+          "sprite": "/mathmonsters/images/characters/shellfin_attack_basic_1.png",
+          "name": "Shellfin",
+          "attack": 3,
+          "health": 9,
+          "damage": 0
+        },
+        "enemy": {
+          "id": "octomurk",
+          "sprite": "/mathmonsters/images/battle/monster_battle_1_3.png",
+          "name": "Octomurk",
+          "attack": 3,
+          "health": 60,
+          "damage": 0
+        }
+      }
+    },
+    {
+      "battleLevel": 4,
+      "name": "Level 4",
+      "mathType": "Addition",
+      "battle": {
+        "questionReference": {
+          "file": "questions/level_4_questions.json"
+        },
+        "accuracyGoal": 0.8,
+        "timeGoalSeconds": 240,
+        "streakGoal": 3,
+        "hero": {
+          "id": "shellfin",
+          "sprite": "/mathmonsters/images/characters/shellfin_attack_basic_2.png",
+          "name": "Shellfin",
+          "attack": 4,
+          "health": 12,
+          "damage": 0
+        },
+        "enemy": {
+          "id": "octomurk",
+          "sprite": "/mathmonsters/images/battle/monster_battle_1_1.png",
+          "name": "Octomurk",
+          "attack": 4,
+          "health": 80,
+          "damage": 0
+        }
+      }
+    },
+    {
+      "battleLevel": 5,
+      "name": "Level 5",
+      "mathType": "Addition",
+      "battle": {
+        "questionReference": {
+          "file": "questions/level_5_questions.json"
+        },
+        "accuracyGoal": 0.8,
+        "timeGoalSeconds": 240,
+        "streakGoal": 3,
+        "hero": {
+          "id": "shellfin",
+          "sprite": "/mathmonsters/images/characters/shellfin_attack_super_1.png",
+          "name": "Shellfin",
+          "attack": 5,
+          "health": 15,
+          "damage": 0
+        },
+        "enemy": {
+          "id": "octomurk",
+          "sprite": "/mathmonsters/images/battle/monster_battle_1_2.png",
+          "name": "Octomurk",
+          "attack": 5,
+          "health": 100,
+          "damage": 0
+        }
+      }
+    },
+    {
+      "battleLevel": 6,
+      "name": "Level 6",
+      "mathType": "Addition",
+      "battle": {
+        "questionReference": {
+          "file": "questions/level_6_questions.json"
+        },
+        "accuracyGoal": 0.8,
+        "timeGoalSeconds": 240,
+        "streakGoal": 3,
+        "hero": {
+          "id": "shellfin",
+          "sprite": "/mathmonsters/images/characters/shellfin_attack_super_1.png",
+          "name": "Shellfin",
+          "attack": 6,
+          "health": 18,
+          "damage": 0
+        },
+        "enemy": {
+          "id": "octomurk",
+          "sprite": "/mathmonsters/images/battle/monster_battle_1_3.png",
+          "name": "Octomurk",
+          "attack": 6,
+          "health": 120,
+          "damage": 0
+        }
+      }
+>>>>>>> 55cd32a4a7b6aef38dd05dd0d7e9bcaea1b97d01
     }
   ]
 }
