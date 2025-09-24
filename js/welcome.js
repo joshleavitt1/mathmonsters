@@ -3,7 +3,6 @@ const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 
 const createDefaultProgress = () => ({
   battleLevel: 1,
-  currentExperience: 0,
 });
 
 const persistGuestSession = () => {

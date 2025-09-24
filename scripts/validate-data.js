@@ -132,17 +132,32 @@ function validateLevels(issues) {
   });
 }
 
-function validateVariables(issues) {
-  const variablesPath = path.join(dataDir, 'variables.json');
-  const variablesData = loadJson(variablesPath);
-  const battles = Array.isArray(variablesData?.user?.battles)
-    ? variablesData.user.battles
-    : [];
+function validatePlayer(issues) {
+  const playerPath = path.join(dataDir, 'player.json');
+  const playerData = loadJson(playerPath);
 
-  battles.forEach((battle) => {
-    const level = typeof battle?.battleLevel === 'number' ? battle.battleLevel : 'unknown';
-    const hero = battle?.hero ?? {};
-    checkAssetExists(hero.sprite, `Variables battleLevel ${level} hero sprite`, issues);
+  if (playerData?.hero) {
+    checkAssetExists(
+      playerData.hero.sprite,
+      'Player global hero sprite',
+      issues
+    );
+  }
+
+  const levelMap =
+    playerData && typeof playerData.battleLevel === 'object'
+      ? playerData.battleLevel
+      : {};
+
+  Object.entries(levelMap).forEach(([levelKey, levelData]) => {
+    const hero = levelData && typeof levelData === 'object' ? levelData.hero : null;
+    if (hero && typeof hero === 'object') {
+      checkAssetExists(
+        hero.sprite,
+        `Player battleLevel ${levelKey} hero sprite`,
+        issues
+      );
+    }
   });
 }
 
@@ -150,7 +165,7 @@ function main() {
   const issues = [];
   try {
     validateLevels(issues);
-    validateVariables(issues);
+    validatePlayer(issues);
   } catch (error) {
     issues.push(error.message);
   }

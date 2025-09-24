@@ -27,7 +27,7 @@ const OFFLINE_ASSETS = [
   'images/questions/shield.svg',
   'images/questions/streak.svg',
   './data/levels.json',
-  './data/variables.json',
+  './data/player.json',
   './data/questions/level_1_questions.json',
   './data/questions/level_2_questions.json',
   './data/questions/level_3_questions.json',
