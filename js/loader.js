@@ -167,44 +167,43 @@ const readStoredProgress = () => {
 
 (async function () {
   try {
-    const [varsRes, levelsRes] = await Promise.all([
-      fetch(resolveDataPath('variables.json')),
+    const [playerRes, levelsRes] = await Promise.all([
+      fetch(resolveDataPath('player.json')),
       fetch(resolveDataPath('levels.json')),
     ]);
 
-    if (!varsRes.ok || !levelsRes.ok) {
+    if (!playerRes.ok || !levelsRes.ok) {
       throw new Error('Failed to fetch required configuration data.');
     }
 
-    const [varsData, levelsData] = await Promise.all([
-      varsRes.json(),
+    const [playerData, levelsData] = await Promise.all([
+      playerRes.json(),
       levelsRes.json(),
     ]);
 
     const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
     const storedProgress = readStoredProgress();
-    const baseVariables =
-      varsData && typeof varsData === 'object' ? varsData : {};
+    const basePlayer =
+      playerData && typeof playerData === 'object' ? playerData : {};
     const baseProgress =
-      baseVariables && typeof baseVariables.progress === 'object'
-        ? baseVariables.progress
+      basePlayer && typeof basePlayer.progress === 'object'
+        ? basePlayer.progress
         : {};
-    const userBattles = Array.isArray(baseVariables?.user?.battles)
-      ? baseVariables.user.battles
-      : [];
+    const baseBattleVariables =
+      basePlayer && typeof basePlayer.battleVariables === 'object'
+        ? basePlayer.battleVariables
+        : {};
     const progress = { ...baseProgress };
+    const battleVariables = { ...baseBattleVariables };
 
     if (storedProgress && typeof storedProgress === 'object') {
       if (typeof storedProgress.battleLevel === 'number') {
         progress.battleLevel = storedProgress.battleLevel;
       }
-      if (typeof storedProgress.currentExperience === 'number') {
-        progress.currentExperience = storedProgress.currentExperience;
+      if (typeof storedProgress.timeRemainingSeconds === 'number') {
+        battleVariables.timeRemainingSeconds =
+          storedProgress.timeRemainingSeconds;
       }
-    }
-
-    if (typeof progress.currentExperience !== 'number') {
-      progress.currentExperience = 0;
     }
 
     const activeBattleLevel =
@@ -269,71 +268,49 @@ const readStoredProgress = () => {
       }
     }
 
-    const resolveUserBattle = (level) => {
-      if (typeof level !== 'number') {
-        return null;
-      }
-      return (
-        userBattles.find(
-          (entry) => typeof entry?.battleLevel === 'number' && entry.battleLevel === level
-        ) ?? null
-      );
-    };
-
-    const activeUserBattle =
-      resolveUserBattle(activeBattleLevel) ?? userBattles[0] ?? null;
-
     const levelBattle = currentLevel?.battle ?? {};
 
-    const getLevelEnemy = (experienceValue) => {
-      const candidates = Object.entries(levelBattle)
-        .filter(([key, value]) =>
-          /^enemy/i.test(key) && value && typeof value === 'object'
-        )
-        .map(([, value]) => value);
-
-      if (candidates.length === 0) {
-        return levelBattle?.enemy ?? null;
+    const resolvePlayerLevelData = (level) => {
+      if (!basePlayer || typeof basePlayer !== 'object') {
+        return null;
+      }
+      const levelMap = basePlayer.battleLevel;
+      if (!levelMap || typeof levelMap !== 'object') {
+        return null;
       }
 
-      const experienceString = String(experienceValue);
-      const matchedEnemy = candidates.find((candidate) => {
-        const candidateId = candidate?.id;
-        if (candidateId === undefined || candidateId === null) {
-          return false;
-        }
-        if (
-          typeof candidateId === 'number' &&
-          Number.isFinite(candidateId) &&
-          typeof experienceValue === 'number' &&
-          Number.isFinite(experienceValue)
-        ) {
-          return candidateId === experienceValue;
-        }
-        return String(candidateId) === experienceString;
-      });
-
-      if (matchedEnemy) {
-        return matchedEnemy;
+      if (level === undefined || level === null) {
+        return null;
       }
 
-      if (typeof experienceValue === 'number' && Number.isFinite(experienceValue)) {
-        const boundedIndex = Math.min(
-          Math.max(Math.floor(experienceValue), 0),
-          candidates.length - 1
-        );
-        return candidates[boundedIndex];
+      if (level in levelMap && typeof levelMap[level] === 'object') {
+        return levelMap[level];
       }
 
-      return candidates[0];
+      const levelKey = String(level);
+      if (levelKey in levelMap && typeof levelMap[levelKey] === 'object') {
+        return levelMap[levelKey];
+      }
+
+      return null;
     };
 
+    const playerHeroBase =
+      basePlayer && typeof basePlayer.hero === 'object' ? basePlayer.hero : {};
+    const playerLevelHero =
+      resolvePlayerLevelData(activeBattleLevel)?.hero ?? null;
     const hero = {
+      ...playerHeroBase,
       ...(levelBattle?.hero ?? {}),
-      ...(activeUserBattle?.hero ?? {}),
+      ...(playerLevelHero ?? {}),
     };
-    const battle = { ...levelBattle, hero };
-    let enemy = getLevelEnemy(progress.currentExperience);
+    const enemyBase = levelBattle?.enemy ?? {};
+    const battle = {
+      ...levelBattle,
+      hero,
+      enemy: { ...(enemyBase ?? {}) },
+    };
+    const enemy = battle.enemy;
 
     const heroSprite = resolveAssetPath(hero?.sprite);
     if (heroSprite) {
@@ -342,8 +319,7 @@ const readStoredProgress = () => {
 
     const enemySprite = resolveAssetPath(enemy?.sprite);
     if (enemySprite) {
-      enemy = { ...(enemy ?? {}), sprite: enemySprite };
-      battle.enemy = enemy;
+      battle.enemy.sprite = enemySprite;
     }
 
     const assetsToPreload = [];
@@ -353,15 +329,19 @@ const readStoredProgress = () => {
     if (enemySprite) {
       assetsToPreload.push(enemySprite);
     }
-    const variables = { ...baseVariables, progress };
-
     if (assetsToPreload.length) {
       const uniqueAssets = Array.from(new Set(assetsToPreload));
       await Promise.all(uniqueAssets.map(preloadImage));
     }
 
     window.preloadedData = {
-      variables,
+      player: {
+        ...basePlayer,
+        progress,
+        battleVariables,
+      },
+      progress,
+      battleVariables,
       levels,
       level: currentLevel,
       battle,

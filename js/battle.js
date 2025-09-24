@@ -243,16 +243,60 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (window.preloadedData?.variables) {
+    if (window.preloadedData) {
       const existingProgress =
-        typeof window.preloadedData.variables.progress === 'object' &&
-        window.preloadedData.variables.progress !== null
-          ? window.preloadedData.variables.progress
+        typeof window.preloadedData.progress === 'object' &&
+        window.preloadedData.progress !== null
+          ? window.preloadedData.progress
           : {};
-      window.preloadedData.variables.progress = {
+      const mergedProgress = {
         ...existingProgress,
         ...update,
       };
+      window.preloadedData.progress = mergedProgress;
+
+      if (
+        window.preloadedData.player &&
+        typeof window.preloadedData.player === 'object'
+      ) {
+        const playerProgress =
+          typeof window.preloadedData.player.progress === 'object' &&
+          window.preloadedData.player.progress !== null
+            ? window.preloadedData.player.progress
+            : {};
+        window.preloadedData.player.progress = {
+          ...playerProgress,
+          ...mergedProgress,
+        };
+      }
+
+      if (Object.prototype.hasOwnProperty.call(update, 'timeRemainingSeconds')) {
+        const timeRemaining = update.timeRemainingSeconds;
+
+        if (
+          window.preloadedData.battleVariables &&
+          typeof window.preloadedData.battleVariables === 'object'
+        ) {
+          window.preloadedData.battleVariables.timeRemainingSeconds = timeRemaining;
+        } else {
+          window.preloadedData.battleVariables = { timeRemainingSeconds: timeRemaining };
+        }
+
+        if (
+          window.preloadedData.player &&
+          typeof window.preloadedData.player === 'object'
+        ) {
+          const playerBattleVariables =
+            typeof window.preloadedData.player.battleVariables === 'object' &&
+            window.preloadedData.player.battleVariables !== null
+              ? window.preloadedData.player.battleVariables
+              : {};
+          window.preloadedData.player.battleVariables = {
+            ...playerBattleVariables,
+            timeRemainingSeconds: timeRemaining,
+          };
+        }
+      }
     }
 
     try {
@@ -286,8 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const baseLevel =
       typeof currentBattleLevel === 'number'
         ? currentBattleLevel
-        : typeof window.preloadedData?.variables?.progress?.battleLevel === 'number'
-        ? window.preloadedData.variables.progress.battleLevel
+        : typeof window.preloadedData?.progress?.battleLevel === 'number'
+        ? window.preloadedData.progress.battleLevel
         : 0;
     const nextLevel = baseLevel + 1;
     persistProgress({ battleLevel: nextLevel });
@@ -300,7 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const battleData = data.battle ?? {};
     const heroData = data.hero ?? {};
     const enemyData = data.enemy ?? {};
-    const progressData = data.variables?.progress ?? {};
+    const progressData = data.progress ?? data.player?.progress ?? {};
+    const battleProgress =
+      data.battleVariables ?? data.player?.battleVariables ?? {};
 
     const resolveAssetPath = (path) => {
       if (typeof path !== 'string' || path.trim().length === 0) {
@@ -341,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ? Math.floor(parsedTimeGoal)
         : 0;
 
-    const storedTime = Number(progressData.timeRemainingSeconds);
+    const storedTime = Number(battleProgress.timeRemainingSeconds);
     if (Number.isFinite(storedTime) && storedTime > 0) {
       timeRemaining = Math.floor(storedTime);
       if (timeGoalSeconds > 0) {
