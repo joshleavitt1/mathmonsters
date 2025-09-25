@@ -212,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const QUESTION_CLOSE_GAP_MS = 300;
   const PRE_ATTACK_DELAY_MS = 1000;
   const POST_CLOSE_ATTACK_DELAY_MS = 1000;
+  const ATTACK_EFFECT_DELAY_MS = prefersReducedMotion ? 0 : 500;
   const ATTACK_EFFECT_HOLD_MS = prefersReducedMotion ? 0 : 1000;
   const ATTACK_SHAKE_DURATION_MS = prefersReducedMotion ? 0 : 1000;
   const POST_ATTACK_RESUME_DELAY_MS = 1000;
@@ -1032,91 +1033,142 @@ document.addEventListener('DOMContentLoaded', () => {
       return activeShakeCleanup;
     };
 
-    const queueDamage = (releaseEffectFn) => {
-      const releaseEffect =
-        typeof releaseEffectFn === 'function' ? releaseEffectFn : () => {};
-      const removeShake = ensureShake();
-
-      const cleanupAfterShake = () => {
-        removeShake();
-        releaseEffect();
-      };
-
-      const proceedAfterShake = () => {
-        if (battleEnded) {
-          return;
-        }
-        window.setTimeout(() => {
-          if (battleEnded) {
-            return;
-          }
-          if (monster.damage >= monster.health) {
-            endBattle(true, { waitForHpDrain: monsterHpFill });
-          } else {
-            showQuestion();
-          }
-        }, POST_ATTACK_RESUME_DELAY_MS);
-      };
-
-      const finishAttack = () => {
-        cleanupAfterShake();
-        proceedAfterShake();
-      };
-
-      const applyDamage = () => {
-        if (battleEnded) {
-          resetSuperAttackBoost();
-          cleanupAfterShake();
-          return;
-        }
-        monster.damage += hero.attack;
-        updateHealthBars();
-        if (useSuperAttack) {
-          streak = 0;
-          streakMaxed = false;
-        }
-        resetSuperAttackBoost();
-
-        if (ATTACK_SHAKE_DURATION_MS > 0) {
-          window.setTimeout(finishAttack, ATTACK_SHAKE_DURATION_MS);
-        } else {
-          finishAttack();
-        }
-      };
-
-      if (ATTACK_EFFECT_HOLD_MS > 0) {
-        window.setTimeout(applyDamage, ATTACK_EFFECT_HOLD_MS);
-      } else {
-        applyDamage();
-      }
-    };
-
-    if (prefersReducedMotion) {
-      const immediateRelease =
-        playAttackEffect(monsterImg, monsterAttackEffect, hero.attackSprites, {
-          superAttack: useSuperAttack,
-          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
-        }) || (() => {});
-      ensureShake();
-      queueDamage(immediateRelease);
-      return;
-    }
-
     let releaseEffect = () => {};
-    const startHandler = (event) => {
-      if (!event || event.animationName !== 'hero-attack') {
+    let cancelEffectDelay = () => {};
+    let effectActivated = false;
+    let effectStartDeadline = null;
+
+    const triggerDelayedEffects = () => {
+      if (effectActivated || battleEnded) {
         return;
       }
-      heroImg.removeEventListener('animationstart', startHandler);
-      if (battleEnded) {
-        return;
-      }
+      effectActivated = true;
+      cancelEffectDelay();
+      effectStartDeadline = null;
       releaseEffect =
         playAttackEffect(monsterImg, monsterAttackEffect, hero.attackSprites, {
           superAttack: useSuperAttack,
           holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
         }) || (() => {});
       ensureShake();
+    };
+
+    const scheduleDelayedEffects = () => {
+      cancelEffectDelay();
+      effectStartDeadline = Date.now() + ATTACK_EFFECT_DELAY_MS;
+      if (ATTACK_EFFECT_DELAY_MS <= 0) {
+        triggerDelayedEffects();
+        return;
+      }
+      const timeoutId = window.setTimeout(() => {
+        cancelEffectDelay = () => {};
+        triggerDelayedEffects();
+      }, ATTACK_EFFECT_DELAY_MS);
+      cancelEffectDelay = () => {
+        window.clearTimeout(timeoutId);
+        cancelEffectDelay = () => {};
+      };
+    };
+
+    const queueDamage = (releaseEffectFn) => {
+      const releaseEffectHandler =
+        typeof releaseEffectFn === 'function' ? releaseEffectFn : () => {};
+
+      const startSequence = () => {
+        if (battleEnded) {
+          resetSuperAttackBoost();
+          releaseEffectHandler();
+          return;
+        }
+        const removeShake = ensureShake();
+
+        const cleanupAfterShake = () => {
+          removeShake();
+          releaseEffectHandler();
+        };
+
+        const proceedAfterShake = () => {
+          if (battleEnded) {
+            return;
+          }
+          window.setTimeout(() => {
+            if (battleEnded) {
+              return;
+            }
+            if (monster.damage >= monster.health) {
+              endBattle(true, { waitForHpDrain: monsterHpFill });
+            } else {
+              showQuestion();
+            }
+          }, POST_ATTACK_RESUME_DELAY_MS);
+        };
+
+        const finishAttack = () => {
+          cleanupAfterShake();
+          proceedAfterShake();
+        };
+
+        const applyDamage = () => {
+          if (battleEnded) {
+            resetSuperAttackBoost();
+            cleanupAfterShake();
+            return;
+          }
+          monster.damage += hero.attack;
+          updateHealthBars();
+          if (useSuperAttack) {
+            streak = 0;
+            streakMaxed = false;
+          }
+          resetSuperAttackBoost();
+
+          if (ATTACK_SHAKE_DURATION_MS > 0) {
+            window.setTimeout(finishAttack, ATTACK_SHAKE_DURATION_MS);
+          } else {
+            finishAttack();
+          }
+        };
+
+        if (ATTACK_EFFECT_HOLD_MS > 0) {
+          window.setTimeout(applyDamage, ATTACK_EFFECT_HOLD_MS);
+        } else {
+          applyDamage();
+        }
+      };
+
+      if (!effectActivated) {
+        if (effectStartDeadline !== null) {
+          const remainingDelay = Math.max(effectStartDeadline - Date.now(), 0);
+          if (remainingDelay > 0) {
+            window.setTimeout(() => {
+              triggerDelayedEffects();
+              startSequence();
+            }, remainingDelay);
+            return;
+          }
+        }
+        triggerDelayedEffects();
+      }
+
+      startSequence();
+    };
+
+    if (prefersReducedMotion) {
+      scheduleDelayedEffects();
+      queueDamage(() => releaseEffect());
+      return;
+    }
+
+    const startHandler = (event) => {
+      if (!event || event.animationName !== 'hero-attack') {
+        return;
+      }
+      heroImg.removeEventListener('animationstart', startHandler);
+      if (battleEnded) {
+        cancelEffectDelay();
+        return;
+      }
+      scheduleDelayedEffects();
     };
     const endHandler = (event) => {
       if (!event || event.animationName !== 'hero-attack') {
@@ -1126,11 +1178,12 @@ document.addEventListener('DOMContentLoaded', () => {
       heroImg.removeEventListener('animationstart', startHandler);
       heroImg.removeEventListener('animationend', endHandler);
       if (battleEnded) {
+        cancelEffectDelay();
         releaseEffect();
         resetSuperAttackBoost();
         return;
       }
-      queueDamage(releaseEffect);
+      queueDamage(() => releaseEffect());
     };
 
     heroImg.addEventListener('animationstart', startHandler);
@@ -1160,82 +1213,132 @@ document.addEventListener('DOMContentLoaded', () => {
       return activeShakeCleanup;
     };
 
-    const queueDamage = (releaseEffectFn) => {
-      const releaseEffect =
-        typeof releaseEffectFn === 'function' ? releaseEffectFn : () => {};
-      const removeShake = ensureShake();
+    let releaseEffect = () => {};
+    let cancelEffectDelay = () => {};
+    let effectActivated = false;
+    let effectStartDeadline = null;
 
-      const cleanupAfterShake = () => {
-        removeShake();
-        releaseEffect();
-      };
-
-      const proceedAfterShake = () => {
-        if (battleEnded) {
-          return;
-        }
-        if (hero.damage >= hero.health) {
-          endBattle(false, { waitForHpDrain: heroHpFill });
-        } else {
-          window.setTimeout(() => {
-            if (!battleEnded) {
-              showQuestion();
-            }
-          }, POST_ATTACK_RESUME_DELAY_MS);
-        }
-      };
-
-      const finishAttack = () => {
-        cleanupAfterShake();
-        proceedAfterShake();
-      };
-
-      const applyDamage = () => {
-        if (battleEnded) {
-          cleanupAfterShake();
-          return;
-        }
-        hero.damage += monster.attack;
-        updateHealthBars();
-
-        if (ATTACK_SHAKE_DURATION_MS > 0) {
-          window.setTimeout(finishAttack, ATTACK_SHAKE_DURATION_MS);
-        } else {
-          finishAttack();
-        }
-      };
-
-      if (ATTACK_EFFECT_HOLD_MS > 0) {
-        window.setTimeout(applyDamage, ATTACK_EFFECT_HOLD_MS);
-      } else {
-        applyDamage();
+    const triggerDelayedEffects = () => {
+      if (effectActivated || battleEnded) {
+        return;
       }
-    };
-
-    if (prefersReducedMotion) {
-      const immediateRelease =
+      effectActivated = true;
+      cancelEffectDelay();
+      effectStartDeadline = null;
+      releaseEffect =
         playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites, {
           holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
         }) || (() => {});
       ensureShake();
-      queueDamage(immediateRelease);
+    };
+
+    const scheduleDelayedEffects = () => {
+      cancelEffectDelay();
+      effectStartDeadline = Date.now() + ATTACK_EFFECT_DELAY_MS;
+      if (ATTACK_EFFECT_DELAY_MS <= 0) {
+        triggerDelayedEffects();
+        return;
+      }
+      const timeoutId = window.setTimeout(() => {
+        cancelEffectDelay = () => {};
+        triggerDelayedEffects();
+      }, ATTACK_EFFECT_DELAY_MS);
+      cancelEffectDelay = () => {
+        window.clearTimeout(timeoutId);
+        cancelEffectDelay = () => {};
+      };
+    };
+
+    const queueDamage = (releaseEffectFn) => {
+      const releaseEffectHandler =
+        typeof releaseEffectFn === 'function' ? releaseEffectFn : () => {};
+      const startSequence = () => {
+        if (battleEnded) {
+          releaseEffectHandler();
+          return;
+        }
+        const removeShake = ensureShake();
+
+        const cleanupAfterShake = () => {
+          removeShake();
+          releaseEffectHandler();
+        };
+
+        const proceedAfterShake = () => {
+          if (battleEnded) {
+            return;
+          }
+          if (hero.damage >= hero.health) {
+            endBattle(false, { waitForHpDrain: heroHpFill });
+          } else {
+            window.setTimeout(() => {
+              if (!battleEnded) {
+                showQuestion();
+              }
+            }, POST_ATTACK_RESUME_DELAY_MS);
+          }
+        };
+
+        const finishAttack = () => {
+          cleanupAfterShake();
+          proceedAfterShake();
+        };
+
+        const applyDamage = () => {
+          if (battleEnded) {
+            cleanupAfterShake();
+            return;
+          }
+          hero.damage += monster.attack;
+          updateHealthBars();
+
+          if (ATTACK_SHAKE_DURATION_MS > 0) {
+            window.setTimeout(finishAttack, ATTACK_SHAKE_DURATION_MS);
+          } else {
+            finishAttack();
+          }
+        };
+
+        if (ATTACK_EFFECT_HOLD_MS > 0) {
+          window.setTimeout(applyDamage, ATTACK_EFFECT_HOLD_MS);
+        } else {
+          applyDamage();
+        }
+      };
+
+      if (!effectActivated) {
+        if (effectStartDeadline !== null) {
+          const remainingDelay = Math.max(effectStartDeadline - Date.now(), 0);
+          if (remainingDelay > 0) {
+            window.setTimeout(() => {
+              triggerDelayedEffects();
+              startSequence();
+            }, remainingDelay);
+            return;
+          }
+        }
+        triggerDelayedEffects();
+      }
+
+      startSequence();
+    };
+
+    if (prefersReducedMotion) {
+      scheduleDelayedEffects();
+      queueDamage(() => releaseEffect());
       return;
     }
 
-    let releaseEffect = () => {};
     const startHandler = (event) => {
       if (!event || event.animationName !== 'monster-attack') {
         return;
       }
       monsterImg.removeEventListener('animationstart', startHandler);
       if (battleEnded) {
+        cancelEffectDelay();
         return;
       }
-      releaseEffect =
-        playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites, {
-          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
-        }) || (() => {});
-      ensureShake();
+      scheduleDelayedEffects();
     };
     const endHandler = (event) => {
       if (!event || event.animationName !== 'monster-attack') {
@@ -1245,10 +1348,11 @@ document.addEventListener('DOMContentLoaded', () => {
       monsterImg.removeEventListener('animationstart', startHandler);
       monsterImg.removeEventListener('animationend', endHandler);
       if (battleEnded) {
+        cancelEffectDelay();
         releaseEffect();
         return;
       }
-      queueDamage(releaseEffect);
+      queueDamage(() => releaseEffect());
     };
 
     monsterImg.addEventListener('animationstart', startHandler);

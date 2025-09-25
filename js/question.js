@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const meterHeading = meter?.querySelector('[data-meter-heading]');
   const meterProgress = meter?.querySelector('[data-meter-progress]');
   const meterFill = meterProgress?.querySelector('.progress__fill');
+  const meterIcon = meter?.querySelector('[data-meter-icon]');
   const requestFrame =
     typeof window !== 'undefined' &&
     typeof window.requestAnimationFrame === 'function'
@@ -45,6 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const trimmedBase = assetBase.endsWith('/')
     ? assetBase.slice(0, -1)
     : assetBase;
+
+  if (meterIcon) {
+    meterIcon.src = `${trimmedBase}/images/questions/sword.svg`;
+  }
 
   let submitLocked = false;
 
