@@ -4,13 +4,11 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const MIN_PRELOAD_DURATION_MS = 2000;
-const HERO_SCALE_DOWN_DURATION_MS = 600;
-const BATTLE_LINK_EXIT_DURATION_MS = 600;
-const BATTLE_TRANSITION_BUFFER_MS = 400;
-
-// Gentle idle motion caps (pixels)
-const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
-const HERO_FLOAT_MAX_PX = 7;  // prevents big bobbing
+const ENEMY_ENTRY_DELAY_MS = 2000;
+const BATTLE_TIME_APPEAR_DELAY_MS = 2000;
+const BATTLE_EXIT_DELAY_MS = 2000;
+const CAST_EXIT_DURATION_MS = 650;
+const REDUCED_MOTION_STEP_DELAY_MS = 200;
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
@@ -123,93 +121,6 @@ const startLandingExperience = () => {
   }
 };
 
-const runBattleIntroSequence = async () => {
-  const battleLink =
-    document.querySelector('[data-battle-link]') ||
-    document.querySelector('.battle-link');
-  const heroImage = document.querySelector('.hero');
-  const prefersReducedMotion =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  const playAnimationClass = async (element, className, durationMs) => {
-    if (!element) {
-      return false;
-    }
-
-    if (prefersReducedMotion) {
-      element.classList.add(className);
-      return true;
-    }
-
-    return new Promise((resolve) => {
-      let resolved = false;
-
-      const cleanup = () => {
-        if (resolved) {
-          return;
-        }
-        resolved = true;
-        element.removeEventListener('animationend', handleAnimationEnd);
-        resolve(true);
-      };
-
-      const handleAnimationEnd = (event) => {
-        if (event.target !== element) {
-          return;
-        }
-        cleanup();
-      };
-
-      element.addEventListener('animationend', handleAnimationEnd);
-
-      element.classList.remove(className);
-      // Force layout before toggling class to ensure animation runs consistently.
-      void element.offsetWidth;
-      element.classList.add(className);
-
-      const timeoutDuration = Number.isFinite(durationMs) ? durationMs : 0;
-      window.setTimeout(cleanup, timeoutDuration + 100);
-    });
-  };
-
-  const animationPromises = [];
-
-  if (heroImage) {
-    animationPromises.push(
-      playAnimationClass(
-        heroImage,
-        'is-battle-transition',
-        HERO_SCALE_DOWN_DURATION_MS
-      )
-    );
-  }
-
-  if (battleLink) {
-    animationPromises.push(
-      playAnimationClass(
-        battleLink,
-        'is-battle-transition',
-        BATTLE_LINK_EXIT_DURATION_MS
-      )
-    );
-  }
-
-  if (!animationPromises.length) {
-    return false;
-  }
-
-  const results = await Promise.all(animationPromises);
-
-  if (!prefersReducedMotion && BATTLE_TRANSITION_BUFFER_MS > 0) {
-    await new Promise((resolve) =>
-      window.setTimeout(resolve, BATTLE_TRANSITION_BUFFER_MS)
-    );
-  }
-
-  return results.some(Boolean);
-};
-
 (async () => {
   const isAuthenticated = await ensureAuthenticated();
   if (isAuthenticated) {
@@ -221,6 +132,134 @@ const getNow = () =>
   typeof performance !== 'undefined' && typeof performance.now === 'function'
     ? performance.now()
     : Date.now();
+
+const wait = (durationMs) =>
+  new Promise((resolve) => {
+    const timeout = Math.max(
+      0,
+      Number.isFinite(durationMs) ? durationMs : Number(durationMs) || 0
+    );
+    if (typeof window !== 'undefined' && typeof window.setTimeout === 'function') {
+      window.setTimeout(resolve, timeout);
+    } else {
+      setTimeout(resolve, timeout);
+    }
+  });
+
+const shouldReduceMotion = () =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const waitForImageLoad = (image) =>
+  new Promise((resolve) => {
+    if (!image) {
+      resolve(false);
+      return;
+    }
+
+    if (image.complete && image.naturalWidth > 0) {
+      resolve(true);
+      return;
+    }
+
+    const cleanup = () => {
+      image.removeEventListener('load', handleLoad);
+      image.removeEventListener('error', handleError);
+    };
+
+    const handleLoad = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const handleError = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    image.addEventListener('load', handleLoad, { once: true });
+    image.addEventListener('error', handleError, { once: true });
+  });
+
+const playLandingSequence = async (elements = {}) => {
+  const heroImage =
+    elements?.heroImage ||
+    document.querySelector('[data-hero]') ||
+    document.querySelector('.hero');
+  const enemyImage =
+    elements?.enemyImage || document.querySelector('[data-enemy]');
+  const battleTimeImage =
+    elements?.battleTimeImage || document.querySelector('[data-battle-time]');
+  const battleCastElement =
+    elements?.battleCast || document.querySelector('[data-battle-cast]');
+  const heroContainer =
+    elements?.heroContainer ||
+    heroImage?.closest('[data-hero-container]') ||
+    battleCastElement?.querySelector('[data-hero-container]') ||
+    null;
+  const enemyContainer =
+    elements?.enemyContainer ||
+    enemyImage?.closest('[data-enemy-container]') ||
+    battleCastElement?.querySelector('[data-enemy-container]') ||
+    null;
+
+  await Promise.all([
+    waitForImageLoad(heroImage),
+    waitForImageLoad(enemyImage),
+  ]).catch(() => {});
+
+  if (shouldReduceMotion()) {
+    if (battleCastElement) {
+      battleCastElement.classList.add('is-enemy-present');
+    }
+    if (enemyContainer) {
+      enemyContainer.classList.add('is-visible');
+    }
+    if (enemyImage) {
+      enemyImage.classList.add('is-visible');
+    }
+    if (battleTimeImage) {
+      battleTimeImage.classList.add('is-visible');
+    }
+
+    await wait(REDUCED_MOTION_STEP_DELAY_MS);
+
+    [heroImage, enemyImage, battleTimeImage].forEach((element) => {
+      if (element) {
+        element.classList.add('is-battle-transition');
+      }
+    });
+
+    await wait(REDUCED_MOTION_STEP_DELAY_MS);
+    return;
+  }
+
+  await wait(ENEMY_ENTRY_DELAY_MS);
+  if (battleCastElement) {
+    battleCastElement.classList.add('is-enemy-present');
+  }
+  if (enemyContainer) {
+    enemyContainer.classList.add('is-visible');
+  }
+  if (enemyImage) {
+    enemyImage.classList.add('is-visible');
+  }
+
+  await wait(BATTLE_TIME_APPEAR_DELAY_MS);
+  if (battleTimeImage) {
+    battleTimeImage.classList.add('is-visible');
+  }
+
+  await wait(BATTLE_EXIT_DELAY_MS);
+  [heroImage, enemyImage, battleTimeImage].forEach((element) => {
+    if (element) {
+      element.classList.add('is-battle-transition');
+    }
+  });
+
+  await wait(CAST_EXIT_DURATION_MS);
+};
 
 const sanitizeAssetPath = (path) => {
   if (typeof path !== 'string') {
@@ -383,49 +422,10 @@ const determineBattlePreview = (levelsData, playerData) => {
   };
 };
 
-const updateHeroFloat = () => {
-  const heroImage = document.querySelector('.hero');
-  const battleLink =
-    document.querySelector('[data-battle-link]') ||
-    document.querySelector('.battle-link');
-  const battleIntro = document.querySelector('[data-battle-intro]');
-
-  if (!heroImage || !battleLink) return;
-
-  const applyLayout = () => {
-    const linkRect = battleLink.getBoundingClientRect();
-    const heroRect = heroImage.getBoundingClientRect();
-
-    const availableSpace = linkRect.top - heroRect.height;
-    const clampedSpace = Math.max(0, availableSpace);
-
-    const rawRange = clampedSpace / 2;
-    const floatRange = Math.min(
-      HERO_FLOAT_MAX_PX,
-      Math.max(HERO_FLOAT_MIN_PX, rawRange)
-    );
-
-    const topOffset = Math.max(0, Math.min(clampedSpace, 72));
-
-    heroImage.style.setProperty('--hero-top', `${topOffset}px`);
-    heroImage.style.setProperty('--hero-float-range', `${floatRange}px`);
-
-    if (battleIntro) {
-      battleIntro.style.removeProperty('--battle-intro-left');
-      battleIntro.style.removeProperty('--battle-intro-top');
-    }
-
-  };
-
-  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-    window.requestAnimationFrame(applyLayout);
-  } else {
-    applyLayout();
-  }
-};
-
 const applyBattlePreview = (previewData = {}) => {
   const heroImage = document.querySelector('.hero');
+  const enemyImage =
+    document.querySelector('[data-enemy]') || document.querySelector('.enemy');
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
   const battleTitleElements = document.querySelectorAll('[data-battle-title]');
   const progressElement = document.querySelector('[data-battle-progress]');
@@ -440,6 +440,18 @@ const applyBattlePreview = (previewData = {}) => {
       typeof previewData?.heroAlt === 'string' && previewData.heroAlt.trim()
         ? previewData.heroAlt
         : 'Hero ready for battle';
+  }
+
+  if (enemyImage) {
+    const enemySprite =
+      typeof previewData?.enemy?.sprite === 'string' ? previewData.enemy.sprite : '';
+    if (enemySprite) {
+      enemyImage.src = enemySprite;
+    }
+    enemyImage.alt =
+      typeof previewData?.enemyAlt === 'string' && previewData.enemyAlt.trim()
+        ? previewData.enemyAlt
+        : 'Enemy ready for battle';
   }
 
   battleMathElements.forEach((element) => {
@@ -480,7 +492,6 @@ const applyBattlePreview = (previewData = {}) => {
     progressElement.setAttribute('aria-valuetext', ariaText);
   }
 
-  updateHeroFloat();
 };
 
 const preloaderElement = document.querySelector('[data-preloader]');
@@ -581,10 +592,7 @@ const randomizeBubbleTimings = () => {
 
 const preloadLandingAssets = async () => {
   const results = { levelsData: null, playerData: null, previewData: null };
-  const imageAssets = new Set([
-    '../images/background/background.png',
-    '../images/battle/battle.png',
-  ]);
+  const imageAssets = new Set(['../images/background/background.png']);
   const questionFiles = new Set();
 
   const addImageAsset = (path) => {
@@ -736,12 +744,23 @@ const initLandingInteractions = (preloadedData = {}) => {
   markLandingVisited();
   randomizeBubbleTimings();
 
-  const battleLink =
-    document.querySelector('[data-battle-link]') ||
-    document.querySelector('.battle-link');
-  const battleButton = document.querySelector('[data-battle-button]');
-  const battleTrigger = battleButton || battleLink;
-  const heroImage = document.querySelector('.hero');
+  const heroImage =
+    document.querySelector('[data-hero]') || document.querySelector('.hero');
+  const enemyImage =
+    document.querySelector('[data-enemy]') || document.querySelector('.enemy');
+  const battleTimeImage =
+    document.querySelector('[data-battle-time]') ||
+    document.querySelector('.battle-time');
+  const battleCastElement =
+    document.querySelector('[data-battle-cast]') || null;
+  const heroContainer =
+    heroImage?.closest('[data-hero-container]') ||
+    battleCastElement?.querySelector('[data-hero-container]') ||
+    null;
+  const enemyContainer =
+    enemyImage?.closest('[data-enemy-container]') ||
+    battleCastElement?.querySelector('[data-enemy-container]') ||
+    null;
 
   const loadBattlePreview = async () => {
     try {
@@ -792,35 +811,24 @@ const initLandingInteractions = (preloadedData = {}) => {
     }
   };
 
-  loadBattlePreview();
+  const startSequence = async () => {
+    await loadBattlePreview();
 
-  if (typeof window !== 'undefined') {
-    window.addEventListener('resize', updateHeroFloat);
-  }
+    try {
+      await playLandingSequence({
+        battleCast: battleCastElement,
+        heroContainer,
+        enemyContainer,
+        heroImage,
+        enemyImage,
+        battleTimeImage,
+      });
+    } finally {
+      window.location.href = 'html/battle.html';
+    }
+  };
 
-  if (heroImage) {
-    heroImage.addEventListener('load', updateHeroFloat);
-  }
-
-  updateHeroFloat();
-
-  if (battleTrigger) {
-    battleTrigger.addEventListener('click', async (event) => {
-      event.preventDefault();
-      if ('disabled' in battleTrigger && battleTrigger.disabled) {
-        return;
-      }
-      if ('disabled' in battleTrigger) {
-        battleTrigger.disabled = true;
-      }
-      battleTrigger.setAttribute('aria-disabled', 'true');
-      try {
-        await runBattleIntroSequence();
-      } finally {
-        window.location.href = 'html/battle.html';
-      }
-    });
-  }
+  startSequence();
 };
 
 const bootstrapLanding = async () => {

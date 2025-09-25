@@ -45,36 +45,28 @@
       <span class="bubble" style="--size: 18px; --duration: 6.4s; --delay: 0.5s;"></span>
     </div>
 
-    <img
-      class="hero"
-      src="./images/characters/shellfin_level_1.png"
-      alt="Shellfin ready for battle"
-    />
-
-    <a
-      class="battle-link"
-      data-battle-link
-      href="html/battle.html"
-      aria-label="Enter the battle"
-    >
-      <img
-        class="battle-link__image"
-        src="./images/battle/battle.png"
-        alt="Enter the battle"
-        width="350"
-        height="350"
-      />
-    </a>
+    <div class="battle-cast" data-battle-cast>
+      <div class="battle-cast__hero" data-hero-container>
+        <img
+          class="hero"
+          data-hero
+          src="./images/characters/shellfin_level_1.png"
+          alt="Shellfin ready for battle"
+        />
+      </div>
+      <div class="battle-cast__enemy" data-enemy-container>
+        <img
+          class="enemy"
+          data-enemy
+          src="./images/battle/monster_battle_1_1.png"
+          alt="Enemy ready for battle"
+        />
+      </div>
+      <div class="battle-time" data-battle-time role="img" aria-label="Battle time">
+        <span aria-hidden="true">Battle Time!</span>
+      </div>
+    </div>
   </main>
-  <div class="battle-intro" data-battle-intro aria-hidden="true">
-    <img
-      class="battle-intro__image"
-      src="./images/battle/battle.png"
-      alt="Battle begins"
-      width="350"
-      height="350"
-    />
-  </div>
   <script>
     window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bHhwdW1jb2loZmFwbXJzYXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjE3MDcsImV4cCI6MjA3Mjk5NzcwN30.PJiDPZ_Dqli_42isJexeYgsf0ebWbCSOwHtR7lsQTN0';
