@@ -77,9 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionText = questionBox.querySelector('.question-text');
   const choicesEl = questionBox.querySelector('.choices');
-  const topBar = questionBox.querySelector('.top-bar');
-  const streakLabel = questionBox.querySelector('.streak-label');
-  const streakIcon = questionBox.querySelector('.streak-icon');
   const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
   const bannerTimeValue = document.querySelector('[data-banner-time]');
   const setStreakButton = document.querySelector('[data-dev-set-streak]');
@@ -118,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentQuestion = 0;
   let streak = 0;
   let streakMaxed = false;
-  let streakIconShown = false;
   let correctAnswers = 0;
   let totalAnswers = 0;
   let wrongAnswers = 0;
@@ -802,44 +798,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     questionBox.classList.add('show');
     document.dispatchEvent(new CustomEvent('question-opened'));
-    updateStreak();
-  }
-
-  function updateStreak() {
-    if (!streakLabel) {
-      return;
-    }
-    if (streak > 0) {
-      topBar?.classList.add('show');
-      if (streakMaxed) {
-        streakLabel.textContent = '2x Attack';
-        streakLabel.style.color = '#FF6A00';
-        streakLabel.classList.remove('show');
-        void streakLabel.offsetWidth;
-        streakLabel.classList.add('show');
-        if (streakIcon && !streakIconShown) {
-          streakIcon.classList.add('show');
-          streakIconShown = true;
-        }
-      } else {
-        streakLabel.style.color = '#006AFF';
-        streakLabel.textContent = `${streak} in a row`;
-        streakLabel.classList.remove('show');
-        void streakLabel.offsetWidth;
-        streakLabel.classList.add('show');
-        if (streakIcon) {
-          streakIcon.classList.remove('show');
-        }
-        streakIconShown = false;
-      }
-    } else {
-      topBar?.classList.remove('show');
-      streakLabel.classList.remove('show');
-      if (streakIcon) {
-        streakIcon.classList.remove('show');
-      }
-      streakIconShown = false;
-    }
   }
 
   function dispatchStreakMeterUpdate(correct) {
@@ -894,7 +852,6 @@ document.addEventListener('DOMContentLoaded', () => {
           // Double-attack was used; reset streak.
           streak = 0;
           streakMaxed = false;
-          updateStreak();
         }
         setTimeout(() => {
           if (battleEnded) {
@@ -962,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetStreak = Math.max(0, STREAK_GOAL - 1);
     streak = targetStreak;
     streakMaxed = false;
-    updateStreak();
+    dispatchStreakMeterUpdate(true);
   });
 
   endBattleButton?.addEventListener('click', () => {
@@ -1077,7 +1034,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      updateStreak();
       dispatchStreakMeterUpdate(true);
 
       // Keep the question visible briefly so the player can
@@ -1094,7 +1050,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       streak = 0;
       streakMaxed = false;
-      updateStreak();
       dispatchStreakMeterUpdate(false);
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
@@ -1223,7 +1178,6 @@ document.addEventListener('DOMContentLoaded', () => {
     battleEnded = false;
     streak = 0;
     streakMaxed = false;
-    streakIconShown = false;
     currentQuestion = 0;
     correctAnswers = 0;
     totalAnswers = 0;
@@ -1248,7 +1202,6 @@ document.addEventListener('DOMContentLoaded', () => {
       summaryTimeValue.classList.remove('goal-result--met', 'goal-result--missed');
     }
     loadData();
-    updateStreak();
     updateAccuracyDisplays();
     startBattleTimer();
     setTimeout(showQuestion, 2000);
