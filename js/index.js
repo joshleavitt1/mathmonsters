@@ -719,6 +719,7 @@ const initLandingInteractions = (preloadedData = {}) => {
 
   const battleCard = document.querySelector('[data-battle-card]');
   const battleButton = document.querySelector('[data-battle-button]');
+  const battleTrigger = battleButton || battleCard;
   const heroImage = document.querySelector('.hero');
 
   const loadBattlePreview = async () => {
@@ -782,14 +783,16 @@ const initLandingInteractions = (preloadedData = {}) => {
 
   updateHeroFloat();
 
-  if (battleButton) {
-    battleButton.addEventListener('click', async (event) => {
+  if (battleTrigger) {
+    battleTrigger.addEventListener('click', async (event) => {
       event.preventDefault();
-      if (battleButton.disabled) {
+      if ('disabled' in battleTrigger && battleTrigger.disabled) {
         return;
       }
-      battleButton.disabled = true;
-      battleButton.setAttribute('aria-disabled', 'true');
+      if ('disabled' in battleTrigger) {
+        battleTrigger.disabled = true;
+      }
+      battleTrigger.setAttribute('aria-disabled', 'true');
       try {
         await runBattleIntroSequence();
       } finally {
