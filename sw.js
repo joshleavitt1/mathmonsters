@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reef-rangers-cache-v1';
+const CACHE_NAME = 'reef-rangers-cache-v2';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
@@ -21,7 +21,7 @@ const OFFLINE_ASSETS = [
   './js/loader.js',
   'images/brand/logo.png',
   'images/characters/shellfin_level_1.png',
-  'images/battle/battle.png',
+  'images/battle/battle_time.png',
   'images/battle/monster_battle_1_1.png',
   'images/meter/sword.png',
   'images/questions/shield.svg',

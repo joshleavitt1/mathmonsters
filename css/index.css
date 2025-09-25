@@ -59,12 +59,15 @@ body:not(.is-preloading) main.landing {
 .hero {
   position: absolute;
   left: 50%;
-  top: var(--hero-top, 0px);
-  animation: hero-float 3.5s ease-in-out 1.35s infinite;
-  max-width: 300px;
-  max-height: 300px;
-  transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
-  transform-origin: 50% 90%;
+  top: 45%;
+  animation: hero-float var(--hero-float-duration, 3.5s)
+      cubic-bezier(0.42, 0, 0.58, 1) 1.35s
+      infinite;
+  max-width: min(320px, 70vw);
+  max-height: min(320px, 70vh);
+  transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+    scaleX(-1);
+  transform-origin: 50% 85%;
   --hero-float-range: 32px;
   --hero-float-duration: 3.5s;
   image-rendering: auto;
@@ -73,30 +76,33 @@ body:not(.is-preloading) main.landing {
   will-change: transform, opacity;
 }
 
-.battle-link {
-  position: absolute;
-  left: 50%;
-  bottom: calc(24px + var(--viewport-bottom-offset, 0px));
-  bottom: calc(
-    24px + var(--viewport-bottom-offset, 0px) +
-    constant(safe-area-inset-bottom)
-  );
-  bottom: calc(
-    24px + var(--viewport-bottom-offset, 0px) +
-    env(safe-area-inset-bottom, 0px)
-  );
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 6;
-  text-decoration: none;
+.hero.is-exiting {
+  animation: hero-intro-exit 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.battle-link:focus-visible {
-  outline: 3px solid #fff;
-  outline-offset: 6px;
-  border-radius: 24px;
+.enemy {
+  position: absolute;
+  left: calc(50% + clamp(96px, 14vw, 180px));
+  top: 45%;
+  max-width: min(320px, 70vw);
+  max-height: min(320px, 70vh);
+  transform: translate(220%, -50%);
+  transform-origin: 50% 85%;
+  opacity: 0;
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.6s ease-out;
+  pointer-events: none;
+  will-change: transform, opacity;
+  z-index: 2;
+}
+
+.enemy.is-visible {
+  transform: translate(-50%, -50%);
+  opacity: 1;
+}
+
+.enemy.is-exiting {
+  animation: enemy-intro-exit 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 body.is-battle-transition {
@@ -108,57 +114,38 @@ body.is-battle-transition .bubbles {
   pointer-events: none;
 }
 
-.battle-link__image {
-  display: block;
-  width: min(420px, calc(100vw - 64px));
-  max-width: 250px;
-  height: auto;
-  transform-origin: 50% 90%;
-  will-change: transform, filter;
-  filter: drop-shadow(0 0 0 rgba(0, 196, 255, 0));
-}
-
-.battle-link.is-battle-transition .battle-link__image {
-  animation:
-    battle-link-scale-down 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: 0.12s;
-  filter: drop-shadow(0 0 0 rgba(0, 196, 255, 0));
-}
-
-.hero.is-battle-transition {
-  animation: hero-battle-scale-down 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: 0.12s;
-}
-
 @keyframes hero-float {
   0% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1);
   }
   50% {
-    transform: translate(-50%, var(--hero-float-range, 32px));
+    transform: translate(-50%, calc(-50% + var(--hero-float-range, 32px)))
+      scaleX(-1);
   }
   100% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero {
     animation: none;
-    transform: translate(-50%, 0);
+    transform: translate(-50%, -50%) scaleX(-1);
   }
 
-  .hero.is-battle-transition {
+  .hero.is-exiting {
     opacity: 0;
   }
 
-  body:not(.is-preloading) .battle-link__image {
-    animation: none;
-    filter: none;
+  .enemy {
+    transition: none;
+    transform: translate(-50%, -50%);
+    opacity: 1;
   }
 
-  .battle-link.is-battle-transition .battle-link__image {
-    animation: none;
+  .enemy.is-exiting {
     opacity: 0;
   }
 
@@ -175,40 +162,40 @@ body.is-battle-transition .bubbles {
   }
 }
 
-@keyframes hero-battle-scale-down {
+@keyframes hero-intro-exit {
   0% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(1);
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(1);
     opacity: 1;
   }
   50% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(1.08);
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(1.08);
     opacity: 1;
   }
   60% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(1.05);
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(1.05);
     opacity: 0.96;
   }
   100% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(0.62);
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(0.62);
     opacity: 0;
   }
 }
 
-@keyframes battle-link-scale-down {
+@keyframes enemy-intro-exit {
   0% {
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
     opacity: 1;
   }
-  50% {
-    transform: translate3d(0, 0, 0) scale(1.08);
+  45% {
+    transform: translate(-50%, -50%) scale(1.05);
     opacity: 1;
-  }
-  60% {
-    transform: translate3d(0, 0, 0) scale(1.05);
-    opacity: 0.96;
   }
   100% {
-    transform: translate3d(0, 0, 0) scale(0.62);
+    transform: translate(-50%, -50%) scale(0.55);
     opacity: 0;
   }
 }
