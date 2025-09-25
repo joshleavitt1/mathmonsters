@@ -232,6 +232,7 @@ button:focus-visible {
   justify-content: center;
   gap: 12px;
   text-align: center;
+  position: relative;
 }
 
 .meter--visible {
@@ -257,6 +258,14 @@ button:focus-visible {
   right: auto;
   width: 0%;
   transition: width 0.5s ease;
+}
+
+.meter__icon {
+  position: absolute;
+  right: 40px;
+  bottom: 20px;
+  max-width: 100%;
+  height: auto;
 }
 
 @keyframes meter-pop {
