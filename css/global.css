@@ -275,6 +275,9 @@ button:focus-visible {
 }
 
 .card {
+  --card-translate-x: 0;
+  --card-translate-y: 0;
+  --card-translate-z: 0;
   width: 420px;
   max-width: 100%;
   background: #ffffff;
@@ -397,7 +400,12 @@ button:focus-visible {
     24px + var(--viewport-bottom-offset, 0px) +
     env(safe-area-inset-bottom, 0px)
   );
-  transform: translateX(-50%);
+  --card-translate-x: -50%;
+  transform: translate3d(
+    var(--card-translate-x, 0),
+    var(--card-translate-y, 0),
+    var(--card-translate-z, 0)
+  );
   width: min(420px, calc(100% - 32px));
   margin: 0;
   padding: 24px 28px 28px;
@@ -418,15 +426,30 @@ button:focus-visible {
 
 @keyframes pop-in {
   0% {
-    transform: scale(0.88);
+    transform: translate3d(
+        var(--card-translate-x, 0),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(0.88);
     opacity: 0;
   }
   80% {
-    transform: scale(1.04);
+    transform: translate3d(
+        var(--card-translate-x, 0),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(1.04);
     opacity: 1;
   }
   100% {
-    transform: scale(1);
+    transform: translate3d(
+        var(--card-translate-x, 0),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(1);
     opacity: 1;
   }
 }
@@ -434,18 +457,38 @@ button:focus-visible {
 @keyframes card-close {
   0% {
     opacity: 1;
-    transform: scale(1);
+    transform: translate3d(
+        var(--card-translate-x, 0),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.08);
+    transform: translate3d(
+        var(--card-translate-x, 0),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(1.08);
   }
   60% {
     opacity: 0.96;
-    transform: scale(1.05);
+    transform: translate3d(
+        var(--card-translate-x, 0),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(1.05);
   }
   100% {
     opacity: 0;
-    transform: scale(0.62);
+    transform: translate3d(
+        var(--card-translate-x, 0),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(0.62);
   }
 }

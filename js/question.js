@@ -234,11 +234,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function closeQuestion() {
-    const handleFade = (e) => {
-      if (e.propertyName !== 'opacity') {
-        return;
+    let overlayFadeStarted = false;
+    let handleCardAnimationEnd = null;
+
+    const finalizeClose = () => {
+      if (questionBox) {
+        questionBox.classList.remove('closing');
+        questionBox.classList.remove('show');
       }
-      questionBox.removeEventListener('transitionend', handleFade);
+      if (questionCard) {
+        questionCard.classList.remove('card--closing');
+      }
       button.classList.remove('result', 'correct', 'incorrect');
       button.textContent = 'Submit';
       clearChoiceSelections();
@@ -246,20 +252,61 @@ document.addEventListener('DOMContentLoaded', () => {
       hideMeter();
     };
 
+    const cleanupCardListeners = () => {
+      if (!questionCard || !handleCardAnimationEnd) {
+        return;
+      }
+      questionCard.removeEventListener('animationend', handleCardAnimationEnd);
+      questionCard.removeEventListener('animationcancel', handleCardAnimationEnd);
+      handleCardAnimationEnd = null;
+    };
+
+    const startOverlayFade = () => {
+      if (overlayFadeStarted) {
+        return;
+      }
+      overlayFadeStarted = true;
+
+      cleanupCardListeners();
+
+      if (!questionBox) {
+        finalizeClose();
+        return;
+      }
+
+      if (!questionBox.classList.contains('show')) {
+        finalizeClose();
+        return;
+      }
+
+      const handleFade = (event) => {
+        if (event.target !== questionBox || event.propertyName !== 'opacity') {
+          return;
+        }
+        questionBox.removeEventListener('transitionend', handleFade);
+        finalizeClose();
+      };
+
+      questionBox.addEventListener('transitionend', handleFade);
+      questionBox.classList.remove('show');
+    };
+
+    if (questionBox) {
+      questionBox.classList.add('closing');
+    }
+
     if (questionCard) {
       questionCard.classList.remove('card--pop');
       questionCard.classList.add('card--closing');
-      const handleCardAnimationEnd = () => {
-        questionCard.classList.remove('card--closing');
-        questionCard.removeEventListener('animationend', handleCardAnimationEnd);
-        questionCard.removeEventListener('animationcancel', handleCardAnimationEnd);
+      handleCardAnimationEnd = () => {
+        startOverlayFade();
       };
       questionCard.addEventListener('animationend', handleCardAnimationEnd);
       questionCard.addEventListener('animationcancel', handleCardAnimationEnd);
+      return;
     }
 
-    questionBox.addEventListener('transitionend', handleFade);
-    questionBox.classList.remove('show');
+    startOverlayFade();
   }
 
   document.addEventListener('close-question', closeQuestion);
@@ -270,6 +317,9 @@ document.addEventListener('DOMContentLoaded', () => {
     clearChoiceSelections();
     setSubmitDisabled(true);
     hideMeter();
+    if (questionBox) {
+      questionBox.classList.remove('closing');
+    }
     if (questionCard) {
       questionCard.classList.remove('card--closing');
       questionCard.classList.remove('card--pop');
