@@ -275,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       effectEl.classList.remove('attack-effect--show');
       effectEl.classList.remove('attack-effect--visible');
+      effectEl.classList.remove('attack-effect--finishing');
       delete effectEl.dataset.hold;
       void effectEl.offsetWidth;
 
@@ -304,8 +305,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       released = true;
       delete effectEl.dataset.hold;
+
+      const cleanupAttackEffect = () => {
+        effectEl.classList.remove('attack-effect--show');
+        effectEl.classList.remove('attack-effect--visible');
+        effectEl.classList.remove('attack-effect--finishing');
+      };
+
+      if (prefersReducedMotion) {
+        cleanupAttackEffect();
+        return;
+      }
+
+      const handleFinishAnimation = (event) => {
+        if (event && event.animationName !== 'attack-effect-scale-down') {
+          return;
+        }
+        effectEl.removeEventListener('animationend', handleFinishAnimation);
+        cleanupAttackEffect();
+      };
+
+      effectEl.addEventListener('animationend', handleFinishAnimation);
       effectEl.classList.remove('attack-effect--show');
-      effectEl.classList.remove('attack-effect--visible');
+      effectEl.classList.add('attack-effect--finishing');
     };
   };
 
