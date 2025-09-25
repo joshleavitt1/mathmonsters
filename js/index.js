@@ -6,6 +6,7 @@ const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const HERO_SCALE_DOWN_DURATION_MS = 600;
 const BATTLE_LINK_EXIT_DURATION_MS = 600;
+const BATTLE_TRANSITION_BUFFER_MS = 400;
 
 // Gentle idle motion caps (pixels)
 const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
@@ -199,6 +200,13 @@ const runBattleIntroSequence = async () => {
   }
 
   const results = await Promise.all(animationPromises);
+
+  if (!prefersReducedMotion && BATTLE_TRANSITION_BUFFER_MS > 0) {
+    await new Promise((resolve) =>
+      window.setTimeout(resolve, BATTLE_TRANSITION_BUFFER_MS)
+    );
+  }
+
   return results.some(Boolean);
 };
 
