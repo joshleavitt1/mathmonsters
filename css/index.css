@@ -118,11 +118,6 @@ body.is-battle-transition .bubbles {
   filter: drop-shadow(0 0 0 rgba(0, 196, 255, 0));
 }
 
-body:not(.is-preloading) .battle-link__image {
-  animation:
-    battle-link-glow 3.6s ease-in-out infinite;
-}
-
 .battle-link.is-battle-transition .battle-link__image {
   animation:
     battle-link-scale-down 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -199,30 +194,6 @@ body:not(.is-preloading) .battle-link__image {
   100% {
     transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px) + 4px)) scale(0.72);
     opacity: 0;
-  }
-}
-
-@keyframes battle-link-glow {
-  0%,
-  30% {
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: drop-shadow(0 0 0 rgba(0, 196, 255, 0));
-  }
-  45% {
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: drop-shadow(0 0 18px rgba(0, 196, 255, 0.55));
-  }
-  60% {
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: drop-shadow(0 0 12px rgba(0, 196, 255, 0.38));
-  }
-  75% {
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: drop-shadow(0 0 14px rgba(0, 196, 255, 0.32));
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: drop-shadow(0 0 0 rgba(0, 196, 255, 0));
   }
 }
 
