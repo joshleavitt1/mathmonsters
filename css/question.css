@@ -74,11 +74,12 @@
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.3s ease, transform 0.3s ease;
+  justify-content: center;
 }
 
 #question .top-bar.show {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   visibility: visible;
   opacity: 1;
   transform: translateY(0);
@@ -86,26 +87,6 @@
 
 #question .top-bar.show + .question-text {
   padding-top: 12px;
-}
-
-#question .progress-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-}
-
-#question .progress {
-  --progress-gradient-start: #36dc36;
-  --progress-gradient-end: #00b600;
-
-  width: 100%;
-  height: 16px;
-}
-
-#question .progress__fill {
-  width: 0%;
-  transition: width 0.5s ease-in-out;
 }
 
 #question .streak-label {

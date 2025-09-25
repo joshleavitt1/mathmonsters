@@ -244,6 +244,13 @@ button:focus-visible {
   width: 100%;
 }
 
+.meter__progress .progress__fill {
+  left: 0;
+  right: auto;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
 @keyframes meter-pop {
   0% {
     opacity: 0;
