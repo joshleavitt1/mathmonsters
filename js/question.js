@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const choicesContainer = questionBox.querySelector('.choices');
+  const questionCard = questionBox.querySelector('.card');
   const button = questionBox.querySelector('button');
   const submitReadyClass = 'question-submit--ready';
   const meter = questionBox.querySelector('[data-meter]');
@@ -245,6 +246,18 @@ document.addEventListener('DOMContentLoaded', () => {
       hideMeter();
     };
 
+    if (questionCard) {
+      questionCard.classList.remove('card--pop');
+      questionCard.classList.add('card--closing');
+      const handleCardAnimationEnd = () => {
+        questionCard.classList.remove('card--closing');
+        questionCard.removeEventListener('animationend', handleCardAnimationEnd);
+        questionCard.removeEventListener('animationcancel', handleCardAnimationEnd);
+      };
+      questionCard.addEventListener('animationend', handleCardAnimationEnd);
+      questionCard.addEventListener('animationcancel', handleCardAnimationEnd);
+    }
+
     questionBox.addEventListener('transitionend', handleFade);
     questionBox.classList.remove('show');
   }
@@ -257,6 +270,12 @@ document.addEventListener('DOMContentLoaded', () => {
     clearChoiceSelections();
     setSubmitDisabled(true);
     hideMeter();
+    if (questionCard) {
+      questionCard.classList.remove('card--closing');
+      questionCard.classList.remove('card--pop');
+      void questionCard.offsetWidth;
+      questionCard.classList.add('card--pop');
+    }
   });
 
   document.addEventListener('streak-meter-update', (event) => {
