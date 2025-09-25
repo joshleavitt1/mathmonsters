@@ -1,13 +1,39 @@
-const getAssetBasePath = () => {
-  const fallback = '/mathmonsters';
+const resolveAssetPath = (path) => {
+  if (typeof path !== 'string') {
+    return null;
+  }
+
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('../') || trimmed.startsWith('./')) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
   const globalBase =
+    typeof window !== 'undefined' &&
     typeof window.mathMonstersAssetBase === 'string'
       ? window.mathMonstersAssetBase.trim()
       : '';
-  if (globalBase) {
-    return globalBase;
+  const base = globalBase || '..';
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const normalizedPath = trimmed.replace(/^\/+/, '');
+
+  if (!normalizedBase || normalizedBase === '.') {
+    return normalizedPath;
   }
-  return fallback;
+
+  return `${normalizedBase}/${normalizedPath}`;
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -24,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const meterHeading = meter?.querySelector('[data-meter-heading]');
   const meterProgress = meter?.querySelector('[data-meter-progress]');
   const meterFill = meterProgress?.querySelector('.progress__fill');
+  const meterIcon = meter?.querySelector('[data-meter-icon]');
   const requestFrame =
     typeof window !== 'undefined' &&
     typeof window.requestAnimationFrame === 'function'
@@ -41,10 +68,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  const assetBase = getAssetBasePath();
-  const trimmedBase = assetBase.endsWith('/')
-    ? assetBase.slice(0, -1)
-    : assetBase;
+  if (meterIcon) {
+    const swordPath = resolveAssetPath('images/meter/sword.png');
+    if (swordPath) {
+      meterIcon.src = swordPath;
+    }
+  }
+
+  const getButtonIconPath = (iconType) =>
+    resolveAssetPath(`images/questions/button/${iconType}.svg`);
 
   let submitLocked = false;
 
@@ -181,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (pointerEventsSupported) {
     choicesContainer.addEventListener('pointerup', (event) => {
-      if (typeof event?.button === 'number' && event.button !== 0) {
+      if (typeof event?.button === 'number' && event.button > 0) {
         return;
       }
       handleChoiceActivation(event);
@@ -223,10 +255,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     button.classList.add('result', isCorrect ? 'correct' : 'incorrect');
     const iconType = isCorrect ? 'correct' : 'incorrect';
-    const iconPath = `${trimmedBase}/images/questions/button/${iconType}.svg`;
-    button.innerHTML =
-      `<img src="${iconPath}" alt="${isCorrect ? 'Correct' : 'Incorrect'} icon" /> ` +
-      (isCorrect ? 'Correct' : 'Incorrect');
+    const iconPath = getButtonIconPath(iconType);
+    if (iconPath) {
+      button.innerHTML =
+        `<img src="${iconPath}" alt="${
+          isCorrect ? 'Correct' : 'Incorrect'
+        } icon" /> ` + (isCorrect ? 'Correct' : 'Incorrect');
+    } else {
+      button.textContent = isCorrect ? 'Correct' : 'Incorrect';
+    }
 
     document.dispatchEvent(
       new CustomEvent('answer-submitted', { detail: { correct: isCorrect } })

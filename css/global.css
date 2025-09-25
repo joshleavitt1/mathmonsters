@@ -262,10 +262,12 @@ button:focus-visible {
 
 .meter__icon {
   position: absolute;
-  right: 40px;
-  bottom: 20px;
-  max-width: 100%;
+  top: 24px;
+  right: 24px;
+  width: 64px;
   height: auto;
+  max-width: none;
+  pointer-events: none;
 }
 
 @keyframes meter-pop {
