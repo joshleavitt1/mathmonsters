@@ -136,6 +136,22 @@ button:hover {
   );
 }
 
+button:disabled {
+  color: #272b34;
+  background-image: none;
+  background-color: #F4F6FA;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+button:disabled:hover {
+  background-image: none;
+  background-color: #F4F6FA;
+  transform: none;
+  box-shadow: none;
+}
+
 button:focus-visible {
   outline: 3px solid rgba(255, 255, 255, 0.7);
   outline-offset: 3px;
