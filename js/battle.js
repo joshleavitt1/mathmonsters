@@ -805,10 +805,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     questionBox.classList.add('show');
     document.dispatchEvent(new CustomEvent('question-opened'));
-    const firstChoice = choicesEl.querySelector('.choice');
-    if (firstChoice) {
-      firstChoice.setAttribute('tabindex', '0');
-    }
     updateStreak();
   }
 

@@ -84,6 +84,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const resetMeterAnimation = () => {
+    if (pendingMeterFrame !== null) {
+      cancelFrame(pendingMeterFrame);
+      pendingMeterFrame = null;
+    }
+    if (pendingMeterFillFrame !== null) {
+      cancelFrame(pendingMeterFillFrame);
+      pendingMeterFillFrame = null;
+    }
+  };
+
   const hideMeter = () => {
     if (!meter) {
       return;
