@@ -175,6 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
       event.stopPropagation();
     }
 
+    if (choice.classList.contains('selected')) {
+      clearChoiceSelections();
+      setSubmitDisabled(true);
+      return;
+    }
+
     activateChoice(choice);
   };
 
