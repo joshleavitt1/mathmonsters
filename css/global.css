@@ -127,6 +127,7 @@ button {
   cursor: pointer;
   transition: transform 0.25s ease, box-shadow 0.25s ease,
     background-image 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button.result {
