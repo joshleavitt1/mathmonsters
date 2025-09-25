@@ -112,7 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAX_STREAK_GOAL = 5;
   let STREAK_GOAL = MAX_STREAK_GOAL;
   let questions = [];
-  let currentQuestion = 0;
+  let questionIds = [];
+  let questionMap = new Map();
+  let currentQuestionId = null;
+  let totalQuestionCount = 0;
   let streak = 0;
   let streakMaxed = false;
   let correctAnswers = 0;
@@ -332,12 +335,82 @@ document.addEventListener('DOMContentLoaded', () => {
     monsterStats?.classList.add('show');
   });
 
-  function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+  function resetQuestionPool(loadedQuestions) {
+    questions = Array.isArray(loadedQuestions) ? loadedQuestions.slice() : [];
+    questionIds = [];
+    questionMap = new Map();
+    currentQuestionId = null;
+
+    questions.forEach((question) => {
+      const numericId = Number(question?.id);
+      if (!Number.isFinite(numericId)) {
+        return;
+      }
+      if (!questionMap.has(numericId)) {
+        questionIds.push(numericId);
+      }
+      questionMap.set(numericId, question);
+    });
+
+    questionIds.sort((a, b) => a - b);
+    totalQuestionCount = questionIds.length;
+  }
+
+  function resolveQuestionByRoll(roll) {
+    if (!Number.isFinite(roll)) {
+      return null;
     }
-    return arr;
+
+    const directMatch = questionMap.get(roll);
+    if (directMatch) {
+      return { id: roll, question: directMatch };
+    }
+
+    const index = roll - 1;
+    if (index >= 0 && index < questionIds.length) {
+      const fallbackId = questionIds[index];
+      if (Number.isFinite(fallbackId)) {
+        const fallbackQuestion = questionMap.get(fallbackId);
+        if (fallbackQuestion) {
+          return { id: fallbackId, question: fallbackQuestion };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function chooseNextQuestion() {
+    if (totalQuestionCount <= 0) {
+      return questions[0] ?? null;
+    }
+
+    if (totalQuestionCount === 1) {
+      const onlyId = questionIds[0];
+      currentQuestionId = onlyId;
+      return questionMap.get(onlyId) ?? questions[0] ?? null;
+    }
+
+    const maxAttempts = totalQuestionCount * 2;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const roll = Math.floor(Math.random() * totalQuestionCount) + 1;
+      const resolved = resolveQuestionByRoll(roll);
+      if (resolved && resolved.id !== currentQuestionId) {
+        currentQuestionId = resolved.id;
+        return resolved.question;
+      }
+    }
+
+    for (const id of questionIds) {
+      if (id !== currentQuestionId) {
+        currentQuestionId = id;
+        return questionMap.get(id) ?? null;
+      }
+    }
+
+    const fallbackId = questionIds[0];
+    currentQuestionId = fallbackId;
+    return questionMap.get(fallbackId) ?? questions[0] ?? null;
   }
 
   function ensureStatValueText(valueEl) {
@@ -691,7 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadedQuestions = Array.isArray(data.questions)
       ? data.questions.slice()
       : [];
-    questions = shuffle(loadedQuestions);
+    resetQuestionPool(loadedQuestions);
 
     updateHealthBars();
     updateBattleTimeDisplay();
@@ -850,7 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (battleEnded) {
       return;
     }
-    const q = questions[currentQuestion];
+    const q = chooseNextQuestion();
     if (!q) return;
     questionText.textContent = q.question || q.q || '';
     choicesEl.innerHTML = '';
@@ -957,7 +1030,6 @@ document.addEventListener('DOMContentLoaded', () => {
           if (monster.damage >= monster.health) {
             endBattle(true, { waitForHpDrain: monsterHpFill });
           } else {
-            currentQuestion++;
             showQuestion();
           }
         }, POST_ATTACK_RESUME_DELAY_MS);
@@ -1084,7 +1156,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           window.setTimeout(() => {
             if (!battleEnded) {
-              currentQuestion++;
               showQuestion();
             }
           }, POST_ATTACK_RESUME_DELAY_MS);
@@ -1441,7 +1512,11 @@ document.addEventListener('DOMContentLoaded', () => {
     streak = 0;
     streakMaxed = false;
     resetSuperAttackBoost();
-    currentQuestion = 0;
+    questions = [];
+    questionIds = [];
+    questionMap = new Map();
+    currentQuestionId = null;
+    totalQuestionCount = 0;
     correctAnswers = 0;
     totalAnswers = 0;
     wrongAnswers = 0;
