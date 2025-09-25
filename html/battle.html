@@ -38,11 +38,31 @@
     />
     <div id="monster-stats" class="stat-box">
       <div class="name"></div>
-      <div class="hp-bar"><div class="hp-fill"></div></div>
+      <div
+        class="progress progress--orange battle-health"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="100"
+        aria-label="Monster health"
+        style="--progress-value: 1"
+      >
+        <span class="progress__fill" aria-hidden="true"></span>
+      </div>
     </div>
     <div id="shellfin-stats" class="stat-box">
       <div class="name"></div>
-      <div class="hp-bar"><div class="hp-fill"></div></div>
+      <div
+        class="progress progress--orange battle-health"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="100"
+        aria-label="Hero health"
+        style="--progress-value: 1"
+      >
+        <span class="progress__fill" aria-hidden="true"></span>
+      </div>
     </div>
   </div>
     <div id="question">
