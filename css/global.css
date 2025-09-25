@@ -6,6 +6,11 @@
   --subtitle-font-size: 20px;
   --subtitle-font-weight: 400;
   --subtitle-color: #778099;
+  --text-size-large: 28px;
+  --text-size-medium: 24px;
+  --text-size-small: 20px;
+  --text-color-dark: #272b34;
+  --text-color-light: #ffffff;
   --button-gradient-start: #0095ff;
   --button-gradient-end: #006aff;
   --button-text-color: #ffffff;
@@ -70,6 +75,29 @@ textarea {
   color: var(--subtitle-color);
 }
 
+.text-large {
+  font-size: var(--text-size-large);
+  line-height: 1.2;
+}
+
+.text-medium {
+  font-size: var(--text-size-medium);
+  line-height: 1.2;
+}
+
+.text-small {
+  font-size: var(--text-size-small);
+  line-height: 1.2;
+}
+
+.text-white {
+  color: var(--text-color-light);
+}
+
+.text-dark {
+  color: var(--text-color-dark);
+}
+
 button {
   --btn-gradient-start: var(--button-gradient-start);
   --btn-gradient-end: var(--button-gradient-end);
@@ -92,7 +120,7 @@ button {
   );
   border: none;
   border-radius: 12px;
-  font-size: 20px;
+  font-size: var(--text-size-small);
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.25s ease, box-shadow 0.25s ease,

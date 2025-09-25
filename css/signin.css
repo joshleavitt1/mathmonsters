@@ -51,6 +51,7 @@ body {
 
 .preloader__headline {
   margin: 0;
+  font-size: var(--text-size-large);
   color: #ffffff;
 }
 

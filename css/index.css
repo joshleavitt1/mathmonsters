@@ -531,8 +531,8 @@ body:not(.is-preloading) .battle-link__image {
 
 .preloader__text {
   margin: 0;
-  font-size: 32px;
-  color: #ffffff;
+  font-size: var(--text-size-large);
+  color: var(--text-color-light);
 }
 
 .preloader__spinner {
