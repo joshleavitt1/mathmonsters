@@ -223,6 +223,26 @@ const readStoredProgress = () => {
     }
 
     const resolveAssetPath = (path) => normalizeAssetPath(path);
+    const isPlainObject = (value) =>
+      Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+    const normalizeAttackSprites = (sprites, fallback = {}) => {
+      const result = {};
+      const allowedKeys = ['basic', 'super'];
+      const source = {
+        ...(isPlainObject(fallback) ? fallback : {}),
+        ...(isPlainObject(sprites) ? sprites : {}),
+      };
+
+      allowedKeys.forEach((key) => {
+        const resolvedPath = resolveAssetPath(source[key]);
+        if (resolvedPath) {
+          result[key] = resolvedPath;
+        }
+      });
+
+      return result;
+    };
 
     const preloadImage = (path) =>
       new Promise((resolve) => {
@@ -317,9 +337,19 @@ const readStoredProgress = () => {
       hero.sprite = heroSprite;
     }
 
+    const heroAttackSprites = normalizeAttackSprites(hero?.attackSprites);
+    if (Object.keys(heroAttackSprites).length > 0) {
+      hero.attackSprites = heroAttackSprites;
+    }
+
     const enemySprite = resolveAssetPath(enemy?.sprite);
     if (enemySprite) {
       battle.enemy.sprite = enemySprite;
+    }
+
+    const enemyAttackSprites = normalizeAttackSprites(enemy?.attackSprites);
+    if (Object.keys(enemyAttackSprites).length > 0) {
+      enemy.attackSprites = enemyAttackSprites;
     }
 
     const assetsToPreload = [];
@@ -329,6 +359,16 @@ const readStoredProgress = () => {
     if (enemySprite) {
       assetsToPreload.push(enemySprite);
     }
+    Object.values(heroAttackSprites).forEach((spritePath) => {
+      if (spritePath) {
+        assetsToPreload.push(spritePath);
+      }
+    });
+    Object.values(enemyAttackSprites).forEach((spritePath) => {
+      if (spritePath) {
+        assetsToPreload.push(spritePath);
+      }
+    });
     if (assetsToPreload.length) {
       const uniqueAssets = Array.from(new Set(assetsToPreload));
       await Promise.all(uniqueAssets.map(preloadImage));
