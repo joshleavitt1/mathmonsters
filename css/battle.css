@@ -92,7 +92,7 @@ body {
 }
 
 .stat-box .name {
-  font-size: var(--text-size-medium);
+  font-size: var(--text-size-small);
   color: var(--text-color-light);
 }
 
@@ -104,7 +104,7 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  font-size: var(--text-size-medium);
+  font-size: var(--text-size-small);
   color: var(--text-color-light);
 }
 
@@ -149,7 +149,7 @@ body {
 
 .stat-box .battle-health {
   width: 130px;
-  height: 12px;
+  height: 16px;
   margin-top: 4px;
   background-color: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.9);
