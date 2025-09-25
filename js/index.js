@@ -5,7 +5,7 @@ const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const HERO_POP_OUT_DURATION_MS = 650;
-const BATTLE_CARD_POP_DURATION_MS = 710;
+const BATTLE_LINK_EXIT_DURATION_MS = 600;
 
 // Gentle idle motion caps (pixels)
 const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
@@ -123,7 +123,9 @@ const startLandingExperience = () => {
 };
 
 const runBattleIntroSequence = async () => {
-  const battleCard = document.querySelector('[data-battle-card]');
+  const battleLink =
+    document.querySelector('[data-battle-link]') ||
+    document.querySelector('.battle-link');
   const heroImage = document.querySelector('.hero');
   const landing = document.querySelector('main.landing');
   const bubbles = document.querySelector('.bubbles');
@@ -191,13 +193,13 @@ const runBattleIntroSequence = async () => {
     HERO_POP_OUT_DURATION_MS
   );
 
-  const cardAnimated = await playAnimationClass(
-    battleCard,
+  const linkAnimated = await playAnimationClass(
+    battleLink,
     'is-battle-transition',
-    BATTLE_CARD_POP_DURATION_MS
+    BATTLE_LINK_EXIT_DURATION_MS
   );
 
-  return heroAnimated || cardAnimated;
+  return heroAnimated || linkAnimated;
 };
 
 (async () => {
@@ -375,16 +377,18 @@ const determineBattlePreview = (levelsData, playerData) => {
 
 const updateHeroFloat = () => {
   const heroImage = document.querySelector('.hero');
-  const battleCard = document.querySelector('[data-battle-card]');
+  const battleLink =
+    document.querySelector('[data-battle-link]') ||
+    document.querySelector('.battle-link');
   const battleIntro = document.querySelector('[data-battle-intro]');
 
-  if (!heroImage || !battleCard) return;
+  if (!heroImage || !battleLink) return;
 
   const applyLayout = () => {
-    const cardRect = battleCard.getBoundingClientRect();
+    const linkRect = battleLink.getBoundingClientRect();
     const heroRect = heroImage.getBoundingClientRect();
 
-    const availableSpace = cardRect.top - heroRect.height;
+    const availableSpace = linkRect.top - heroRect.height;
     const clampedSpace = Math.max(0, availableSpace);
 
     const rawRange = clampedSpace / 2;
@@ -724,9 +728,11 @@ const initLandingInteractions = (preloadedData = {}) => {
   markLandingVisited();
   randomizeBubbleTimings();
 
-  const battleCard = document.querySelector('[data-battle-card]');
+  const battleLink =
+    document.querySelector('[data-battle-link]') ||
+    document.querySelector('.battle-link');
   const battleButton = document.querySelector('[data-battle-button]');
-  const battleTrigger = battleButton || battleCard;
+  const battleTrigger = battleButton || battleLink;
   const heroImage = document.querySelector('.hero');
 
   const loadBattlePreview = async () => {
