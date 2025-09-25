@@ -127,7 +127,6 @@ button {
   cursor: pointer;
   transition: transform 0.25s ease, box-shadow 0.25s ease,
     background-image 0.25s ease;
-  -webkit-tap-highlight-color: transparent;
 }
 
 button.result {
@@ -263,7 +262,7 @@ button:focus-visible {
 
 .meter__icon {
   position: absolute;
-  top: 48px;
+  top: 32px;
   right: 16px;
   width: 48px;
   height: auto;
