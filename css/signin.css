@@ -34,8 +34,10 @@ body {
 }
 
 .preloader__logo {
-  width: clamp(160px, 40vw, 220px);
-  height: clamp(160px, 40vw, 220px);
+  width: min(200px, 45vw);
+  height: min(200px, 45vw);
+  max-width: 200px;
+  max-height: 200px;
   object-fit: contain;
 }
 
@@ -192,8 +194,8 @@ body {
     max-width: none;
   }
   .preloader__logo {
-    width: clamp(140px, 35vw, 180px);
-    height: clamp(140px, 35vw, 180px);
+    width: min(200px, 60vw);
+    height: min(200px, 60vw);
   }
 }
 .visually-hidden {

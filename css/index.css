@@ -522,8 +522,10 @@ body:not(.is-preloading) .battle-link__image {
 }
 
 .preloader__logo {
-  width: 300px;
-  height: 300px;
+  width: min(200px, 45vw);
+  height: min(200px, 45vw);
+  max-width: 200px;
+  max-height: 200px;
   object-fit: contain;
 }
 
