@@ -21,6 +21,14 @@
   visibility: visible;
 }
 
+#question.closing {
+  visibility: visible;
+}
+
+#question.closing .card--question {
+  pointer-events: none;
+}
+
 #question .card--question {
   position: relative;
   width: min(420px, 100%);

@@ -246,19 +246,39 @@ body.is-battle-transition .bubbles {
 
 @keyframes card-pop-out {
   0% {
-    transform: translateX(-50%) scale(1);
+    transform: translate3d(
+        var(--card-translate-x, -50%),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(1);
     opacity: 1;
   }
   25% {
-    transform: translateX(-50%) scale(0.95);
+    transform: translate3d(
+        var(--card-translate-x, -50%),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(0.95);
     opacity: 1;
   }
   58% {
-    transform: translateX(-50%) scale(1.07);
+    transform: translate3d(
+        var(--card-translate-x, -50%),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(1.07);
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) scale(0.83);
+    transform: translate3d(
+        var(--card-translate-x, -50%),
+        var(--card-translate-y, 0),
+        var(--card-translate-z, 0)
+      )
+      scale(0.83);
     opacity: 0;
   }
 }
