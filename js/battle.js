@@ -1038,8 +1038,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Keep the question visible briefly so the player can
       // see the result and streak progress before it closes.
-      // If the streak just hit the goal (x2), linger a bit longer.
-      const lingerTime = incText === 'x2' ? 3000 : 2000;
+      // Always linger for 3 seconds so feedback timing is consistent.
+      const lingerTime = 3000;
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
         setTimeout(() => {
@@ -1054,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
         monsterAttack();
-      }, 2000);
+      }, 3000);
     }
   });
   function endBattle(win, _options = {}) {
