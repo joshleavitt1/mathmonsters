@@ -120,7 +120,7 @@ body.is-battle-transition .bubbles {
 body:not(.is-preloading) .battle-link__image {
   animation:
     battle-link-glow 3.6s ease-in-out infinite;
-  animation-delay: 2s;
+  animation-delay: 4s;
 }
 
 .battle-link.is-battle-transition .battle-link__image {
