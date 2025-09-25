@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHeroAttackDisplay();
   };
 
-  const ANSWER_LINGER_MS = 4000;
+  const ANSWER_LINGER_MS = 3000;
   const QUESTION_CLOSE_GAP_MS = 300;
   const PRE_ATTACK_DELAY_MS = 1000;
   const POST_CLOSE_ATTACK_DELAY_MS = 1000;
