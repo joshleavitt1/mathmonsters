@@ -23,7 +23,7 @@ const OFFLINE_ASSETS = [
   'images/characters/shellfin_level_1.png',
   'images/battle/battle.png',
   'images/battle/monster_battle_1_1.png',
-  'images/questions/sword.svg',
+  'images/meter/sword.png',
   'images/questions/shield.svg',
   './data/levels.json',
   './data/player.json',
