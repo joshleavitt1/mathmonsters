@@ -105,7 +105,7 @@ body:not(.is-preloading) main.landing {
 
 body:not(.is-preloading) .battle-link__image {
   animation:
-    battle-link-bounce 2.8s cubic-bezier(0.25, 0.75, 0.25, 1) infinite,
+    battle-link-bounce 5.6s cubic-bezier(0.25, 0.75, 0.25, 1) infinite,
     battle-link-glow 3.6s ease-in-out infinite;
 }
 
