@@ -1,6 +1,7 @@
 const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
+const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 
 const readVisitedFlag = (storage, label) => {
   if (!storage) {
@@ -840,7 +841,28 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    window.location.replace('../signin.html');
+    try {
+      window.localStorage?.removeItem(PROGRESS_STORAGE_KEY);
+      window.localStorage?.removeItem(LANDING_VISITED_KEY);
+      window.localStorage?.removeItem(GUEST_SESSION_KEY);
+      window.sessionStorage?.removeItem(LANDING_VISITED_KEY);
+    } catch (error) {
+      console.warn('Unable to clear local player data', error);
+    }
+
+    if (window.preloadedData && typeof window.preloadedData === 'object') {
+      if (
+        window.preloadedData.player &&
+        typeof window.preloadedData.player === 'object'
+      ) {
+        delete window.preloadedData.player.progress;
+        delete window.preloadedData.player.battleVariables;
+      }
+      delete window.preloadedData.progress;
+      delete window.preloadedData.battleVariables;
+    }
+
+    window.location.replace('https://joshleavitt1.github.io/mathmonsters/html/welcome.html');
   });
 
   document.addEventListener('answer-submitted', (e) => {
