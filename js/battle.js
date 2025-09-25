@@ -62,8 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const prefersReducedMotion = window.matchMedia(
     '(prefers-reduced-motion: reduce)'
   ).matches;
-  const monsterHpFill = document.querySelector('#monster-stats .hp-fill');
-  const heroHpFill = document.querySelector('#shellfin-stats .hp-fill');
+  const monsterHpBar = document.querySelector('#monster-stats .battle-health');
+  const monsterHpFill = monsterHpBar?.querySelector('.progress__fill') ?? null;
+  const heroHpBar = document.querySelector('#shellfin-stats .battle-health');
+  const heroHpFill = heroHpBar?.querySelector('.progress__fill') ?? null;
   const monsterNameEl = document.querySelector('#monster-stats .name');
   const heroNameEl = document.querySelector('#shellfin-stats .name');
   const monsterStats = document.getElementById('monster-stats');
@@ -480,6 +482,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (monsterHealthVal) monsterHealthVal.textContent = monster.health;
     if (heroNameEl) heroNameEl.textContent = hero.name;
     if (monsterNameEl) monsterNameEl.textContent = monster.name;
+    if (heroHpBar && hero.name) {
+      heroHpBar.setAttribute('aria-label', `${hero.name} health`);
+    }
+    if (monsterHpBar && monster.name) {
+      monsterHpBar.setAttribute('aria-label', `${monster.name} health`);
+    }
     if (completeEnemyImg && monster.name) {
       completeEnemyImg.alt = `${monster.name} ready for battle`;
     }
@@ -494,10 +502,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateHealthBars() {
-    const heroPercent = ((hero.health - hero.damage) / hero.health) * 100;
-    const monsterPercent = ((monster.health - monster.damage) / monster.health) * 100;
-    heroHpFill.style.width = heroPercent + '%';
-    monsterHpFill.style.width = monsterPercent + '%';
+    const heroPercent =
+      hero.health > 0 ? ((hero.health - hero.damage) / hero.health) * 100 : 0;
+    const monsterPercent =
+      monster.health > 0
+        ? ((monster.health - monster.damage) / monster.health) * 100
+        : 0;
+    updateHealthBar(heroHpBar, heroHpFill, heroPercent);
+    updateHealthBar(monsterHpBar, monsterHpFill, monsterPercent);
+  }
+
+  function updateHealthBar(barEl, fillEl, percent) {
+    const clampedPercent = Math.max(0, Math.min(100, Number(percent) || 0));
+    if (barEl) {
+      barEl.style.setProperty('--progress-value', `${clampedPercent / 100}`);
+      barEl.setAttribute('aria-valuenow', `${Math.round(clampedPercent)}`);
+      barEl.setAttribute('aria-valuetext', `${Math.round(clampedPercent)}%`);
+    }
+    if (fillEl) {
+      fillEl.style.width = `${clampedPercent}%`;
+    }
   }
 
   function waitForHealthDrain(fillEl) {

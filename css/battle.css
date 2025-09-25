@@ -147,20 +147,14 @@ body {
   }
 }
 
-.hp-bar {
+.stat-box .battle-health {
   width: 130px;
   height: 12px;
-  border: 1px solid #fff;
-  border-radius: 4px;
   margin-top: 4px;
-  overflow: hidden;
 }
 
-.hp-fill {
-  background: #FFBB00;
+.stat-box .battle-health .progress__fill {
   height: 100%;
-  width: 100%;
-  transition: width 0.5s ease-in-out;
 }
 
 #battle-shellfin.attack {
