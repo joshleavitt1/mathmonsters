@@ -247,6 +247,7 @@ button:focus-visible {
 
 .meter__progress {
   width: 100%;
+  color: white;
 }
 
 .meter__progress .progress__fill {
