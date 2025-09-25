@@ -1,13 +1,39 @@
-const getAssetBasePath = () => {
-  const fallback = '/mathmonsters';
+const resolveAssetPath = (path) => {
+  if (typeof path !== 'string') {
+    return null;
+  }
+
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('../') || trimmed.startsWith('./')) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
   const globalBase =
+    typeof window !== 'undefined' &&
     typeof window.mathMonstersAssetBase === 'string'
       ? window.mathMonstersAssetBase.trim()
       : '';
-  if (globalBase) {
-    return globalBase;
+  const base = globalBase || '..';
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const normalizedPath = trimmed.replace(/^\/+/, '');
+
+  if (!normalizedBase || normalizedBase === '.') {
+    return normalizedPath;
   }
-  return fallback;
+
+  return `${normalizedBase}/${normalizedPath}`;
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -24,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const meterHeading = meter?.querySelector('[data-meter-heading]');
   const meterProgress = meter?.querySelector('[data-meter-progress]');
   const meterFill = meterProgress?.querySelector('.progress__fill');
+  const meterIcon = meter?.querySelector('[data-meter-icon]');
   const requestFrame =
     typeof window !== 'undefined' &&
     typeof window.requestAnimationFrame === 'function'
@@ -41,10 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  const assetBase = getAssetBasePath();
-  const trimmedBase = assetBase.endsWith('/')
-    ? assetBase.slice(0, -1)
-    : assetBase;
+  if (meterIcon) {
+    const swordPath = resolveAssetPath('images/meter/sword.png');
+    if (swordPath) {
+      meterIcon.src = swordPath;
+    }
+  }
 
   let submitLocked = false;
 
