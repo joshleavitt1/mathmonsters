@@ -64,6 +64,7 @@ body:not(.is-preloading) main.landing {
   max-width: 300px;
   max-height: 300px;
   transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
+  transform-origin: 50% 90%;
   --hero-float-range: 32px;
   --hero-float-duration: 3.5s;
   image-rendering: auto;
@@ -120,7 +121,6 @@ body.is-battle-transition .bubbles {
 body:not(.is-preloading) .battle-link__image {
   animation:
     battle-link-glow 3.6s ease-in-out infinite;
-  animation-delay: 4s;
 }
 
 .battle-link.is-battle-transition .battle-link__image {
@@ -179,7 +179,7 @@ body:not(.is-preloading) .battle-link__image {
   }
 }
 
-@keyframes hero-pop-out {
+@keyframes hero-scale-down {
   0% {
     transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(1);
     opacity: 1;

@@ -4,7 +4,7 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const MIN_PRELOAD_DURATION_MS = 2000;
-const HERO_POP_OUT_DURATION_MS = 650;
+const HERO_SCALE_DOWN_DURATION_MS = 600;
 const BATTLE_LINK_EXIT_DURATION_MS = 600;
 
 // Gentle idle motion caps (pixels)
@@ -127,9 +127,6 @@ const runBattleIntroSequence = async () => {
     document.querySelector('[data-battle-link]') ||
     document.querySelector('.battle-link');
   const heroImage = document.querySelector('.hero');
-  const landing = document.querySelector('main.landing');
-  const bubbles = document.querySelector('.bubbles');
-  const pageBody = document.body;
   const prefersReducedMotion =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -175,31 +172,34 @@ const runBattleIntroSequence = async () => {
     });
   };
 
-  if (pageBody) {
-    pageBody.classList.add('is-battle-transition');
+  const animationPromises = [];
+
+  if (heroImage) {
+    animationPromises.push(
+      playAnimationClass(
+        heroImage,
+        'is-battle-transition',
+        HERO_SCALE_DOWN_DURATION_MS
+      )
+    );
   }
 
-  if (landing) {
-    landing.classList.add('is-battle-transition');
+  if (battleLink) {
+    animationPromises.push(
+      playAnimationClass(
+        battleLink,
+        'is-battle-transition',
+        BATTLE_LINK_EXIT_DURATION_MS
+      )
+    );
   }
 
-  if (bubbles) {
-    bubbles.classList.add('is-battle-transition');
+  if (!animationPromises.length) {
+    return false;
   }
 
-  const heroAnimated = await playAnimationClass(
-    heroImage,
-    'is-battle-transition',
-    HERO_POP_OUT_DURATION_MS
-  );
-
-  const linkAnimated = await playAnimationClass(
-    battleLink,
-    'is-battle-transition',
-    BATTLE_LINK_EXIT_DURATION_MS
-  );
-
-  return heroAnimated || linkAnimated;
+  const results = await Promise.all(animationPromises);
+  return results.some(Boolean);
 };
 
 (async () => {
