@@ -41,9 +41,9 @@
 }
 
 #question .question-text {
-  font-size: 24px;
+  font-size: var(--text-size-large);
   margin: 0;
-  color: #272b34;
+  color: var(--text-color-dark);
   width: 100%;
   padding-top: 16px;
 }
@@ -185,8 +185,8 @@
 }
 
 #question .choice p {
-  font-size: 24px;
-  color: #272B34;
+  font-size: var(--text-size-medium);
+  color: var(--text-color-dark);
   margin: 0;
   text-align: center;
 }

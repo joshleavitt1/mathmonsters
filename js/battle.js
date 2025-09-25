@@ -675,6 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
         div.appendChild(img);
       }
       const p = document.createElement('p');
+      p.classList.add('text-medium', 'text-dark');
       p.textContent = choice.name || '';
       div.appendChild(p);
       choicesEl.appendChild(div);
