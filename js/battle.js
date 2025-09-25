@@ -78,12 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionText = questionBox.querySelector('.question-text');
   const choicesEl = questionBox.querySelector('.choices');
   const topBar = questionBox.querySelector('.top-bar');
-  const progressBar =
-    questionBox.querySelector('.progress-bar') ||
-    questionBox.querySelector('.progress');
-  const progressFill =
-    questionBox.querySelector('.progress-fill') ||
-    questionBox.querySelector('.progress__fill');
   const streakLabel = questionBox.querySelector('.streak-label');
   const streakIcon = questionBox.querySelector('.streak-icon');
   const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
@@ -811,37 +805,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateStreak() {
-    const percent = Math.min(streak / STREAK_GOAL, 1) * 100;
+    if (!streakLabel) {
+      return;
+    }
     if (streak > 0) {
       topBar?.classList.add('show');
-      progressBar?.classList.add('with-label');
-      if (progressFill) {
-        void progressFill.offsetWidth;
-        progressFill.style.width = percent + '%';
-      }
       if (streakMaxed) {
-        if (progressFill) {
-          progressFill.style.background = '#FF6A00';
-        }
         streakLabel.textContent = '2x Attack';
         streakLabel.style.color = '#FF6A00';
         streakLabel.classList.remove('show');
         void streakLabel.offsetWidth;
         streakLabel.classList.add('show');
-        if (progressFill && streakIcon && !streakIconShown) {
-          progressFill.addEventListener(
-            'transitionend',
-            () => {
-              streakIcon.classList.add('show');
-            },
-            { once: true }
-          );
+        if (streakIcon && !streakIconShown) {
+          streakIcon.classList.add('show');
           streakIconShown = true;
         }
       } else {
-        if (progressFill) {
-          progressFill.style.background = '#006AFF';
-        }
         streakLabel.style.color = '#006AFF';
         streakLabel.textContent = `${streak} in a row`;
         streakLabel.classList.remove('show');
@@ -854,11 +833,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       topBar?.classList.remove('show');
-      progressBar?.classList.remove('with-label');
-      if (progressFill) {
-        progressFill.style.width = '0%';
-        progressFill.style.background = '#006AFF';
-      }
       streakLabel.classList.remove('show');
       if (streakIcon) {
         streakIcon.classList.remove('show');
