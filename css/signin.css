@@ -99,7 +99,8 @@ body {
   justify-content: center;
   gap: 16px;
   width: 100%;
-  min-height: clamp(56px, 7vh, 64px);
+  min-height: 64px;
+  height: 64px;
   box-sizing: border-box;
 }
 
@@ -117,7 +118,8 @@ body {
   justify-content: center;
   gap: 12px;
   width: 100%;
-  min-height: clamp(56px, 7vh, 64px);
+  min-height: 64px;
+  height: 64px;
   margin: 0;
   box-sizing: border-box;
   border: 2px solid rgba(255, 255, 255, 0.25);
