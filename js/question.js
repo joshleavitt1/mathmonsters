@@ -242,6 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
         questionBox.classList.remove('closing');
         questionBox.classList.remove('show');
       }
+      if (questionCard) {
+        questionCard.classList.remove('card--closing');
+      }
       button.classList.remove('result', 'correct', 'incorrect');
       button.textContent = 'Submit';
       clearChoiceSelections();
@@ -296,7 +299,6 @@ document.addEventListener('DOMContentLoaded', () => {
       questionCard.classList.remove('card--pop');
       questionCard.classList.add('card--closing');
       handleCardAnimationEnd = () => {
-        questionCard.classList.remove('card--closing');
         startOverlayFade();
       };
       questionCard.addEventListener('animationend', handleCardAnimationEnd);
