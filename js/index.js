@@ -4,7 +4,8 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const MIN_PRELOAD_DURATION_MS = 2000;
-const HERO_CARD_POP_DURATION_MS = 450;
+const HERO_POP_OUT_DURATION_MS = 650;
+const BATTLE_CARD_POP_DURATION_MS = 710;
 
 // Gentle idle motion caps (pixels)
 const HERO_FLOAT_MIN_PX = 5;   // tiny but visible
@@ -124,6 +125,9 @@ const startLandingExperience = () => {
 const runBattleIntroSequence = async () => {
   const battleCard = document.querySelector('[data-battle-card]');
   const heroImage = document.querySelector('.hero');
+  const landing = document.querySelector('main.landing');
+  const bubbles = document.querySelector('.bubbles');
+  const pageBody = document.body;
   const prefersReducedMotion =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -169,16 +173,28 @@ const runBattleIntroSequence = async () => {
     });
   };
 
+  if (pageBody) {
+    pageBody.classList.add('is-battle-transition');
+  }
+
+  if (landing) {
+    landing.classList.add('is-battle-transition');
+  }
+
+  if (bubbles) {
+    bubbles.classList.add('is-battle-transition');
+  }
+
   const heroAnimated = await playAnimationClass(
     heroImage,
     'is-battle-transition',
-    HERO_CARD_POP_DURATION_MS
+    HERO_POP_OUT_DURATION_MS
   );
 
   const cardAnimated = await playAnimationClass(
     battleCard,
     'is-battle-transition',
-    HERO_CARD_POP_DURATION_MS
+    BATTLE_CARD_POP_DURATION_MS
   );
 
   return heroAnimated || cardAnimated;
