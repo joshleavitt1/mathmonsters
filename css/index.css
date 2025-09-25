@@ -64,6 +64,7 @@ body:not(.is-preloading) main.landing {
   max-width: 300px;
   max-height: 300px;
   transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px)));
+  transform-origin: 50% 90%;
   --hero-float-range: 32px;
   --hero-float-duration: 3.5s;
   image-rendering: auto;
@@ -130,7 +131,7 @@ body:not(.is-preloading) .battle-link__image {
 }
 
 .hero.is-battle-transition {
-  animation: hero-pop-out 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: hero-scale-down 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes hero-float {
@@ -178,25 +179,13 @@ body:not(.is-preloading) .battle-link__image {
   }
 }
 
-@keyframes hero-pop-out {
+@keyframes hero-scale-down {
   0% {
     transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(1);
     opacity: 1;
   }
-  20% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px) + 6px)) scale(0.95);
-    opacity: 1;
-  }
-  48% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px) - 4px)) scale(1.07);
-    opacity: 1;
-  }
-  78% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px) - 24px)) scale(1.24);
-    opacity: 1;
-  }
   100% {
-    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px) - 44px)) scale(1.34);
+    transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(0.62);
     opacity: 0;
   }
 }
