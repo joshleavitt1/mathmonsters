@@ -62,26 +62,17 @@ document.addEventListener('DOMContentLoaded', () => {
     button.classList.toggle(submitReadyClass, !isDisabled);
   };
 
-  const resetMeterAnimation = () => {
-    if (pendingMeterFrame !== null) {
-      cancelFrame(pendingMeterFrame);
-      pendingMeterFrame = null;
+  const lockSubmit = () => {
+    submitLocked = true;
+    button.classList.add('button--locked');
+    button.classList.remove(submitReadyClass);
+    button.disabled = false;
+    if (typeof button.toggleAttribute === 'function') {
+      button.toggleAttribute('disabled', false);
+    } else {
+      button.removeAttribute('disabled');
     }
-    if (pendingMeterFillFrame !== null) {
-      cancelFrame(pendingMeterFillFrame);
-      pendingMeterFillFrame = null;
-    }
-  };
-
-  const resetMeterAnimation = () => {
-    if (pendingMeterFrame !== null) {
-      cancelFrame(pendingMeterFrame);
-      pendingMeterFrame = null;
-    }
-    if (pendingMeterFillFrame !== null) {
-      cancelFrame(pendingMeterFillFrame);
-      pendingMeterFillFrame = null;
-    }
+    button.setAttribute('aria-disabled', 'true');
   };
 
   const resetMeterAnimation = () => {
@@ -175,6 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
       event.stopPropagation();
     }
 
+    if (choice.classList.contains('selected')) {
+      clearChoiceSelections();
+      setSubmitDisabled(true);
+      return;
+    }
+
     activateChoice(choice);
   };
 
@@ -191,6 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   choicesContainer.addEventListener('click', (event) => {
+    if (pointerEventsSupported && event.detail !== 0) {
+      return;
+    }
     handleChoiceActivation(event);
   });
 
