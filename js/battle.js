@@ -348,24 +348,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const battleProgress =
       data.battleVariables ?? data.player?.battleVariables ?? {};
 
+    const assetBasePath = (() => {
+      const globalBase =
+        typeof window?.mathMonstersAssetBase === 'string'
+          ? window.mathMonstersAssetBase.trim()
+          : '';
+      if (globalBase) {
+        return globalBase;
+      }
+      return '..';
+    })();
+
     const resolveAssetPath = (path) => {
-      if (typeof path !== 'string' || path.trim().length === 0) {
+      if (typeof path !== 'string') {
         return null;
       }
+
       const trimmed = path.trim();
-      if (/^https?:\/\//i.test(trimmed)) {
+      if (!trimmed) {
+        return null;
+      }
+
+      if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) {
         return trimmed;
       }
-      if (trimmed.startsWith('../')) {
+
+      if (trimmed.startsWith('../') || trimmed.startsWith('./')) {
         return trimmed;
       }
-      if (trimmed.startsWith('./')) {
-        return `../${trimmed.slice(2)}`;
-      }
+
       if (trimmed.startsWith('/')) {
-        return `..${trimmed}`;
+        return trimmed;
       }
-      return `../${trimmed}`;
+
+      const normalizedBase = assetBasePath.endsWith('/')
+        ? assetBasePath.slice(0, -1)
+        : assetBasePath;
+      const normalizedPath = trimmed.replace(/^\/+/, '');
+
+      if (!normalizedBase || normalizedBase === '.') {
+        return normalizedPath;
+      }
+
+      return `${normalizedBase}/${normalizedPath}`;
     };
 
     currentBattleLevel =
