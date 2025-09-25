@@ -1039,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Keep the question visible briefly so the player can
       // see the result and streak progress before it closes.
       // Always linger for 3 seconds so feedback timing is consistent.
-      const lingerTime = 3000;
+      const lingerTime = 4000;
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
         setTimeout(() => {
@@ -1054,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
         monsterAttack();
-      }, 3000);
+      }, 4000);
     }
   });
   function endBattle(win, _options = {}) {
