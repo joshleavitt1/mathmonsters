@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let battleStartTime = null;
   let battleLevelAdvanced = false;
   let battleGoalsMet = false;
+  let heroSuperAttackBase = null;
 
   const hero = {
     attack: 1,
@@ -154,12 +155,62 @@ document.addEventListener('DOMContentLoaded', () => {
     img.classList.add('battle-ready');
   };
 
+  const updateHeroAttackDisplay = () => {
+    if (heroAttackVal) {
+      heroAttackVal.textContent = hero.attack;
+    }
+  };
+
+  const updateHeroHealthDisplay = () => {
+    if (heroHealthVal) {
+      heroHealthVal.textContent = hero.health;
+    }
+  };
+
+  const adjustHeroAttack = (delta) => {
+    const amount = Number(delta) || 0;
+    if (amount === 0) {
+      return;
+    }
+    hero.attack += amount;
+    if (heroSuperAttackBase !== null) {
+      heroSuperAttackBase += amount;
+    }
+    updateHeroAttackDisplay();
+  };
+
+  const adjustHeroHealth = (delta) => {
+    const amount = Number(delta) || 0;
+    if (amount === 0) {
+      return;
+    }
+    hero.health += amount;
+    updateHeroHealthDisplay();
+  };
+
+  const applySuperAttackBoost = () => {
+    if (heroSuperAttackBase === null) {
+      heroSuperAttackBase = hero.attack;
+    }
+    hero.attack = heroSuperAttackBase * 2;
+    updateHeroAttackDisplay();
+  };
+
+  const resetSuperAttackBoost = () => {
+    if (heroSuperAttackBase === null) {
+      return;
+    }
+    hero.attack = heroSuperAttackBase;
+    heroSuperAttackBase = null;
+    updateHeroAttackDisplay();
+  };
+
   const ANSWER_LINGER_MS = 4000;
   const QUESTION_CLOSE_GAP_MS = 300;
   const PRE_ATTACK_DELAY_MS = 1000;
   const ATTACK_EFFECT_HOLD_MS = prefersReducedMotion ? 0 : 1000;
   const ATTACK_SHAKE_DURATION_MS = prefersReducedMotion ? 0 : 1000;
-  const POST_ATTACK_RESUME_DELAY_MS = 2000;
+  const POST_ATTACK_RESUME_DELAY_MS = 1000;
 
   const clearAttackEffectAnimation = (effectEl) => {
     if (!effectEl) {
@@ -572,6 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
 
+    heroSuperAttackBase = null;
     hero.attack = Number(heroData.attack) || hero.attack;
     hero.health = Number(heroData.health) || hero.health;
     hero.damage = Number(heroData.damage) || hero.damage;
@@ -620,8 +672,8 @@ document.addEventListener('DOMContentLoaded', () => {
       completeEnemyImg.src = monsterSprite;
     }
 
-    if (heroAttackVal) heroAttackVal.textContent = hero.attack;
-    if (heroHealthVal) heroHealthVal.textContent = hero.health;
+    updateHeroAttackDisplay();
+    updateHeroHealthDisplay();
     if (monsterAttackVal) monsterAttackVal.textContent = monster.attack;
     if (monsterHealthVal) monsterHealthVal.textContent = monster.health;
     if (heroNameEl) heroNameEl.textContent = hero.name;
@@ -863,52 +915,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function heroAttack() {
     if (battleEnded) {
+      resetSuperAttackBoost();
       return;
     }
     const useSuperAttack = streakMaxed;
+    let activeShakeCleanup = null;
+
+    const ensureShake = () => {
+      if (!monsterImg || ATTACK_SHAKE_DURATION_MS <= 0) {
+        return () => {};
+      }
+      if (activeShakeCleanup) {
+        return activeShakeCleanup;
+      }
+      const cleanup = applyShake(monsterImg);
+      activeShakeCleanup = () => {
+        cleanup();
+        activeShakeCleanup = null;
+      };
+      return activeShakeCleanup;
+    };
 
     const queueDamage = (releaseEffectFn) => {
-      const applyDamage = () => {
+      const releaseEffect =
+        typeof releaseEffectFn === 'function' ? releaseEffectFn : () => {};
+      const removeShake = ensureShake();
+
+      const cleanupAfterShake = () => {
+        removeShake();
+        releaseEffect();
+      };
+
+      const proceedAfterShake = () => {
         if (battleEnded) {
-          releaseEffectFn();
           return;
         }
-        const removeShake = applyShake(monsterImg);
-        monster.damage += hero.attack;
-        updateHealthBars();
-        if (streakMaxed) {
-          // Double-attack was used; reset streak.
-          streak = 0;
-          streakMaxed = false;
-        }
-
-        const startNextStep = () => {
+        window.setTimeout(() => {
           if (battleEnded) {
             return;
           }
-          window.setTimeout(() => {
-            if (battleEnded) {
-              return;
-            }
-            if (monster.damage >= monster.health) {
-              endBattle(true, { waitForHpDrain: monsterHpFill });
-            } else {
-              currentQuestion++;
-              showQuestion();
-            }
-          }, POST_ATTACK_RESUME_DELAY_MS);
-        };
+          if (monster.damage >= monster.health) {
+            endBattle(true, { waitForHpDrain: monsterHpFill });
+          } else {
+            currentQuestion++;
+            showQuestion();
+          }
+        }, POST_ATTACK_RESUME_DELAY_MS);
+      };
+
+      const finishAttack = () => {
+        cleanupAfterShake();
+        proceedAfterShake();
+      };
+
+      const applyDamage = () => {
+        if (battleEnded) {
+          resetSuperAttackBoost();
+          cleanupAfterShake();
+          return;
+        }
+        monster.damage += hero.attack;
+        updateHealthBars();
+        if (useSuperAttack) {
+          streak = 0;
+          streakMaxed = false;
+        }
+        resetSuperAttackBoost();
 
         if (ATTACK_SHAKE_DURATION_MS > 0) {
-          window.setTimeout(() => {
-            removeShake();
-            releaseEffectFn();
-            startNextStep();
-          }, ATTACK_SHAKE_DURATION_MS);
+          window.setTimeout(finishAttack, ATTACK_SHAKE_DURATION_MS);
         } else {
-          removeShake();
-          releaseEffectFn();
-          startNextStep();
+          finishAttack();
         }
       };
 
@@ -925,6 +1002,7 @@ document.addEventListener('DOMContentLoaded', () => {
           superAttack: useSuperAttack,
           holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
         }) || (() => {});
+      ensureShake();
       queueDamage(immediateRelease);
       return;
     }
@@ -943,6 +1021,7 @@ document.addEventListener('DOMContentLoaded', () => {
           superAttack: useSuperAttack,
           holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
         }) || (() => {});
+      ensureShake();
     };
     const endHandler = (event) => {
       if (!event || event.animationName !== 'hero-attack') {
@@ -953,6 +1032,7 @@ document.addEventListener('DOMContentLoaded', () => {
       heroImg.removeEventListener('animationend', endHandler);
       if (battleEnded) {
         releaseEffect();
+        resetSuperAttackBoost();
         return;
       }
       queueDamage(releaseEffect);
@@ -968,42 +1048,66 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    let activeShakeCleanup = null;
+
+    const ensureShake = () => {
+      if (!heroImg || ATTACK_SHAKE_DURATION_MS <= 0) {
+        return () => {};
+      }
+      if (activeShakeCleanup) {
+        return activeShakeCleanup;
+      }
+      const cleanup = applyShake(heroImg);
+      activeShakeCleanup = () => {
+        cleanup();
+        activeShakeCleanup = null;
+      };
+      return activeShakeCleanup;
+    };
+
     const queueDamage = (releaseEffectFn) => {
-      const applyDamage = () => {
+      const releaseEffect =
+        typeof releaseEffectFn === 'function' ? releaseEffectFn : () => {};
+      const removeShake = ensureShake();
+
+      const cleanupAfterShake = () => {
+        removeShake();
+        releaseEffect();
+      };
+
+      const proceedAfterShake = () => {
         if (battleEnded) {
-          releaseEffectFn();
           return;
         }
-        const removeShake = applyShake(heroImg);
+        if (hero.damage >= hero.health) {
+          endBattle(false, { waitForHpDrain: heroHpFill });
+        } else {
+          window.setTimeout(() => {
+            if (!battleEnded) {
+              currentQuestion++;
+              showQuestion();
+            }
+          }, POST_ATTACK_RESUME_DELAY_MS);
+        }
+      };
+
+      const finishAttack = () => {
+        cleanupAfterShake();
+        proceedAfterShake();
+      };
+
+      const applyDamage = () => {
+        if (battleEnded) {
+          cleanupAfterShake();
+          return;
+        }
         hero.damage += monster.attack;
         updateHealthBars();
 
-        const proceedAfterShake = () => {
-          if (battleEnded) {
-            return;
-          }
-          if (hero.damage >= hero.health) {
-            endBattle(false, { waitForHpDrain: heroHpFill });
-          } else {
-            window.setTimeout(() => {
-              if (!battleEnded) {
-                currentQuestion++;
-                showQuestion();
-              }
-            }, POST_ATTACK_RESUME_DELAY_MS);
-          }
-        };
-
         if (ATTACK_SHAKE_DURATION_MS > 0) {
-          window.setTimeout(() => {
-            removeShake();
-            releaseEffectFn();
-            proceedAfterShake();
-          }, ATTACK_SHAKE_DURATION_MS);
+          window.setTimeout(finishAttack, ATTACK_SHAKE_DURATION_MS);
         } else {
-          removeShake();
-          releaseEffectFn();
-          proceedAfterShake();
+          finishAttack();
         }
       };
 
@@ -1019,6 +1123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites, {
           holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
         }) || (() => {});
+      ensureShake();
       queueDamage(immediateRelease);
       return;
     }
@@ -1036,6 +1141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites, {
           holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
         }) || (() => {});
+      ensureShake();
     };
     const endHandler = (event) => {
       if (!event || event.animationName !== 'monster-attack') {
@@ -1165,21 +1271,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (streak >= STREAK_GOAL) {
           streak = STREAK_GOAL;
           streakMaxed = true;
-          hero.attack *= 2;
-          if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+          applySuperAttackBoost();
           incEl = heroAttackInc;
           incText = 'x2';
         } else {
           const stats = ['attack', 'health'];
           const stat = stats[Math.floor(Math.random() * stats.length)];
           if (stat === 'attack') {
-            hero.attack++;
-            if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+            adjustHeroAttack(1);
             incEl = heroAttackInc;
             incText = '+1';
           } else {
-            hero.health++;
-            if (heroHealthVal) heroHealthVal.textContent = hero.health;
+            adjustHeroHealth(1);
             incEl = heroHealthInc;
             incText = '+1';
             updateHealthBars();
@@ -1189,13 +1292,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const stats = ['attack', 'health'];
         const stat = stats[Math.floor(Math.random() * stats.length)];
         if (stat === 'attack') {
-          hero.attack++;
-          if (heroAttackVal) heroAttackVal.textContent = hero.attack;
+          adjustHeroAttack(1);
           incEl = heroAttackInc;
           incText = '+1';
         } else {
-          hero.health++;
-          if (heroHealthVal) heroHealthVal.textContent = hero.health;
+          adjustHeroHealth(1);
           incEl = heroHealthInc;
           incText = '+1';
           updateHealthBars();
@@ -1222,6 +1323,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     battleEnded = true;
+    resetSuperAttackBoost();
     devControls?.classList.add('battle-dev-controls--hidden');
     document.dispatchEvent(new Event('close-question'));
     stopBattleTimer();
@@ -1338,6 +1440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     battleEnded = false;
     streak = 0;
     streakMaxed = false;
+    resetSuperAttackBoost();
     currentQuestion = 0;
     correctAnswers = 0;
     totalAnswers = 0;

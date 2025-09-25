@@ -292,6 +292,10 @@ button:focus-visible {
   animation: pop-in 0.4s ease-out forwards;
 }
 
+.card--closing {
+  animation: card-close 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .card .battle-info {
   display: flex;
   flex-direction: column;
@@ -424,5 +428,20 @@ button:focus-visible {
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes card-close {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    opacity: 0.85;
+    transform: translateY(8px) scale(0.97);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.9);
   }
 }
