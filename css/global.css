@@ -262,7 +262,7 @@ button:focus-visible {
 
 .meter__icon {
   position: absolute;
-  top: 32px;
+  top: 40px;
   right: 16px;
   width: 48px;
   height: auto;
