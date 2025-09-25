@@ -57,8 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!landingVisited) {
     return;
   }
+  const battleField = document.getElementById('battle');
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
+  const monsterAttackEffect = document.getElementById('monster-attack-effect');
+  const heroAttackEffect = document.getElementById('hero-attack-effect');
   const prefersReducedMotion = window.matchMedia(
     '(prefers-reduced-motion: reduce)'
   ).matches;
@@ -131,8 +134,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let battleLevelAdvanced = false;
   let battleGoalsMet = false;
 
-  const hero = { attack: 1, health: 5, gems: 0, damage: 0, name: 'Hero' };
-  const monster = { attack: 1, health: 5, damage: 0, name: 'Monster' };
+  const hero = {
+    attack: 1,
+    health: 5,
+    gems: 0,
+    damage: 0,
+    name: 'Hero',
+    attackSprites: {},
+  };
+  const monster = {
+    attack: 1,
+    health: 5,
+    damage: 0,
+    name: 'Monster',
+    attackSprites: {},
+  };
 
   const markBattleReady = (img) => {
     if (!img) {
@@ -140,6 +156,79 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     img.classList.remove('slide-in');
     img.classList.add('battle-ready');
+  };
+
+  const ATTACK_EFFECT_DELAY_MS = 220;
+
+  const clearAttackEffectAnimation = (effectEl) => {
+    if (!effectEl) {
+      return;
+    }
+    effectEl.classList.remove('attack-effect--show');
+    effectEl.classList.remove('attack-effect--visible');
+  };
+
+  [heroAttackEffect, monsterAttackEffect].forEach((effectEl) => {
+    if (!effectEl) {
+      return;
+    }
+    effectEl.addEventListener('animationend', () => {
+      clearAttackEffectAnimation(effectEl);
+    });
+    effectEl.addEventListener('animationcancel', () => {
+      clearAttackEffectAnimation(effectEl);
+    });
+  });
+
+  const selectAttackSprite = (sprites, { superAttack = false } = {}) => {
+    if (!sprites || typeof sprites !== 'object') {
+      return null;
+    }
+
+    if (superAttack) {
+      return sprites.super || sprites.basic || null;
+    }
+
+    return sprites.basic || sprites.super || null;
+  };
+
+  const playAttackEffect = (targetImg, effectEl, sprites, options = {}) => {
+    if (!battleField || !targetImg || !effectEl) {
+      return;
+    }
+
+    const sprite = selectAttackSprite(sprites, options);
+    if (!sprite) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      if (!battleField || !targetImg || !effectEl) {
+        return;
+      }
+
+      const battleRect = battleField.getBoundingClientRect();
+      const targetRect = targetImg.getBoundingClientRect();
+      const centerX = targetRect.left + targetRect.width / 2 - battleRect.left;
+      const centerY = targetRect.top + targetRect.height / 2 - battleRect.top;
+
+      effectEl.src = sprite;
+      effectEl.style.left = `${centerX}px`;
+      effectEl.style.top = `${centerY}px`;
+
+      effectEl.classList.remove('attack-effect--show');
+      effectEl.classList.remove('attack-effect--visible');
+      void effectEl.offsetWidth;
+
+      if (prefersReducedMotion) {
+        effectEl.classList.add('attack-effect--visible');
+        window.setTimeout(() => {
+          effectEl.classList.remove('attack-effect--visible');
+        }, 250);
+      } else {
+        effectEl.classList.add('attack-effect--show');
+      }
+    });
   };
 
   if (prefersReducedMotion) {
@@ -390,6 +479,27 @@ document.addEventListener('DOMContentLoaded', () => {
       return `${normalizedBase}/${normalizedPath}`;
     };
 
+    const isPlainObject = (value) =>
+      Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+    const normalizeAttackSprites = (sprites, fallback = {}) => {
+      const allowedKeys = ['basic', 'super'];
+      const source = {
+        ...(isPlainObject(fallback) ? fallback : {}),
+        ...(isPlainObject(sprites) ? sprites : {}),
+      };
+      const result = {};
+
+      allowedKeys.forEach((key) => {
+        const resolved = resolveAssetPath(source[key]);
+        if (resolved) {
+          result[key] = resolved;
+        }
+      });
+
+      return result;
+    };
+
     currentBattleLevel =
       typeof progressData.battleLevel === 'number'
         ? progressData.battleLevel
@@ -446,6 +556,14 @@ document.addEventListener('DOMContentLoaded', () => {
       hero.gems = heroData.gems;
     }
 
+    const heroAttackSprites = normalizeAttackSprites(
+      heroData.attackSprites,
+      hero.attackSprites
+    );
+    if (Object.keys(heroAttackSprites).length > 0) {
+      hero.attackSprites = heroAttackSprites;
+    }
+
     const heroSprite = resolveAssetPath(heroData.sprite);
     if (heroSprite && heroImg) {
       heroImg.src = heroSprite;
@@ -458,6 +576,14 @@ document.addEventListener('DOMContentLoaded', () => {
     monster.health = Number(enemyData.health) || monster.health;
     monster.damage = Number(enemyData.damage) || monster.damage;
     monster.name = enemyData.name || monster.name;
+
+    const monsterAttackSprites = normalizeAttackSprites(
+      enemyData.attackSprites,
+      monster.attackSprites
+    );
+    if (Object.keys(monsterAttackSprites).length > 0) {
+      monster.attackSprites = monsterAttackSprites;
+    }
 
     const monsterSprite = resolveAssetPath(enemyData.sprite);
     if (monsterSprite && monsterImg) {
@@ -742,7 +868,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (battleEnded) {
       return;
     }
+    const useSuperAttack = streakMaxed;
     heroImg.classList.add('attack');
+    const effectDelay = prefersReducedMotion ? 0 : ATTACK_EFFECT_DELAY_MS;
+    window.setTimeout(() => {
+      if (battleEnded) {
+        return;
+      }
+      playAttackEffect(monsterImg, monsterAttackEffect, hero.attackSprites, {
+        superAttack: useSuperAttack,
+      });
+    }, effectDelay);
     const handler = (e) => {
       if (e.animationName !== 'hero-attack') return;
       heroImg.classList.remove('attack');
@@ -784,6 +920,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       monsterImg.classList.add('attack');
+      const effectDelay = prefersReducedMotion ? 0 : ATTACK_EFFECT_DELAY_MS;
+      window.setTimeout(() => {
+        if (battleEnded) {
+          return;
+        }
+        playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites);
+      }, effectDelay);
       const handler = (e) => {
         if (e.animationName !== 'monster-attack') return;
         monsterImg.classList.remove('attack');

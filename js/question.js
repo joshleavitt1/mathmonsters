@@ -44,7 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ? assetBase.slice(0, -1)
     : assetBase;
 
+  let submitLocked = false;
+
   const setSubmitDisabled = (isDisabled) => {
+    submitLocked = false;
+    button.classList.remove('button--locked');
     button.disabled = isDisabled;
     button.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
   };
@@ -176,12 +180,16 @@ document.addEventListener('DOMContentLoaded', () => {
   setSubmitDisabled(true);
 
   button.addEventListener('click', () => {
+    if (submitLocked) {
+      return;
+    }
+
     const choice = choicesContainer.querySelector('.choice.selected');
     if (!choice) {
       return;
     }
 
-    setSubmitDisabled(true);
+    lockSubmit();
     const isCorrect = choice.dataset.correct === 'true';
 
     clearChoiceSelections();
