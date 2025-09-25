@@ -105,7 +105,6 @@ body:not(.is-preloading) main.landing {
 
 body:not(.is-preloading) .battle-link__image {
   animation:
-    battle-link-bounce 5.6s cubic-bezier(0.25, 0.75, 0.25, 1) infinite,
     battle-link-glow 3.6s ease-in-out infinite;
 }
 
@@ -164,27 +163,6 @@ body:not(.is-preloading) .battle-link__image {
   100% {
     transform: translate(-50%, calc(-1 * var(--hero-float-range, 32px))) scale(1.28);
     opacity: 0;
-  }
-}
-
-@keyframes battle-link-bounce {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  20% {
-    transform: translate3d(0, -5px, 0) scale(1.015);
-  }
-  40% {
-    transform: translate3d(0, 0, 0) scale(0.995);
-  }
-  55% {
-    transform: translate3d(0, -3px, 0) scale(1.01);
-  }
-  70% {
-    transform: translate3d(0, 0, 0) scale(0.9975);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
