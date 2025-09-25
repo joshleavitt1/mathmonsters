@@ -142,6 +142,11 @@ button.result.incorrect {
   --btn-gradient-end: #e20000;
 }
 
+button.button--locked {
+  pointer-events: none;
+  cursor: default;
+}
+
 button:hover {
   transform: translateY(-2px);
   background-image: linear-gradient(
