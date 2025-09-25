@@ -814,9 +814,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (streakMaxed) {
         streakLabel.textContent = '2x Attack';
         streakLabel.style.color = '#FF6A00';
-        streakLabel.classList.remove('show');
-        void streakLabel.offsetWidth;
-        streakLabel.classList.add('show');
         if (streakIcon && !streakIconShown) {
           streakIcon.classList.add('show');
           streakIconShown = true;
@@ -824,9 +821,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         streakLabel.style.color = '#006AFF';
         streakLabel.textContent = `${streak} in a row`;
-        streakLabel.classList.remove('show');
-        void streakLabel.offsetWidth;
-        streakLabel.classList.add('show');
         if (streakIcon) {
           streakIcon.classList.remove('show');
         }
@@ -834,7 +828,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       topBar?.classList.remove('show');
-      streakLabel.classList.remove('show');
       if (streakIcon) {
         streakIcon.classList.remove('show');
       }
