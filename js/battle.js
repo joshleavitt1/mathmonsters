@@ -741,6 +741,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function dispatchStreakMeterUpdate(correct) {
+    document.dispatchEvent(
+      new CustomEvent('streak-meter-update', {
+        detail: {
+          correct: Boolean(correct),
+          streak,
+          streakGoal: STREAK_GOAL,
+        },
+      })
+    );
+  }
+
   function showIncrease(el, text) {
     if (!el) return;
     el.classList.remove('show');
@@ -948,6 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       updateStreak();
+      dispatchStreakMeterUpdate(true);
 
       // Keep the question visible briefly so the player can
       // see the result and streak progress before it closes.
@@ -964,6 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
       streak = 0;
       streakMaxed = false;
       updateStreak();
+      dispatchStreakMeterUpdate(false);
       setTimeout(() => {
         document.dispatchEvent(new Event('close-question'));
         monsterAttack();
