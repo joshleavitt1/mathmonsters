@@ -104,13 +104,15 @@ button {
   --btn-text-color: var(--button-text-color);
   --btn-hover-gradient-start: var(--button-hover-gradient-start);
   --btn-hover-gradient-end: var(--button-hover-gradient-end);
+  --btn-height: 64px;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   width: 100%;
-  min-height: 64px;
+  min-height: var(--btn-height, 64px);
+  height: var(--btn-height, 64px);
   padding: 0 24px;
   color: var(--btn-text-color);
   background-image: linear-gradient(
