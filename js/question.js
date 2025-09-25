@@ -22,6 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const meterHeading = meter?.querySelector('[data-meter-heading]');
   const meterProgress = meter?.querySelector('[data-meter-progress]');
   const meterFill = meterProgress?.querySelector('.progress__fill');
+  const requestFrame =
+    typeof window !== 'undefined' &&
+    typeof window.requestAnimationFrame === 'function'
+      ? window.requestAnimationFrame.bind(window)
+      : (callback) => window.setTimeout(callback, 16);
+  const cancelFrame =
+    typeof window !== 'undefined' &&
+    typeof window.cancelAnimationFrame === 'function'
+      ? window.cancelAnimationFrame.bind(window)
+      : (id) => window.clearTimeout(id);
+  let pendingMeterFrame = null;
+  let pendingMeterFillFrame = null;
 
   if (!choicesContainer || !button) {
     return;
@@ -35,6 +47,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const setSubmitDisabled = (isDisabled) => {
     button.disabled = isDisabled;
     button.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
+  };
+
+  const resetMeterAnimation = () => {
+    if (pendingMeterFrame !== null) {
+      cancelFrame(pendingMeterFrame);
+      pendingMeterFrame = null;
+    }
+    if (pendingMeterFillFrame !== null) {
+      cancelFrame(pendingMeterFillFrame);
+      pendingMeterFillFrame = null;
+    }
   };
 
   const hideMeter = () => {
@@ -52,6 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (meterFill) {
+      resetMeterAnimation();
+      meterFill.style.transition = '';
       meterFill.style.width = '0%';
     }
   };
@@ -217,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const detail = event?.detail ?? {};
+    resetMeterAnimation();
     if (!detail.correct) {
       hideMeter();
       return;
@@ -242,8 +268,17 @@ document.addEventListener('DOMContentLoaded', () => {
       meterHeading.textContent = 'Super Attack';
     }
 
-    meterFill.style.width = `${percent}%`;
+    meterFill.style.transition = 'none';
+    meterFill.style.width = '0%';
     showMeter();
+    pendingMeterFrame = requestFrame(() => {
+      meterFill.style.transition = '';
+      pendingMeterFrame = null;
+      pendingMeterFillFrame = requestFrame(() => {
+        meterFill.style.width = `${percent}%`;
+        pendingMeterFillFrame = null;
+      });
+    });
   });
 
   hideMeter();
