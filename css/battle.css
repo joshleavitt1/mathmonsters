@@ -305,11 +305,11 @@ body {
 
 .battle-dev-controls {
   position: fixed;
-  top: 12px;
-  right: 12px;
+  top: 8px;
+  right: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   padding: 0;
   background: none;
   border: none;
@@ -322,14 +322,14 @@ body {
 }
 
 .battle-dev-controls__btn {
-  border: 1px solid #b9c1ce;
-  background: #ffffff;
+  border: 1px solid rgba(29, 36, 51, 0.25);
+  background: rgba(255, 255, 255, 0.7);
   color: #1d2433;
-  border-radius: 0;
-  padding: 6px 10px;
+  border-radius: 2px;
+  padding: 2px 6px;
   font: inherit;
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 11px;
+  line-height: 1.1;
   cursor: pointer;
   box-shadow: none;
   text-transform: none;
