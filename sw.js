@@ -25,7 +25,6 @@ const OFFLINE_ASSETS = [
   'images/battle/monster_battle_1_1.png',
   'images/questions/sword.svg',
   'images/questions/shield.svg',
-  'images/questions/streak.svg',
   './data/levels.json',
   './data/player.json',
   './data/questions/level_1_questions.json',
