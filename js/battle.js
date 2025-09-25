@@ -211,6 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ANSWER_LINGER_MS = 4000;
   const QUESTION_CLOSE_GAP_MS = 300;
   const PRE_ATTACK_DELAY_MS = 1000;
+  const POST_CLOSE_ATTACK_DELAY_MS = 1000;
   const ATTACK_EFFECT_HOLD_MS = prefersReducedMotion ? 0 : 1000;
   const ATTACK_SHAKE_DURATION_MS = prefersReducedMotion ? 0 : 1000;
   const POST_ATTACK_RESUME_DELAY_MS = 1000;
@@ -1341,7 +1342,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!battleEnded) {
         attackFn();
       }
-    }, PRE_ATTACK_DELAY_MS);
+    }, PRE_ATTACK_DELAY_MS + POST_CLOSE_ATTACK_DELAY_MS);
   };
 
   document.addEventListener('answer-submitted', (e) => {
