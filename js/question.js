@@ -75,9 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  if (meterIcon) {
-    meterIcon.src = `${trimmedBase}/images/questions/sword.svg`;
-  }
+  const getButtonIconPath = (iconType) =>
+    resolveAssetPath(`images/questions/button/${iconType}.svg`);
 
   let submitLocked = false;
 
@@ -214,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (pointerEventsSupported) {
     choicesContainer.addEventListener('pointerup', (event) => {
-      if (typeof event?.button === 'number' && event.button !== 0) {
+      if (typeof event?.button === 'number' && event.button > 0) {
         return;
       }
       handleChoiceActivation(event);
@@ -256,10 +255,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     button.classList.add('result', isCorrect ? 'correct' : 'incorrect');
     const iconType = isCorrect ? 'correct' : 'incorrect';
-    const iconPath = `${trimmedBase}/images/questions/button/${iconType}.svg`;
-    button.innerHTML =
-      `<img src="${iconPath}" alt="${isCorrect ? 'Correct' : 'Incorrect'} icon" /> ` +
-      (isCorrect ? 'Correct' : 'Incorrect');
+    const iconPath = getButtonIconPath(iconType);
+    if (iconPath) {
+      button.innerHTML =
+        `<img src="${iconPath}" alt="${
+          isCorrect ? 'Correct' : 'Incorrect'
+        } icon" /> ` + (isCorrect ? 'Correct' : 'Incorrect');
+    } else {
+      button.textContent = isCorrect ? 'Correct' : 'Incorrect';
+    }
 
     document.dispatchEvent(
       new CustomEvent('answer-submitted', { detail: { correct: isCorrect } })
