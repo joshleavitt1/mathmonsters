@@ -788,9 +788,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const div = document.createElement('div');
       div.classList.add('choice');
       div.dataset.correct = !!choice.correct;
-      div.setAttribute('role', 'radio');
-      div.setAttribute('aria-checked', 'false');
-      div.setAttribute('tabindex', '-1');
       if (choice.image) {
         const img = document.createElement('img');
         img.src = `/mathmonsters/images/questions/${choice.image}`;

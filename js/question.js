@@ -141,8 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .querySelectorAll('.choice')
       .forEach((choice) => {
         choice.classList.remove('selected', 'correct-choice', 'wrong-choice');
-        choice.setAttribute('aria-checked', 'false');
-        choice.setAttribute('tabindex', '-1');
       });
   };
 
@@ -153,15 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     clearChoiceSelections();
     choice.classList.add('selected');
-    choice.setAttribute('aria-checked', 'true');
-    choice.setAttribute('tabindex', '0');
-    if (typeof choice.focus === 'function') {
-      try {
-        choice.focus({ preventScroll: true });
-      } catch (error) {
-        choice.focus();
-      }
-    }
     setSubmitDisabled(false);
   };
 
@@ -205,13 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
     handleChoiceActivation(event);
   });
 
-  choicesContainer.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' && event.key !== ' ') {
-      return;
-    }
-    handleChoiceActivation(event);
-  });
-
   setSubmitDisabled(true);
 
   button.addEventListener('click', () => {
@@ -228,8 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const isCorrect = choice.dataset.correct === 'true';
 
     clearChoiceSelections();
-    choice.setAttribute('aria-checked', 'true');
-
     if (isCorrect) {
       choice.classList.add('correct-choice');
     } else {
