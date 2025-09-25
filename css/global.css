@@ -264,7 +264,7 @@ button:focus-visible {
   position: absolute;
   top: 24px;
   right: 24px;
-  width: 64px;
+  width: 48px;
   height: auto;
   max-width: none;
   pointer-events: none;
