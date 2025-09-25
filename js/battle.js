@@ -154,14 +154,21 @@ document.addEventListener('DOMContentLoaded', () => {
     img.classList.add('battle-ready');
   };
 
-  const ATTACK_EFFECT_DELAY_MS = 220;
+  const ANSWER_LINGER_MS = 4000;
+  const QUESTION_CLOSE_GAP_MS = 300;
+  const PRE_ATTACK_DELAY_MS = 1000;
+  const ATTACK_EFFECT_HOLD_MS = prefersReducedMotion ? 0 : 1000;
+  const ATTACK_SHAKE_DURATION_MS = prefersReducedMotion ? 0 : 1000;
+  const POST_ATTACK_RESUME_DELAY_MS = 2000;
 
   const clearAttackEffectAnimation = (effectEl) => {
     if (!effectEl) {
       return;
     }
     effectEl.classList.remove('attack-effect--show');
-    effectEl.classList.remove('attack-effect--visible');
+    if (!effectEl.dataset.hold) {
+      effectEl.classList.remove('attack-effect--visible');
+    }
   };
 
   [heroAttackEffect, monsterAttackEffect].forEach((effectEl) => {
@@ -190,12 +197,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const playAttackEffect = (targetImg, effectEl, sprites, options = {}) => {
     if (!battleField || !targetImg || !effectEl) {
-      return;
+      return null;
     }
 
     const sprite = selectAttackSprite(sprites, options);
     if (!sprite) {
-      return;
+      return null;
     }
 
     window.requestAnimationFrame(() => {
@@ -214,17 +221,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
       effectEl.classList.remove('attack-effect--show');
       effectEl.classList.remove('attack-effect--visible');
+      delete effectEl.dataset.hold;
       void effectEl.offsetWidth;
 
-      if (prefersReducedMotion) {
+      const holdVisible = Boolean(options?.holdVisible);
+
+      if (holdVisible) {
+        effectEl.dataset.hold = 'true';
         effectEl.classList.add('attack-effect--visible');
-        window.setTimeout(() => {
-          effectEl.classList.remove('attack-effect--visible');
-        }, 250);
+      }
+
+      if (prefersReducedMotion) {
+        if (!holdVisible) {
+          effectEl.classList.add('attack-effect--visible');
+        }
       } else {
         effectEl.classList.add('attack-effect--show');
+        if (!holdVisible) {
+          effectEl.classList.add('attack-effect--visible');
+        }
       }
     });
+
+    let released = false;
+    return () => {
+      if (released || !effectEl) {
+        return;
+      }
+      released = true;
+      delete effectEl.dataset.hold;
+      effectEl.classList.remove('attack-effect--show');
+      effectEl.classList.remove('attack-effect--visible');
+    };
   };
 
   if (prefersReducedMotion) {
@@ -823,29 +851,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2000);
   }
 
+  const applyShake = (targetImg) => {
+    if (!targetImg || ATTACK_SHAKE_DURATION_MS <= 0) {
+      return () => {};
+    }
+    targetImg.classList.add('battle-shake');
+    return () => {
+      targetImg.classList.remove('battle-shake');
+    };
+  };
+
   function heroAttack() {
     if (battleEnded) {
       return;
     }
     const useSuperAttack = streakMaxed;
     heroImg.classList.add('attack');
-    const effectDelay = prefersReducedMotion ? 0 : ATTACK_EFFECT_DELAY_MS;
-    window.setTimeout(() => {
-      if (battleEnded) {
-        return;
-      }
-      playAttackEffect(monsterImg, monsterAttackEffect, hero.attackSprites, {
-        superAttack: useSuperAttack,
-      });
-    }, effectDelay);
     const handler = (e) => {
       if (e.animationName !== 'hero-attack') return;
       heroImg.classList.remove('attack');
       heroImg.removeEventListener('animationend', handler);
-      setTimeout(() => {
+      if (battleEnded) {
+        return;
+      }
+
+      const releaseEffect =
+        playAttackEffect(monsterImg, monsterAttackEffect, hero.attackSprites, {
+          superAttack: useSuperAttack,
+          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
+        }) || (() => {});
+
+      const applyDamage = () => {
         if (battleEnded) {
+          releaseEffect();
           return;
         }
+        const removeShake = applyShake(monsterImg);
         monster.damage += hero.attack;
         updateHealthBars();
         if (streakMaxed) {
@@ -853,18 +894,42 @@ document.addEventListener('DOMContentLoaded', () => {
           streak = 0;
           streakMaxed = false;
         }
-        setTimeout(() => {
+
+        const startNextStep = () => {
           if (battleEnded) {
             return;
           }
-          if (monster.damage >= monster.health) {
-            endBattle(true, { waitForHpDrain: monsterHpFill });
-          } else {
-            currentQuestion++;
-            showQuestion();
-          }
-        }, 2000);
-      }, 500);
+          window.setTimeout(() => {
+            if (battleEnded) {
+              return;
+            }
+            if (monster.damage >= monster.health) {
+              endBattle(true, { waitForHpDrain: monsterHpFill });
+            } else {
+              currentQuestion++;
+              showQuestion();
+            }
+          }, POST_ATTACK_RESUME_DELAY_MS);
+        };
+
+        if (ATTACK_SHAKE_DURATION_MS > 0) {
+          window.setTimeout(() => {
+            removeShake();
+            releaseEffect();
+            startNextStep();
+          }, ATTACK_SHAKE_DURATION_MS);
+        } else {
+          removeShake();
+          releaseEffect();
+          startNextStep();
+        }
+      };
+
+      if (ATTACK_EFFECT_HOLD_MS > 0) {
+        window.setTimeout(applyDamage, ATTACK_EFFECT_HOLD_MS);
+      } else {
+        applyDamage();
+      }
     };
     heroImg.addEventListener('animationend', handler);
   }
@@ -873,29 +938,34 @@ document.addEventListener('DOMContentLoaded', () => {
     if (battleEnded) {
       return;
     }
-    setTimeout(() => {
+    monsterImg.classList.add('attack');
+    const handler = (e) => {
+      if (e.animationName !== 'monster-attack') return;
+      monsterImg.classList.remove('attack');
+      monsterImg.removeEventListener('animationend', handler);
       if (battleEnded) {
         return;
       }
-      monsterImg.classList.add('attack');
-      const effectDelay = prefersReducedMotion ? 0 : ATTACK_EFFECT_DELAY_MS;
-      window.setTimeout(() => {
+
+      const releaseEffect =
+        playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites, {
+          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
+        }) || (() => {});
+
+      const applyDamage = () => {
         if (battleEnded) {
+          releaseEffect();
           return;
         }
-        playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites);
-      }, effectDelay);
-      const handler = (e) => {
-        if (e.animationName !== 'monster-attack') return;
-        monsterImg.classList.remove('attack');
-        monsterImg.removeEventListener('animationend', handler);
-        setTimeout(() => {
+        const removeShake = applyShake(heroImg);
+        hero.damage += monster.attack;
+        updateHealthBars();
+
+        const startNextStep = () => {
           if (battleEnded) {
             return;
           }
-          hero.damage += monster.attack;
-          updateHealthBars();
-          setTimeout(() => {
+          window.setTimeout(() => {
             if (battleEnded) {
               return;
             }
@@ -905,11 +975,29 @@ document.addEventListener('DOMContentLoaded', () => {
               currentQuestion++;
               showQuestion();
             }
-          }, 2000);
-        }, 500);
+          }, POST_ATTACK_RESUME_DELAY_MS);
+        };
+
+        if (ATTACK_SHAKE_DURATION_MS > 0) {
+          window.setTimeout(() => {
+            removeShake();
+            releaseEffect();
+            startNextStep();
+          }, ATTACK_SHAKE_DURATION_MS);
+        } else {
+          removeShake();
+          releaseEffect();
+          startNextStep();
+        }
       };
-      monsterImg.addEventListener('animationend', handler);
-    }, 300);
+
+      if (ATTACK_EFFECT_HOLD_MS > 0) {
+        window.setTimeout(applyDamage, ATTACK_EFFECT_HOLD_MS);
+      } else {
+        applyDamage();
+      }
+    };
+    monsterImg.addEventListener('animationend', handler);
   }
 
   setStreakButton?.addEventListener('click', () => {
@@ -977,6 +1065,30 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.replace('https://joshleavitt1.github.io/mathmonsters/html/welcome.html');
   });
 
+  const scheduleQuestionClose = (afterClose) => {
+    window.setTimeout(() => {
+      if (battleEnded) {
+        return;
+      }
+      document.dispatchEvent(new Event('close-question'));
+      if (typeof afterClose === 'function') {
+        window.setTimeout(() => {
+          if (!battleEnded) {
+            afterClose();
+          }
+        }, QUESTION_CLOSE_GAP_MS);
+      }
+    }, ANSWER_LINGER_MS);
+  };
+
+  const scheduleAttack = (attackFn) => {
+    window.setTimeout(() => {
+      if (!battleEnded) {
+        attackFn();
+      }
+    }, PRE_ATTACK_DELAY_MS);
+  };
+
   document.addEventListener('answer-submitted', (e) => {
     if (battleEnded) {
       return;
@@ -1036,25 +1148,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       dispatchStreakMeterUpdate(true);
 
-      // Keep the question visible briefly so the player can
-      // see the result and streak progress before it closes.
-      // Always linger for 3 seconds so feedback timing is consistent.
-      const lingerTime = 4000;
-      setTimeout(() => {
-        document.dispatchEvent(new Event('close-question'));
-        setTimeout(() => {
-          showIncrease(incEl, incText);
-          setTimeout(heroAttack, 1000);
-        }, 300);
-      }, lingerTime);
+      scheduleQuestionClose(() => {
+        showIncrease(incEl, incText);
+        scheduleAttack(heroAttack);
+      });
     } else {
       streak = 0;
       streakMaxed = false;
       dispatchStreakMeterUpdate(false);
-      setTimeout(() => {
-        document.dispatchEvent(new Event('close-question'));
-        monsterAttack();
-      }, 4000);
+      scheduleQuestionClose(() => {
+        scheduleAttack(monsterAttack);
+      });
     }
   });
   function endBattle(win, _options = {}) {
