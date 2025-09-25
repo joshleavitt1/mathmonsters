@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const choicesContainer = questionBox.querySelector('.choices');
   const button = questionBox.querySelector('button');
+  const submitReadyClass = 'question-submit--ready';
   const meter = questionBox.querySelector('[data-meter]');
   const meterHeading = meter?.querySelector('[data-meter-heading]');
   const meterProgress = meter?.querySelector('[data-meter-progress]');
@@ -44,9 +45,43 @@ document.addEventListener('DOMContentLoaded', () => {
     ? assetBase.slice(0, -1)
     : assetBase;
 
+  let submitLocked = false;
+
   const setSubmitDisabled = (isDisabled) => {
+    submitLocked = false;
+    button.classList.remove('button--locked');
     button.disabled = isDisabled;
+    if (typeof button.toggleAttribute === 'function') {
+      button.toggleAttribute('disabled', isDisabled);
+    } else if (isDisabled) {
+      button.setAttribute('disabled', '');
+    } else {
+      button.removeAttribute('disabled');
+    }
     button.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
+    button.classList.toggle(submitReadyClass, !isDisabled);
+  };
+
+  const resetMeterAnimation = () => {
+    if (pendingMeterFrame !== null) {
+      cancelFrame(pendingMeterFrame);
+      pendingMeterFrame = null;
+    }
+    if (pendingMeterFillFrame !== null) {
+      cancelFrame(pendingMeterFillFrame);
+      pendingMeterFillFrame = null;
+    }
+  };
+
+  const resetMeterAnimation = () => {
+    if (pendingMeterFrame !== null) {
+      cancelFrame(pendingMeterFrame);
+      pendingMeterFrame = null;
+    }
+    if (pendingMeterFillFrame !== null) {
+      cancelFrame(pendingMeterFillFrame);
+      pendingMeterFillFrame = null;
+    }
   };
 
   const resetMeterAnimation = () => {
@@ -107,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .forEach((choice) => {
         choice.classList.remove('selected', 'correct-choice', 'wrong-choice');
         choice.setAttribute('aria-checked', 'false');
+        choice.setAttribute('tabindex', '-1');
       });
   };
 
@@ -118,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearChoiceSelections();
     choice.classList.add('selected');
     choice.setAttribute('aria-checked', 'true');
+    choice.setAttribute('tabindex', '0');
     if (typeof choice.focus === 'function') {
       try {
         choice.focus({ preventScroll: true });
@@ -156,13 +193,15 @@ document.addEventListener('DOMContentLoaded', () => {
     typeof window !== 'undefined' && 'PointerEvent' in window;
 
   if (pointerEventsSupported) {
-    choicesContainer.addEventListener('pointerup', handleChoiceActivation);
+    choicesContainer.addEventListener('pointerup', (event) => {
+      if (typeof event?.button === 'number' && event.button !== 0) {
+        return;
+      }
+      handleChoiceActivation(event);
+    });
   }
 
   choicesContainer.addEventListener('click', (event) => {
-    if (pointerEventsSupported && event.detail !== 0) {
-      return;
-    }
     handleChoiceActivation(event);
   });
 
@@ -176,12 +215,16 @@ document.addEventListener('DOMContentLoaded', () => {
   setSubmitDisabled(true);
 
   button.addEventListener('click', () => {
+    if (submitLocked) {
+      return;
+    }
+
     const choice = choicesContainer.querySelector('.choice.selected');
     if (!choice) {
       return;
     }
 
-    setSubmitDisabled(true);
+    lockSubmit();
     const isCorrect = choice.dataset.correct === 'true';
 
     clearChoiceSelections();

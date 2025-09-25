@@ -53,6 +53,24 @@
   width: 100%;
 }
 
+#question button.question-submit--ready {
+  background-image: linear-gradient(
+    180deg,
+    var(--button-gradient-start),
+    var(--button-gradient-end)
+  );
+  color: var(--button-text-color);
+  cursor: pointer;
+}
+
+#question button.question-submit--ready:hover {
+  background-image: linear-gradient(
+    180deg,
+    var(--button-hover-gradient-start),
+    var(--button-hover-gradient-end)
+  );
+}
+
 #question button:disabled {
   background-color: #F4F6FA;
   background-image: none;

@@ -36,6 +36,22 @@
       src="../images/characters/shellfin_level_1.png"
       alt="Shellfin"
     />
+    <img
+      id="monster-attack-effect"
+      class="attack-effect"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+    />
+    <img
+      id="hero-attack-effect"
+      class="attack-effect"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+    />
     <div id="monster-stats" class="stat-box">
       <div class="name text-small text-white"></div>
       <div
@@ -72,7 +88,7 @@
           <p class="streak-label"></p>
         </div>
         <p class="title question-text text-large text-dark"></p>
-        <div class="choices"></div>
+        <div class="choices" role="radiogroup"></div>
         <div class="meter" data-meter aria-hidden="true">
           <p class="meter__heading text-small text-dark" data-meter-heading>
             Super Attack
@@ -89,7 +105,7 @@
             <span class="progress__fill" aria-hidden="true"></span>
           </div>
         </div>
-        <button type="button">Submit</button>
+        <button type="button" disabled aria-disabled="true">Submit</button>
       </section>
     </div>
     <div
