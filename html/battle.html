@@ -84,6 +84,22 @@
         </div>
         <p class="title question-text text-large text-dark"></p>
         <div class="choices"></div>
+        <div class="meter" data-meter aria-hidden="true">
+          <p class="meter__heading text-small text-dark" data-meter-heading>
+            Super Attack
+          </p>
+          <div
+            class="progress meter__progress"
+            data-meter-progress
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="0"
+            aria-valuenow="0"
+            aria-valuetext="0 of 0"
+          >
+            <span class="progress__fill" aria-hidden="true"></span>
+          </div>
+        </div>
         <button type="button">Submit</button>
       </section>
     </div>

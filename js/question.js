@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const choicesContainer = questionBox.querySelector('.choices');
   const button = questionBox.querySelector('button');
+  const meter = questionBox.querySelector('[data-meter]');
+  const meterHeading = meter?.querySelector('[data-meter-heading]');
+  const meterProgress = meter?.querySelector('[data-meter-progress]');
+  const meterFill = meterProgress?.querySelector('.progress__fill');
 
   if (!choicesContainer || !button) {
     return;
@@ -32,6 +36,45 @@ document.addEventListener('DOMContentLoaded', () => {
     button.disabled = isDisabled;
     button.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
   };
+
+  const hideMeter = () => {
+    if (!meter) {
+      return;
+    }
+
+    meter.classList.remove('meter--visible', 'meter--pop');
+    meter.setAttribute('aria-hidden', 'true');
+
+    if (meterProgress) {
+      meterProgress.setAttribute('aria-valuemax', '0');
+      meterProgress.setAttribute('aria-valuenow', '0');
+      meterProgress.setAttribute('aria-valuetext', '0 of 0');
+    }
+
+    if (meterFill) {
+      meterFill.style.width = '0%';
+    }
+  };
+
+  const showMeter = () => {
+    if (!meter) {
+      return;
+    }
+
+    meter.classList.add('meter--visible');
+    meter.setAttribute('aria-hidden', 'false');
+    meter.classList.remove('meter--pop');
+    void meter.offsetWidth;
+    meter.classList.add('meter--pop');
+  };
+
+  if (meter) {
+    meter.addEventListener('animationend', (event) => {
+      if (event.animationName === 'meter-pop') {
+        meter.classList.remove('meter--pop');
+      }
+    });
+  }
 
   const clearChoiceSelections = () => {
     choicesContainer
@@ -151,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
       button.textContent = 'Submit';
       clearChoiceSelections();
       setSubmitDisabled(true);
+      hideMeter();
     };
 
     questionBox.addEventListener('transitionend', handleFade);
@@ -164,5 +208,43 @@ document.addEventListener('DOMContentLoaded', () => {
     button.textContent = 'Submit';
     clearChoiceSelections();
     setSubmitDisabled(true);
+    hideMeter();
   });
+
+  document.addEventListener('streak-meter-update', (event) => {
+    if (!meter || !meterProgress || !meterFill) {
+      return;
+    }
+
+    const detail = event?.detail ?? {};
+    if (!detail.correct) {
+      hideMeter();
+      return;
+    }
+
+    const rawGoal = Number(detail.streakGoal);
+    const rawStreak = Number(detail.streak);
+
+    if (!Number.isFinite(rawGoal) || rawGoal <= 0) {
+      hideMeter();
+      return;
+    }
+
+    const goal = Math.max(1, Math.round(rawGoal));
+    const streak = Math.max(0, Math.min(Math.round(rawStreak), goal));
+    const percent = Math.min(1, streak / goal) * 100;
+
+    meterProgress.setAttribute('aria-valuemax', `${goal}`);
+    meterProgress.setAttribute('aria-valuenow', `${streak}`);
+    meterProgress.setAttribute('aria-valuetext', `${streak} of ${goal}`);
+
+    if (meterHeading) {
+      meterHeading.textContent = 'Super Attack';
+    }
+
+    meterFill.style.width = `${percent}%`;
+    showMeter();
+  });
+
+  hideMeter();
 });
