@@ -866,24 +866,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const useSuperAttack = streakMaxed;
-    heroImg.classList.add('attack');
-    const handler = (e) => {
-      if (e.animationName !== 'hero-attack') return;
-      heroImg.classList.remove('attack');
-      heroImg.removeEventListener('animationend', handler);
-      if (battleEnded) {
-        return;
-      }
 
-      const releaseEffect =
-        playAttackEffect(monsterImg, monsterAttackEffect, hero.attackSprites, {
-          superAttack: useSuperAttack,
-          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
-        }) || (() => {});
-
+    const queueDamage = (releaseEffectFn) => {
       const applyDamage = () => {
         if (battleEnded) {
-          releaseEffect();
+          releaseEffectFn();
           return;
         }
         const removeShake = applyShake(monsterImg);
@@ -915,12 +902,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ATTACK_SHAKE_DURATION_MS > 0) {
           window.setTimeout(() => {
             removeShake();
-            releaseEffect();
+            releaseEffectFn();
             startNextStep();
           }, ATTACK_SHAKE_DURATION_MS);
         } else {
           removeShake();
-          releaseEffect();
+          releaseEffectFn();
           startNextStep();
         }
       };
@@ -931,63 +918,92 @@ document.addEventListener('DOMContentLoaded', () => {
         applyDamage();
       }
     };
-    heroImg.addEventListener('animationend', handler);
+
+    if (prefersReducedMotion) {
+      const immediateRelease =
+        playAttackEffect(monsterImg, monsterAttackEffect, hero.attackSprites, {
+          superAttack: useSuperAttack,
+          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
+        }) || (() => {});
+      queueDamage(immediateRelease);
+      return;
+    }
+
+    let releaseEffect = () => {};
+    const startHandler = (event) => {
+      if (!event || event.animationName !== 'hero-attack') {
+        return;
+      }
+      heroImg.removeEventListener('animationstart', startHandler);
+      if (battleEnded) {
+        return;
+      }
+      releaseEffect =
+        playAttackEffect(monsterImg, monsterAttackEffect, hero.attackSprites, {
+          superAttack: useSuperAttack,
+          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
+        }) || (() => {});
+    };
+    const endHandler = (event) => {
+      if (!event || event.animationName !== 'hero-attack') {
+        return;
+      }
+      heroImg.classList.remove('attack');
+      heroImg.removeEventListener('animationstart', startHandler);
+      heroImg.removeEventListener('animationend', endHandler);
+      if (battleEnded) {
+        releaseEffect();
+        return;
+      }
+      queueDamage(releaseEffect);
+    };
+
+    heroImg.addEventListener('animationstart', startHandler);
+    heroImg.addEventListener('animationend', endHandler);
+    heroImg.classList.add('attack');
   }
 
   function monsterAttack() {
     if (battleEnded) {
       return;
     }
-    monsterImg.classList.add('attack');
-    const handler = (e) => {
-      if (e.animationName !== 'monster-attack') return;
-      monsterImg.classList.remove('attack');
-      monsterImg.removeEventListener('animationend', handler);
-      if (battleEnded) {
-        return;
-      }
 
-      const releaseEffect =
-        playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites, {
-          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
-        }) || (() => {});
-
+    const queueDamage = (releaseEffectFn) => {
       const applyDamage = () => {
         if (battleEnded) {
-          releaseEffect();
+          releaseEffectFn();
           return;
         }
         const removeShake = applyShake(heroImg);
         hero.damage += monster.attack;
         updateHealthBars();
 
-        const startNextStep = () => {
+        const proceedAfterShake = () => {
           if (battleEnded) {
             return;
           }
-          window.setTimeout(() => {
-            if (battleEnded) {
-              return;
-            }
-            if (hero.damage >= hero.health) {
-              endBattle(false, { waitForHpDrain: heroHpFill });
-            } else {
-              currentQuestion++;
-              showQuestion();
-            }
-          }, POST_ATTACK_RESUME_DELAY_MS);
+          if (hero.damage >= hero.health) {
+            endBattle(false, { waitForHpDrain: heroHpFill });
+          } else {
+            window.setTimeout(() => {
+              if (!battleEnded) {
+                currentQuestion++;
+                showQuestion();
+              }
+            }, POST_ATTACK_RESUME_DELAY_MS);
+          }
         };
 
         if (ATTACK_SHAKE_DURATION_MS > 0) {
           window.setTimeout(() => {
             removeShake();
-            releaseEffect();
-            startNextStep();
+            releaseEffectFn();
+            proceedAfterShake();
           }, ATTACK_SHAKE_DURATION_MS);
         } else {
           removeShake();
-          releaseEffect();
-          startNextStep();
+          releaseEffectFn();
+          proceedAfterShake();
         }
       };
 
@@ -997,7 +1013,47 @@ document.addEventListener('DOMContentLoaded', () => {
         applyDamage();
       }
     };
-    monsterImg.addEventListener('animationend', handler);
+
+    if (prefersReducedMotion) {
+      const immediateRelease =
+        playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites, {
+          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
+        }) || (() => {});
+      queueDamage(immediateRelease);
+      return;
+    }
+
+    let releaseEffect = () => {};
+    const startHandler = (event) => {
+      if (!event || event.animationName !== 'monster-attack') {
+        return;
+      }
+      monsterImg.removeEventListener('animationstart', startHandler);
+      if (battleEnded) {
+        return;
+      }
+      releaseEffect =
+        playAttackEffect(heroImg, heroAttackEffect, monster.attackSprites, {
+          holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
+        }) || (() => {});
+    };
+    const endHandler = (event) => {
+      if (!event || event.animationName !== 'monster-attack') {
+        return;
+      }
+      monsterImg.classList.remove('attack');
+      monsterImg.removeEventListener('animationstart', startHandler);
+      monsterImg.removeEventListener('animationend', endHandler);
+      if (battleEnded) {
+        releaseEffect();
+        return;
+      }
+      queueDamage(releaseEffect);
+    };
+
+    monsterImg.addEventListener('animationstart', startHandler);
+    monsterImg.addEventListener('animationend', endHandler);
+    monsterImg.classList.add('attack');
   }
 
   setStreakButton?.addEventListener('click', () => {
