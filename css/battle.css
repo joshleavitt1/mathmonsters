@@ -415,6 +415,98 @@ body {
   margin-top: 0;
 }
 
+.battle-complete-card {
+  position: relative;
+}
+
+.battle-complete-card__meter {
+  width: 100%;
+}
+
+.battle-complete-card__meter .meter__heading {
+  margin: 0;
+  font-size: var(--title-font-size);
+  font-weight: var(--title-font-weight);
+  color: var(--title-color);
+}
+
+.battle-complete-card__meter-subtitle {
+  margin: 0;
+  font-size: var(--subtitle-font-size);
+  font-weight: var(--subtitle-font-weight);
+  color: var(--subtitle-color);
+}
+
+.battle-complete-card__enemy {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.battle-complete-card .enemy-image {
+  transition: filter 0.4s ease, opacity 0.4s ease;
+}
+
+.battle-complete-card .enemy-image.enemy-image--defeated {
+  filter: saturate(0);
+  opacity: 0.1;
+}
+
+.battle-complete-card .enemy-defeat-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0;
+  width: 140px;
+  max-width: 70%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.battle-complete-card .enemy-defeat-overlay img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@keyframes enemy-defeat-check-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0;
+  }
+
+  60% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.battle-complete-card .enemy-defeat-overlay--visible {
+  animation: enemy-defeat-check-pop 0.45s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-complete-card .enemy-image {
+    transition: none;
+  }
+
+  .battle-complete-card .enemy-defeat-overlay {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .battle-complete-card .enemy-defeat-overlay--visible {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 
 .battle-dev-controls {
   position: fixed;

@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const completeMessage = document.getElementById('complete-message');
   const battleCompleteTitle = completeMessage?.querySelector('#battle-complete-title');
   const completeEnemyImg = completeMessage?.querySelector('.enemy-image');
+  const enemyDefeatOverlay = completeMessage?.querySelector('[data-enemy-defeat-overlay]');
   const summaryAccuracyStat = completeMessage?.querySelector('[data-goal="accuracy"]');
   const summaryTimeStat = completeMessage?.querySelector('[data-goal="time"]');
   const summaryAccuracyValue = summaryAccuracyStat?.querySelector('.summary-accuracy');
@@ -134,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let battleLevelAdvanced = false;
   let battleGoalsMet = false;
   let heroSuperAttackBase = null;
+  let enemyDefeatAnimationTimeout = null;
 
   const hero = {
     attack: 1,
@@ -453,6 +455,29 @@ document.addEventListener('DOMContentLoaded', () => {
     valueEl.textContent = '';
     valueEl.appendChild(span);
     return span;
+  }
+
+  function resetEnemyDefeatAnimation() {
+    if (enemyDefeatAnimationTimeout !== null) {
+      window.clearTimeout(enemyDefeatAnimationTimeout);
+      enemyDefeatAnimationTimeout = null;
+    }
+    if (completeEnemyImg) {
+      completeEnemyImg.classList.remove('enemy-image--defeated');
+    }
+    if (enemyDefeatOverlay) {
+      enemyDefeatOverlay.classList.remove('enemy-defeat-overlay--visible');
+    }
+  }
+
+  function applyEnemyDefeatStyles() {
+    if (completeEnemyImg) {
+      completeEnemyImg.classList.add('enemy-image--defeated');
+    }
+    if (enemyDefeatOverlay) {
+      enemyDefeatOverlay.classList.add('enemy-defeat-overlay--visible');
+    }
+    enemyDefeatAnimationTimeout = null;
   }
 
   function applyGoalResult(valueEl, textSpan, text, met) {
@@ -1537,6 +1562,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     battleEnded = true;
+    resetEnemyDefeatAnimation();
     resetSuperAttackBoost();
     devControls?.classList.add('battle-dev-controls--hidden');
     document.dispatchEvent(new Event('close-question'));
@@ -1621,6 +1647,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof completeMessage.focus === 'function') {
         completeMessage.focus();
       }
+      if (win) {
+        if (prefersReducedMotion) {
+          applyEnemyDefeatStyles();
+        } else {
+          enemyDefeatAnimationTimeout = window.setTimeout(() => {
+            applyEnemyDefeatStyles();
+          }, 1000);
+        }
+      }
     };
 
     const waitForHpDrainEl =
@@ -1672,6 +1707,7 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMessage.classList.remove('show');
       completeMessage.setAttribute('aria-hidden', 'true');
     }
+    resetEnemyDefeatAnimation();
     setBattleCompleteTitleLines('Monster Defeated');
     if (nextMissionBtn) {
       nextMissionBtn.textContent = 'Next Battle';

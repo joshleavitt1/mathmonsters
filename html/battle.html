@@ -123,16 +123,9 @@
       tabindex="-1"
     >
       <section class="card card--pop battle-complete-card">
-        <div class="battle-info">
-          <p id="battle-complete-title" class="battle-title">Monster Defeated</p>
-        </div>
-        <img
-          class="enemy-image"
-          src="../images/battle/monster_battle_1_1.png"
-          alt="Enemy preparing for the next battle"
-        />
-        <div class="meter meter--visible meter--level-up">
-          <p class="meter__heading text-small text-dark">Level Up</p>
+        <div class="meter meter--visible meter--level-up battle-complete-card__meter">
+          <p id="battle-complete-title" class="meter__heading battle-title">Monster Defeated</p>
+          <p class="battle-complete-card__meter-subtitle subtitle">Level Up</p>
           <div class="progress meter__progress" role="presentation" aria-hidden="true">
             <span class="progress__fill" aria-hidden="true"></span>
           </div>
@@ -141,6 +134,16 @@
             src="../images/meter/chest.png"
             alt="Treasure chest level-up reward"
           />
+        </div>
+        <div class="battle-complete-card__enemy">
+          <img
+            class="enemy-image"
+            src="../images/battle/monster_battle_1_1.png"
+            alt="Enemy preparing for the next battle"
+          />
+          <div class="enemy-defeat-overlay" data-enemy-defeat-overlay aria-hidden="true">
+            <img src="../images/complete/check.svg" alt="" />
+          </div>
         </div>
         <button type="button" class="btn-primary next-mission-btn" data-action="next">Next Battle</button>
       </section>
