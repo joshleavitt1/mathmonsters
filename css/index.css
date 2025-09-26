@@ -150,6 +150,68 @@ body:not(.is-preloading) main.landing {
   transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.landing__hero-speech {
+  position: absolute;
+  top: clamp(18%, 32vh, 44%);
+  left: 50%;
+  transform: translate(-50%, -8px);
+  max-width: min(520px, 90vw);
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+  transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing__hero-speech::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -18px;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+  box-shadow: 0 18px 36px rgba(0, 27, 65, 0.18);
+}
+
+.landing__hero-speech.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.landing__hero-speech-text {
+  margin: 0;
+  width: 100%;
+  font-size: clamp(18px, 3.8vw, 22px);
+  color: rgba(39, 43, 52, 0.95);
+  letter-spacing: 0.01em;
+}
+
+.landing__hero-speech-text[data-typing='true']::after {
+  content: '▌';
+  display: inline-block;
+  margin-left: 4px;
+  animation: hero-speech-caret 0.8s steps(1, end) infinite;
+}
+
+.landing__hero-speech-text[data-typing='false']::after,
+.landing__hero-speech-text:not([data-typing])::after {
+  content: '';
+}
+
+@keyframes hero-speech-caret {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
 .hero.is-side-position {
   left: calc(50% - var(--intro-sprite-offset));
 }
@@ -202,6 +264,14 @@ body:not(.is-preloading) main.landing {
 
 body.is-level-one-landing .landing__hero-info,
 body.is-level-one-landing .landing__actions {
+  display: none;
+}
+
+body.is-level-one-landing .enemy {
+  display: none;
+}
+
+body:not(.is-level-one-landing) .landing__hero-speech {
   display: none;
 }
 

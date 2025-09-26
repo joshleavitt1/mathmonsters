@@ -14,6 +14,10 @@ const ENEMY_EXIT_DURATION_MS = 600;
 const BATTLE_CALL_POP_OUT_DURATION_MS = 450;
 const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
+const LEVEL_ONE_SPEECH_DELAY_MS = 2000;
+const LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS = 45;
+const LEVEL_ONE_SPEECH_TEXT =
+  "Hi! I\u2019m Shellfin. Uh-oh\u2026 monsters are here! Can you help me stop them?";
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
@@ -175,6 +179,9 @@ const runBattleIntroSequence = async (options = {}) => {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const showIntroImmediately = Boolean(options?.showIntroImmediately);
   const skipHeroSidePosition = Boolean(options?.skipHeroSidePosition);
+  const skipEnemyAppearance = Boolean(
+    options?.hideEnemy || options?.skipEnemyAppearance
+  );
 
   const wait = (durationMs) =>
     new Promise((resolve) =>
@@ -185,8 +192,13 @@ const runBattleIntroSequence = async (options = {}) => {
     return false;
   }
 
+  if (skipEnemyAppearance && enemyImage) {
+    enemyImage.classList.remove('is-visible', 'is-exiting');
+    enemyImage.setAttribute('aria-hidden', 'true');
+  }
+
   const showEnemy = () => {
-    if (!enemyImage) {
+    if (!enemyImage || skipEnemyAppearance) {
       return;
     }
     enemyImage.classList.add('is-visible');
@@ -222,7 +234,7 @@ const runBattleIntroSequence = async (options = {}) => {
   const beginExitAnimations = () => {
     document.body.classList.add('is-battle-transition');
     heroImage.classList.add('is-exiting');
-    if (enemyImage) {
+    if (enemyImage && !skipEnemyAppearance) {
       enemyImage.classList.add('is-exiting');
     }
     return hideBattleIntro();
@@ -254,7 +266,7 @@ const runBattleIntroSequence = async (options = {}) => {
       Math.max(
         REDUCED_MOTION_SEQUENCE_DURATION_MS,
         HERO_EXIT_DURATION_MS,
-        ENEMY_EXIT_DURATION_MS,
+        skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS,
         exitDuration
       )
     );
@@ -278,10 +290,80 @@ const runBattleIntroSequence = async (options = {}) => {
   const exitDuration = beginExitAnimations();
 
   await wait(
-    Math.max(HERO_EXIT_DURATION_MS, ENEMY_EXIT_DURATION_MS, exitDuration)
+    Math.max(
+      HERO_EXIT_DURATION_MS,
+      skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS,
+      exitDuration
+    )
   );
 
   return true;
+};
+
+const playLevelOneHeroSpeech = ({
+  container,
+  textElement,
+  delayMs,
+} = {}) => {
+  if (!container || !textElement) {
+    return Promise.resolve(false);
+  }
+
+  const delay = Number.isFinite(delayMs) && delayMs >= 0
+    ? delayMs
+    : LEVEL_ONE_SPEECH_DELAY_MS;
+
+  container.classList.remove('is-visible');
+  container.setAttribute('aria-hidden', 'true');
+  textElement.textContent = '';
+  if (textElement.dataset) {
+    delete textElement.dataset.typing;
+  } else {
+    textElement.removeAttribute('data-typing');
+  }
+
+  return new Promise((resolve) => {
+    const startTyping = () => {
+      container.setAttribute('aria-hidden', 'false');
+      container.classList.add('is-visible');
+
+      const prefersReducedMotion =
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        textElement.textContent = LEVEL_ONE_SPEECH_TEXT;
+        textElement.dataset.typing = 'false';
+        resolve(true);
+        return;
+      }
+
+      const characters = Array.from(LEVEL_ONE_SPEECH_TEXT);
+      let index = 0;
+      textElement.textContent = '';
+      textElement.dataset.typing = 'true';
+
+      const typeNextCharacter = () => {
+        if (index >= characters.length) {
+          textElement.dataset.typing = 'false';
+          resolve(true);
+          return;
+        }
+
+        textElement.textContent += characters[index];
+        index += 1;
+
+        window.setTimeout(
+          typeNextCharacter,
+          Math.max(0, LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS)
+        );
+      };
+
+      typeNextCharacter();
+    };
+
+    window.setTimeout(startTyping, Math.max(0, Number(delay) || 0));
+  });
 };
 
 (async () => {
@@ -1054,6 +1136,11 @@ const initLandingInteractions = async (preloadedData = {}) => {
   let battleButton = document.querySelector('[data-battle-button]');
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
+  const heroSpeechElement = document.querySelector('[data-hero-speech]');
+  const heroSpeechTextElement = heroSpeechElement?.querySelector(
+    '[data-hero-speech-text]'
+  );
+  let heroSpeechPromise = null;
   let isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
 
   const loadBattlePreview = async () => {
@@ -1109,6 +1196,25 @@ const initLandingInteractions = async (preloadedData = {}) => {
   await loadBattlePreview();
   isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
 
+  if (isLevelOneLanding && heroSpeechElement && heroSpeechTextElement) {
+    heroSpeechPromise = playLevelOneHeroSpeech({
+      container: heroSpeechElement,
+      textElement: heroSpeechTextElement,
+      delayMs: LEVEL_ONE_SPEECH_DELAY_MS,
+    });
+  } else if (heroSpeechElement) {
+    heroSpeechElement.classList.remove('is-visible');
+    heroSpeechElement.setAttribute('aria-hidden', 'true');
+    if (heroSpeechTextElement) {
+      heroSpeechTextElement.textContent = '';
+      if (heroSpeechTextElement.dataset) {
+        delete heroSpeechTextElement.dataset.typing;
+      } else {
+        heroSpeechTextElement.removeAttribute('data-typing');
+      }
+    }
+  }
+
   if (isLevelOneLanding) {
     if (actionsElement) {
       actionsElement.setAttribute('aria-hidden', 'true');
@@ -1120,6 +1226,9 @@ const initLandingInteractions = async (preloadedData = {}) => {
       battleButton.disabled = true;
       battleButton.setAttribute('aria-hidden', 'true');
       battleButton.setAttribute('tabindex', '-1');
+    }
+    if (enemyImage) {
+      enemyImage.setAttribute('aria-hidden', 'true');
     }
     battleButton = null;
   } else {
@@ -1160,7 +1269,20 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
   if (!battleButton) {
     await waitForImages;
-    if (CENTER_IMAGE_HOLD_DURATION_MS > 0) {
+    if (heroSpeechPromise) {
+      try {
+        await heroSpeechPromise;
+      } catch (error) {
+        console.warn('Level one hero speech failed.', error);
+      }
+    }
+
+    if (heroSpeechElement && isLevelOneLanding) {
+      heroSpeechElement.classList.remove('is-visible');
+      heroSpeechElement.setAttribute('aria-hidden', 'true');
+    }
+
+    if (!heroSpeechPromise && CENTER_IMAGE_HOLD_DURATION_MS > 0) {
       await new Promise((resolve) =>
         window.setTimeout(
           resolve,
@@ -1172,6 +1294,8 @@ const initLandingInteractions = async (preloadedData = {}) => {
     try {
       await runBattleIntroSequence({
         skipHeroSidePosition: isLevelOneLanding,
+        showIntroImmediately: isLevelOneLanding,
+        hideEnemy: isLevelOneLanding,
       });
     } finally {
       redirectToBattle();
