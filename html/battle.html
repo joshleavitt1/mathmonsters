@@ -89,6 +89,13 @@
         <p class="title question-text text-large text-dark"></p>
         <div class="choices"></div>
         <div class="meter" data-meter aria-hidden="true">
+          <img
+            class="meter__icon"
+            src="../images/complete/sword.png"
+            data-meter-icon
+            alt=""
+            aria-hidden="true"
+          />
           <p class="meter__heading text-small text-dark" data-meter-heading>
             Super Attack
           </p>
@@ -103,13 +110,6 @@
           >
             <span class="progress__fill" aria-hidden="true"></span>
           </div>
-          <img
-            class="meter__icon"
-            src="../images/complete/sword.png"
-            data-meter-icon
-            alt=""
-            aria-hidden="true"
-          />
         </div>
         <button type="button" disabled aria-disabled="true">Submit</button>
       </section>
@@ -124,16 +124,16 @@
     >
       <section class="card card--pop battle-complete-card">
         <div class="meter meter--visible meter--level-up battle-complete-card__meter">
-          <p id="battle-complete-title" class="meter__heading battle-title">Monster Defeated</p>
-          <p class="battle-complete-card__meter-subtitle subtitle">Level Up</p>
-          <div class="progress meter__progress" role="presentation" aria-hidden="true">
-            <span class="progress__fill" aria-hidden="true"></span>
-          </div>
           <img
             class="meter__icon"
             src="../images/complete/chest.png"
             alt="Treasure chest level-up reward"
           />
+          <p id="battle-complete-title" class="meter__heading battle-title">Monster Defeated</p>
+          <p class="battle-complete-card__meter-subtitle subtitle">Level Up</p>
+          <div class="progress meter__progress" role="presentation" aria-hidden="true">
+            <span class="progress__fill" aria-hidden="true"></span>
+          </div>
         </div>
         <div class="battle-complete-card__enemy">
           <img
