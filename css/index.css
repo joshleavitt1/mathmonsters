@@ -55,6 +55,65 @@ body:not(.is-preloading) main.landing {
   filter: none;
 }
 
+.landing__hero-info {
+  position: absolute;
+  top: clamp(48px, 18vh, 180px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(360px, 88vw);
+  padding: 0 12px;
+  text-align: center;
+  z-index: 3;
+}
+
+.landing__hero-name,
+.landing__hero-level {
+  margin: 0;
+}
+
+.landing__hero-level {
+  opacity: 0.85;
+}
+
+.landing__hero-progress {
+  --progress-gradient-start: #36dc36;
+  --progress-gradient-end: #00b600;
+
+  height: 18px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.landing__hero-progress .progress__fill::after {
+  inset: 3px 5px 0 5px;
+}
+
+.landing__actions {
+  position: absolute;
+  left: 50%;
+  bottom: calc(24px + var(--viewport-bottom-offset, 0px));
+  bottom: calc(
+    24px + var(--viewport-bottom-offset, 0px) + constant(safe-area-inset-bottom)
+  );
+  bottom: calc(
+    24px + var(--viewport-bottom-offset, 0px) + env(safe-area-inset-bottom, 0px)
+  );
+  transform: translateX(-50%);
+  width: min(360px, calc(100vw - 32px));
+  z-index: 3;
+}
+
+.landing__battle-button {
+  box-shadow: 0 18px 32px rgba(0, 58, 128, 0.35);
+}
+
 @media (prefers-reduced-motion: reduce) {
   main.landing {
     transition: none;
