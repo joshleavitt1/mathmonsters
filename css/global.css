@@ -247,6 +247,13 @@ button:focus-visible {
   font-weight: 700;
 }
 
+.meter__value {
+  margin: 0;
+  font-size: var(--subtitle-font-size);
+  font-weight: var(--subtitle-font-weight);
+  color: var(--title-color);
+}
+
 .meter__progress {
   width: 100%;
   background-color: #ffffff;

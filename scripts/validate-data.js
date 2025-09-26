@@ -119,7 +119,34 @@ function validateLevels(issues) {
     const label = `Level ${index + 1}`;
     const battle = level?.battle ?? {};
     const hero = battle.hero ?? {};
-    const enemy = battle.enemy ?? {};
+    const enemyCandidates = [];
+    if (battle && typeof battle.enemy === 'object' && battle.enemy !== null) {
+      enemyCandidates.push(battle.enemy);
+    }
+    if (Array.isArray(battle.enemies)) {
+      battle.enemies.forEach((entry) => {
+        if (entry && typeof entry === 'object') {
+          enemyCandidates.push(entry);
+        }
+      });
+    }
+    const enemy = enemyCandidates[0] ?? {};
+
+    if (typeof battle.levelUp !== 'number') {
+      issues.push(`${label}: battle.levelUp should be a number`);
+    }
+
+    if (!enemyCandidates.length) {
+      issues.push(`${label}: no enemy data found`);
+    } else {
+      enemyCandidates.forEach((candidate, enemyIndex) => {
+        if (typeof candidate.experiencePoints !== 'number') {
+          issues.push(
+            `${label}: enemy ${enemyIndex + 1} missing numeric experiencePoints`
+          );
+        }
+      });
+    }
 
     if (battle?.questionReference?.file) {
       validateQuestionSet(battle.questionReference.file.replace(/^questions\//, ''), issues);

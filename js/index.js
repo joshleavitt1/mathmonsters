@@ -256,6 +256,79 @@ const getNow = () =>
     ? performance.now()
     : Date.now();
 
+const isPlainObject = (value) =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const normalizeExperienceMap = (source) => {
+  if (!isPlainObject(source)) {
+    return {};
+  }
+
+  const normalized = {};
+  Object.entries(source).forEach(([key, value]) => {
+    const levelKey = String(key).trim();
+    const numericValue = Number(value);
+    if (!levelKey) {
+      return;
+    }
+    if (!Number.isFinite(numericValue)) {
+      return;
+    }
+    normalized[levelKey] = Math.max(0, Math.round(numericValue));
+  });
+  return normalized;
+};
+
+const mergeExperienceMaps = (base, extra) => {
+  const merged = { ...normalizeExperienceMap(base) };
+  const additional = normalizeExperienceMap(extra);
+
+  Object.entries(additional).forEach(([key, value]) => {
+    merged[key] = value;
+  });
+
+  return merged;
+};
+
+const readExperienceForLevel = (experienceMap, level) => {
+  if (!isPlainObject(experienceMap)) {
+    return 0;
+  }
+
+  const normalizedLevel = Number(level);
+  if (Number.isFinite(normalizedLevel) && normalizedLevel in experienceMap) {
+    const direct = Number(experienceMap[normalizedLevel]);
+    if (Number.isFinite(direct)) {
+      return Math.max(0, direct);
+    }
+  }
+
+  const levelKey = String(level);
+  if (!levelKey) {
+    return 0;
+  }
+  const value = Number(experienceMap[levelKey]);
+  return Number.isFinite(value) ? Math.max(0, value) : 0;
+};
+
+const computeExperienceProgress = (earned, requirement) => {
+  const safeEarned = Number.isFinite(earned) ? Math.max(0, Math.round(earned)) : 0;
+  const safeRequirement = Number.isFinite(requirement)
+    ? Math.max(0, Math.round(requirement))
+    : 0;
+  const totalWithBase = safeRequirement + 1;
+  const earnedWithBase = Math.min(totalWithBase, safeEarned + 1);
+  const ratio = totalWithBase > 0 ? Math.min(1, earnedWithBase / totalWithBase) : 0;
+  const text = `${earnedWithBase} of ${totalWithBase}`;
+
+  return {
+    ratio,
+    text,
+    earned: earnedWithBase,
+    total: totalWithBase,
+  };
+};
+
 const sanitizeAssetPath = (path) => {
   if (typeof path !== 'string') {
     return null;
@@ -292,6 +365,20 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       ? rawPlayerData.battleVariables
       : {};
 
+  const existingExperience = normalizeExperienceMap(player?.progress?.experience);
+  const baseExperience = normalizeExperienceMap(baseProgress?.experience);
+  const storedExperience = normalizeExperienceMap(storedProgress?.experience);
+  const combinedExperience = mergeExperienceMaps(
+    mergeExperienceMaps(baseExperience, existingExperience),
+    storedExperience
+  );
+
+  if (Object.keys(combinedExperience).length > 0) {
+    mergedProgress.experience = combinedExperience;
+  } else {
+    delete mergedProgress.experience;
+  }
+
   player.battleVariables =
     player && typeof player.battleVariables === 'object'
       ? { ...baseBattleVariables, ...player.battleVariables }
@@ -311,7 +398,14 @@ const mergePlayerWithProgress = (rawPlayerData) => {
   if (!player.progress || typeof player.progress !== 'object') {
     player.progress = mergedProgress;
   } else {
+    const normalizedExisting = normalizeExperienceMap(player.progress.experience);
     player.progress = { ...player.progress, ...mergedProgress };
+    if (mergedProgress.experience) {
+      player.progress.experience = {
+        ...normalizedExisting,
+        ...mergedProgress.experience,
+      };
+    }
   }
 
   return player;
@@ -380,7 +474,20 @@ const determineBattlePreview = (levelsData, playerData) => {
       : 'Math Mission';
   const mathLabel = mathLabelSource.trim() || 'Math Mission';
 
-  const enemyData = battle?.enemy ?? {};
+  const enemyData = (() => {
+    if (battle && typeof battle.enemy === 'object' && battle.enemy !== null) {
+      return battle.enemy;
+    }
+    if (Array.isArray(battle?.enemies)) {
+      const match = battle.enemies.find(
+        (candidate) => candidate && typeof candidate === 'object'
+      );
+      if (match) {
+        return match;
+      }
+    }
+    return {};
+  })();
   const rawEnemySprite =
     typeof enemyData?.sprite === 'string' ? enemyData.sprite.trim() : '';
   const enemySprite = sanitizeAssetPath(rawEnemySprite) || rawEnemySprite;
@@ -394,10 +501,17 @@ const determineBattlePreview = (levelsData, playerData) => {
     (typeof activeLevel?.battleLevel === 'number'
       ? `Battle ${activeLevel.battleLevel}`
       : 'Upcoming Battle');
-  const progressText =
-    typeof activeLevel?.battleLevel === 'number'
-      ? `Level ${activeLevel.battleLevel}`
-      : 'Ready for battle';
+  const experienceMap = normalizeExperienceMap(player?.progress?.experience);
+  const earnedExperience = readExperienceForLevel(
+    experienceMap,
+    activeLevel?.battleLevel
+  );
+  const levelUpRequirement = Number(battle?.levelUp);
+  const experienceProgress = computeExperienceProgress(
+    earnedExperience,
+    levelUpRequirement
+  );
+  const progressText = experienceProgress.text;
 
   return {
     levels,
@@ -411,7 +525,9 @@ const determineBattlePreview = (levelsData, playerData) => {
       heroAlt,
       enemy: { ...enemyData, sprite: enemySprite },
       enemyAlt,
-      progressExperience: null,
+      progressExperience: experienceProgress.ratio,
+      progressExperienceEarned: experienceProgress.earned,
+      progressExperienceTotal: experienceProgress.total,
       progressExperienceText: progressText,
     },
   };
@@ -480,8 +596,18 @@ const applyBattlePreview = (previewData = {}) => {
       previewData.progressExperienceText.trim()
         ? previewData.progressExperienceText.trim()
         : '0 of 0';
+    const earnedCount = Number(previewData?.progressExperienceEarned);
+    const totalCount = Number(previewData?.progressExperienceTotal);
     progressElement.style.setProperty('--progress-value', progressValue);
-    progressElement.setAttribute('aria-valuenow', `${Math.round(progressValue * 100)}`);
+    progressElement.setAttribute('aria-valuemin', '0');
+    if (Number.isFinite(earnedCount) && Number.isFinite(totalCount) && totalCount > 0) {
+      const clampedEarned = Math.max(0, Math.min(earnedCount, totalCount));
+      progressElement.setAttribute('aria-valuemax', `${Math.round(totalCount)}`);
+      progressElement.setAttribute('aria-valuenow', `${Math.round(clampedEarned)}`);
+    } else {
+      progressElement.setAttribute('aria-valuemax', '100');
+      progressElement.setAttribute('aria-valuenow', `${Math.round(progressValue * 100)}`);
+    }
     const ariaText = progressText.includes(' of ')
       ? `${progressText} experience`
       : progressText;

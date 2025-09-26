@@ -147,6 +147,40 @@ const resolveDataPath = (path) => {
   return normalizeAssetPath(normalized);
 };
 
+const isPlainObject = (value) =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const normalizeExperienceMap = (source) => {
+  if (!isPlainObject(source)) {
+    return {};
+  }
+
+  const normalized = {};
+  Object.entries(source).forEach(([key, value]) => {
+    const levelKey = String(key).trim();
+    const numericValue = Number(value);
+    if (!levelKey) {
+      return;
+    }
+    if (!Number.isFinite(numericValue)) {
+      return;
+    }
+    normalized[levelKey] = Math.max(0, Math.round(numericValue));
+  });
+  return normalized;
+};
+
+const mergeExperienceMaps = (base, extra) => {
+  const merged = { ...normalizeExperienceMap(base) };
+  const additional = normalizeExperienceMap(extra);
+
+  Object.entries(additional).forEach(([key, value]) => {
+    merged[key] = value;
+  });
+
+  return merged;
+};
+
 const readStoredProgress = () => {
   try {
     const storage = window.localStorage;
@@ -195,6 +229,7 @@ const readStoredProgress = () => {
         : {};
     const progress = { ...baseProgress };
     const battleVariables = { ...baseBattleVariables };
+    let experienceMap = normalizeExperienceMap(progress?.experience);
 
     if (storedProgress && typeof storedProgress === 'object') {
       if (typeof storedProgress.battleLevel === 'number') {
@@ -204,6 +239,14 @@ const readStoredProgress = () => {
         battleVariables.timeRemainingSeconds =
           storedProgress.timeRemainingSeconds;
       }
+      experienceMap = mergeExperienceMaps(experienceMap, storedProgress.experience);
+    }
+
+    experienceMap = normalizeExperienceMap(experienceMap);
+    if (Object.keys(experienceMap).length > 0) {
+      progress.experience = experienceMap;
+    } else {
+      delete progress.experience;
     }
 
     const activeBattleLevel =
@@ -366,7 +409,20 @@ const readStoredProgress = () => {
       ...(levelBattle?.hero ?? {}),
       ...(playerLevelHero ?? {}),
     };
-    const enemyBase = levelBattle?.enemy ?? {};
+    const enemyBase = (() => {
+      if (levelBattle && typeof levelBattle.enemy === 'object') {
+        return levelBattle.enemy;
+      }
+      if (Array.isArray(levelBattle?.enemies)) {
+        const match = levelBattle.enemies.find(
+          (candidate) => candidate && typeof candidate === 'object'
+        );
+        if (match) {
+          return match;
+        }
+      }
+      return {};
+    })();
     const battle = {
       ...levelBattle,
       hero,
