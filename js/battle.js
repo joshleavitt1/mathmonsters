@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const bannerTimeValue = document.querySelector('[data-banner-time]');
   const setStreakButton = document.querySelector('[data-dev-set-streak]');
   const endBattleButton = document.querySelector('[data-dev-end-battle]');
+  const loseBattleButton = document.querySelector('[data-dev-lose-battle]');
   const resetLevelButton = document.querySelector('[data-dev-reset-level]');
   const logOutButton = document.querySelector('[data-dev-log-out]');
   const devControls = document.querySelector('.battle-dev-controls');
@@ -1368,6 +1369,21 @@ document.addEventListener('DOMContentLoaded', () => {
     streak = targetStreak;
     streakMaxed = false;
     dispatchStreakMeterUpdate(true);
+  });
+
+  loseBattleButton?.addEventListener('click', () => {
+    if (battleEnded) {
+      return;
+    }
+    const previousHealth = hero.health;
+    hero.health = 0;
+    hero.damage = Math.max(hero.damage, previousHealth);
+    updateHeroHealthDisplay();
+    updateHealthBars();
+    document.dispatchEvent(new Event('close-question'));
+    window.setTimeout(() => {
+      endBattle(false, { waitForHpDrain: heroHpFill });
+    }, 0);
   });
 
   endBattleButton?.addEventListener('click', () => {
