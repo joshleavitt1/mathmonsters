@@ -221,6 +221,7 @@ button:focus-visible {
 }
 
 .meter {
+  display: none;
   box-sizing: border-box;
   width: 100%;
   padding: 24px;
