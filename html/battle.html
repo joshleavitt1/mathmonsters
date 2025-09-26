@@ -123,18 +123,9 @@
       tabindex="-1"
     >
       <section class="card card--pop battle-complete-card">
-        <div class="meter meter--visible meter--level-up battle-complete-card__meter">
-          <img
-            class="meter__icon"
-            src="../images/complete/chest.png"
-            alt="Treasure chest level-up reward"
-          />
-          <p id="battle-complete-title" class="meter__heading battle-title">Monster Defeated</p>
-          <p class="battle-complete-card__meter-subtitle subtitle">Level Up</p>
-          <div class="progress meter__progress" role="presentation" aria-hidden="true">
-            <span class="progress__fill" aria-hidden="true"></span>
-          </div>
-        </div>
+        <h2 id="battle-complete-title" class="battle-complete-card__title battle-title">
+          Monster Defeated
+        </h2>
         <div class="battle-complete-card__enemy">
           <img
             class="enemy-image"
@@ -143,6 +134,24 @@
           />
           <div class="enemy-defeat-overlay" data-enemy-defeat-overlay aria-hidden="true">
             <img src="../images/complete/check.svg" alt="" />
+          </div>
+        </div>
+        <div class="meter meter--visible battle-complete-card__meter">
+          <img
+            class="meter__icon"
+            src="../images/complete/chest.png"
+            alt="Treasure chest level-up reward"
+          />
+          <p class="meter__heading text-small text-dark">Level Progress</p>
+          <div
+            class="progress meter__progress"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="0"
+            aria-valuenow="0"
+            aria-valuetext="0 of 0"
+          >
+            <span class="progress__fill" aria-hidden="true"></span>
           </div>
         </div>
         <button type="button" class="btn-primary next-mission-btn" data-action="next">Next Battle</button>
