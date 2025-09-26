@@ -12,6 +12,7 @@ const HERO_EXIT_DURATION_MS = 700;
 const ENEMY_EXIT_DURATION_MS = 600;
 const BATTLE_CALL_POP_OUT_DURATION_MS = 450;
 const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
+const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
@@ -791,6 +792,15 @@ const initLandingInteractions = async (preloadedData = {}) => {
   };
 
   await Promise.all([awaitImageReady(heroImage), awaitImageReady(enemyImage)]);
+
+  if (CENTER_IMAGE_HOLD_DURATION_MS > 0) {
+    await new Promise((resolve) =>
+      window.setTimeout(
+        resolve,
+        Math.max(0, Number(CENTER_IMAGE_HOLD_DURATION_MS) || 0)
+      )
+    );
+  }
 
   try {
     await runBattleIntroSequence();
