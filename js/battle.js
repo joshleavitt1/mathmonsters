@@ -275,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const hero = {
     attack: 1,
     health: 5,
-    gems: 0,
     damage: 0,
     name: 'Hero',
     attackSprites: {},
@@ -1028,10 +1027,6 @@ document.addEventListener('DOMContentLoaded', () => {
     hero.health = Number(heroData.health) || hero.health;
     hero.damage = Number(heroData.damage) || hero.damage;
     hero.name = heroData.name || hero.name;
-    if (typeof heroData.gems === 'number') {
-      hero.gems = heroData.gems;
-    }
-
     const heroAttackSprites = normalizeAttackSprites(hero, heroData);
     if (Object.keys(heroAttackSprites).length > 0) {
       hero.attackSprites = heroAttackSprites;
