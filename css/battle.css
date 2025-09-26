@@ -445,7 +445,7 @@ body {
 
 .battle-complete-card .enemy-image {
   display: block;
-  max-width: 280px;
+  max-width: 200px;
   width: 100%;
   height: auto;
   transition: filter 0.4s ease, opacity 0.4s ease;
