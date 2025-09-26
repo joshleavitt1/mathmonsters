@@ -3,6 +3,50 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 
+const BATTLE_PAGE_MODE_PARAM = 'mode';
+const BATTLE_PAGE_MODE_PLAY = 'play';
+
+const isDevControlsHiddenMode = () => {
+  if (typeof window === 'undefined' || typeof window.location === 'undefined') {
+    return false;
+  }
+
+  const search = window.location.search || '';
+
+  if (typeof URLSearchParams === 'function') {
+    try {
+      const params = new URLSearchParams(search);
+      const mode = params.get(BATTLE_PAGE_MODE_PARAM);
+      return typeof mode === 'string' && mode.toLowerCase() === BATTLE_PAGE_MODE_PLAY;
+    } catch (error) {
+      console.warn('Unable to read battle mode from URL parameters.', error);
+    }
+  }
+
+  const trimmed = search.startsWith('?') ? search.slice(1) : search;
+  if (!trimmed) {
+    return false;
+  }
+
+  return trimmed.split('&').some((pair) => {
+    if (!pair) {
+      return false;
+    }
+
+    const [rawKey, rawValue = ''] = pair.split('=');
+    if (!rawKey) {
+      return false;
+    }
+
+    const key = rawKey.trim().toLowerCase();
+    if (key !== BATTLE_PAGE_MODE_PARAM) {
+      return false;
+    }
+
+    return rawValue.trim().toLowerCase() === BATTLE_PAGE_MODE_PLAY;
+  });
+};
+
 const readVisitedFlag = (storage, label) => {
   if (!storage) {
     return null;
@@ -57,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!landingVisited) {
     return;
   }
+  const hideDevControls = isDevControlsHiddenMode();
   const battleField = document.getElementById('battle');
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
@@ -85,6 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetLevelButton = document.querySelector('[data-dev-reset-level]');
   const logOutButton = document.querySelector('[data-dev-log-out]');
   const devControls = document.querySelector('.battle-dev-controls');
+  if (hideDevControls) {
+    devControls?.classList.add('battle-dev-controls--hidden');
+  }
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
   const heroAttackInc = heroStats.querySelector('.attack .increase');
