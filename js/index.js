@@ -884,14 +884,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
   applyLandingModeRequest();
   randomizeBubbleTimings();
 
-  const playNowButton = document.querySelector('[data-play-now]');
-  if (playNowButton) {
-    playNowButton.addEventListener('click', () => {
-      requestBattleWithoutDevControls();
-      playNowButton.setAttribute('aria-pressed', 'true');
-    });
-  }
-
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
 
