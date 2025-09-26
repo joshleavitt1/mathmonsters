@@ -86,7 +86,20 @@ self.addEventListener('fetch', (event) => {
           });
           return response;
         })
-        .catch(() => caches.match('./index.html'));
+        .catch(async () => {
+          const isBattleVariant =
+            requestURL.pathname.endsWith('/html/battle.html') &&
+            requestURL.search;
+
+          if (isBattleVariant) {
+            const fallbackBattle = await caches.match('./html/battle.html');
+            if (fallbackBattle) {
+              return fallbackBattle;
+            }
+          }
+
+          return caches.match('./index.html');
+        });
     })
   );
 });

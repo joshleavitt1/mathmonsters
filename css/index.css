@@ -477,6 +477,81 @@ body.is-battle-transition .bubbles {
   100% { --ty: -110vh;              --sx: 1.06; --sy: 1.06; opacity: 0; }
 }
 
+.landing-actions {
+  position: absolute;
+  left: 50%;
+  bottom: calc(32px + var(--viewport-bottom-offset, 0px));
+  bottom: calc(
+    32px + var(--viewport-bottom-offset, 0px) +
+    constant(safe-area-inset-bottom)
+  );
+  bottom: calc(
+    32px + var(--viewport-bottom-offset, 0px) +
+    env(safe-area-inset-bottom, 0px)
+  );
+  transform: translate3d(-50%, 0, 0);
+  width: min(320px, calc(100% - 32px));
+  display: flex;
+  justify-content: center;
+  z-index: 6;
+  pointer-events: auto;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.landing-actions__btn {
+  flex: 1;
+  border: none;
+  border-radius: 999px;
+  padding: 18px 28px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(180deg, #ffb347 0%, #ff8a00 100%);
+  box-shadow: 0 12px 24px rgba(255, 138, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.landing-actions__btn:hover,
+.landing-actions__btn:focus-visible,
+.landing-actions__btn[aria-pressed='true'] {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(255, 138, 0, 0.45);
+}
+
+.landing-actions__btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.landing-actions__btn:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 18px rgba(255, 138, 0, 0.35);
+}
+
+body.is-preloading .landing-actions {
+  opacity: 0;
+  transform: translate3d(-50%, 16px, 0);
+  pointer-events: none;
+}
+
+body.is-battle-transition .landing-actions {
+  opacity: 0;
+  transform: translate3d(-50%, 24px, 0);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-actions {
+    transition: none;
+  }
+
+  .landing-actions__btn {
+    transition: none;
+  }
+}
+
 .battle-intro {
   position: fixed;
   left: var(--battle-intro-left, 50%);
