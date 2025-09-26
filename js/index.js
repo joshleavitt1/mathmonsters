@@ -3,6 +3,7 @@ const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
+const LANDING_MODE_STORAGE_KEY = 'reefRangersLandingMode';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const HERO_TO_ENEMY_DELAY_MS = 2000;
 const ENEMY_ENTRANCE_DURATION_MS = 900;
@@ -567,6 +568,144 @@ const markLandingVisited = () => {
   setVisitedFlag(localStorage, 'Local');
 };
 
+const readLandingModeRequestFromStorage = () => {
+  try {
+    const storage = window.sessionStorage;
+    if (!storage) {
+      return null;
+    }
+    const value = storage.getItem(LANDING_MODE_STORAGE_KEY);
+    return typeof value === 'string' && value ? value : null;
+  } catch (error) {
+    console.warn('Landing mode preference unavailable.', error);
+    return null;
+  }
+};
+
+const clearLandingModeRequestFromStorage = () => {
+  try {
+    window.sessionStorage?.removeItem(LANDING_MODE_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Unable to clear landing mode preference.', error);
+  }
+};
+
+const readLandingModeRequestFromQuery = () => {
+  if (typeof window === 'undefined' || typeof window.location === 'undefined') {
+    return null;
+  }
+
+  const search = window.location.search || '';
+
+  if (typeof URLSearchParams === 'function') {
+    try {
+      const params = new URLSearchParams(search);
+      const mode = params.get(BATTLE_PAGE_MODE_PARAM);
+      return typeof mode === 'string' && mode ? mode : null;
+    } catch (error) {
+      console.warn('Unable to read landing mode from URL parameters.', error);
+    }
+  }
+
+  const trimmed = search.startsWith('?') ? search.slice(1) : search;
+  if (!trimmed) {
+    return null;
+  }
+
+  const pairs = trimmed.split('&');
+  for (const pair of pairs) {
+    if (!pair) {
+      continue;
+    }
+    const [rawKey, rawValue = ''] = pair.split('=');
+    if (!rawKey) {
+      continue;
+    }
+    const key = rawKey.trim().toLowerCase();
+    if (key !== BATTLE_PAGE_MODE_PARAM) {
+      continue;
+    }
+    const value = rawValue.trim();
+    return value ? value : null;
+  }
+
+  return null;
+};
+
+const clearLandingModeRequestFromQuery = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const { history, location, document: doc } = window;
+  if (!history?.replaceState || !location) {
+    return;
+  }
+
+  try {
+    const url = new URL(location.href);
+    url.searchParams.delete(BATTLE_PAGE_MODE_PARAM);
+    history.replaceState(null, doc?.title || '', url.toString());
+    return;
+  } catch (error) {
+    console.warn('Unable to update URL search parameters.', error);
+  }
+
+  try {
+    const search = location.search || '';
+    const trimmed = search.startsWith('?') ? search.slice(1) : search;
+    if (!trimmed) {
+      return;
+    }
+
+    const filtered = trimmed
+      .split('&')
+      .filter((pair) => {
+        if (!pair) {
+          return false;
+        }
+        const [rawKey] = pair.split('=');
+        if (!rawKey) {
+          return true;
+        }
+        return rawKey.trim().toLowerCase() !== BATTLE_PAGE_MODE_PARAM;
+      })
+      .join('&');
+
+    const newSearch = filtered ? `?${filtered}` : '';
+    const origin =
+      location.origin || `${location.protocol}//${location.host || ''}`;
+    const newUrl = `${origin}${location.pathname}${newSearch}${
+      location.hash || ''
+    }`;
+    history.replaceState(null, doc?.title || '', newUrl);
+  } catch (fallbackError) {
+    console.warn('Unable to clear landing mode from URL parameters.', fallbackError);
+  }
+};
+
+const applyLandingModeRequest = () => {
+  const storedMode = readLandingModeRequestFromStorage();
+  if (storedMode) {
+    if (storedMode.trim().toLowerCase() === BATTLE_PAGE_MODE_PLAY) {
+      requestBattleWithoutDevControls();
+    }
+    clearLandingModeRequestFromStorage();
+    return;
+  }
+
+  const queryMode = readLandingModeRequestFromQuery();
+  if (!queryMode) {
+    return;
+  }
+
+  if (queryMode.trim().toLowerCase() === BATTLE_PAGE_MODE_PLAY) {
+    requestBattleWithoutDevControls();
+  }
+
+  clearLandingModeRequestFromQuery();
+};
+
 const randomizeBubbleTimings = () => {
   const bubbles = document.querySelectorAll('.bubble');
 
@@ -742,6 +881,7 @@ const preloadLandingAssets = async () => {
 const initLandingInteractions = async (preloadedData = {}) => {
   battleRedirectUrl = BATTLE_PAGE_URL;
   markLandingVisited();
+  applyLandingModeRequest();
   randomizeBubbleTimings();
 
   const playNowButton = document.querySelector('[data-play-now]');
