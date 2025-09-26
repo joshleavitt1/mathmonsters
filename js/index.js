@@ -16,9 +16,30 @@ const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
 const LEVEL_ONE_SPEECH_DELAY_MS = 2000;
 const LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS = 90;
-const LEVEL_ONE_SPEECH_SENTENCE_PAUSE_MS = 1000;
-const LEVEL_ONE_SPEECH_TEXT =
-  "Hi! I\u2019m Shellfin. Uh-oh\u2026 monsters are here! Can you help me stop them?";
+const LEVEL_ONE_SPEECH_SEQUENCE = [
+  { text: 'Hi! I’m Shellfin.', pauseAfterMs: 1000 },
+  { text: ' Uh-oh…', pauseAfterMs: 1000 },
+  { text: ' monsters are here!', pauseAfterMs: 1000 },
+  { text: ' Can you help me stop them?', pauseAfterMs: 2000 },
+];
+
+const buildSpeechCharacters = (segments = []) =>
+  segments.flatMap((segment) => {
+    if (!segment || typeof segment.text !== 'string') {
+      return [];
+    }
+
+    const characters = Array.from(segment.text);
+    const pauseAfter = Math.max(0, Number(segment.pauseAfterMs) || 0);
+
+    return characters.map((character, index) => ({
+      character,
+      pauseAfterMs: index === characters.length - 1 ? pauseAfter : 0,
+    }));
+  });
+
+const LEVEL_ONE_SPEECH_CHARACTERS = buildSpeechCharacters(LEVEL_ONE_SPEECH_SEQUENCE);
+const LEVEL_ONE_SPEECH_TEXT = LEVEL_ONE_SPEECH_CHARACTERS.map(({ character }) => character).join('');
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
@@ -339,7 +360,7 @@ const playLevelOneHeroSpeech = ({
         return;
       }
 
-      const characters = Array.from(LEVEL_ONE_SPEECH_TEXT);
+      const characters = LEVEL_ONE_SPEECH_CHARACTERS;
       let index = 0;
       textElement.textContent = '';
       textElement.dataset.typing = 'true';
@@ -351,15 +372,14 @@ const playLevelOneHeroSpeech = ({
           return;
         }
 
-        const currentCharacter = characters[index];
-        textElement.textContent += currentCharacter;
+        const currentEntry = characters[index] || { character: '', pauseAfterMs: 0 };
+        textElement.textContent += currentEntry.character;
         index += 1;
 
         const baseDelay = Math.max(0, LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS);
-        const sentencePause =
-          currentCharacter === '.' ? LEVEL_ONE_SPEECH_SENTENCE_PAUSE_MS : 0;
+        const entryPause = Math.max(0, Number(currentEntry.pauseAfterMs) || 0);
 
-        window.setTimeout(typeNextCharacter, baseDelay + sentencePause);
+        window.setTimeout(typeNextCharacter, baseDelay + entryPause);
       };
 
       typeNextCharacter();
