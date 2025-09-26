@@ -85,6 +85,15 @@ const determineAssetBasePath = () => {
 
 const ASSET_BASE_PATH = determineAssetBasePath();
 
+const progressUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
+
+if (!progressUtils) {
+  throw new Error('Progress utilities are not available.');
+}
+
+const { isPlainObject, normalizeExperienceMap, mergeExperienceMaps } = progressUtils;
+
 const normalizeAssetPath = (inputPath) => {
   if (typeof inputPath !== 'string') {
     return null;
@@ -145,40 +154,6 @@ const resolveDataPath = (path) => {
     : `data/${trimmed.replace(/^\/+/, '')}`;
 
   return normalizeAssetPath(normalized);
-};
-
-const isPlainObject = (value) =>
-  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-
-const normalizeExperienceMap = (source) => {
-  if (!isPlainObject(source)) {
-    return {};
-  }
-
-  const normalized = {};
-  Object.entries(source).forEach(([key, value]) => {
-    const levelKey = String(key).trim();
-    const numericValue = Number(value);
-    if (!levelKey) {
-      return;
-    }
-    if (!Number.isFinite(numericValue)) {
-      return;
-    }
-    normalized[levelKey] = Math.max(0, Math.round(numericValue));
-  });
-  return normalized;
-};
-
-const mergeExperienceMaps = (base, extra) => {
-  const merged = { ...normalizeExperienceMap(base) };
-  const additional = normalizeExperienceMap(extra);
-
-  Object.entries(additional).forEach(([key, value]) => {
-    merged[key] = value;
-  });
-
-  return merged;
 };
 
 const readStoredProgress = () => {
