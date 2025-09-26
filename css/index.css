@@ -74,6 +74,11 @@ body:not(.is-preloading) main.landing {
   z-index: 2;
   pointer-events: none;
   will-change: transform, opacity;
+  transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero.is-side-position {
+  left: clamp(120px, 28vw, 260px);
 }
 
 .hero.is-exiting {
@@ -86,7 +91,8 @@ body:not(.is-preloading) main.landing {
   top: 45%;
   max-width: min(320px, 70vw);
   max-height: min(320px, 70vh);
-  transform: translate(220%, -50%);
+  transform: translate(-50%, calc(-50% - var(--enemy-drop-distance, 22vh)))
+    scale(1.04);
   transform-origin: 50% 85%;
   opacity: 0;
   transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
@@ -97,7 +103,7 @@ body:not(.is-preloading) main.landing {
 }
 
 .enemy.is-visible {
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1);
   opacity: 1;
 }
 

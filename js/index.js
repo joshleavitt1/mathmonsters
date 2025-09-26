@@ -186,6 +186,7 @@ const runBattleIntroSequence = async () => {
   };
 
   if (prefersReducedMotion) {
+    heroImage.classList.add('is-side-position');
     showEnemy();
     showBattleIntro();
     const exitDuration = beginExitAnimations();
@@ -201,6 +202,7 @@ const runBattleIntroSequence = async () => {
   }
 
   await wait(HERO_TO_ENEMY_DELAY_MS);
+  heroImage.classList.add('is-side-position');
   showEnemy();
 
   await wait(ENEMY_ENTRANCE_DURATION_MS + BATTLE_CALL_INTRO_OFFSET_MS);
