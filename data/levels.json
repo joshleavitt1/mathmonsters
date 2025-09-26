@@ -12,26 +12,26 @@
           "id": "shellfin",
           "sprite": "/mathmonsters/images/characters/shellfin_level_1.png",
           "name": "Shellfin",
-          "basicAttack": "mathmonsters/images/characters/shellfin_attack_basic_1.png",
-          "superAttack": "mathmonsters/images/characters/shellfin_attack_super_1.png",
+          "basicAttack": "/mathmonsters/images/characters/shellfin_attack_1.png",
+          "superAttack": "/mathmonsters/images/characters/shellfin_attack_1.png",
           "attack": 1,
           "health": 3,
           "damage": 0,
           "attackSprites": {
-            "basic": "/mathmonsters/images/characters/shellfin_attack_basic_1.png",
-            "super": "/mathmonsters/images/characters/shellfin_attack_super_1.png"
+            "basic": "/mathmonsters/images/characters/shellfin_attack_1.png",
+            "super": "/mathmonsters/images/characters/shellfin_attack_1.png"
           }
         },
         "enemy": {
           "id": "octomurk",
           "sprite": "/mathmonsters/images/battle/monster_battle_1_1.png",
           "name": "Octomurk",
-          "basicAttack": "mathmonsters/images/characters/shellfin_attack_basic_1.png",
+          "basicAttack": "/mathmonsters/images/characters/enemy_attack.png",
           "attack": 1,
           "health": 20,
           "damage": 0,
           "attackSprites": {
-            "basic": "/mathmonsters/images/characters/shellfin_attack_basic_2.png"
+            "basic": "/mathmonsters/images/characters/enemy_attack.png"
           }
         }
       }
@@ -52,8 +52,8 @@
           "health": 6,
           "damage": 0,
           "attackSprites": {
-            "basic": "/mathmonsters/images/characters/shellfin_attack_basic_1.png",
-            "super": "/mathmonsters/images/characters/shellfin_attack_super_1.png"
+            "basic": "/mathmonsters/images/characters/shellfin_attack_1.png",
+            "super": "/mathmonsters/images/characters/shellfin_attack_1.png"
           }
         },
         "enemy": {
@@ -64,7 +64,7 @@
           "health": 40,
           "damage": 0,
           "attackSprites": {
-            "basic": "/mathmonsters/images/characters/shellfin_attack_basic_2.png"
+            "basic": "/mathmonsters/images/characters/enemy_attack.png"
           }
         }
       }
