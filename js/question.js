@@ -69,14 +69,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (meterIcon) {
-    const swordPath = resolveAssetPath('images/meter/sword.png');
+    const swordPath = resolveAssetPath('images/complete/sword.png');
     if (swordPath) {
       meterIcon.src = swordPath;
     }
   }
 
   const getButtonIconPath = (iconType) =>
-    resolveAssetPath(`images/questions/button/${iconType}.svg`);
+    resolveAssetPath(`images/questions/${iconType}.svg`);
 
   let submitLocked = false;
 
