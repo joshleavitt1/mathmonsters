@@ -155,7 +155,7 @@ body:not(.is-preloading) main.landing {
   top: clamp(18%, 32vh, 44%);
   left: 50%;
   transform: translate(-50%, -8px);
-  max-width: min(520px, 90vw);
+  max-width: min(420px, 100%);
   text-align: left;
   align-items: flex-start;
   opacity: 0;
