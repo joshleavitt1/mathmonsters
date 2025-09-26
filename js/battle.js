@@ -680,20 +680,64 @@ document.addEventListener('DOMContentLoaded', () => {
     const isPlainObject = (value) =>
       Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
-    const normalizeAttackSprites = (sprites, fallback = {}) => {
+    const normalizeAttackSprites = (...spriteSources) => {
       const allowedKeys = ['basic', 'super'];
-      const source = {
-        ...(isPlainObject(fallback) ? fallback : {}),
-        ...(isPlainObject(sprites) ? sprites : {}),
-      };
       const result = {};
 
-      allowedKeys.forEach((key) => {
-        const resolved = resolveAssetPath(source[key]);
-        if (resolved) {
-          result[key] = resolved;
+      const extractSpritePath = (source, key) => {
+        if (!source) {
+          return null;
         }
+
+        if (typeof source === 'string') {
+          return key === 'basic' ? source : null;
+        }
+
+        if (!isPlainObject(source)) {
+          return null;
+        }
+
+        if (typeof source[key] === 'string') {
+          return source[key];
+        }
+
+        const legacyKey = `${key}Attack`;
+        if (typeof source[legacyKey] === 'string') {
+          return source[legacyKey];
+        }
+
+        const nestedObject =
+          isPlainObject(source.attackSprite) || isPlainObject(source.attackSprites)
+            ? isPlainObject(source.attackSprite)
+              ? source.attackSprite
+              : source.attackSprites
+            : null;
+
+        if (nestedObject && typeof nestedObject[key] === 'string') {
+          return nestedObject[key];
+        }
+
+        if (typeof source.attackSprite === 'string' || typeof source.attackSprites === 'string') {
+          const sprite = source.attackSprite || source.attackSprites;
+          return key === 'basic' ? sprite : null;
+        }
+
+        return null;
+      };
+
+      spriteSources.forEach((source) => {
+        allowedKeys.forEach((key) => {
+          const spritePath = extractSpritePath(source, key);
+          const resolved = resolveAssetPath(spritePath);
+          if (resolved) {
+            result[key] = resolved;
+          }
+        });
       });
+
+      if (!result.super && result.basic) {
+        result.super = result.basic;
+      }
 
       return result;
     };
@@ -755,13 +799,15 @@ document.addEventListener('DOMContentLoaded', () => {
       hero.gems = heroData.gems;
     }
 
-    const heroAttackSprites = normalizeAttackSprites(
-      heroData.attackSprites,
-      hero.attackSprites
-    );
+    const heroAttackSprites = normalizeAttackSprites(hero, heroData);
     if (Object.keys(heroAttackSprites).length > 0) {
       hero.attackSprites = heroAttackSprites;
+    } else {
+      delete hero.attackSprites;
     }
+    delete hero.attackSprite;
+    delete hero.basicAttack;
+    delete hero.superAttack;
 
     const heroSprite = resolveAssetPath(heroData.sprite);
     if (heroSprite && heroImg) {
@@ -776,13 +822,15 @@ document.addEventListener('DOMContentLoaded', () => {
     monster.damage = Number(enemyData.damage) || monster.damage;
     monster.name = enemyData.name || monster.name;
 
-    const monsterAttackSprites = normalizeAttackSprites(
-      enemyData.attackSprites,
-      monster.attackSprites
-    );
+    const monsterAttackSprites = normalizeAttackSprites(monster, enemyData);
     if (Object.keys(monsterAttackSprites).length > 0) {
       monster.attackSprites = monsterAttackSprites;
+    } else {
+      delete monster.attackSprites;
     }
+    delete monster.attackSprite;
+    delete monster.basicAttack;
+    delete monster.superAttack;
 
     const monsterSprite = resolveAssetPath(enemyData.sprite);
     if (monsterSprite && monsterImg) {

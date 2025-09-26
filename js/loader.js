@@ -226,20 +226,62 @@ const readStoredProgress = () => {
     const isPlainObject = (value) =>
       Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
-    const normalizeAttackSprites = (sprites, fallback = {}) => {
+    const normalizeAttackSprites = (...spriteSources) => {
       const result = {};
       const allowedKeys = ['basic', 'super'];
-      const source = {
-        ...(isPlainObject(fallback) ? fallback : {}),
-        ...(isPlainObject(sprites) ? sprites : {}),
+
+      const extractSpritePath = (source, key) => {
+        if (!source) {
+          return null;
+        }
+
+        if (typeof source === 'string') {
+          return key === 'basic' ? source : null;
+        }
+
+        if (!isPlainObject(source)) {
+          return null;
+        }
+
+        if (typeof source[key] === 'string') {
+          return source[key];
+        }
+
+        const legacyKey = `${key}Attack`;
+        if (typeof source[legacyKey] === 'string') {
+          return source[legacyKey];
+        }
+
+        if (isPlainObject(source.attackSprite) || isPlainObject(source.attackSprites)) {
+          const nested = isPlainObject(source.attackSprite)
+            ? source.attackSprite
+            : source.attackSprites;
+          if (typeof nested[key] === 'string') {
+            return nested[key];
+          }
+        }
+
+        if (typeof source.attackSprite === 'string' || typeof source.attackSprites === 'string') {
+          const sprite = source.attackSprite || source.attackSprites;
+          return key === 'basic' ? sprite : null;
+        }
+
+        return null;
       };
 
-      allowedKeys.forEach((key) => {
-        const resolvedPath = resolveAssetPath(source[key]);
-        if (resolvedPath) {
-          result[key] = resolvedPath;
-        }
+      spriteSources.forEach((source) => {
+        allowedKeys.forEach((key) => {
+          const spritePath = extractSpritePath(source, key);
+          const resolvedPath = resolveAssetPath(spritePath);
+          if (resolvedPath) {
+            result[key] = resolvedPath;
+          }
+        });
       });
+
+      if (!result.super && result.basic) {
+        result.super = result.basic;
+      }
 
       return result;
     };
@@ -337,20 +379,30 @@ const readStoredProgress = () => {
       hero.sprite = heroSprite;
     }
 
-    const heroAttackSprites = normalizeAttackSprites(hero?.attackSprites);
+    const heroAttackSprites = normalizeAttackSprites(hero);
     if (Object.keys(heroAttackSprites).length > 0) {
       hero.attackSprites = heroAttackSprites;
+    } else {
+      delete hero.attackSprites;
     }
+    delete hero.attackSprite;
+    delete hero.basicAttack;
+    delete hero.superAttack;
 
     const enemySprite = resolveAssetPath(enemy?.sprite);
     if (enemySprite) {
       battle.enemy.sprite = enemySprite;
     }
 
-    const enemyAttackSprites = normalizeAttackSprites(enemy?.attackSprites);
+    const enemyAttackSprites = normalizeAttackSprites(enemy);
     if (Object.keys(enemyAttackSprites).length > 0) {
       enemy.attackSprites = enemyAttackSprites;
+    } else {
+      delete enemy.attackSprites;
     }
+    delete enemy.attackSprite;
+    delete enemy.basicAttack;
+    delete enemy.superAttack;
 
     const assetsToPreload = [];
     if (heroSprite) {
