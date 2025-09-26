@@ -13,7 +13,7 @@ body {
 }
 
 :root {
-  --intro-sprite-offset: clamp(150px, 22vw, 280px);
+  --intro-sprite-offset: clamp(200px, 24vw, 280px);
 }
 
 main.landing {
