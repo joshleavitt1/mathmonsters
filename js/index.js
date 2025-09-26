@@ -150,7 +150,7 @@ const startLandingExperience = () => {
   }
 };
 
-const runBattleIntroSequence = async () => {
+const runBattleIntroSequence = async (options = {}) => {
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
   const battleIntro = document.querySelector('[data-battle-intro]');
@@ -158,6 +158,8 @@ const runBattleIntroSequence = async () => {
   const prefersReducedMotion =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const showIntroImmediately = Boolean(options?.showIntroImmediately);
+  const skipHeroSidePosition = Boolean(options?.skipHeroSidePosition);
 
   const wait = (durationMs) =>
     new Promise((resolve) =>
@@ -211,10 +213,27 @@ const runBattleIntroSequence = async () => {
     return hideBattleIntro();
   };
 
-  if (prefersReducedMotion) {
+  const applySidePositionIfNeeded = () => {
+    if (skipHeroSidePosition) {
+      return;
+    }
     heroImage.classList.add('is-side-position');
+  };
+
+  const prepareForBattle = () => {
+    applySidePositionIfNeeded();
     showEnemy();
-    showBattleIntro();
+  };
+
+  if (prefersReducedMotion) {
+    if (showIntroImmediately) {
+      showBattleIntro();
+      await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
+      prepareForBattle();
+    } else {
+      prepareForBattle();
+      showBattleIntro();
+    }
     const exitDuration = beginExitAnimations();
     await wait(
       Math.max(
@@ -227,14 +246,20 @@ const runBattleIntroSequence = async () => {
     return true;
   }
 
-  await wait(HERO_TO_ENEMY_DELAY_MS);
-  heroImage.classList.add('is-side-position');
-  showEnemy();
+  if (showIntroImmediately) {
+    showBattleIntro();
+    await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
+  } else {
+    await wait(HERO_TO_ENEMY_DELAY_MS);
+  }
+
+  prepareForBattle();
 
   await wait(ENEMY_ENTRANCE_DURATION_MS + BATTLE_CALL_INTRO_OFFSET_MS);
-  showBattleIntro();
-
-  await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
+  if (!showIntroImmediately) {
+    showBattleIntro();
+    await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
+  }
   const exitDuration = beginExitAnimations();
 
   await wait(
@@ -547,6 +572,9 @@ const applyBattlePreview = (previewData = {}) => {
   const progressElement = document.querySelector('[data-battle-progress]');
   const heroNameElements = document.querySelectorAll('[data-hero-name]');
   const heroLevelElements = document.querySelectorAll('[data-hero-level]');
+  const heroInfoElement = document.querySelector('.landing__hero-info');
+  const actionsElement = document.querySelector('.landing__actions');
+  const landingRoot = document.body;
 
   if (heroImage) {
     const heroSprite =
@@ -655,6 +683,32 @@ const applyBattlePreview = (previewData = {}) => {
       ? `${progressText} experience`
       : progressText;
     progressElement.setAttribute('aria-valuetext', ariaText);
+  }
+
+  const resolvedBattleLevel = Number(previewData?.battleLevel);
+  const isLevelOneLanding = Number.isFinite(resolvedBattleLevel)
+    ? resolvedBattleLevel <= 1
+    : false;
+
+  if (landingRoot) {
+    landingRoot.classList.toggle('is-level-one-landing', isLevelOneLanding);
+    landingRoot.classList.toggle('is-standard-landing', !isLevelOneLanding);
+  }
+
+  if (heroInfoElement) {
+    if (isLevelOneLanding) {
+      heroInfoElement.setAttribute('aria-hidden', 'true');
+    } else {
+      heroInfoElement.removeAttribute('aria-hidden');
+    }
+  }
+
+  if (actionsElement) {
+    if (isLevelOneLanding) {
+      actionsElement.setAttribute('aria-hidden', 'true');
+    } else {
+      actionsElement.removeAttribute('aria-hidden');
+    }
   }
 
   updateHeroFloat();
@@ -1055,7 +1109,10 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
-  const battleButton = document.querySelector('[data-battle-button]');
+  let battleButton = document.querySelector('[data-battle-button]');
+  const actionsElement = document.querySelector('.landing__actions');
+  const heroInfoElement = document.querySelector('.landing__hero-info');
+  let isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
 
   const loadBattlePreview = async () => {
     try {
@@ -1100,6 +1157,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
       if (previewData) {
         applyBattlePreview(previewData);
+        isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
       }
     } catch (error) {
       console.error('Failed to load battle preview', error);
@@ -1107,6 +1165,34 @@ const initLandingInteractions = async (preloadedData = {}) => {
   };
 
   await loadBattlePreview();
+  isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
+
+  if (isLevelOneLanding) {
+    if (actionsElement) {
+      actionsElement.setAttribute('aria-hidden', 'true');
+    }
+    if (heroInfoElement) {
+      heroInfoElement.setAttribute('aria-hidden', 'true');
+    }
+    if (battleButton) {
+      battleButton.disabled = true;
+      battleButton.setAttribute('aria-hidden', 'true');
+      battleButton.setAttribute('tabindex', '-1');
+    }
+    battleButton = null;
+  } else {
+    if (actionsElement) {
+      actionsElement.removeAttribute('aria-hidden');
+    }
+    if (heroInfoElement) {
+      heroInfoElement.removeAttribute('aria-hidden');
+    }
+    if (battleButton) {
+      battleButton.removeAttribute('aria-hidden');
+      battleButton.removeAttribute('tabindex');
+      battleButton.disabled = false;
+    }
+  }
 
   const awaitImageReady = async (image) => {
     if (!image) {
@@ -1142,7 +1228,9 @@ const initLandingInteractions = async (preloadedData = {}) => {
     }
 
     try {
-      await runBattleIntroSequence();
+      await runBattleIntroSequence({
+        skipHeroSidePosition: isLevelOneLanding,
+      });
     } finally {
       redirectToBattle();
     }
@@ -1172,7 +1260,10 @@ const initLandingInteractions = async (preloadedData = {}) => {
     }
 
     try {
-      await runBattleIntroSequence();
+      await runBattleIntroSequence({
+        showIntroImmediately: true,
+        skipHeroSidePosition: isLevelOneLanding,
+      });
     } catch (error) {
       console.warn('Battle intro sequence failed.', error);
     } finally {

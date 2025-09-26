@@ -63,7 +63,7 @@ body:not(.is-preloading) main.landing {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 0;
   width: min(360px, 88vw);
   padding: 0 12px;
   text-align: center;
@@ -76,6 +76,7 @@ body:not(.is-preloading) main.landing {
 }
 
 .landing__hero-level {
+  margin-top: 8px;
   opacity: 0.85;
 }
 
@@ -85,10 +86,13 @@ body:not(.is-preloading) main.landing {
 
   height: 18px;
   width: 100%;
+  max-width: 140px;
   background-color: rgba(255, 255, 255, 0.25);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  margin-top: 24px;
 }
 
 .landing__hero-progress .progress__fill::after {
@@ -128,7 +132,7 @@ body:not(.is-preloading) main.landing {
 .hero {
   position: absolute;
   left: 50%;
-  top: 45%;
+  top: 52%;
   animation: hero-float var(--hero-float-duration, 3.5s)
       cubic-bezier(0.42, 0, 0.58, 1) 1.35s
       infinite;
@@ -194,6 +198,11 @@ body:not(.is-preloading) main.landing {
 
 .enemy.is-exiting {
   animation: enemy-intro-exit 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+body.is-level-one-landing .landing__hero-info,
+body.is-level-one-landing .landing__actions {
+  display: none;
 }
 
 body.is-battle-transition {
