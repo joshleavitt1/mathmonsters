@@ -172,6 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelProgressText = completeMessage?.querySelector(
     '[data-level-progress-text]'
   );
+  const rewardOverlay = document.querySelector('[data-reward-overlay]');
+  const rewardSprite = rewardOverlay?.querySelector('[data-reward-sprite]');
 
   const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
   const summaryTimeText = ensureStatValueText(summaryTimeValue);
@@ -214,6 +216,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let enemyDefeatAnimationTimeout = null;
   let levelExperienceEarned = 0;
   let levelExperienceRequirement = 0;
+  let levelUpAvailable = false;
+  let hasPendingLevelUpReward = false;
+  let rewardAnimationPlayed = false;
+  let rewardAnimationTimeoutId = null;
+  let rewardSpriteTransitionHandler = null;
+
+  const REWARD_ANIMATION_DELAY_MS = 2000;
+  const REWARD_CHEST_SRC = '../images/complete/chest.png';
+  const REWARD_POTION_SRC = '../images/complete/potion.png';
 
   const hero = {
     attack: 1,
@@ -230,9 +241,119 @@ document.addEventListener('DOMContentLoaded', () => {
     attackSprites: {},
   };
 
+  const clearRewardAnimation = () => {
+    if (rewardAnimationTimeoutId !== null) {
+      window.clearTimeout(rewardAnimationTimeoutId);
+      rewardAnimationTimeoutId = null;
+    }
+
+    if (rewardSprite && rewardSpriteTransitionHandler) {
+      rewardSprite.removeEventListener('transitionend', rewardSpriteTransitionHandler);
+      rewardSpriteTransitionHandler = null;
+    }
+  };
+
+  const resetRewardOverlay = () => {
+    if (!rewardOverlay || !rewardSprite) {
+      return;
+    }
+
+    clearRewardAnimation();
+    rewardOverlay.classList.remove('reward-overlay--visible');
+    rewardOverlay.setAttribute('aria-hidden', 'true');
+    rewardSprite.classList.remove(
+      'reward-overlay__image--pop-in',
+      'reward-overlay__image--shrink',
+      'reward-overlay__image--pop'
+    );
+    rewardSprite.src = REWARD_CHEST_SRC;
+    rewardSprite.alt = 'Treasure chest level-up reward';
+  };
+
+  const playLevelUpRewardAnimation = () => {
+    if (!rewardOverlay || !rewardSprite) {
+      return;
+    }
+
+    clearRewardAnimation();
+    rewardOverlay.classList.add('reward-overlay--visible');
+    rewardOverlay.setAttribute('aria-hidden', 'false');
+    rewardSprite.classList.remove(
+      'reward-overlay__image--pop-in',
+      'reward-overlay__image--shrink',
+      'reward-overlay__image--pop'
+    );
+    rewardSprite.src = REWARD_CHEST_SRC;
+    rewardSprite.alt = 'Treasure chest level-up reward';
+
+    if (prefersReducedMotion) {
+      rewardSprite.classList.add('reward-overlay__image--pop-in');
+      rewardAnimationTimeoutId = window.setTimeout(() => {
+        rewardAnimationTimeoutId = null;
+        rewardSprite.src = REWARD_POTION_SRC;
+        rewardSprite.alt = 'Potion level-up reward';
+      }, REWARD_ANIMATION_DELAY_MS);
+      return;
+    }
+
+    void rewardSprite.offsetWidth;
+    rewardSprite.classList.add('reward-overlay__image--pop-in');
+    rewardAnimationTimeoutId = window.setTimeout(() => {
+      rewardAnimationTimeoutId = null;
+      rewardSprite.classList.remove('reward-overlay__image--pop-in');
+      rewardSprite.classList.add('reward-overlay__image--shrink');
+
+      const handleTransitionEnd = () => {
+        if (!rewardSprite) {
+          return;
+        }
+
+        rewardSprite.removeEventListener('transitionend', handleTransitionEnd);
+        rewardSpriteTransitionHandler = null;
+        rewardSprite.classList.remove('reward-overlay__image--shrink');
+        rewardSprite.src = REWARD_POTION_SRC;
+        rewardSprite.alt = 'Potion level-up reward';
+        void rewardSprite.offsetWidth;
+        rewardSprite.classList.add('reward-overlay__image--pop');
+        rewardSprite.addEventListener(
+          'animationend',
+          () => {
+            rewardSprite.classList.remove('reward-overlay__image--pop');
+          },
+          { once: true }
+        );
+      };
+
+      rewardSpriteTransitionHandler = handleTransitionEnd;
+      rewardSprite.addEventListener('transitionend', handleTransitionEnd, { once: true });
+    }, REWARD_ANIMATION_DELAY_MS);
+  };
+
+  const updateNextMissionButton = (win = true) => {
+    if (!nextMissionBtn) {
+      return;
+    }
+
+    if (!win) {
+      nextMissionBtn.textContent = 'Try Again';
+      nextMissionBtn.dataset.action = 'retry';
+      return;
+    }
+
+    nextMissionBtn.textContent = hasPendingLevelUpReward
+      ? 'Claim Reward'
+      : 'Next Battle';
+    nextMissionBtn.dataset.action = 'next';
+  };
+
   const updateLevelProgressDisplay = () => {
+    const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
+    if (sanitizedEarned !== levelExperienceEarned) {
+      levelExperienceEarned = sanitizedEarned;
+    }
+
     const progress = computeExperienceProgress(
-      levelExperienceEarned,
+      sanitizedEarned,
       levelExperienceRequirement
     );
 
@@ -253,6 +374,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (levelProgressText) {
       levelProgressText.textContent = progress.text;
+    }
+
+    const requirementMet =
+      levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
+    levelUpAvailable = requirementMet;
+
+    if (!requirementMet) {
+      hasPendingLevelUpReward = false;
+      rewardAnimationPlayed = false;
     }
   };
 
@@ -302,24 +432,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const awardExperiencePoints = () => {
     const points = resolveExperiencePointsForEnemy();
-    if (points <= 0) {
-      updateLevelProgressDisplay();
-      return;
-    }
-
     const level = resolveBattleLevelForExperience();
+    const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
+    const wasComplete =
+      levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
+
     if (!Number.isFinite(level)) {
+      levelExperienceEarned = sanitizedEarned;
       updateLevelProgressDisplay();
+      hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
+      if (hasPendingLevelUpReward) {
+        rewardAnimationPlayed = false;
+      }
       return;
     }
 
-    const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
+    if (points <= 0) {
+      levelExperienceEarned = sanitizedEarned;
+      updateLevelProgressDisplay();
+      hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
+      if (hasPendingLevelUpReward) {
+        rewardAnimationPlayed = false;
+      }
+      return;
+    }
+
     const nextTotal = sanitizedEarned + points;
     const levelKey = String(Math.max(1, Math.round(level)));
 
     persistProgress({ experience: { [levelKey]: nextTotal } });
     levelExperienceEarned = nextTotal;
     updateLevelProgressDisplay();
+
+    hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
+    if (hasPendingLevelUpReward) {
+      rewardAnimationPlayed = false;
+    }
   };
 
   const markBattleReady = (img) => {
@@ -1852,9 +2000,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     battleGoalsMet = goalsAchieved;
 
-    if (nextMissionBtn) {
-      nextMissionBtn.textContent = win ? 'Next Battle' : 'Try Again';
-      nextMissionBtn.dataset.action = win ? 'next' : 'retry';
+    updateNextMissionButton(win);
+
+    if (!win) {
+      resetRewardOverlay();
+    } else if (hasPendingLevelUpReward && !rewardAnimationPlayed) {
+      playLevelUpRewardAnimation();
+      rewardAnimationPlayed = true;
     }
 
     const showCompleteMessage = () => {
@@ -1920,17 +2072,19 @@ document.addEventListener('DOMContentLoaded', () => {
     battleGoalsMet = false;
     levelExperienceEarned = 0;
     levelExperienceRequirement = 0;
+    levelUpAvailable = false;
+    hasPendingLevelUpReward = false;
+    rewardAnimationPlayed = false;
+    clearRewardAnimation();
     updateLevelProgressDisplay();
     if (completeMessage) {
       completeMessage.classList.remove('show');
       completeMessage.setAttribute('aria-hidden', 'true');
     }
     resetEnemyDefeatAnimation();
+    resetRewardOverlay();
     setBattleCompleteTitleLines('Monster Defeated');
-    if (nextMissionBtn) {
-      nextMissionBtn.textContent = 'Next Battle';
-      nextMissionBtn.dataset.action = 'next';
-    }
+    updateNextMissionButton();
     if (summaryAccuracyValue) {
       summaryAccuracyValue.classList.remove('goal-result--met', 'goal-result--missed');
     }
