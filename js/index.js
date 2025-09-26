@@ -16,6 +16,30 @@ const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
+const BATTLE_PAGE_URL = 'html/battle.html';
+const BATTLE_PAGE_MODE_PARAM = 'mode';
+const BATTLE_PAGE_MODE_PLAY = 'play';
+
+let battleRedirectUrl = BATTLE_PAGE_URL;
+
+const buildBattleUrl = (mode) => {
+  if (!mode) {
+    return BATTLE_PAGE_URL;
+  }
+
+  const params = new URLSearchParams();
+  params.set(BATTLE_PAGE_MODE_PARAM, mode);
+  return `${BATTLE_PAGE_URL}?${params.toString()}`;
+};
+
+const requestBattleWithoutDevControls = () => {
+  battleRedirectUrl = buildBattleUrl(BATTLE_PAGE_MODE_PLAY);
+};
+
+const redirectToBattle = () => {
+  window.location.href = battleRedirectUrl;
+};
+
 const updateViewportOffsetVariable = () => {
   const root = document.documentElement;
   if (!root) {
@@ -716,8 +740,17 @@ const preloadLandingAssets = async () => {
 };
 
 const initLandingInteractions = async (preloadedData = {}) => {
+  battleRedirectUrl = BATTLE_PAGE_URL;
   markLandingVisited();
   randomizeBubbleTimings();
+
+  const playNowButton = document.querySelector('[data-play-now]');
+  if (playNowButton) {
+    playNowButton.addEventListener('click', () => {
+      requestBattleWithoutDevControls();
+      playNowButton.setAttribute('aria-pressed', 'true');
+    });
+  }
 
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
@@ -805,7 +838,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   try {
     await runBattleIntroSequence();
   } finally {
-    window.location.href = 'html/battle.html';
+    redirectToBattle();
   }
 };
 
