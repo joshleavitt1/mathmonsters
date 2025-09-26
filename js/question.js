@@ -51,6 +51,136 @@ document.addEventListener('DOMContentLoaded', () => {
   const meterProgress = meter?.querySelector('[data-meter-progress]');
   const meterFill = meterProgress?.querySelector('.progress__fill');
   const meterIcon = meter?.querySelector('[data-meter-icon]');
+  const questionIntro = questionBox.querySelector('[data-question-dialogue]');
+  const questionIntroText = questionIntro?.querySelector(
+    '[data-question-dialogue-text]'
+  );
+  const QUESTION_INTRO_DELAY_MS = 200;
+  const QUESTION_INTRO_CHARACTER_INTERVAL_MS = 70;
+  const QUESTION_INTRO_SEQUENCE = [
+    { text: 'Answer a question to attack!', pauseAfterMs: 1000 },
+    { text: ' Get it right and', pauseAfterMs: 1000 },
+    { text: '—POW!', pauseAfterMs: 1000 },
+    { text: '—your hero fights back!', pauseAfterMs: 2000 },
+  ];
+
+  const buildDialogueCharacters = (segments = []) =>
+    segments.flatMap((segment) => {
+      if (!segment || typeof segment.text !== 'string') {
+        return [];
+      }
+
+      const characters = Array.from(segment.text);
+      const pauseAfter = Math.max(0, Number(segment.pauseAfterMs) || 0);
+
+      return characters.map((character, index) => ({
+        character,
+        pauseAfterMs: index === characters.length - 1 ? pauseAfter : 0,
+      }));
+    });
+
+  const QUESTION_INTRO_CHARACTERS = buildDialogueCharacters(QUESTION_INTRO_SEQUENCE);
+  const QUESTION_INTRO_TEXT = QUESTION_INTRO_CHARACTERS.map(
+    ({ character }) => character
+  ).join('');
+  const questionIntroTimeouts = [];
+
+  const scheduleQuestionIntroTimeout = (callback, delay) => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const index = questionIntroTimeouts.indexOf(timeoutId);
+      if (index >= 0) {
+        questionIntroTimeouts.splice(index, 1);
+      }
+      callback();
+    }, Math.max(0, Number(delay) || 0));
+
+    questionIntroTimeouts.push(timeoutId);
+    return timeoutId;
+  };
+
+  const clearQuestionIntroTimeouts = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    while (questionIntroTimeouts.length > 0) {
+      const timeoutId = questionIntroTimeouts.pop();
+      window.clearTimeout(timeoutId);
+    }
+  };
+
+  const hideQuestionIntro = () => {
+    if (!questionIntro || !questionIntroText) {
+      return;
+    }
+
+    questionIntro.classList.remove('is-visible');
+    questionIntro.setAttribute('aria-hidden', 'true');
+    questionIntroText.textContent = '';
+    if (questionIntroText.dataset) {
+      delete questionIntroText.dataset.typing;
+    } else {
+      questionIntroText.removeAttribute('data-typing');
+    }
+  };
+
+  const playQuestionIntro = () => {
+    if (!questionIntro || !questionIntroText) {
+      return;
+    }
+
+    clearQuestionIntroTimeouts();
+    hideQuestionIntro();
+
+    if (QUESTION_INTRO_CHARACTERS.length === 0) {
+      questionIntro.setAttribute('aria-hidden', 'false');
+      questionIntro.classList.add('is-visible');
+      return;
+    }
+
+    questionIntro.setAttribute('aria-hidden', 'false');
+    questionIntro.classList.add('is-visible');
+    questionIntroText.textContent = '';
+    questionIntroText.dataset.typing = 'true';
+
+    const prefersReducedMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      questionIntroText.textContent = QUESTION_INTRO_TEXT;
+      questionIntroText.dataset.typing = 'false';
+      return;
+    }
+
+    let index = 0;
+
+    const typeNextCharacter = () => {
+      if (index >= QUESTION_INTRO_CHARACTERS.length) {
+        questionIntroText.dataset.typing = 'false';
+        return;
+      }
+
+      const entry = QUESTION_INTRO_CHARACTERS[index] || {
+        character: '',
+        pauseAfterMs: 0,
+      };
+      questionIntroText.textContent += entry.character;
+      index += 1;
+
+      const baseDelay = Math.max(0, QUESTION_INTRO_CHARACTER_INTERVAL_MS);
+      const pauseAfter = Math.max(0, Number(entry.pauseAfterMs) || 0);
+
+      scheduleQuestionIntroTimeout(typeNextCharacter, baseDelay + pauseAfter);
+    };
+
+    scheduleQuestionIntroTimeout(typeNextCharacter, QUESTION_INTRO_DELAY_MS);
+  };
+
   const requestFrame =
     typeof window !== 'undefined' &&
     typeof window.requestAnimationFrame === 'function'
@@ -275,6 +405,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let handleCardAnimationEnd = null;
 
     const finalizeClose = () => {
+      clearQuestionIntroTimeouts();
+      hideQuestionIntro();
       if (questionBox) {
         questionBox.classList.remove('closing');
         questionBox.classList.remove('show');
@@ -354,6 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearChoiceSelections();
     setSubmitDisabled(true);
     hideMeter();
+    playQuestionIntro();
     if (questionBox) {
       questionBox.classList.remove('closing');
     }

@@ -498,6 +498,13 @@ body {
   margin: 0;
 }
 
+.battle-complete-card__meter [data-level-progress-text] {
+  margin: 0;
+  font-size: var(--subtitle-font-size);
+  font-weight: var(--subtitle-font-weight);
+  color: var(--title-color);
+}
+
 .battle-complete-card__enemy {
   position: relative;
   width: 100%;

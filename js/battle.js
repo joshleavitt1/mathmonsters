@@ -357,8 +357,10 @@ document.addEventListener('DOMContentLoaded', () => {
       levelExperienceRequirement
     );
 
+    const clampedRatio = Math.max(0, Math.min(1, Number(progress.ratio) || 0));
+    const targetWidth = `${clampedRatio * 100}%`;
+
     if (levelProgressMeter) {
-      levelProgressMeter.style.setProperty('--progress-value', `${progress.ratio}`);
       levelProgressMeter.setAttribute('aria-valuemin', '0');
       levelProgressMeter.setAttribute('aria-valuemax', `${progress.totalDisplay}`);
       levelProgressMeter.setAttribute('aria-valuenow', `${progress.earnedDisplay}`);
@@ -368,8 +370,34 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
 
+    const requestProgressFrame =
+      typeof window !== 'undefined' &&
+      typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => window.setTimeout(callback, 16);
+
     if (levelProgressFill) {
-      levelProgressFill.style.width = `${progress.ratio * 100}%`;
+      const wasInitialized = levelProgressFill.dataset.progressAnimated === 'true';
+
+      if (!wasInitialized) {
+        levelProgressFill.dataset.progressAnimated = 'true';
+        levelProgressFill.style.transition = 'none';
+        levelProgressFill.style.width = '0%';
+        if (levelProgressMeter) {
+          levelProgressMeter.style.setProperty('--progress-value', '0');
+        }
+        void levelProgressFill.offsetWidth;
+        levelProgressFill.style.transition = '';
+      }
+
+      requestProgressFrame(() => {
+        if (levelProgressMeter) {
+          levelProgressMeter.style.setProperty('--progress-value', `${clampedRatio}`);
+        }
+        levelProgressFill.style.width = targetWidth;
+      });
+    } else if (levelProgressMeter) {
+      levelProgressMeter.style.setProperty('--progress-value', `${clampedRatio}`);
     }
 
     if (levelProgressText) {
@@ -2004,9 +2032,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!win) {
       resetRewardOverlay();
-    } else if (hasPendingLevelUpReward && !rewardAnimationPlayed) {
-      playLevelUpRewardAnimation();
-      rewardAnimationPlayed = true;
     }
 
     const showCompleteMessage = () => {
@@ -2041,6 +2066,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (nextMissionBtn) {
     nextMissionBtn.addEventListener('click', () => {
+      if (hasPendingLevelUpReward && !rewardAnimationPlayed) {
+        rewardAnimationPlayed = true;
+        hasPendingLevelUpReward = false;
+        updateNextMissionButton(true);
+        playLevelUpRewardAnimation();
+        return;
+      }
+
       const action = nextMissionBtn.dataset.action;
       if (action === 'retry') {
         window.location.reload();
@@ -2048,6 +2081,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (battleGoalsMet && !battleLevelAdvanced) {
           advanceBattleLevel();
         }
+        resetRewardOverlay();
         window.location.href = '../index.html';
       }
     });

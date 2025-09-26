@@ -159,17 +159,13 @@ button:hover {
 }
 
 button:disabled {
-  color: #272b34;
-  background-image: none;
-  background-color: #F4F6FA;
   cursor: not-allowed;
+  pointer-events: none;
   transform: none;
   box-shadow: none;
 }
 
 button:disabled:hover {
-  background-image: none;
-  background-color: #F4F6FA;
   transform: none;
   box-shadow: none;
 }
@@ -245,13 +241,6 @@ button:focus-visible {
 .meter__heading {
   margin: 0;
   font-weight: 700;
-}
-
-.meter__value {
-  margin: 0;
-  font-size: var(--subtitle-font-size);
-  font-weight: var(--subtitle-font-weight);
-  color: var(--title-color);
 }
 
 .meter__progress {
