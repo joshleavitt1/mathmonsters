@@ -15,7 +15,8 @@ const BATTLE_CALL_POP_OUT_DURATION_MS = 450;
 const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
 const LEVEL_ONE_SPEECH_DELAY_MS = 2000;
-const LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS = 45;
+const LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS = 90;
+const LEVEL_ONE_SPEECH_SENTENCE_PAUSE_MS = 1000;
 const LEVEL_ONE_SPEECH_TEXT =
   "Hi! I\u2019m Shellfin. Uh-oh\u2026 monsters are here! Can you help me stop them?";
 
@@ -350,13 +351,15 @@ const playLevelOneHeroSpeech = ({
           return;
         }
 
-        textElement.textContent += characters[index];
+        const currentCharacter = characters[index];
+        textElement.textContent += currentCharacter;
         index += 1;
 
-        window.setTimeout(
-          typeNextCharacter,
-          Math.max(0, LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS)
-        );
+        const baseDelay = Math.max(0, LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS);
+        const sentencePause =
+          currentCharacter === '.' ? LEVEL_ONE_SPEECH_SENTENCE_PAUSE_MS : 0;
+
+        window.setTimeout(typeNextCharacter, baseDelay + sentencePause);
       };
 
       typeNextCharacter();
