@@ -15,7 +15,8 @@
           "attack": 1,
           "health": 3,
           "damage": 0,
-          "attackSprite": "/mathmonsters/images/characters/shellfin_attack_1.png"
+          "attackSprite": {
+            "basic": "/mathmonsters/images/characters/shellfin_attack_1.png"
           }
         },
         "enemy": {
@@ -25,7 +26,8 @@
           "attack": 1,
           "health": 3,
           "damage": 0,
-          "attackSprite": "/mathmonsters/images/characters/enemy_attack.png"
+          "attackSprite": {
+            "basic": "/mathmonsters/images/characters/enemy_attack.png"
           }
     },
     {
@@ -43,7 +45,8 @@
           "attack": 1,
           "health": 3,
           "damage": 0,
-          "attackSprite": "/mathmonsters/images/characters/shellfin_attack_2.png"
+          "attackSprite": {
+            "basic": "/mathmonsters/images/characters/shellfin_attack_1.png"
           }
         },
         "enemy": {
@@ -53,7 +56,8 @@
           "attack": 1,
           "health": 3,
           "damage": 0,
-          "attackSprite": "/mathmonsters/images/characters/enemy_attack.png"
+          "attackSprite": {
+            "basic": "/mathmonsters/images/characters/enemy_attack.png"
           }
     }
   ]
