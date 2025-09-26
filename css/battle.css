@@ -460,7 +460,7 @@ body {
   transform: translate(-50%, -50%) scale(0.4);
   opacity: 0;
   width: 140px;
-  max-width: 70%;
+  max-width: 200px;
   z-index: 1;
   pointer-events: none;
 }
