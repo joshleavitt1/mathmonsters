@@ -1569,20 +1569,21 @@ document.addEventListener('DOMContentLoaded', () => {
       completeEnemyImg.src = monsterImg.src;
       if (monster.name) {
         completeEnemyImg.alt = win
-          ? `${monster.name} defeated in battle`
+          ? `${monster.name} defeated`
           : `${monster.name} preparing for the next battle`;
+      } else {
+        completeEnemyImg.alt = win
+          ? 'Enemy defeated'
+          : 'Enemy preparing for the next battle';
       }
     }
 
-    const goalsAchieved = win && accuracyGoalMet && timeGoalMet;
+    const goalsAchieved = win;
 
-    if (win && goalsAchieved) {
-      const monsterName =
-        typeof monster?.name === 'string' ? monster.name.trim() : '';
-      const victoryName = monsterName || 'Monster';
-      setBattleCompleteTitleLines(victoryName, 'Defeated!');
+    if (win) {
+      setBattleCompleteTitleLines('Monster Defeated');
     } else {
-      setBattleCompleteTitleLines('Keep', 'Practicing!');
+      setBattleCompleteTitleLines('Keep Practicing');
     }
 
     battleGoalsMet = goalsAchieved;
@@ -1591,8 +1592,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (nextMissionBtn) {
-      nextMissionBtn.textContent = battleGoalsMet ? 'Next Mission' : 'Try Again';
-      nextMissionBtn.dataset.action = battleGoalsMet ? 'next' : 'retry';
+      nextMissionBtn.textContent = win ? 'Next Battle' : 'Try Again';
+      nextMissionBtn.dataset.action = win ? 'next' : 'retry';
     }
 
     const showCompleteMessage = () => {
@@ -1655,9 +1656,9 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMessage.classList.remove('show');
       completeMessage.setAttribute('aria-hidden', 'true');
     }
-    setBattleCompleteTitleLines('Battle', 'Complete');
+    setBattleCompleteTitleLines('Monster Defeated');
     if (nextMissionBtn) {
-      nextMissionBtn.textContent = 'Next Mission';
+      nextMissionBtn.textContent = 'Next Battle';
       nextMissionBtn.dataset.action = 'next';
     }
     if (summaryAccuracyValue) {
