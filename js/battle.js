@@ -5,6 +5,7 @@ const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 
 const BATTLE_PAGE_MODE_PARAM = 'mode';
 const BATTLE_PAGE_MODE_PLAY = 'play';
+const ENEMY_DEFEAT_ANIMATION_DELAY = 2000;
 
 const isDevControlsHiddenMode = () => {
   if (typeof window === 'undefined' || typeof window.location === 'undefined') {
@@ -1725,9 +1726,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     battleGoalsMet = goalsAchieved;
-    if (battleGoalsMet) {
-      advanceBattleLevel();
-    }
 
     if (nextMissionBtn) {
       nextMissionBtn.textContent = win ? 'Next Battle' : 'Try Again';
@@ -1744,13 +1742,9 @@ document.addEventListener('DOMContentLoaded', () => {
         completeMessage.focus();
       }
       if (win) {
-        if (prefersReducedMotion) {
+        enemyDefeatAnimationTimeout = window.setTimeout(() => {
           applyEnemyDefeatStyles();
-        } else {
-          enemyDefeatAnimationTimeout = window.setTimeout(() => {
-            applyEnemyDefeatStyles();
-          }, 1000);
-        }
+        }, ENEMY_DEFEAT_ANIMATION_DELAY);
       }
     };
 
