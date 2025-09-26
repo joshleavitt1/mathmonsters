@@ -16,6 +16,12 @@ body {
   --intro-sprite-offset: clamp(200px, 24vw, 280px);
 }
 
+@property --enemy-float-offset {
+  syntax: '<length>';
+  initial-value: 0px;
+  inherits: false;
+}
+
 main.landing {
   position: relative;
   width: 100%;
@@ -90,12 +96,21 @@ body:not(.is-preloading) main.landing {
 }
 
 .enemy {
+  --enemy-float-range: 28px;
+  --enemy-float-duration: 3.8s;
+  --enemy-float-offset: calc(-1 * var(--enemy-float-range));
   position: absolute;
   left: calc(50% + var(--intro-sprite-offset));
   top: 45%;
   max-width: min(320px, 70vw);
   max-height: min(320px, 70vh);
-  transform: translate(-50%, calc(-50% - var(--enemy-drop-distance, 22vh)))
+  transform: translate(
+      -50%,
+      calc(
+        -50% - var(--enemy-drop-distance, 22vh) +
+          var(--enemy-float-offset)
+      )
+    )
     scale(1.04);
   transform-origin: 50% 85%;
   opacity: 0;
@@ -107,8 +122,15 @@ body:not(.is-preloading) main.landing {
 }
 
 .enemy.is-visible {
-  transform: translate(-50%, -50%) scale(1);
+  transform: translate(
+      -50%,
+      calc(-50% + var(--enemy-float-offset))
+    )
+    scale(1);
   opacity: 1;
+  animation: enemy-float var(--enemy-float-duration) cubic-bezier(0.42, 0, 0.58, 1)
+      1.35s
+      infinite;
 }
 
 .enemy.is-exiting {
@@ -139,6 +161,18 @@ body.is-battle-transition .bubbles {
   }
 }
 
+@keyframes enemy-float {
+  0% {
+    --enemy-float-offset: calc(-1 * var(--enemy-float-range));
+  }
+  50% {
+    --enemy-float-offset: var(--enemy-float-range);
+  }
+  100% {
+    --enemy-float-offset: calc(-1 * var(--enemy-float-range));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero {
     animation: none;
@@ -150,8 +184,10 @@ body.is-battle-transition .bubbles {
   }
 
   .enemy {
+    animation: none;
     transition: none;
     transform: translate(-50%, -50%);
+    --enemy-float-offset: 0px;
     opacity: 1;
   }
 
