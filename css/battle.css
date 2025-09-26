@@ -417,6 +417,15 @@ body {
 
 .battle-complete-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.battle-complete-card__title {
+  margin: 0;
+  text-align: center;
 }
 
 .battle-complete-card__meter {
@@ -425,16 +434,6 @@ body {
 
 .battle-complete-card__meter .meter__heading {
   margin: 0;
-  font-size: var(--title-font-size);
-  font-weight: var(--title-font-weight);
-  color: var(--title-color);
-}
-
-.battle-complete-card__meter-subtitle {
-  margin: 0;
-  font-size: var(--subtitle-font-size);
-  font-weight: var(--subtitle-font-weight);
-  color: var(--subtitle-color);
 }
 
 .battle-complete-card__enemy {
@@ -445,6 +444,10 @@ body {
 }
 
 .battle-complete-card .enemy-image {
+  display: block;
+  max-width: 280px;
+  width: 100%;
+  height: auto;
   transition: filter 0.4s ease, opacity 0.4s ease;
 }
 
@@ -459,8 +462,8 @@ body {
   left: 50%;
   transform: translate(-50%, -50%) scale(0.4);
   opacity: 0;
-  width: 140px;
-  max-width: 70%;
+  width: 80px;
+  height: 80px;
   z-index: 1;
   pointer-events: none;
 }
@@ -468,7 +471,8 @@ body {
 .battle-complete-card .enemy-defeat-overlay img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
 }
 
 @keyframes enemy-defeat-check-pop {
