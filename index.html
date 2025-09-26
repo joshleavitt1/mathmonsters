@@ -45,11 +45,38 @@
       <span class="bubble" style="--size: 18px; --duration: 6.4s; --delay: 0.5s;"></span>
     </div>
 
+    <section class="landing__hero-info" aria-live="polite">
+      <p class="landing__hero-name text-large text-white" data-hero-name>
+        Shellfin
+      </p>
+      <p class="landing__hero-level text-small text-white" data-hero-level>
+        Level 1
+      </p>
+      <div
+        class="progress landing__hero-progress"
+        role="progressbar"
+        aria-label="Level progress"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        aria-valuetext="0 of 0 experience"
+        data-battle-progress
+      >
+        <div class="progress__fill" aria-hidden="true"></div>
+      </div>
+    </section>
+
     <img
       class="hero"
       src="./images/characters/shellfin_level_1.png"
       alt="Shellfin ready for battle"
     />
+
+    <div class="landing__actions">
+      <button class="landing__battle-button" type="button" data-battle-button>
+        Battle
+      </button>
+    </div>
 
     <img
       class="enemy"

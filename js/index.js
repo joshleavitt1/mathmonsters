@@ -501,6 +501,11 @@ const determineBattlePreview = (levelsData, playerData) => {
     (typeof activeLevel?.battleLevel === 'number'
       ? `Battle ${activeLevel.battleLevel}`
       : 'Upcoming Battle');
+  const heroLevelLabel =
+    levelName ||
+    (typeof activeLevel?.battleLevel === 'number'
+      ? `Level ${activeLevel.battleLevel}`
+      : 'Level');
   const experienceMap = normalizeExperienceMap(player?.progress?.experience);
   const earnedExperience = readExperienceForLevel(
     experienceMap,
@@ -523,6 +528,7 @@ const determineBattlePreview = (levelsData, playerData) => {
       battleTitleLabel,
       hero: { ...heroData, sprite: heroSprite },
       heroAlt,
+      heroLevelLabel,
       enemy: { ...enemyData, sprite: enemySprite },
       enemyAlt,
       progressExperience: experienceProgress.ratio,
@@ -539,6 +545,8 @@ const applyBattlePreview = (previewData = {}) => {
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
   const battleTitleElements = document.querySelectorAll('[data-battle-title]');
   const progressElement = document.querySelector('[data-battle-progress]');
+  const heroNameElements = document.querySelectorAll('[data-hero-name]');
+  const heroLevelElements = document.querySelectorAll('[data-hero-level]');
 
   if (heroImage) {
     const heroSprite =
@@ -585,6 +593,41 @@ const applyBattlePreview = (previewData = {}) => {
       previewData.battleTitleLabel.trim()
         ? previewData.battleTitleLabel
         : 'Upcoming Battle';
+  });
+
+  const resolvedHeroName =
+    typeof previewData?.hero?.name === 'string' && previewData.hero.name.trim()
+      ? previewData.hero.name.trim()
+      : '';
+
+  heroNameElements.forEach((element) => {
+    if (!element) {
+      return;
+    }
+    element.textContent = resolvedHeroName || 'Hero';
+  });
+
+  const resolvedLevelLabel = (() => {
+    if (
+      typeof previewData?.heroLevelLabel === 'string' &&
+      previewData.heroLevelLabel.trim()
+    ) {
+      return previewData.heroLevelLabel.trim();
+    }
+    if (
+      typeof previewData?.battleTitleLabel === 'string' &&
+      previewData.battleTitleLabel.trim()
+    ) {
+      return previewData.battleTitleLabel.trim();
+    }
+    return 'Level';
+  })();
+
+  heroLevelElements.forEach((element) => {
+    if (!element) {
+      return;
+    }
+    element.textContent = resolvedLevelLabel;
   });
 
   if (progressElement) {
@@ -1012,6 +1055,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
+  const battleButton = document.querySelector('[data-battle-button]');
 
   const loadBattlePreview = async () => {
     try {
@@ -1081,23 +1125,62 @@ const initLandingInteractions = async (preloadedData = {}) => {
       image.addEventListener('error', finalize);
     });
   };
+  const waitForImages = Promise.all([
+    awaitImageReady(heroImage),
+    awaitImageReady(enemyImage),
+  ]);
 
-  await Promise.all([awaitImageReady(heroImage), awaitImageReady(enemyImage)]);
+  if (!battleButton) {
+    await waitForImages;
+    if (CENTER_IMAGE_HOLD_DURATION_MS > 0) {
+      await new Promise((resolve) =>
+        window.setTimeout(
+          resolve,
+          Math.max(0, Number(CENTER_IMAGE_HOLD_DURATION_MS) || 0)
+        )
+      );
+    }
 
-  if (CENTER_IMAGE_HOLD_DURATION_MS > 0) {
-    await new Promise((resolve) =>
-      window.setTimeout(
-        resolve,
-        Math.max(0, Number(CENTER_IMAGE_HOLD_DURATION_MS) || 0)
-      )
-    );
+    try {
+      await runBattleIntroSequence();
+    } finally {
+      redirectToBattle();
+    }
+    return;
   }
 
-  try {
-    await runBattleIntroSequence();
-  } finally {
-    redirectToBattle();
-  }
+  let isLaunchingBattle = false;
+
+  const beginBattle = async () => {
+    if (isLaunchingBattle) {
+      return;
+    }
+    isLaunchingBattle = true;
+
+    battleButton.disabled = true;
+    battleButton.setAttribute('aria-busy', 'true');
+
+    await waitForImages;
+
+    if (CENTER_IMAGE_HOLD_DURATION_MS > 0) {
+      await new Promise((resolve) =>
+        window.setTimeout(
+          resolve,
+          Math.max(0, Number(CENTER_IMAGE_HOLD_DURATION_MS) || 0)
+        )
+      );
+    }
+
+    try {
+      await runBattleIntroSequence();
+    } catch (error) {
+      console.warn('Battle intro sequence failed.', error);
+    } finally {
+      redirectToBattle();
+    }
+  };
+
+  battleButton.addEventListener('click', beginBattle);
 };
 
 const bootstrapLanding = async () => {
