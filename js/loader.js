@@ -266,8 +266,6 @@ const readStoredProgress = () => {
     }
 
     const resolveAssetPath = (path) => normalizeAssetPath(path);
-    const isPlainObject = (value) =>
-      Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
     const normalizeAttackSprites = (...spriteSources) => {
       const result = {};
