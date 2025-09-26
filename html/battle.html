@@ -119,31 +119,27 @@
       aria-hidden="true"
       tabindex="-1"
     >
-      <section class="battle-card battle-card--pop battle-complete-card">
+      <section class="card card--pop battle-complete-card">
         <div class="battle-info">
-          <p id="battle-complete-title" class="battle-title">Battle<br />Complete</p>
+          <p id="battle-complete-title" class="battle-title">Monster Defeated</p>
         </div>
         <img
           class="enemy-image"
           src="../images/battle/monster_battle_1_1.png"
-          alt="Enemy defeated in battle"
+          alt="Enemy preparing for the next battle"
         />
-        <p class="battle-goals-title">Battle Goals</p>
-        <div class="battle-stats">
-          <div class="battle-stat" data-goal="accuracy">
-            <span class="stat-label">Accuracy</span>
-            <span class="stat-value summary-accuracy">
-              <span class="stat-value-text">0%</span>
-            </span>
+        <div class="meter meter--visible meter--level-up">
+          <p class="meter__heading text-small text-dark">Level Up</p>
+          <div class="progress meter__progress" role="presentation" aria-hidden="true">
+            <span class="progress__fill" aria-hidden="true"></span>
           </div>
-          <div class="battle-stat" data-goal="time">
-            <span class="stat-label">Time</span>
-            <span class="stat-value summary-time">
-              <span class="stat-value-text">0s</span>
-            </span>
-          </div>
+          <img
+            class="meter__icon"
+            src="../images/meter/chest.png"
+            alt="Treasure chest level-up reward"
+          />
         </div>
-        <button type="button" class="btn-primary next-mission-btn" data-action="next">Next Mission</button>
+        <button type="button" class="btn-primary next-mission-btn" data-action="next">Next Battle</button>
       </section>
     </div>
     <div id="battle-message">

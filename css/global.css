@@ -338,8 +338,32 @@ button:focus-visible {
 }
 
 .card .enemy-image {
-  width: 220px;
-  height: 220px;
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+}
+
+.meter--level-up {
+  padding: 0;
+  background-color: transparent;
+  gap: 12px;
+}
+
+.meter--level-up .meter__heading {
+  font-size: var(--subtitle-font-size);
+  font-weight: var(--subtitle-font-weight);
+  color: var(--title-color);
+}
+
+.meter--level-up .meter__progress {
+  display: none;
+}
+
+.meter--level-up .meter__icon {
+  position: static;
+  width: 160px;
+  height: auto;
+  max-width: 100%;
 }
 
 .card .battle-stats {
