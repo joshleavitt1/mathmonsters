@@ -5,7 +5,9 @@ const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 
 const BATTLE_PAGE_MODE_PARAM = 'mode';
 const BATTLE_PAGE_MODE_PLAY = 'play';
-const ENEMY_DEFEAT_ANIMATION_DELAY = 2000;
+const ENEMY_DEFEAT_ANIMATION_DELAY = 1000;
+const VICTORY_PROGRESS_UPDATE_DELAY = ENEMY_DEFEAT_ANIMATION_DELAY + 1000;
+const DEFEAT_PROGRESS_UPDATE_DELAY = 1000;
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -216,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let levelUpAvailable = false;
   let hasPendingLevelUpReward = false;
   let rewardAnimationPlayed = false;
+  let levelProgressUpdateTimeout = null;
   let rewardSpriteTransitionHandler = null;
   let rewardAwaitingActivation = false;
 
@@ -526,6 +529,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const cancelScheduledLevelProgressDisplayUpdate = () => {
+    if (levelProgressUpdateTimeout !== null) {
+      window.clearTimeout(levelProgressUpdateTimeout);
+      levelProgressUpdateTimeout = null;
+    }
+  };
+
+  const scheduleLevelProgressDisplayUpdate = (delayMs = 0) => {
+    cancelScheduledLevelProgressDisplayUpdate();
+
+    if (delayMs > 0) {
+      levelProgressUpdateTimeout = window.setTimeout(() => {
+        levelProgressUpdateTimeout = null;
+        updateLevelProgressDisplay();
+      }, delayMs);
+      return;
+    }
+
+    updateLevelProgressDisplay();
+  };
+
   const applyProgressUpdate = (baseProgress, update) => {
     const result = isPlainObject(baseProgress) ? { ...baseProgress } : {};
     if (!isPlainObject(update)) {
@@ -570,7 +594,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.max(0, Math.round(enemyXp));
   };
 
-  const awardExperiencePoints = () => {
+  const awardExperiencePoints = ({
+    delayProgressUpdateMs = 0,
+    scheduleProgressUpdate = true,
+  } = {}) => {
+    const maybeScheduleProgressUpdate = () => {
+      if (!scheduleProgressUpdate) {
+        return;
+      }
+      scheduleLevelProgressDisplayUpdate(delayProgressUpdateMs);
+    };
+
     const points = resolveExperiencePointsForEnemy();
     const level = resolveBattleLevelForExperience();
     const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
@@ -579,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!Number.isFinite(level)) {
       levelExperienceEarned = sanitizedEarned;
-      updateLevelProgressDisplay();
+      maybeScheduleProgressUpdate();
       hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
       if (hasPendingLevelUpReward) {
         rewardAnimationPlayed = false;
@@ -589,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (points <= 0) {
       levelExperienceEarned = sanitizedEarned;
-      updateLevelProgressDisplay();
+      maybeScheduleProgressUpdate();
       hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
       if (hasPendingLevelUpReward) {
         rewardAnimationPlayed = false;
@@ -602,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     persistProgress({ experience: { [levelKey]: nextTotal } });
     levelExperienceEarned = nextTotal;
-    updateLevelProgressDisplay();
+    maybeScheduleProgressUpdate();
 
     hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
     if (hasPendingLevelUpReward) {
@@ -2146,10 +2180,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win) {
       setBattleCompleteTitleLines('Monster Defeated');
-      awardExperiencePoints();
+      awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
       setBattleCompleteTitleLines('Keep Practicing');
-      updateLevelProgressDisplay();
     }
 
     battleGoalsMet = goalsAchieved;
@@ -2161,6 +2194,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const showCompleteMessage = () => {
+      const progressDelay = win
+        ? VICTORY_PROGRESS_UPDATE_DELAY
+        : DEFEAT_PROGRESS_UPDATE_DELAY;
+      scheduleLevelProgressDisplayUpdate(progressDelay);
+
       if (!completeMessage) {
         return;
       }
@@ -2174,6 +2212,7 @@ document.addEventListener('DOMContentLoaded', () => {
           applyEnemyDefeatStyles();
         }, ENEMY_DEFEAT_ANIMATION_DELAY);
       }
+
     };
 
     const waitForHpDrainEl =
@@ -2235,6 +2274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     levelUpAvailable = false;
     hasPendingLevelUpReward = false;
     rewardAnimationPlayed = false;
+    cancelScheduledLevelProgressDisplayUpdate();
     clearRewardAnimation();
     updateLevelProgressDisplay();
     if (completeMessage) {
