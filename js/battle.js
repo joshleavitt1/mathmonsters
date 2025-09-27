@@ -1392,7 +1392,21 @@ document.addEventListener('DOMContentLoaded', () => {
       choicesEl.appendChild(div);
     });
     questionBox.classList.add('show');
-    document.dispatchEvent(new CustomEvent('question-opened'));
+
+    const resolvedBattleLevel = (() => {
+      if (Number.isFinite(currentBattleLevel)) {
+        return currentBattleLevel;
+      }
+
+      const preloadedLevel = Number(window.preloadedData?.level?.battleLevel);
+      return Number.isFinite(preloadedLevel) ? preloadedLevel : null;
+    })();
+
+    document.dispatchEvent(
+      new CustomEvent('question-opened', {
+        detail: { battleLevel: resolvedBattleLevel },
+      })
+    );
   }
 
   function dispatchStreakMeterUpdate(correct) {
