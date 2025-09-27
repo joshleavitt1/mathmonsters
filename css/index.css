@@ -152,7 +152,7 @@ body:not(.is-preloading) main.landing {
 
 .landing__hero-speech {
   position: absolute;
-  top: calc(clamp(18%, 32vh, 44%) - 60px);
+  top: calc(clamp(18%, 32vh, 44%) - 80px);
   left: 50%;
   transform: translate(-50%, -8px);
   max-width: min(420px, 100%);
