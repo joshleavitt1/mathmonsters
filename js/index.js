@@ -20,7 +20,7 @@ const LEVEL_ONE_SPEECH_SEQUENCE = [
   { text: 'Hi! I’m Shellfin.', pauseAfterMs: 1000 },
   { text: ' Uh-oh…', pauseAfterMs: 1000 },
   { text: ' monsters are here!', pauseAfterMs: 1000 },
-  { text: ' Can you help me stop them?', pauseAfterMs: 4000 },
+  { text: ' Let’s use math to fight back!', pauseAfterMs: 4000 },
 ];
 
 const buildSpeechCharacters = (segments = []) =>
