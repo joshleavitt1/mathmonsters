@@ -437,6 +437,14 @@ body {
   visibility: visible;
 }
 
+body.is-reward-active > *:not(.reward-overlay) {
+  visibility: hidden;
+}
+
+body.is-reward-active .reward-overlay {
+  visibility: visible;
+}
+
 .reward-overlay__image {
   width: 250px;
   height: 250px;
@@ -496,13 +504,6 @@ body {
 
 .battle-complete-card__meter .meter__heading {
   margin: 0;
-}
-
-.battle-complete-card__meter [data-level-progress-text] {
-  margin: 0;
-  font-size: var(--subtitle-font-size);
-  font-weight: var(--subtitle-font-weight);
-  color: var(--title-color);
 }
 
 .battle-complete-card__enemy {

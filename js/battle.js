@@ -169,9 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
     '.battle-complete-card__meter .meter__progress'
   );
   const levelProgressFill = levelProgressMeter?.querySelector('.progress__fill');
-  const levelProgressText = completeMessage?.querySelector(
-    '[data-level-progress-text]'
-  );
   const rewardOverlay = document.querySelector('[data-reward-overlay]');
   const rewardSprite = rewardOverlay?.querySelector('[data-reward-sprite]');
 
@@ -261,6 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearRewardAnimation();
     rewardOverlay.classList.remove('reward-overlay--visible');
     rewardOverlay.setAttribute('aria-hidden', 'true');
+    document.body?.classList.remove('is-reward-active');
     rewardSprite.classList.remove(
       'reward-overlay__image--pop-in',
       'reward-overlay__image--shrink',
@@ -278,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearRewardAnimation();
     rewardOverlay.classList.add('reward-overlay--visible');
     rewardOverlay.setAttribute('aria-hidden', 'false');
+    document.body?.classList.add('is-reward-active');
     rewardSprite.classList.remove(
       'reward-overlay__image--pop-in',
       'reward-overlay__image--shrink',
@@ -400,9 +399,6 @@ document.addEventListener('DOMContentLoaded', () => {
       levelProgressMeter.style.setProperty('--progress-value', `${clampedRatio}`);
     }
 
-    if (levelProgressText) {
-      levelProgressText.textContent = progress.text;
-    }
 
     const requirementMet =
       levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;

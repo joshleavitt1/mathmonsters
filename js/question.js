@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { text: 'Answer a question to attack!', pauseAfterMs: 1000 },
     { text: ' Get it right and', pauseAfterMs: 1000 },
     { text: '—POW!', pauseAfterMs: 1000 },
-    { text: '—your hero fights back!', pauseAfterMs: 2000 },
+    { text: '—your hero fights back!', pauseAfterMs: 4000 },
   ];
 
   const buildDialogueCharacters = (segments = []) =>

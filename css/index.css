@@ -152,7 +152,7 @@ body:not(.is-preloading) main.landing {
 
 .landing__hero-speech {
   position: absolute;
-  top: calc(clamp(18%, 32vh, 44%) - 40px);
+  top: calc(clamp(18%, 32vh, 44%) - 60px);
   left: 50%;
   transform: translate(-50%, -8px);
   max-width: min(420px, 100%);
@@ -173,7 +173,7 @@ body:not(.is-preloading) main.landing {
 .landing__hero-speech-text {
   margin: 0;
   width: 100%;
-  font-size: clamp(18px, 3.8vw, 22px);
+  font-size: var(--text-size-medium);
   color: rgba(39, 43, 52, 0.95);
   letter-spacing: 0.01em;
 }
