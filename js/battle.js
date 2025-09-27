@@ -234,6 +234,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const REWARD_CHEST_SRC = '../images/complete/chest.png';
   const REWARD_POTION_SRC = '../images/complete/potion.png';
 
+  const applyRewardChestGlow = () => {
+    if (!rewardSprite) {
+      return;
+    }
+
+    rewardSprite.style.setProperty('--pulsating-glow-color', 'rgba(255, 232, 118, 0.9)');
+    rewardSprite.style.setProperty('--pulsating-glow-opacity', '0.9');
+    rewardSprite.style.setProperty('--pulsating-glow-opacity-peak', '1');
+    rewardSprite.style.setProperty('--pulsating-glow-spread', '42px');
+    rewardSprite.style.setProperty('--pulsating-glow-radius', '48px');
+    rewardSprite.style.setProperty('--pulsating-glow-duration', '1.8s');
+    rewardSprite.style.setProperty('--pulsating-glow-scale-start', '0.88');
+    rewardSprite.style.setProperty('--pulsating-glow-scale-peak', '1.08');
+    rewardSprite.style.setProperty('--pulsating-glow-blur', '12px');
+  };
+
   const hero = {
     attack: 1,
     health: 5,
@@ -284,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     rewardAwaitingActivation = true;
+    applyRewardChestGlow();
     rewardSprite.classList.add(
       'reward-overlay__image--interactive',
       'pulsating-glow'
@@ -343,15 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     rewardSprite.src = REWARD_CHEST_SRC;
     rewardSprite.alt = 'Treasure chest level-up reward';
-    rewardSprite.style.setProperty('--pulsating-glow-color', 'rgba(255, 232, 118, 0.9)');
-    rewardSprite.style.setProperty('--pulsating-glow-opacity', '0.9');
-    rewardSprite.style.setProperty('--pulsating-glow-opacity-peak', '1');
-    rewardSprite.style.setProperty('--pulsating-glow-spread', '42px');
-    rewardSprite.style.setProperty('--pulsating-glow-radius', '48px');
-    rewardSprite.style.setProperty('--pulsating-glow-duration', '1.8s');
-    rewardSprite.style.setProperty('--pulsating-glow-scale-start', '0.88');
-    rewardSprite.style.setProperty('--pulsating-glow-scale-peak', '1.08');
-    rewardSprite.style.setProperty('--pulsating-glow-blur', '12px');
+    applyRewardChestGlow();
 
     void rewardSprite.offsetWidth;
     rewardSprite.classList.add('reward-overlay__image--pop-in');

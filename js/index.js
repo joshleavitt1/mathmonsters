@@ -46,8 +46,10 @@ const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 const BATTLE_PAGE_URL = 'html/battle.html';
 const BATTLE_PAGE_MODE_PARAM = 'mode';
 const BATTLE_PAGE_MODE_PLAY = 'play';
+const BATTLE_PAGE_MODE_DEV_TOOLS = 'devtools';
 
 let battleRedirectUrl = BATTLE_PAGE_URL;
+let shouldSkipLandingForDevTools = false;
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -75,7 +77,13 @@ const buildBattleUrl = (mode) => {
 };
 
 const requestBattleWithoutDevControls = () => {
+  shouldSkipLandingForDevTools = false;
   battleRedirectUrl = buildBattleUrl(BATTLE_PAGE_MODE_PLAY);
+};
+
+const requestBattleWithDevTools = () => {
+  shouldSkipLandingForDevTools = true;
+  battleRedirectUrl = BATTLE_PAGE_URL;
 };
 
 const redirectToBattle = () => {
@@ -955,10 +963,14 @@ const clearLandingModeRequestFromQuery = () => {
 };
 
 const applyLandingModeRequest = () => {
+  shouldSkipLandingForDevTools = false;
   const storedMode = readLandingModeRequestFromStorage();
   if (storedMode) {
-    if (storedMode.trim().toLowerCase() === BATTLE_PAGE_MODE_PLAY) {
+    const normalizedStoredMode = storedMode.trim().toLowerCase();
+    if (normalizedStoredMode === BATTLE_PAGE_MODE_PLAY) {
       requestBattleWithoutDevControls();
+    } else if (normalizedStoredMode === BATTLE_PAGE_MODE_DEV_TOOLS) {
+      requestBattleWithDevTools();
     }
     clearLandingModeRequestFromStorage();
     return;
@@ -969,8 +981,11 @@ const applyLandingModeRequest = () => {
     return;
   }
 
-  if (queryMode.trim().toLowerCase() === BATTLE_PAGE_MODE_PLAY) {
+  const normalizedQueryMode = queryMode.trim().toLowerCase();
+  if (normalizedQueryMode === BATTLE_PAGE_MODE_PLAY) {
     requestBattleWithoutDevControls();
+  } else if (normalizedQueryMode === BATTLE_PAGE_MODE_DEV_TOOLS) {
+    requestBattleWithDevTools();
   }
 
   clearLandingModeRequestFromQuery();
@@ -1152,6 +1167,11 @@ const initLandingInteractions = async (preloadedData = {}) => {
   battleRedirectUrl = BATTLE_PAGE_URL;
   markLandingVisited();
   applyLandingModeRequest();
+  if (shouldSkipLandingForDevTools) {
+    shouldSkipLandingForDevTools = false;
+    redirectToBattle();
+    return;
+  }
   randomizeBubbleTimings();
 
   const heroImage = document.querySelector('.hero');
