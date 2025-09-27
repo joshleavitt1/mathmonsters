@@ -140,7 +140,7 @@ body {
   align-items: center;
   padding: 16px;
   gap: 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(4px);
   opacity: 0;
@@ -186,7 +186,7 @@ body {
   font-size: 20px;
   background: #00B600;
   color: #FFFFFF;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 6px 12px;
   opacity: 0;
   transform: scale(0);
@@ -378,7 +378,7 @@ body {
 #battle-message .content {
   background: #fff;
   padding: 24px;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
 }
 
