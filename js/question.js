@@ -594,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('close-question', closeQuestion);
 
-  document.addEventListener('question-opened', () => {
+  document.addEventListener('question-opened', (event) => {
     button.classList.remove('result', 'correct', 'incorrect');
     button.textContent = 'Submit';
     clearChoiceSelections();
@@ -618,6 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    hasShownQuestionIntro = hasShownQuestionIntro || !isLevelOne;
     clearQuestionIntroTimeouts();
     hideQuestionIntro({ immediate: true });
     revealQuestionCard();
