@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionIntroText = questionIntro?.querySelector(
     '[data-question-dialogue-text]'
   );
+  const QUESTION_OVERLAY_CLASS = 'question--with-overlay';
   const QUESTION_INTRO_DELAY_MS = 200;
   const QUESTION_INTRO_CHARACTER_INTERVAL_MS = 70;
   const QUESTION_INTRO_SEQUENCE = [
@@ -449,10 +450,30 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   });
 
-  const isQuestionOverlayActive = () =>
+  const isQuestionContainerActive = () =>
     Boolean(questionBox) &&
     questionBox.classList.contains('show') &&
     !questionBox.classList.contains('closing');
+
+  const isQuestionOverlayActive = () =>
+    isQuestionContainerActive() &&
+    questionBox.classList.contains(QUESTION_OVERLAY_CLASS);
+
+  const enableQuestionOverlay = () => {
+    if (!questionBox) {
+      return;
+    }
+
+    questionBox.classList.add(QUESTION_OVERLAY_CLASS);
+  };
+
+  const disableQuestionOverlay = () => {
+    if (!questionBox) {
+      return;
+    }
+
+    questionBox.classList.remove(QUESTION_OVERLAY_CLASS);
+  };
 
   const setQuestionCardHidden = (hidden) => {
     if (!questionCard) {
@@ -475,6 +496,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const revealQuestionCard = () => {
+    if (!isQuestionContainerActive()) {
+      return;
+    }
+
+    enableQuestionOverlay();
+
     if (!isQuestionOverlayActive()) {
       return;
     }
@@ -495,6 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (questionBox) {
         questionBox.classList.remove('closing');
         questionBox.classList.remove('show');
+        questionBox.classList.remove(QUESTION_OVERLAY_CLASS);
       }
       if (questionCard) {
         questionCard.classList.remove('card--closing');
@@ -576,11 +604,13 @@ document.addEventListener('DOMContentLoaded', () => {
       questionBox.classList.remove('closing');
     }
 
+    disableQuestionOverlay();
+
     if (!hasShownQuestionIntro) {
       setQuestionCardHidden(true);
       Promise.resolve(playQuestionIntro()).then(() => {
         hasShownQuestionIntro = true;
-        if (!isQuestionOverlayActive()) {
+        if (!isQuestionContainerActive()) {
           return;
         }
         revealQuestionCard();
