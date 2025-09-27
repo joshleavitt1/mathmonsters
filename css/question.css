@@ -25,20 +25,23 @@
 }
 
 #question .question-dialogue {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   width: min(420px, 100%);
   text-align: left;
   opacity: 0;
-  transform: translateY(12px);
+  transform: translate(-50%, calc(-50% - 8px));
   transition: opacity 0.3s ease, transform 0.3s ease;
   pointer-events: none;
   --dialogue-tail-offset: 38%;
-  align-self: center;
-  margin: 0 auto 20px;
+  margin: 0;
+  z-index: 1;
 }
 
 #question .question-dialogue.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, calc(-50% - 20px));
 }
 
 #question .question-dialogue__text {

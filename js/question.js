@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('close-question', closeQuestion);
 
-  document.addEventListener('question-opened', () => {
+  document.addEventListener('question-opened', (event) => {
     button.classList.remove('result', 'correct', 'incorrect');
     button.textContent = 'Submit';
     clearChoiceSelections();
@@ -576,10 +576,16 @@ document.addEventListener('DOMContentLoaded', () => {
       questionBox.classList.remove('closing');
     }
 
-    if (!hasShownQuestionIntro) {
+    const rawLevel = Number(event?.detail?.battleLevel);
+    const sanitizedLevel = Number.isFinite(rawLevel)
+      ? Math.max(1, Math.round(rawLevel))
+      : 1;
+    const isLevelOne = sanitizedLevel === 1;
+
+    if (!hasShownQuestionIntro && isLevelOne) {
+      hasShownQuestionIntro = true;
       setQuestionCardHidden(true);
       Promise.resolve(playQuestionIntro()).then(() => {
-        hasShownQuestionIntro = true;
         if (!isQuestionOverlayActive()) {
           return;
         }
@@ -588,6 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    hasShownQuestionIntro = hasShownQuestionIntro || !isLevelOne;
     clearQuestionIntroTimeouts();
     hideQuestionIntro({ immediate: true });
     revealQuestionCard();

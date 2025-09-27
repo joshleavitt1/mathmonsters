@@ -424,7 +424,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.8);
+  background: transparent;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -439,10 +439,12 @@ body {
 
 body.is-reward-active > *:not(.reward-overlay) {
   visibility: hidden;
+  display: none !important;
 }
 
 body.is-reward-active .reward-overlay {
   visibility: visible;
+  pointer-events: auto;
 }
 
 .reward-overlay__image {
