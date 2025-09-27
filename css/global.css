@@ -339,7 +339,7 @@ button:focus-visible {
   bottom: calc(var(--dialogue-tail-size, 18px) * -0.55);
   width: calc(var(--dialogue-tail-size, 18px) * 1.2);
   height: calc(var(--dialogue-tail-size, 18px) * 1.2);
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255);
   border-radius: 12px;
   transform: translateX(-50%) rotate(45deg);
 }
