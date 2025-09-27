@@ -25,13 +25,15 @@
 }
 
 #question .question-dialogue {
-  width: 100%;
+  width: min(420px, 100%);
   text-align: left;
   opacity: 0;
   transform: translateY(12px);
   transition: opacity 0.3s ease, transform 0.3s ease;
   pointer-events: none;
   --dialogue-tail-offset: 38%;
+  align-self: center;
+  margin: 0 auto 20px;
 }
 
 #question .question-dialogue.is-visible {
@@ -44,6 +46,7 @@
   font-size: var(--text-size-medium);
   color: var(--text-color-dark);
   text-align: left;
+  letter-spacing: 0.01em;
 }
 
 #question .card--question.card--hidden {

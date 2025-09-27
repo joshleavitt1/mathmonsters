@@ -343,7 +343,6 @@ button:focus-visible {
   height: calc(var(--dialogue-tail-size, 18px) * 1.2);
   background: rgba(255, 255, 255, 0.95);
   border-radius: 6px;
-  box-shadow: 0 14px 28px rgba(0, 27, 65, 0.25);
   transform: translateX(-50%) rotate(45deg);
 }
 .card--pop {
