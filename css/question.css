@@ -21,16 +21,17 @@
   flex-direction: column;
   gap: 16px;
   width: min(420px, 100%);
-  align-items: center;
+  align-items: stretch;
 }
 
 #question .question-dialogue {
   width: 100%;
-  text-align: center;
+  text-align: left;
   opacity: 0;
   transform: translateY(12px);
   transition: opacity 0.3s ease, transform 0.3s ease;
   pointer-events: none;
+  --dialogue-tail-offset: 38%;
 }
 
 #question .question-dialogue.is-visible {
@@ -42,6 +43,11 @@
   margin: 0;
   font-size: var(--text-size-medium);
   color: var(--text-color-dark);
+  text-align: left;
+}
+
+#question .card--question.card--hidden {
+  display: none;
 }
 
 #question.show {

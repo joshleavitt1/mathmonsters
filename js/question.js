@@ -84,6 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
     ({ character }) => character
   ).join('');
   const questionIntroTimeouts = [];
+  const QUESTION_INTRO_COMPLETE_PAUSE_MS = 900;
+  const QUESTION_INTRO_HIDE_TRANSITION_MS = 320;
+  let questionIntroSequenceId = 0;
+  let hasShownQuestionIntro = false;
 
   const scheduleQuestionIntroTimeout = (callback, delay) => {
     if (typeof window === 'undefined') {
@@ -113,33 +117,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const hideQuestionIntro = () => {
+  const hideQuestionIntro = ({ immediate = false } = {}) => {
     if (!questionIntro || !questionIntroText) {
       return;
     }
 
     questionIntro.classList.remove('is-visible');
-    questionIntro.setAttribute('aria-hidden', 'true');
-    questionIntroText.textContent = '';
-    if (questionIntroText.dataset) {
-      delete questionIntroText.dataset.typing;
-    } else {
-      questionIntroText.removeAttribute('data-typing');
+
+    const finalizeHide = () => {
+      questionIntro.setAttribute('aria-hidden', 'true');
+      questionIntroText.textContent = '';
+      if (questionIntroText.dataset) {
+        delete questionIntroText.dataset.typing;
+      } else {
+        questionIntroText.removeAttribute('data-typing');
+      }
+    };
+
+    if (immediate) {
+      finalizeHide();
+      return;
     }
+
+    scheduleQuestionIntroTimeout(finalizeHide, QUESTION_INTRO_HIDE_TRANSITION_MS);
   };
 
   const playQuestionIntro = () => {
     if (!questionIntro || !questionIntroText) {
-      return;
+      return Promise.resolve();
     }
 
+    questionIntroSequenceId += 1;
+    const sequenceId = questionIntroSequenceId;
+
     clearQuestionIntroTimeouts();
-    hideQuestionIntro();
+    hideQuestionIntro({ immediate: true });
 
     if (QUESTION_INTRO_CHARACTERS.length === 0) {
       questionIntro.setAttribute('aria-hidden', 'false');
       questionIntro.classList.add('is-visible');
-      return;
+      questionIntroText.textContent = '';
+      questionIntroText.dataset.typing = 'false';
+      hideQuestionIntro();
+      return Promise.resolve();
     }
 
     questionIntro.setAttribute('aria-hidden', 'false');
@@ -151,34 +171,63 @@ document.addEventListener('DOMContentLoaded', () => {
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (prefersReducedMotion) {
-      questionIntroText.textContent = QUESTION_INTRO_TEXT;
-      questionIntroText.dataset.typing = 'false';
-      return;
-    }
+    return new Promise((resolve) => {
+      const resolveIfCurrent = () => {
+        if (sequenceId !== questionIntroSequenceId) {
+          resolve();
+          return;
+        }
 
-    let index = 0;
-
-    const typeNextCharacter = () => {
-      if (index >= QUESTION_INTRO_CHARACTERS.length) {
         questionIntroText.dataset.typing = 'false';
+
+        scheduleQuestionIntroTimeout(() => {
+          if (sequenceId !== questionIntroSequenceId) {
+            resolve();
+            return;
+          }
+
+          hideQuestionIntro();
+
+          scheduleQuestionIntroTimeout(() => {
+            resolve();
+          }, QUESTION_INTRO_HIDE_TRANSITION_MS);
+        }, QUESTION_INTRO_COMPLETE_PAUSE_MS);
+      };
+
+      if (prefersReducedMotion) {
+        questionIntroText.textContent = QUESTION_INTRO_TEXT;
+        resolveIfCurrent();
         return;
       }
 
-      const entry = QUESTION_INTRO_CHARACTERS[index] || {
-        character: '',
-        pauseAfterMs: 0,
+      let index = 0;
+
+      const typeNextCharacter = () => {
+        if (sequenceId !== questionIntroSequenceId) {
+          resolve();
+          return;
+        }
+
+        if (index >= QUESTION_INTRO_CHARACTERS.length) {
+          resolveIfCurrent();
+          return;
+        }
+
+        const entry = QUESTION_INTRO_CHARACTERS[index] || {
+          character: '',
+          pauseAfterMs: 0,
+        };
+        questionIntroText.textContent += entry.character;
+        index += 1;
+
+        const baseDelay = Math.max(0, QUESTION_INTRO_CHARACTER_INTERVAL_MS);
+        const pauseAfter = Math.max(0, Number(entry.pauseAfterMs) || 0);
+
+        scheduleQuestionIntroTimeout(typeNextCharacter, baseDelay + pauseAfter);
       };
-      questionIntroText.textContent += entry.character;
-      index += 1;
 
-      const baseDelay = Math.max(0, QUESTION_INTRO_CHARACTER_INTERVAL_MS);
-      const pauseAfter = Math.max(0, Number(entry.pauseAfterMs) || 0);
-
-      scheduleQuestionIntroTimeout(typeNextCharacter, baseDelay + pauseAfter);
-    };
-
-    scheduleQuestionIntroTimeout(typeNextCharacter, QUESTION_INTRO_DELAY_MS);
+      scheduleQuestionIntroTimeout(typeNextCharacter, QUESTION_INTRO_DELAY_MS);
+    });
   };
 
   const requestFrame =
@@ -400,13 +449,49 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   });
 
+  const isQuestionOverlayActive = () =>
+    Boolean(questionBox) &&
+    questionBox.classList.contains('show') &&
+    !questionBox.classList.contains('closing');
+
+  const setQuestionCardHidden = (hidden) => {
+    if (!questionCard) {
+      return;
+    }
+
+    questionCard.classList.toggle('card--hidden', hidden);
+    questionCard.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+  };
+
+  const showQuestionCardWithPop = () => {
+    if (!questionCard) {
+      return;
+    }
+
+    questionCard.classList.remove('card--closing');
+    questionCard.classList.remove('card--pop');
+    void questionCard.offsetWidth;
+    questionCard.classList.add('card--pop');
+  };
+
+  const revealQuestionCard = () => {
+    if (!isQuestionOverlayActive()) {
+      return;
+    }
+
+    setQuestionCardHidden(false);
+    showQuestionCardWithPop();
+  };
+
   function closeQuestion() {
+    questionIntroSequenceId += 1;
+    clearQuestionIntroTimeouts();
+    hideQuestionIntro({ immediate: true });
+
     let overlayFadeStarted = false;
     let handleCardAnimationEnd = null;
 
     const finalizeClose = () => {
-      clearQuestionIntroTimeouts();
-      hideQuestionIntro();
       if (questionBox) {
         questionBox.classList.remove('closing');
         questionBox.classList.remove('show');
@@ -419,6 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
       clearChoiceSelections();
       setSubmitDisabled(true);
       hideMeter();
+      setQuestionCardHidden(false);
     };
 
     const cleanupCardListeners = () => {
@@ -486,16 +572,25 @@ document.addEventListener('DOMContentLoaded', () => {
     clearChoiceSelections();
     setSubmitDisabled(true);
     hideMeter();
-    playQuestionIntro();
     if (questionBox) {
       questionBox.classList.remove('closing');
     }
-    if (questionCard) {
-      questionCard.classList.remove('card--closing');
-      questionCard.classList.remove('card--pop');
-      void questionCard.offsetWidth;
-      questionCard.classList.add('card--pop');
+
+    if (!hasShownQuestionIntro) {
+      setQuestionCardHidden(true);
+      Promise.resolve(playQuestionIntro()).then(() => {
+        hasShownQuestionIntro = true;
+        if (!isQuestionOverlayActive()) {
+          return;
+        }
+        revealQuestionCard();
+      });
+      return;
     }
+
+    clearQuestionIntroTimeouts();
+    hideQuestionIntro({ immediate: true });
+    revealQuestionCard();
   });
 
   document.addEventListener('streak-meter-update', (event) => {

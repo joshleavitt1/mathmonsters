@@ -152,7 +152,7 @@ body:not(.is-preloading) main.landing {
 
 .landing__hero-speech {
   position: absolute;
-  top: clamp(18%, 32vh, 44%);
+  top: calc(clamp(18%, 32vh, 44%) - 40px);
   left: 50%;
   transform: translate(-50%, -8px);
   max-width: min(420px, 100%);
@@ -162,11 +162,7 @@ body:not(.is-preloading) main.landing {
   pointer-events: none;
   z-index: 3;
   transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.landing__hero-speech::after {
-  content: none;
-  display: none;
+  --dialogue-tail-offset: 60%;
 }
 
 .landing__hero-speech.is-visible {
