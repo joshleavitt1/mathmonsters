@@ -2,6 +2,7 @@ const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const LANDING_MODE_STORAGE_KEY = 'reefRangersLandingMode';
 const BATTLE_PAGE_MODE_PLAY = 'play';
+const BATTLE_PAGE_MODE_DEV_TOOLS = 'devtools';
 
 const createDefaultProgress = () => ({
   battleLevel: 1,
@@ -107,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       persistLandingModeRequest(BATTLE_PAGE_MODE_PLAY);
       redirectTarget = '../index.html?mode=play';
     } else {
-      clearLandingModeRequest();
+      persistLandingModeRequest(BATTLE_PAGE_MODE_DEV_TOOLS);
     }
 
     window.location.replace(redirectTarget);
