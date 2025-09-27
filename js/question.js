@@ -60,8 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const QUESTION_INTRO_SEQUENCE = [
     { text: 'Answer a question to attack!', pauseAfterMs: 1000 },
     { text: ' Get it right and', pauseAfterMs: 1000 },
-    { text: '—POW!', pauseAfterMs: 1000 },
-    { text: '—your hero fights back!', pauseAfterMs: 2000 },
+    { text: ' POW–!', pauseAfterMs: 1000 },
+    { text: ' your hero fights back!', pauseAfterMs: 2000 },
   ];
 
   const buildDialogueCharacters = (segments = []) =>
