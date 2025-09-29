@@ -1,8 +1,11 @@
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
+const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const LANDING_MODE_STORAGE_KEY = 'reefRangersLandingMode';
 const BATTLE_PAGE_MODE_PLAY = 'play';
 const BATTLE_PAGE_MODE_DEV_TOOLS = 'devtools';
+const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
+const REGISTER_PAGE_URL = 'register.html';
 
 const createDefaultProgress = () => ({
   battleLevel: 1,
@@ -14,7 +17,7 @@ const persistGuestSession = () => {
     if (!storage) {
       return false;
     }
-    storage.setItem(GUEST_SESSION_KEY, 'true');
+    storage.setItem(GUEST_SESSION_KEY, GUEST_SESSION_ACTIVE_VALUE);
     const existingProgress = storage.getItem(PROGRESS_STORAGE_KEY);
     if (!existingProgress) {
       storage.setItem(
@@ -34,6 +37,27 @@ const clearGuestSessionFlag = () => {
     window.localStorage?.removeItem(GUEST_SESSION_KEY);
   } catch (error) {
     console.warn('Unable to clear guest session flag.', error);
+  }
+};
+
+const redirectToRegister = () => {
+  window.location.replace(REGISTER_PAGE_URL);
+};
+
+const isRegistrationRequiredForGuest = () => {
+  try {
+    const storage = window.localStorage;
+    if (!storage) {
+      return false;
+    }
+
+    return (
+      storage.getItem(GUEST_SESSION_KEY) ===
+      GUEST_SESSION_REGISTRATION_REQUIRED_VALUE
+    );
+  } catch (error) {
+    console.warn('Guest session lookup failed.', error);
+    return false;
   }
 };
 
@@ -93,6 +117,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
       console.warn('Unexpected session lookup error.', error);
     }
+  }
+
+  if (isRegistrationRequiredForGuest()) {
+    redirectToRegister();
+    return;
   }
 
   const startGuestSession = (hideDevControls) => {

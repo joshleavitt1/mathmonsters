@@ -9,7 +9,10 @@ const ENEMY_DEFEAT_ANIMATION_DELAY = 1000;
 const VICTORY_PROGRESS_UPDATE_DELAY = ENEMY_DEFEAT_ANIMATION_DELAY + 1000;
 const DEFEAT_PROGRESS_UPDATE_DELAY = 1000;
 const LEVEL_PROGRESS_ANIMATION_DELAY_MS = 0;
-const HERO_EVOLUTION_TRANSITION_DURATION_MS = 800;
+const HERO_EVOLUTION_SWAP_DELAY_MS = 1400;
+const HERO_EVOLUTION_TOTAL_DURATION_MS = 2800;
+const REGISTER_PAGE_URL = './register.html';
+const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -181,6 +184,12 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   const evolutionNextSprite = evolutionOverlay?.querySelector(
     '[data-evolution-next]'
+  );
+  const evolutionCompleteOverlay = document.querySelector(
+    '[data-evolution-complete-overlay]'
+  );
+  const evolutionCompleteButton = evolutionCompleteOverlay?.querySelector(
+    '[data-evolution-complete-button]'
   );
 
   const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
@@ -413,6 +422,51 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body?.classList.remove('is-reward-active');
   };
 
+  const focusWithoutScroll = (element) => {
+    if (!element || typeof element.focus !== 'function') {
+      return;
+    }
+
+    try {
+      element.focus({ preventScroll: true });
+    } catch (error) {
+      element.focus();
+    }
+  };
+
+  const markRegistrationAsRequired = () => {
+    try {
+      const storage = window.localStorage;
+      if (!storage) {
+        return;
+      }
+
+      storage.setItem(
+        GUEST_SESSION_KEY,
+        GUEST_SESSION_REGISTRATION_REQUIRED_VALUE
+      );
+    } catch (error) {
+      console.warn('Unable to require registration for the guest player.', error);
+    }
+  };
+
+  const showEvolutionCompleteOverlay = () => {
+    if (!evolutionCompleteOverlay) {
+      return false;
+    }
+
+    evolutionCompleteOverlay.setAttribute('aria-hidden', 'false');
+    evolutionCompleteOverlay.classList.add('post-evolution-overlay--visible');
+    focusWithoutScroll(evolutionCompleteButton);
+    return true;
+  };
+
+  if (evolutionCompleteButton) {
+    evolutionCompleteButton.addEventListener('click', () => {
+      window.location.assign(REGISTER_PAGE_URL);
+    });
+  }
+
   const finishEvolutionSequence = (nextSpriteSrc) => {
     if (!evolutionInProgress) {
       resetEvolutionOverlay();
@@ -431,7 +485,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.setTimeout(() => {
       resetRewardOverlay();
-      window.location.href = '../index.html';
+      hideRewardOverlayInstantly();
+      markRegistrationAsRequired();
+      const overlayShown = showEvolutionCompleteOverlay();
+      if (!overlayShown) {
+        window.location.assign(REGISTER_PAGE_URL);
+      }
     }, 600);
   };
 
