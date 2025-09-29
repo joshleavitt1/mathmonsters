@@ -25,17 +25,18 @@
   </head>
   <body>
     <main class="preloader app-safe-area" role="main">
-      <img
-        class="preloader__logo"
-        src="../images/brand/logo.png"
-        alt="Reef Rangers logo"
-        width="200"
-        height="200"
-      />
-      <h1 class="preloader__headline text-large text-white">Register</h1>
-      <p class="preloader__tagline">
-        Create your Reef Rangers account to track progress and earn rewards.
-      </p>
+      <div class="preloader__intro">
+        <span class="preloader__badge">Parent Check-In</span>
+        <div class="preloader__titles">
+          <h1 class="preloader__headline text-large text-white">
+            Unlock More Math Adventures
+          </h1>
+          <p class="preloader__tagline text-small text-white-50">
+            Register for free to help your child explore new content and build lasting
+            math skills.
+          </p>
+        </div>
+      </div>
       <form
         class="preloader__form"
         action="#"
@@ -43,19 +44,6 @@
         novalidate
         autocomplete="on"
       >
-        <label class="visually-hidden" for="register-name">Name</label>
-        <input
-          class="preloader__field"
-          type="text"
-          id="register-name"
-          name="name"
-          placeholder="Name"
-          autocomplete="name"
-          inputmode="text"
-          autocapitalize="words"
-          spellcheck="false"
-          required
-        />
         <label class="visually-hidden" for="register-email">Email</label>
         <input
           class="preloader__field"
@@ -79,12 +67,42 @@
           autocomplete="new-password"
           required
         />
+        <label class="visually-hidden" for="register-grade"
+          >Child's Grade Level</label
+        >
+        <select
+          class="preloader__field preloader__field--select"
+          id="register-grade"
+          name="grade"
+          required
+        >
+          <option value="" disabled selected hidden>Child’s Grade Level</option>
+          <option value="K">K</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+        <label class="visually-hidden" for="register-referral"
+          >Where Did You Find Us?</label
+        >
+        <select
+          class="preloader__field preloader__field--select"
+          id="register-referral"
+          name="referral"
+          required
+        >
+          <option value="" disabled selected hidden>Where Did You Find Us?</option>
+          <option value="Reddit">Reddit</option>
+          <option value="Friend">Friend</option>
+          <option value="Google">Google</option>
+        </select>
         <button class="btn-primary preloader__button" type="submit">
           <span class="preloader__button-label">Register</span>
           <span class="preloader__spinner" aria-hidden="true"></span>
         </button>
       </form>
-      <a class="preloader__link" href="signin.html">Sign In</a>
       <p
         class="preloader__error"
         data-register-error

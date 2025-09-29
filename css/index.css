@@ -140,7 +140,7 @@ body:not(.is-preloading) main.landing {
 }
 
 .hero.is-click-scaling {
-  animation: hero-prebattle-charge 320ms cubic-bezier(0.3, 0.9, 0.3, 1) forwards;
+  animation: hero-prebattle-charge 220ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 }
 
 .hero.is-side-position {
@@ -276,7 +276,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 .level-one-intro__egg-button.is-visible::before {
   opacity: 1;
-  transition-delay: 0.25s;
+  transition-delay: 0s;
 }
 
 .level-one-intro__egg-button:hover,
@@ -437,9 +437,13 @@ body.is-battle-transition .bubbles {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
       scaleX(-1) scale(1);
   }
+  36% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(0.94);
+  }
   100% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.8);
+      scaleX(-1) scale(0.82);
   }
 }
 

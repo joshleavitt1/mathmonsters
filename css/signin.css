@@ -14,7 +14,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: clamp(24px, 6vh, 48px);
+  gap: 40px;
   background-color: #001b41;
   text-align: center;
   box-sizing: border-box;
@@ -41,12 +41,40 @@ body {
   object-fit: contain;
 }
 
+.preloader__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+.preloader__titles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.preloader__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-image: linear-gradient(180deg, #ffbf00, #ff6a00);
+  color: #ffffff;
+  font-size: clamp(14px, 4vw, 16px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .preloader__form {
   width: min(420px, 100%);
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: clamp(20px, 4vh, 28px);
+  gap: 24px;
 }
 
 .preloader__headline {
@@ -70,11 +98,19 @@ body {
   border: none;
   border-radius: 12px;
   background-color: #293f5f;
-  color: #949faf;
+  color: #ffffff;
   font-size: clamp(18px, 5vw, 20px);
 }
 
 .preloader__field:not(:placeholder-shown) {
+  color: #ffffff;
+}
+
+.preloader__field--select {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.preloader__field--select.has-value {
   color: #ffffff;
 }
 
@@ -91,6 +127,14 @@ body {
 
 .preloader__field:focus::placeholder {
   color: transparent;
+}
+
+.preloader__field--select:focus {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.preloader__field--select.has-value:focus {
+  color: #ffffff;
 }
 
 .preloader__button {
@@ -110,6 +154,10 @@ body {
   color: #ffffff;
   font-size: clamp(18px, 5vw, 20px);
   text-wrap: balance;
+}
+
+.preloader__tagline.text-white-50 {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .preloader__secondary-button {
@@ -139,18 +187,6 @@ body {
 .preloader__secondary-button:focus-visible {
   outline: 3px solid rgba(255, 255, 255, 0.7);
   outline-offset: 3px;
-}
-
-.preloader__link {
-  color: #ffffff;
-  font-size: clamp(18px, 5vw, 20px);
-  text-decoration: underline;
-  margin-top: 8px;
-  display: inline-block;
-}
-
-.preloader__link:focus-visible {
-  text-decoration: none;
 }
 
 .preloader__spinner {
@@ -185,7 +221,7 @@ body {
   .preloader {
     justify-content: center;
     align-items: center;
-    gap: 24px;
+    gap: 40px;
     padding-top: calc(
       24px + env(safe-area-inset-top, 0px)
     );
@@ -195,6 +231,9 @@ body {
   }
   .preloader__form {
     max-width: none;
+  }
+  .preloader__intro {
+    align-items: center;
   }
   .preloader__logo {
     width: min(200px, 60vw);
