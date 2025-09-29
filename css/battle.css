@@ -394,8 +394,9 @@ body {
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
+  padding: 24px;
   background: rgba(0, 0, 0, 0.3);
   opacity: 0;
   visibility: hidden;
@@ -513,79 +514,11 @@ body.is-reward-active .reward-overlay {
   margin: 0;
 }
 
-.battle-complete-card__enemy {
-  position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: center;
+.battle-complete-card__meter .meter__icon {
+  width: 80px;
+  height: 80px;
 }
 
-.battle-complete-card .enemy-image {
-  display: block;
-  max-width: 200px;
-  width: 100%;
-  height: auto;
-  transition: filter 0.4s ease, opacity 0.4s ease;
-}
-
-.battle-complete-card .enemy-image.enemy-image--defeated {
-  filter: saturate(0);
-  opacity: 0.1;
-}
-
-.battle-complete-card .enemy-defeat-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.4);
-  opacity: 0;
-  max-width: 200px;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.battle-complete-card .enemy-defeat-overlay img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-@keyframes enemy-defeat-check-pop {
-  0% {
-    transform: translate(-50%, -50%) scale(0.4);
-    opacity: 0;
-  }
-
-  60% {
-    transform: translate(-50%, -50%) scale(1.15);
-    opacity: 1;
-  }
-
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-}
-
-.battle-complete-card .enemy-defeat-overlay--visible {
-  animation: enemy-defeat-check-pop 0.45s ease-out forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .battle-complete-card .enemy-image {
-    transition: none;
-  }
-
-  .battle-complete-card .enemy-defeat-overlay {
-    transform: translate(-50%, -50%) scale(1);
-  }
-
-  .battle-complete-card .enemy-defeat-overlay--visible {
-    animation: none;
-    opacity: 1;
-  }
-}
 
 
 .battle-dev-controls {

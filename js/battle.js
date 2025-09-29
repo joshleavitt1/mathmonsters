@@ -8,6 +8,7 @@ const BATTLE_PAGE_MODE_PLAY = 'play';
 const ENEMY_DEFEAT_ANIMATION_DELAY = 1000;
 const VICTORY_PROGRESS_UPDATE_DELAY = ENEMY_DEFEAT_ANIMATION_DELAY + 1000;
 const DEFEAT_PROGRESS_UPDATE_DELAY = 1000;
+const LEVEL_PROGRESS_ANIMATION_DELAY_MS = 1000;
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -219,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let hasPendingLevelUpReward = false;
   let rewardAnimationPlayed = false;
   let levelProgressUpdateTimeout = null;
+  let levelProgressAnimationTimeout = null;
   let rewardSpriteTransitionHandler = null;
   let rewardAwaitingActivation = false;
 
@@ -458,9 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    nextMissionBtn.textContent = hasPendingLevelUpReward
-      ? 'Claim Reward'
-      : 'Next Battle';
+    nextMissionBtn.textContent = 'Claim Reward';
     nextMissionBtn.dataset.action = 'next';
   };
 
@@ -494,6 +494,38 @@ document.addEventListener('DOMContentLoaded', () => {
         ? window.requestAnimationFrame.bind(window)
         : (callback) => window.setTimeout(callback, 16);
 
+    const applyProgressVisuals = () => {
+      requestProgressFrame(() => {
+        if (levelProgressMeter) {
+          levelProgressMeter.style.setProperty('--progress-value', `${clampedRatio}`);
+        }
+        if (levelProgressFill) {
+          levelProgressFill.style.width = targetWidth;
+        }
+      });
+    };
+
+    const scheduleProgressAnimation = () => {
+      if (levelProgressAnimationTimeout !== null) {
+        window.clearTimeout(levelProgressAnimationTimeout);
+        levelProgressAnimationTimeout = null;
+      }
+
+      const animationDelay = prefersReducedMotion
+        ? 0
+        : LEVEL_PROGRESS_ANIMATION_DELAY_MS;
+
+      if (animationDelay > 0) {
+        levelProgressAnimationTimeout = window.setTimeout(() => {
+          levelProgressAnimationTimeout = null;
+          applyProgressVisuals();
+        }, animationDelay);
+        return;
+      }
+
+      applyProgressVisuals();
+    };
+
     if (levelProgressFill) {
       const wasInitialized = levelProgressFill.dataset.progressAnimated === 'true';
 
@@ -507,16 +539,11 @@ document.addEventListener('DOMContentLoaded', () => {
         void levelProgressFill.offsetWidth;
         levelProgressFill.style.transition = '';
       }
-
-      requestProgressFrame(() => {
-        if (levelProgressMeter) {
-          levelProgressMeter.style.setProperty('--progress-value', `${clampedRatio}`);
-        }
-        levelProgressFill.style.width = targetWidth;
-      });
     } else if (levelProgressMeter) {
-      levelProgressMeter.style.setProperty('--progress-value', `${clampedRatio}`);
+      levelProgressMeter.style.setProperty('--progress-value', '0');
     }
+
+    scheduleProgressAnimation();
 
 
     const requirementMet =
@@ -533,6 +560,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (levelProgressUpdateTimeout !== null) {
       window.clearTimeout(levelProgressUpdateTimeout);
       levelProgressUpdateTimeout = null;
+    }
+    if (levelProgressAnimationTimeout !== null) {
+      window.clearTimeout(levelProgressAnimationTimeout);
+      levelProgressAnimationTimeout = null;
     }
   };
 
