@@ -10,13 +10,13 @@
         "levelUp": 1,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_1.png",
+          "sprite": "/mathmonsters/images/hero/shellfin_level_1.png",
           "name": "Shellfin",
           "attack": 1,
           "health": 3,
           "damage": 0,
           "attackSprite": {
-            "basic": "/mathmonsters/images/characters/shellfin_attack_1.png"
+            "basic": "/mathmonsters/images/hero/shellfin_attack_1.png"
           }
         },
         "enemies": [
@@ -28,7 +28,7 @@
             "health": 3,
             "damage": 0,
             "attackSprite": {
-              "basic": "/mathmonsters/images/characters/enemy_attack.png"
+              "basic": "/mathmonsters/images/hero/enemy_attack.png"
             },
             "experiencePoints": 1
           }
@@ -45,13 +45,13 @@
         "levelUp": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/characters/shellfin_level_2.png",
+          "sprite": "/mathmonsters/images/hero/shellfin_level_2.png",
           "name": "Shellfin",
           "attack": 1,
           "health": 3,
           "damage": 0,
           "attackSprite": {
-            "basic": "/mathmonsters/images/characters/shellfin_attack_1.png"
+            "basic": "/mathmonsters/images/hero/shellfin_attack_1.png"
           },
           "experiencePoints": 1
         },
@@ -64,7 +64,7 @@
             "health": 3,
             "damage": 0,
             "attackSprite": {
-              "basic": "/mathmonsters/images/characters/enemy_attack.png"
+              "basic": "/mathmonsters/images/hero/enemy_attack.png"
             },
             "experiencePoints": 1
           },
@@ -76,7 +76,7 @@
             "health": 3,
             "damage": 0,
             "attackSprite": {
-              "basic": "/mathmonsters/images/characters/enemy_attack.png"
+              "basic": "/mathmonsters/images/hero/enemy_attack.png"
             },
             "experiencePoints": 1
           }

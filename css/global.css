@@ -80,21 +80,25 @@ textarea {
 
 .text-large {
   font-size: var(--text-size-large);
-  line-height: 1.2;
+  line-height: 1.4;
 }
 
 .text-medium {
   font-size: var(--text-size-medium);
-  line-height: 1.2;
+  line-height: 1.4;
 }
 
 .text-small {
   font-size: var(--text-size-small);
-  line-height: 1.2;
+  line-height: 1.4;
 }
 
 .text-white {
   color: var(--text-color-light);
+}
+
+.text-white-50 {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .text-dark {

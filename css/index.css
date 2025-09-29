@@ -140,7 +140,7 @@ body:not(.is-preloading) main.landing {
 }
 
 .hero.is-click-scaling {
-  animation: hero-prebattle-charge 520ms cubic-bezier(0.2, 0.9, 0.25, 1) forwards;
+  animation: hero-prebattle-charge 520ms cubic-bezier(0.34, 0.01, 0.12, 1) forwards;
 }
 
 .hero.is-side-position {
@@ -268,7 +268,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   pointer-events: none;
   border-radius: 50%;
   background: rgba(2, 221, 255, 0.60);
-  filter: blur(40px);
+  filter: blur(64px);
   opacity: 0;
   transition: opacity 0.45s ease;
   transition-delay: 0s;
@@ -276,7 +276,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 .level-one-intro__egg-button.is-visible::before {
   opacity: 1;
-  transition-delay: 0.5s;
+  transition-delay: 0.25s;
 }
 
 .level-one-intro__egg-button:hover,
@@ -435,39 +435,19 @@ body.is-battle-transition .bubbles {
 @keyframes hero-prebattle-charge {
   0% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(1) rotate(0deg);
+      scaleX(-1) scale(1);
   }
-  20% {
-    transform: translate(
-        -50%,
-        calc(-50% - var(--hero-float-range, 32px) + 8px)
-      )
-      scaleX(-1) scale(0.94) rotate(-4deg);
+  45% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(0.94);
   }
-  48% {
-    transform: translate(
-        -50%,
-        calc(-50% - var(--hero-float-range, 32px) - 6px)
-      )
-      scaleX(-1) scale(1.12) rotate(3deg);
-  }
-  68% {
-    transform: translate(
-        -50%,
-        calc(-50% - var(--hero-float-range, 32px) - 10px)
-      )
-      scaleX(-1) scale(1.18) rotate(1deg);
-  }
-  86% {
-    transform: translate(
-        -50%,
-        calc(-50% - var(--hero-float-range, 32px) + 4px)
-      )
-      scaleX(-1) scale(0.97) rotate(-2deg);
+  70% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(0.87);
   }
   100% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(1) rotate(0deg);
+      scaleX(-1) scale(1);
   }
 }
 
