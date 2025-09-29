@@ -542,6 +542,50 @@ body.is-reward-active .reward-overlay {
       cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+.post-evolution-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 5vmin, 48px);
+  background: rgba(3, 12, 28, 0.92);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 120;
+}
+
+.post-evolution-overlay--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.post-evolution-overlay__card {
+  width: min(440px, 94vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.post-evolution-overlay__title {
+  margin: 0;
+  width: 100%;
+}
+
+.post-evolution-overlay__text {
+  margin: 0;
+}
+
+.post-evolution-overlay__button {
+  width: 100%;
+}
+
 .reward-overlay__image {
   width: 250px;
   height: 250px;

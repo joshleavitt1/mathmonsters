@@ -3,6 +3,8 @@ const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
+const GUEST_SESSION_ACTIVE_VALUE = 'true';
+const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const LANDING_MODE_STORAGE_KEY = 'reefRangersLandingMode';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const HERO_TO_ENEMY_DELAY_MS = 1200;
@@ -29,6 +31,7 @@ const BATTLE_PAGE_URL = 'html/battle.html';
 const BATTLE_PAGE_MODE_PARAM = 'mode';
 const BATTLE_PAGE_MODE_PLAY = 'play';
 const BATTLE_PAGE_MODE_DEV_TOOLS = 'devtools';
+const REGISTER_PAGE_URL = 'html/register.html';
 
 let battleRedirectUrl = BATTLE_PAGE_URL;
 let shouldSkipLandingForDevTools = false;
@@ -122,18 +125,30 @@ const redirectToWelcome = () => {
   window.location.replace('html/welcome.html');
 };
 
-const isGuestModeActive = () => {
+const redirectToRegister = () => {
+  window.location.replace(REGISTER_PAGE_URL);
+};
+
+const readGuestSessionState = () => {
   try {
     const storage = window.localStorage;
     if (!storage) {
-      return false;
+      return null;
     }
-    return storage.getItem(GUEST_SESSION_KEY) === 'true';
+
+    return storage.getItem(GUEST_SESSION_KEY);
   } catch (error) {
     console.warn('Guest mode detection failed.', error);
-    return false;
+    return null;
   }
 };
+
+const isGuestModeActive = (sessionState = readGuestSessionState()) =>
+  sessionState === GUEST_SESSION_ACTIVE_VALUE;
+
+const isRegistrationRequiredForGuest = (
+  sessionState = readGuestSessionState()
+) => sessionState === GUEST_SESSION_REGISTRATION_REQUIRED_VALUE;
 
 const clearGuestMode = () => {
   try {
@@ -144,7 +159,14 @@ const clearGuestMode = () => {
 };
 
 const ensureAuthenticated = async () => {
-  if (isGuestModeActive()) {
+  const guestSessionState = readGuestSessionState();
+
+  if (isRegistrationRequiredForGuest(guestSessionState)) {
+    redirectToRegister();
+    return false;
+  }
+
+  if (isGuestModeActive(guestSessionState)) {
     return true;
   }
 
