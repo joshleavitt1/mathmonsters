@@ -12,6 +12,28 @@ body {
   box-sizing: border-box;
 }
 
+body.is-evolution-active .battle-dev-controls,
+body.is-evolution-active #question,
+body.is-evolution-active #complete-message,
+body.is-evolution-active .reward-overlay {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.is-evolution-active #battle-monster,
+body.is-evolution-active #monster-stats,
+body.is-evolution-active #shellfin-stats,
+body.is-evolution-active #monster-attack-effect,
+body.is-evolution-active #hero-attack-effect {
+  opacity: 0 !important;
+  filter: blur(16px);
+}
+
+body.is-evolution-active #battle-shellfin {
+  opacity: 0;
+}
+
 #battle {
   position: relative;
   width: 100%;
@@ -95,6 +117,11 @@ body {
   right: 55%;
   transform: translateZ(0) scaleX(-1);
   transform-origin: center;
+}
+
+#battle-shellfin.battle-shellfin--evolved {
+  filter: blur(0) drop-shadow(0 0 28px rgba(73, 164, 255, 0.55));
+  transition: filter 0.6s ease;
 }
 
 .attack-effect {
@@ -524,6 +551,47 @@ body.is-reward-active > *:not(.reward-overlay) {
 body.is-reward-active .reward-overlay {
   visibility: visible;
   pointer-events: auto;
+}
+
+.evolution-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 15, 28, 0.82);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+  z-index: 80;
+}
+
+.evolution-overlay--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.evolution-overlay__sprite {
+  grid-area: 1 / 1;
+  width: clamp(240px, 38vmin, 360px);
+  max-width: 90vw;
+  filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.45));
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.evolution-overlay__sprite--current {
+  opacity: 1;
+}
+
+.evolution-overlay--animating .evolution-overlay__sprite--current {
+  opacity: 0;
+}
+
+.evolution-overlay--animating .evolution-overlay__sprite--next {
+  opacity: 1;
+  transition-delay: 0.1s;
 }
 
 .reward-overlay__image {
