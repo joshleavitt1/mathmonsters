@@ -252,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let levelProgressAnimationTimeout = null;
   let rewardSpriteAnimationEndHandler = null;
   let rewardCardButtonHandler = null;
-  let evolutionHeroSwapTimeout = null;
   let evolutionCompletionTimeout = null;
   let evolutionInProgress = false;
 
@@ -394,11 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const clearEvolutionTimers = () => {
-    if (evolutionHeroSwapTimeout !== null) {
-      window.clearTimeout(evolutionHeroSwapTimeout);
-      evolutionHeroSwapTimeout = null;
-    }
-
     if (evolutionCompletionTimeout !== null) {
       window.clearTimeout(evolutionCompletionTimeout);
       evolutionCompletionTimeout = null;
@@ -533,36 +527,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body?.classList.add('is-evolution-active');
 
-    void evolutionOverlay.offsetWidth;
-    evolutionOverlay.classList.add('evolution-overlay--animating');
-
     if (heroImg) {
       heroImg.classList.remove('battle-shellfin--evolved');
     }
 
-    evolutionHeroSwapTimeout = window.setTimeout(() => {
-      evolutionHeroSwapTimeout = null;
-      if (heroImg) {
-        heroImg.src = nextSpriteSrc;
-      }
-    }, Math.max(0, HERO_EVOLUTION_SWAP_DELAY_MS));
+    void evolutionOverlay.offsetWidth;
+    evolutionOverlay.classList.add('evolution-overlay--animating');
 
-    const handleAnimationEnd = (event) => {
-      if (event.animationName !== 'hero-evolution-next') {
+    const handleTransitionEnd = (event) => {
+      if (event.target !== evolutionNextSprite) {
         return;
       }
 
-      evolutionNextSprite.removeEventListener('animationend', handleAnimationEnd);
+      evolutionNextSprite.removeEventListener('transitionend', handleTransitionEnd);
       finishEvolutionSequence(nextSpriteSrc);
     };
 
-    evolutionNextSprite.addEventListener('animationend', handleAnimationEnd);
+    evolutionNextSprite.addEventListener('transitionend', handleTransitionEnd);
 
     evolutionCompletionTimeout = window.setTimeout(() => {
       evolutionCompletionTimeout = null;
-      evolutionNextSprite.removeEventListener('animationend', handleAnimationEnd);
+      evolutionNextSprite.removeEventListener('transitionend', handleTransitionEnd);
       finishEvolutionSequence(nextSpriteSrc);
-    }, Math.max(0, HERO_EVOLUTION_TOTAL_DURATION_MS) + 800);
+    }, Math.max(0, HERO_EVOLUTION_TRANSITION_DURATION_MS) + 400);
   };
 
   const detachRewardSpriteAnimationHandler = () => {
