@@ -125,6 +125,18 @@ body:not(.is-preloading) main.landing {
   inherits: false;
 }
 
+@property --hero-side-shift {
+  syntax: '<length>';
+  initial-value: 0px;
+  inherits: false;
+}
+
+@property --hero-charge-scale {
+  syntax: '<number>';
+  initial-value: 1;
+  inherits: false;
+}
+
 .hero {
   position: absolute;
   left: 50%;
@@ -137,29 +149,25 @@ body:not(.is-preloading) main.landing {
   --hero-float-range: 32px;
   --hero-float-duration: 3.5s;
   --hero-float-offset: calc(-1 * var(--hero-float-range, 32px));
-  transform: translate(
-      -50%,
-      calc(-50% + var(--hero-float-offset))
+  --hero-side-shift: 0px;
+  --hero-charge-scale: 1;
+  transform: translate3d(
+      calc(-50% + var(--hero-side-shift, 0px)),
+      calc(-50% + var(--hero-float-offset)),
+      0
     )
     scaleX(-1)
-    scale(1);
+    scale(var(--hero-charge-scale, 1));
   transform-origin: 50% 85%;
   image-rendering: auto;
   z-index: 2;
   pointer-events: none;
   will-change: transform, opacity;
-  transition: left 0.45s cubic-bezier(0.36, 0, 0.66, 1);
-}
-
-.hero.is-click-scaling {
-  animation:
-    hero-float var(--hero-float-duration, 3.5s) cubic-bezier(0.42, 0, 0.58, 1)
-      1.35s infinite,
-    hero-prebattle-charge 220ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+  transition: transform 0.45s cubic-bezier(0.36, 0, 0.66, 1);
 }
 
 .hero.is-side-position {
-  left: calc(50% - var(--intro-sprite-offset));
+  --hero-side-shift: calc(-1 * var(--intro-sprite-offset));
 }
 
 .hero.is-exiting {
@@ -444,21 +452,6 @@ body.is-battle-transition .bubbles {
   }
 }
 
-@keyframes hero-prebattle-charge {
-  0% {
-    transform: translate(-50%, calc(-50% + var(--hero-float-offset))) scaleX(-1)
-      scale(1);
-  }
-  36% {
-    transform: translate(-50%, calc(-50% + var(--hero-float-offset))) scaleX(-1)
-      scale(0.94);
-  }
-  100% {
-    transform: translate(-50%, calc(-50% + var(--hero-float-offset))) scaleX(-1)
-      scale(0.82);
-  }
-}
-
 @keyframes enemy-float {
   0% {
     --enemy-float-offset: calc(-1 * var(--enemy-float-range));
@@ -473,33 +466,63 @@ body.is-battle-transition .bubbles {
 
 @keyframes hero-intro-exit {
   0% {
-    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(1);
+    transform: translate3d(
+        calc(-50% + var(--hero-side-shift, 0px)),
+        calc(-50% - var(--hero-float-range, 32px)),
+        0
+      )
+      scaleX(-1)
+      scale(1);
     opacity: 1;
   }
   18% {
-    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(1.1);
+    transform: translate3d(
+        calc(-50% + var(--hero-side-shift, 0px)),
+        calc(-50% - var(--hero-float-range, 32px)),
+        0
+      )
+      scaleX(-1)
+      scale(1.1);
     opacity: 1;
   }
   38% {
-    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.84);
+    transform: translate3d(
+        calc(-50% + var(--hero-side-shift, 0px)),
+        calc(-50% - var(--hero-float-range, 32px)),
+        0
+      )
+      scaleX(-1)
+      scale(0.84);
     opacity: 0.92;
   }
   58% {
-    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.56);
+    transform: translate3d(
+        calc(-50% + var(--hero-side-shift, 0px)),
+        calc(-50% - var(--hero-float-range, 32px)),
+        0
+      )
+      scaleX(-1)
+      scale(0.56);
     opacity: 0.6;
   }
   78% {
-    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.32);
+    transform: translate3d(
+        calc(-50% + var(--hero-side-shift, 0px)),
+        calc(-50% - var(--hero-float-range, 32px)),
+        0
+      )
+      scaleX(-1)
+      scale(0.32);
     opacity: 0.28;
   }
   100% {
-    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.22);
+    transform: translate3d(
+        calc(-50% + var(--hero-side-shift, 0px)),
+        calc(-50% - var(--hero-float-range, 32px)),
+        0
+      )
+      scaleX(-1)
+      scale(0.22);
     opacity: 0;
   }
 }
