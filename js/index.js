@@ -16,6 +16,11 @@ const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
 const LEVEL_ONE_SPEECH_DELAY_MS = 2000;
 const LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS = 90;
+const LEVEL_ONE_INTRO_EGG_DELAY_MS = 2000;
+const LEVEL_ONE_INTRO_CARD_DELAY_MS = 400;
+const LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS = 350;
+const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 900;
+const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 2000;
 const LEVEL_ONE_SPEECH_SEQUENCE = [
   { text: 'Hi! I’m Shellfin.', pauseAfterMs: 1000 },
   { text: ' Uh-oh…', pauseAfterMs: 1000 },
@@ -328,6 +333,189 @@ const runBattleIntroSequence = async (options = {}) => {
   );
 
   return true;
+};
+
+const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
+  const introRoot = document.querySelector('[data-level-one-intro]');
+  const eggButton = introRoot?.querySelector('[data-level-one-egg-button]');
+  const eggImage = introRoot?.querySelector('[data-level-one-egg-image]');
+  const welcomeCard = introRoot?.querySelector('[data-level-one-card="welcome"]');
+  const continueButton = introRoot?.querySelector('[data-level-one-card-continue]');
+  const battleCard = introRoot?.querySelector('[data-level-one-card="battle"]');
+  const battleButton = introRoot?.querySelector('[data-level-one-card-battle]');
+  const wait = (durationMs) =>
+    new Promise((resolve) =>
+      window.setTimeout(resolve, Math.max(0, Number(durationMs) || 0))
+    );
+
+  if (
+    !introRoot ||
+    !eggButton ||
+    !eggImage ||
+    !welcomeCard ||
+    !continueButton ||
+    !battleCard ||
+    !battleButton
+  ) {
+    if (typeof beginBattle === 'function') {
+      beginBattle({ showIntroImmediately: true }).catch((error) => {
+        console.warn('Level one intro fallback failed.', error);
+        redirectToBattle();
+      });
+    } else {
+      redirectToBattle();
+    }
+    return;
+  }
+
+  let isEggInteractive = false;
+  let isHatching = false;
+  let hasStartedBattle = false;
+
+  if (heroImage) {
+    heroImage.classList.remove('is-revealed');
+    heroImage.setAttribute('aria-hidden', 'true');
+  }
+
+  const showCard = (card) => {
+    if (!card) {
+      return;
+    }
+    card.classList.remove('is-exiting');
+    card.setAttribute('aria-hidden', 'false');
+    void card.offsetWidth;
+    card.classList.add('is-visible');
+  };
+
+  const hideCard = async (card) => {
+    if (!card) {
+      return;
+    }
+    card.classList.remove('is-visible');
+    card.classList.add('is-exiting');
+    await wait(LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS);
+    card.classList.remove('is-exiting');
+    card.setAttribute('aria-hidden', 'true');
+  };
+
+  const showEgg = () => {
+    introRoot.classList.add('is-active');
+    introRoot.setAttribute('aria-hidden', 'false');
+    eggButton.classList.add('is-visible');
+    eggImage.classList.remove('is-hatching');
+    eggImage.classList.remove('is-pop-in');
+    void eggImage.offsetWidth;
+    eggImage.classList.add('is-pop-in');
+  };
+
+  const enableEgg = () => {
+    isEggInteractive = true;
+    eggButton.disabled = false;
+    eggButton.classList.add('is-glowing');
+    if (typeof eggButton.focus === 'function') {
+      try {
+        eggButton.focus({ preventScroll: true });
+      } catch (error) {
+        eggButton.focus();
+      }
+    }
+  };
+
+  const disableEgg = () => {
+    isEggInteractive = false;
+    eggButton.disabled = true;
+    eggButton.classList.remove('is-glowing');
+  };
+
+  const revealHero = () => {
+    if (!heroImage) {
+      return;
+    }
+    heroImage.classList.add('is-revealed');
+    heroImage.removeAttribute('aria-hidden');
+  };
+
+  const showBattleCard = async () => {
+    showCard(battleCard);
+    await wait(LEVEL_ONE_INTRO_CARD_DELAY_MS);
+    if (typeof battleButton.focus === 'function') {
+      try {
+        battleButton.focus({ preventScroll: true });
+      } catch (error) {
+        battleButton.focus();
+      }
+    }
+  };
+
+  const handleContinue = async () => {
+    continueButton.disabled = true;
+    continueButton.setAttribute('aria-busy', 'true');
+    await hideCard(welcomeCard);
+    continueButton.removeAttribute('aria-busy');
+    enableEgg();
+  };
+
+  const handleEggClick = async () => {
+    if (!isEggInteractive || isHatching) {
+      return;
+    }
+    isHatching = true;
+    disableEgg();
+    eggImage.classList.remove('is-pop-in');
+    void eggImage.offsetWidth;
+    eggImage.classList.add('is-hatching');
+    await wait(LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS);
+    eggButton.classList.remove('is-visible');
+    eggButton.classList.add('is-hidden');
+    revealHero();
+    await wait(LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS);
+    await showBattleCard();
+  };
+
+  const handleBattleClick = async () => {
+    if (hasStartedBattle) {
+      return;
+    }
+    hasStartedBattle = true;
+    await hideCard(battleCard);
+    introRoot.classList.remove('is-active');
+    introRoot.setAttribute('aria-hidden', 'true');
+
+    if (typeof beginBattle === 'function') {
+      try {
+        await beginBattle({
+          triggerButton: battleButton,
+          showIntroImmediately: true,
+        });
+      } catch (error) {
+        console.warn('Unable to launch battle from level one intro.', error);
+        redirectToBattle();
+      }
+    } else {
+      redirectToBattle();
+    }
+  };
+
+  continueButton.addEventListener('click', handleContinue);
+  eggButton.addEventListener('click', handleEggClick);
+  battleButton.addEventListener('click', handleBattleClick);
+
+  (async () => {
+    introRoot.classList.add('is-active');
+    introRoot.setAttribute('aria-hidden', 'false');
+    disableEgg();
+    await wait(LEVEL_ONE_INTRO_EGG_DELAY_MS);
+    showEgg();
+    await wait(LEVEL_ONE_INTRO_CARD_DELAY_MS);
+    showCard(welcomeCard);
+    if (typeof continueButton.focus === 'function') {
+      try {
+        continueButton.focus({ preventScroll: true });
+      } catch (error) {
+        continueButton.focus();
+      }
+    }
+  })();
 };
 
 const playLevelOneHeroSpeech = ({
@@ -1183,7 +1371,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
   const heroSpeechTextElement = heroSpeechElement?.querySelector(
     '[data-hero-speech-text]'
   );
-  let heroSpeechPromise = null;
   let isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
 
   const buttonGlowProperties = [
@@ -1279,22 +1466,16 @@ const initLandingInteractions = async (preloadedData = {}) => {
   await loadBattlePreview();
   isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
 
-  if (isLevelOneLanding && heroSpeechElement && heroSpeechTextElement) {
-    heroSpeechPromise = playLevelOneHeroSpeech({
-      container: heroSpeechElement,
-      textElement: heroSpeechTextElement,
-      delayMs: LEVEL_ONE_SPEECH_DELAY_MS,
-    });
-  } else if (heroSpeechElement) {
+  if (heroSpeechElement) {
     heroSpeechElement.classList.remove('is-visible');
     heroSpeechElement.setAttribute('aria-hidden', 'true');
-    if (heroSpeechTextElement) {
-      heroSpeechTextElement.textContent = '';
-      if (heroSpeechTextElement.dataset) {
-        delete heroSpeechTextElement.dataset.typing;
-      } else {
-        heroSpeechTextElement.removeAttribute('data-typing');
-      }
+  }
+  if (heroSpeechTextElement) {
+    heroSpeechTextElement.textContent = '';
+    if (heroSpeechTextElement.dataset) {
+      delete heroSpeechTextElement.dataset.typing;
+    } else {
+      heroSpeechTextElement.removeAttribute('data-typing');
     }
   }
 
@@ -1352,22 +1533,23 @@ const initLandingInteractions = async (preloadedData = {}) => {
     awaitImageReady(enemyImage),
   ]);
 
-  if (!battleButton) {
+  let isLaunchingBattle = false;
+
+  const beginBattle = async ({ triggerButton, showIntroImmediately } = {}) => {
+    if (isLaunchingBattle) {
+      return;
+    }
+    isLaunchingBattle = true;
+
+    const buttonToDisable = triggerButton || battleButton;
+    if (buttonToDisable) {
+      buttonToDisable.disabled = true;
+      buttonToDisable.setAttribute('aria-busy', 'true');
+    }
+
     await waitForImages;
-    if (heroSpeechPromise) {
-      try {
-        await heroSpeechPromise;
-      } catch (error) {
-        console.warn('Level one hero speech failed.', error);
-      }
-    }
 
-    if (heroSpeechElement && isLevelOneLanding) {
-      heroSpeechElement.classList.remove('is-visible');
-      heroSpeechElement.setAttribute('aria-hidden', 'true');
-    }
-
-    if (!heroSpeechPromise && CENTER_IMAGE_HOLD_DURATION_MS > 0) {
+    if (CENTER_IMAGE_HOLD_DURATION_MS > 0 && !isLevelOneLanding) {
       await new Promise((resolve) =>
         window.setTimeout(
           resolve,
@@ -1378,27 +1560,26 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
     try {
       await runBattleIntroSequence({
+        showIntroImmediately:
+          typeof showIntroImmediately === 'boolean'
+            ? showIntroImmediately
+            : true,
         skipHeroSidePosition: isLevelOneLanding,
-        showIntroImmediately: isLevelOneLanding,
         hideEnemy: isLevelOneLanding,
       });
+    } catch (error) {
+      console.warn('Battle intro sequence failed.', error);
     } finally {
       redirectToBattle();
     }
+  };
+
+  if (isLevelOneLanding) {
+    setupLevelOneIntro({ heroImage, beginBattle });
     return;
   }
 
-  let isLaunchingBattle = false;
-
-  const beginBattle = async () => {
-    if (isLaunchingBattle) {
-      return;
-    }
-    isLaunchingBattle = true;
-
-    battleButton.disabled = true;
-    battleButton.setAttribute('aria-busy', 'true');
-
+  if (!battleButton) {
     await waitForImages;
 
     if (CENTER_IMAGE_HOLD_DURATION_MS > 0) {
@@ -1410,19 +1591,13 @@ const initLandingInteractions = async (preloadedData = {}) => {
       );
     }
 
-    try {
-      await runBattleIntroSequence({
-        showIntroImmediately: true,
-        skipHeroSidePosition: isLevelOneLanding,
-      });
-    } catch (error) {
-      console.warn('Battle intro sequence failed.', error);
-    } finally {
-      redirectToBattle();
-    }
-  };
+    await beginBattle({ showIntroImmediately: true });
+    return;
+  }
 
-  battleButton.addEventListener('click', beginBattle);
+  battleButton.addEventListener('click', () =>
+    beginBattle({ triggerButton: battleButton, showIntroImmediately: true })
+  );
 };
 
 const bootstrapLanding = async () => {
