@@ -66,17 +66,17 @@
       ? Math.max(0, Math.round(requirement))
       : 0;
 
-    const totalWithBase = safeRequirement + 1;
-    const earnedWithBase = Math.min(totalWithBase, safeEarned + 1);
-    const ratio = totalWithBase > 0 ? Math.min(1, earnedWithBase / totalWithBase) : 0;
+    const totalDisplay = safeRequirement;
+    const earnedDisplay = Math.min(totalDisplay, safeEarned);
+    const ratio = totalDisplay > 0 ? Math.min(1, earnedDisplay / totalDisplay) : 0;
 
     return {
       ratio,
-      text: `${earnedWithBase} of ${totalWithBase}`,
-      earned: earnedWithBase,
-      total: totalWithBase,
-      earnedDisplay: earnedWithBase,
-      totalDisplay: totalWithBase,
+      text: `${earnedDisplay} of ${totalDisplay}`,
+      earned: earnedDisplay,
+      total: totalDisplay,
+      earnedDisplay,
+      totalDisplay,
     };
   };
 
