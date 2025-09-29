@@ -150,11 +150,21 @@ body:not(.is-preloading) main.landing {
   transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.hero.is-click-scaling {
+  animation: hero-float var(--hero-float-duration, 3.5s)
+      cubic-bezier(0.42, 0, 0.58, 1) 1.35s infinite,
+    hero-click-pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1) 0s 1 forwards;
+}
+
 .hero.is-side-position {
   left: calc(50% - var(--intro-sprite-offset));
 }
 
 .hero.is-exiting {
+  animation: hero-intro-exit 0.75s cubic-bezier(0.32, 0, 0.67, 1) forwards;
+}
+
+.hero.is-exiting.is-click-scaling {
   animation: hero-intro-exit 0.75s cubic-bezier(0.32, 0, 0.67, 1) forwards;
 }
 
@@ -255,7 +265,9 @@ body:not(.is-level-one-landing) .level-one-intro {
   height: min(250px, 62vw);
   padding: 0;
   border: none;
-  background: transparent;
+  border-radius: 50%;
+  background: none;
+  background-image: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,6 +275,13 @@ body:not(.is-level-one-landing) .level-one-intro {
   transition: opacity 0.3s ease;
   z-index: 4;
   overflow: visible;
+}
+
+.level-one-intro__egg-button:hover,
+.level-one-intro__egg-button:focus-visible {
+  background: none;
+  background-image: none;
+  transform: none;
 }
 
 .level-one-intro__egg-button[disabled] {
@@ -447,6 +466,25 @@ body.is-battle-transition .bubbles {
   }
 }
 
+@keyframes hero-click-pop {
+  0% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1);
+  }
+  48% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(0.88);
+  }
+  78% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(1.06);
+  }
+  100% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1);
+  }
+}
+
 @keyframes enemy-float {
   0% {
     --enemy-float-offset: calc(-1 * var(--enemy-float-range));
@@ -463,6 +501,10 @@ body.is-battle-transition .bubbles {
   .hero {
     animation: none;
     transform: translate(-50%, -50%) scaleX(-1);
+  }
+
+  .hero.is-click-scaling {
+    animation: none;
   }
 
   .hero.is-exiting {
