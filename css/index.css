@@ -269,6 +269,14 @@ body:not(.is-level-one-landing) .level-one-intro {
   border-radius: 50%;
   background: #02ddff;
   filter: blur(40px);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  transition-delay: 0s;
+}
+
+.level-one-intro__egg-button.is-visible::before {
+  opacity: 1;
+  transition-delay: 0.5s;
 }
 
 .level-one-intro__egg-button:hover,
