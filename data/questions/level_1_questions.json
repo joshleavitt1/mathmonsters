@@ -13,25 +13,25 @@
     },
     {
       "id": 2,
-      "question": "What is 0 + 1?",
+      "question": "What is 0 + 2?",
       "options": [
         1,
         2,
         3,
         4
       ],
-      "answer": 1
+      "answer": 2
     },
     {
       "id": 3,
-      "question": "What is 0 + 1?",
+      "question": "What is 0 + 3?",
       "options": [
         1,
         2,
         3,
         4
       ],
-      "answer": 1
+      "answer": 3
     }
   ]
 }
