@@ -129,22 +129,12 @@
           Monster Defeated
         </h2>
         <div class="meter meter--visible battle-complete-card__meter">
+          <p class="meter__heading text-small text-dark">Reward</p>
           <img
             class="meter__icon"
             src="../images/complete/potion.png"
             alt="Potion level-up reward"
           />
-          <p class="meter__heading text-small text-dark">Level Up</p>
-          <div
-            class="progress meter__progress"
-            role="progressbar"
-            aria-valuemin="0"
-            aria-valuemax="0"
-            aria-valuenow="0"
-            aria-valuetext="0 of 0"
-          >
-            <span class="progress__fill" aria-hidden="true"></span>
-          </div>
         </div>
         <button type="button" class="btn-primary next-mission-btn" data-action="next">Claim Reward</button>
       </section>
@@ -200,29 +190,37 @@
       data-evolution-complete-overlay
       aria-hidden="true"
     >
-      <section
-        class="card card--home post-evolution-overlay__card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="post-evolution-title"
-      >
-        <h2
-          id="post-evolution-title"
-          class="post-evolution-overlay__title text-large text-dark"
+      <div class="post-evolution-overlay__content">
+        <img
+          class="post-evolution-overlay__sprite"
+          src="../images/hero/shellfin_level_2.png"
+          alt="Shellfin evolved"
+          data-evolution-complete-sprite
+        />
+        <section
+          class="card card--home post-evolution-overlay__card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="post-evolution-title"
         >
-          Your creature just evolved!
-        </h2>
-        <p class="post-evolution-overlay__text text-medium text-dark">
-          It’s stronger now and ready for new adventures!
-        </p>
-        <button
-          type="button"
-          class="btn-primary post-evolution-overlay__button"
-          data-evolution-complete-button
-        >
-          Register Now
-        </button>
-      </section>
+          <h2
+            id="post-evolution-title"
+            class="post-evolution-overlay__title text-large text-dark"
+          >
+            Your creature just evolved!
+          </h2>
+          <p class="post-evolution-overlay__text text-medium text-dark">
+            It’s stronger now and ready for new adventures!
+          </p>
+          <button
+            type="button"
+            class="btn-primary post-evolution-overlay__button"
+            data-evolution-complete-button
+          >
+            Register Now
+          </button>
+        </section>
+      </div>
     </div>
     <div id="battle-message">
       <div class="content">

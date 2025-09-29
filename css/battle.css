@@ -528,6 +528,22 @@ body.is-reward-active .reward-overlay {
   pointer-events: auto;
 }
 
+.post-evolution-overlay__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(24px, 4vmin, 40px);
+  text-align: center;
+}
+
+.post-evolution-overlay__sprite {
+  width: clamp(240px, 38vmin, 360px);
+  max-width: 90vw;
+  filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.45));
+  transform: scaleX(-1);
+  pointer-events: none;
+}
+
 .post-evolution-overlay__card {
   width: min(440px, 94vw);
   display: flex;
@@ -555,7 +571,8 @@ body.is-reward-active .reward-overlay {
   height: 250px;
   object-fit: contain;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transform: scale(1);
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 .reward-overlay__image--visible {
@@ -577,6 +594,16 @@ body.is-reward-active .reward-overlay {
 
 .reward-overlay__image--potion-pop {
   animation: reward-overlay-egg-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.reward-overlay__image--swap-out {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+.reward-overlay__image--swap-in {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .reward-overlay__card {
