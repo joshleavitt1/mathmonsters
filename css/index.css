@@ -497,19 +497,29 @@ body.is-battle-transition .bubbles {
       scaleX(-1) scale(1);
     opacity: 1;
   }
+  18% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(1.1);
+    opacity: 1;
+  }
   38% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.88);
-    opacity: 0.98;
+      scaleX(-1) scale(0.84);
+    opacity: 0.92;
   }
-  68% {
+  58% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.7);
-    opacity: 0.82;
+      scaleX(-1) scale(0.56);
+    opacity: 0.6;
+  }
+  78% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(0.32);
+    opacity: 0.28;
   }
   100% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.58);
+      scaleX(-1) scale(0.22);
     opacity: 0;
   }
 }
