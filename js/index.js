@@ -11,7 +11,6 @@ const HERO_EXIT_DURATION_MS = 550;
 const ENEMY_EXIT_DURATION_MS = 600;
 const PRE_BATTLE_HOLD_DURATION_MS = 1000;
 const HERO_EXIT_SYNC_OFFSET_MS = 120;
-const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
 const LEVEL_ONE_INTRO_EGG_DELAY_MS = 500;
 const LEVEL_ONE_INTRO_INITIAL_CARD_DELAY_MS = 2000;
@@ -185,9 +184,6 @@ const startLandingExperience = () => {
 const runBattleIntroSequence = async (options = {}) => {
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
-  const prefersReducedMotion =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const showIntroImmediately = Boolean(options?.showIntroImmediately);
   const skipHeroSidePosition = Boolean(options?.skipHeroSidePosition);
   const skipEnemyAppearance = Boolean(
@@ -241,20 +237,6 @@ const runBattleIntroSequence = async (options = {}) => {
     ? PRE_BATTLE_HOLD_DURATION_MS
     : HERO_TO_ENEMY_DELAY_MS;
 
-  if (prefersReducedMotion) {
-    await wait(holdDuration);
-    prepareForBattle();
-    beginExitAnimations();
-    await wait(
-      Math.max(
-        HERO_EXIT_DURATION_MS,
-        skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS,
-        REDUCED_MOTION_SEQUENCE_DURATION_MS
-      )
-    );
-    return true;
-  }
-
   await wait(holdDuration);
   prepareForBattle();
   await wait(ENEMY_ENTRANCE_DURATION_MS + HERO_EXIT_SYNC_OFFSET_MS);
@@ -282,10 +264,6 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     new Promise((resolve) =>
       window.setTimeout(resolve, Math.max(0, Number(durationMs) || 0))
     );
-  const shouldReduceMotion =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
   let heroPrebattleChargeTimeoutId = null;
 
   const clearHeroPrebattleChargeTimeout = () => {
@@ -296,11 +274,7 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
   };
 
   const scheduleHeroPrebattleCharge = () => {
-    if (
-      !heroImage ||
-      shouldReduceMotion ||
-      HERO_PREBATTLE_CHARGE_DELAY_MS <= 0
-    ) {
+    if (!heroImage || HERO_PREBATTLE_CHARGE_DELAY_MS <= 0) {
       return;
     }
 

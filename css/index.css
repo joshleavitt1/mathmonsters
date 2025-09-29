@@ -118,17 +118,6 @@ body:not(.is-preloading) main.landing {
   box-shadow: 0 18px 32px rgba(0, 58, 128, 0.35);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  main.landing {
-    transition: none;
-  }
-
-  body.is-preloading main.landing {
-    transform: none;
-    filter: none;
-  }
-}
-
 .hero {
   position: absolute;
   left: 50%;
@@ -486,45 +475,6 @@ body.is-battle-transition .bubbles {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .hero {
-    animation: none;
-    transform: translate(-50%, -50%) scaleX(-1);
-  }
-
-  .hero.is-click-scaling {
-    animation: none;
-  }
-
-  .hero.is-exiting {
-    opacity: 0;
-  }
-
-  .enemy {
-    animation: none;
-    transition: none;
-    transform: translate(-50%, -50%);
-    --enemy-float-offset: 0px;
-    opacity: 1;
-  }
-
-  .enemy.is-exiting {
-    opacity: 0;
-  }
-
-  main.landing.is-battle-transition {
-    animation: none;
-    transform: translate3d(0, 0, 0);
-    filter: none;
-  }
-
-  .bubbles.is-battle-transition {
-    animation: none;
-    transform: translateX(-50%);
-    opacity: 0;
-  }
-}
-
 @keyframes hero-intro-exit {
   0% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
@@ -639,12 +589,6 @@ body.is-battle-transition .bubbles {
         var(--card-translate-z, 0)
       )
       scale(0.83);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card--home.is-battle-transition {
     opacity: 0;
   }
 }
@@ -882,16 +826,6 @@ body.is-battle-transition .bubbles {
 .preloader--hidden {
   opacity: 0;
   pointer-events: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .preloader {
-    transition: none;
-  }
-
-  .preloader__spinner {
-    animation-duration: 0s;
-  }
 }
 
 @keyframes preloader-spin {
