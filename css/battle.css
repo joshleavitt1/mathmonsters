@@ -40,25 +40,8 @@ body {
 }
 
 #battle-shellfin.slide-in {
-  animation: hero-enter 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: hero-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   animation-delay: 0.08s;
-}
-
-#battle-shellfin::after {
-  content: "";
-  position: absolute;
-  inset: 5% 15% 15% -45%;
-  background: radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.55), rgba(73, 164, 255, 0.35) 45%, rgba(73, 164, 255, 0));
-  opacity: 0;
-  transform: translate3d(-30%, 10%, 0) scaleX(1.25) scaleY(0.75);
-  filter: blur(16px) drop-shadow(0 0 18px rgba(73, 164, 255, 0.45));
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-#battle-shellfin.slide-in::after {
-  animation: hero-trail 1s cubic-bezier(0.55, 0.03, 0.34, 1.5) forwards;
-  animation-delay: 0.02s;
 }
 
 #battle-monster {
@@ -260,47 +243,19 @@ body {
 
 @keyframes hero-enter {
   0% {
-    transform: translate3d(150%, 15%, 0) scale(0.82) rotate(-10deg) scaleX(-1);
+    transform: translateX(140%) scale(0.9) scaleX(-1);
     opacity: 0;
-    filter: blur(18px) saturate(0.85);
-  }
-  45% {
-    transform: translate3d(-6%, -8%, 0) scale(1.08) rotate(6deg) scaleX(-1);
-    opacity: 1;
-    filter: blur(3px) saturate(1.1);
-  }
-  70% {
-    transform: translate3d(3%, 5%, 0) scale(0.98) rotate(-4deg) scaleX(-1);
-    opacity: 1;
-    filter: blur(1px) saturate(1.05);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale(1) rotate(0deg) scaleX(-1);
-    opacity: 1;
-    filter: blur(0) saturate(1);
-  }
-}
-
-@keyframes hero-trail {
-  0% {
-    opacity: 0;
-    transform: translate3d(-45%, 24%, 0) scaleX(1.45) scaleY(0.55);
-    filter: blur(20px) drop-shadow(0 0 22px rgba(73, 164, 255, 0.6));
-  }
-  30% {
-    opacity: 0.75;
-    transform: translate3d(-25%, 10%, 0) scaleX(1.25) scaleY(0.75);
-    filter: blur(14px) drop-shadow(0 0 16px rgba(73, 164, 255, 0.55));
+    filter: blur(16px);
   }
   65% {
-    opacity: 0.4;
-    transform: translate3d(-10%, 0, 0) scaleX(1) scaleY(0.9);
-    filter: blur(12px) drop-shadow(0 0 12px rgba(73, 164, 255, 0.4));
+    transform: translateX(-3%) scale(1.04) scaleX(-1);
+    opacity: 1;
+    filter: blur(0);
   }
   100% {
-    opacity: 0;
-    transform: translate3d(10%, -10%, 0) scaleX(0.7) scaleY(1.1);
-    filter: blur(24px) drop-shadow(0 0 6px rgba(73, 164, 255, 0));
+    transform: translateX(0) scale(1) scaleX(-1);
+    opacity: 1;
+    filter: blur(0);
   }
 }
 
