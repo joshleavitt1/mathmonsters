@@ -151,9 +151,7 @@ body:not(.is-preloading) main.landing {
 }
 
 .hero.is-click-scaling {
-  animation: hero-float var(--hero-float-duration, 3.5s)
-      cubic-bezier(0.42, 0, 0.58, 1) 1.35s infinite,
-    hero-click-pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1) 0s 1 forwards;
+  animation: hero-prebattle-charge 420ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
 }
 
 .hero.is-side-position {
@@ -164,9 +162,6 @@ body:not(.is-preloading) main.landing {
   animation: hero-intro-exit 0.55s cubic-bezier(0.36, 0, 0.66, 1) forwards;
 }
 
-.hero.is-exiting.is-click-scaling {
-  animation: hero-intro-exit 0.55s cubic-bezier(0.36, 0, 0.66, 1) forwards;
-}
 
 .enemy {
   --enemy-float-range: 28px;
@@ -388,7 +383,11 @@ body:not(.is-level-one-landing) .level-one-intro {
     opacity: 1;
   }
   86% {
-    transform: scale(1.15);
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  94% {
+    transform: scale(1.28);
     opacity: 1;
   }
   100% {
@@ -421,22 +420,26 @@ body.is-battle-transition .bubbles {
   }
 }
 
-@keyframes hero-click-pop {
+@keyframes hero-prebattle-charge {
   0% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1);
+      scaleX(-1) scale(1);
   }
-  48% {
+  58% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.88);
+      scaleX(-1) scale(1.08);
   }
-  78% {
+  72% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(1.06);
+      scaleX(-1) scale(1.16);
+  }
+  88% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(0.9);
   }
   100% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1);
+      scaleX(-1) scale(1);
   }
 }
 

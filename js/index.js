@@ -21,8 +21,8 @@ const LEVEL_ONE_INTRO_EGG_AUTO_START_DELAY_MS = 1000;
 const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 1600;
 const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 700;
 const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 220;
-const HERO_CLICK_POP_DELAY_MS = 1000;
-const HERO_CLICK_POP_ANIMATION_NAME = 'hero-click-pop';
+const HERO_PREBATTLE_CHARGE_DELAY_MS = 500;
+const HERO_PREBATTLE_CHARGE_ANIMATION_NAME = 'hero-prebattle-charge';
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
@@ -286,43 +286,59 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  let heroClickPopTimeoutId = null;
+  let heroPrebattleChargeTimeoutId = null;
 
-  const clearHeroClickPopTimeout = () => {
-    if (heroClickPopTimeoutId !== null) {
-      window.clearTimeout(heroClickPopTimeoutId);
-      heroClickPopTimeoutId = null;
+  const clearHeroPrebattleChargeTimeout = () => {
+    if (heroPrebattleChargeTimeoutId !== null) {
+      window.clearTimeout(heroPrebattleChargeTimeoutId);
+      heroPrebattleChargeTimeoutId = null;
     }
   };
 
-  const scheduleHeroClickPop = () => {
-    if (!heroImage || shouldReduceMotion || HERO_CLICK_POP_DELAY_MS <= 0) {
+  const scheduleHeroPrebattleCharge = () => {
+    if (
+      !heroImage ||
+      shouldReduceMotion ||
+      HERO_PREBATTLE_CHARGE_DELAY_MS <= 0
+    ) {
       return;
     }
 
-    clearHeroClickPopTimeout();
-    heroClickPopTimeoutId = window.setTimeout(() => {
-      heroClickPopTimeoutId = null;
+    clearHeroPrebattleChargeTimeout();
+    heroPrebattleChargeTimeoutId = window.setTimeout(() => {
+      heroPrebattleChargeTimeoutId = null;
 
       if (!heroImage || heroImage.classList.contains('is-exiting')) {
         return;
       }
 
-      const handleHeroClickPopEnd = (event) => {
-        if (event && event.animationName !== HERO_CLICK_POP_ANIMATION_NAME) {
+      const handleHeroPrebattleChargeEnd = (event) => {
+        if (
+          event &&
+          event.animationName !== HERO_PREBATTLE_CHARGE_ANIMATION_NAME
+        ) {
           return;
         }
 
         heroImage.classList.remove('is-click-scaling');
-        heroImage.removeEventListener('animationend', handleHeroClickPopEnd);
-        heroImage.removeEventListener('animationcancel', handleHeroClickPopEnd);
+        heroImage.removeEventListener(
+          'animationend',
+          handleHeroPrebattleChargeEnd
+        );
+        heroImage.removeEventListener(
+          'animationcancel',
+          handleHeroPrebattleChargeEnd
+        );
       };
 
       heroImage.classList.remove('is-click-scaling');
-      heroImage.addEventListener('animationend', handleHeroClickPopEnd);
-      heroImage.addEventListener('animationcancel', handleHeroClickPopEnd);
+      heroImage.addEventListener('animationend', handleHeroPrebattleChargeEnd);
+      heroImage.addEventListener(
+        'animationcancel',
+        handleHeroPrebattleChargeEnd
+      );
       heroImage.classList.add('is-click-scaling');
-    }, HERO_CLICK_POP_DELAY_MS);
+    }, HERO_PREBATTLE_CHARGE_DELAY_MS);
   };
 
   if (
@@ -476,7 +492,7 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     }
     hasStartedBattle = true;
     clearEggAutoHatchTimeout();
-    scheduleHeroClickPop();
+    scheduleHeroPrebattleCharge();
     await hideCard(battleCard);
     introRoot.classList.remove('is-active');
     introRoot.setAttribute('aria-hidden', 'true');
