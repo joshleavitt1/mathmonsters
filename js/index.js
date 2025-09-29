@@ -20,6 +20,8 @@ const LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS = 350;
 const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 900;
 const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 2000;
 const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 350;
+const HERO_CLICK_POP_DELAY_MS = 1000;
+const HERO_CLICK_POP_ANIMATION_NAME = 'hero-click-pop';
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
@@ -215,6 +217,7 @@ const runBattleIntroSequence = async (options = {}) => {
 
   const beginExitAnimations = () => {
     document.body.classList.add('is-battle-transition');
+    heroImage.classList.remove('is-click-scaling');
     heroImage.classList.add('is-exiting');
     if (enemyImage && !skipEnemyAppearance) {
       enemyImage.classList.add('is-exiting');
@@ -278,6 +281,48 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     new Promise((resolve) =>
       window.setTimeout(resolve, Math.max(0, Number(durationMs) || 0))
     );
+  const shouldReduceMotion =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let heroClickPopTimeoutId = null;
+
+  const clearHeroClickPopTimeout = () => {
+    if (heroClickPopTimeoutId !== null) {
+      window.clearTimeout(heroClickPopTimeoutId);
+      heroClickPopTimeoutId = null;
+    }
+  };
+
+  const scheduleHeroClickPop = () => {
+    if (!heroImage || shouldReduceMotion || HERO_CLICK_POP_DELAY_MS <= 0) {
+      return;
+    }
+
+    clearHeroClickPopTimeout();
+    heroClickPopTimeoutId = window.setTimeout(() => {
+      heroClickPopTimeoutId = null;
+
+      if (!heroImage || heroImage.classList.contains('is-exiting')) {
+        return;
+      }
+
+      const handleHeroClickPopEnd = (event) => {
+        if (event && event.animationName !== HERO_CLICK_POP_ANIMATION_NAME) {
+          return;
+        }
+
+        heroImage.classList.remove('is-click-scaling');
+        heroImage.removeEventListener('animationend', handleHeroClickPopEnd);
+        heroImage.removeEventListener('animationcancel', handleHeroClickPopEnd);
+      };
+
+      heroImage.classList.remove('is-click-scaling');
+      heroImage.addEventListener('animationend', handleHeroClickPopEnd);
+      heroImage.addEventListener('animationcancel', handleHeroClickPopEnd);
+      heroImage.classList.add('is-click-scaling');
+    }, HERO_CLICK_POP_DELAY_MS);
+  };
 
   if (
     !introRoot ||
@@ -418,6 +463,7 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
       return;
     }
     hasStartedBattle = true;
+    scheduleHeroClickPop();
     await hideCard(battleCard);
     introRoot.classList.remove('is-active');
     introRoot.setAttribute('aria-hidden', 'true');
