@@ -1087,25 +1087,6 @@ const applyLandingModeRequest = () => {
   clearLandingModeRequestFromQuery();
 };
 
-const randomizeBubbleTimings = () => {
-  const bubbles = document.querySelectorAll('.bubble');
-
-  bubbles.forEach((bubble) => {
-    const computedStyles = window.getComputedStyle(bubble);
-    const durationValue = computedStyles.getPropertyValue('--duration').trim();
-    const durationInSeconds = Number.parseFloat(durationValue);
-
-    if (!Number.isFinite(durationInSeconds) || durationInSeconds <= 0) {
-      const fallbackOffset = -(Math.random() * 2);
-      bubble.style.setProperty('--delay', `${fallbackOffset.toFixed(3)}s`);
-      return;
-    }
-
-    const randomOffset = Math.random() * durationInSeconds;
-    bubble.style.setProperty('--delay', `${-randomOffset.toFixed(3)}s`);
-  });
-};
-
 const preloadLandingAssets = async () => {
   const results = { levelsData: null, playerData: null, previewData: null };
   const imageAssets = new Set([
@@ -1268,8 +1249,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
     redirectToBattle();
     return;
   }
-  randomizeBubbleTimings();
-
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
   let battleButton = document.querySelector('[data-battle-button]');
