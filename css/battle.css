@@ -58,8 +58,8 @@ body.is-evolution-active #battle-shellfin {
 }
 
 #battle-monster.slide-in {
-  animation: monster-enter 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: 0.04s;
+  animation: monster-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.08s;
 }
 
 #battle-shellfin.slide-in {
@@ -290,16 +290,19 @@ body.is-evolution-active #battle-shellfin {
 
 @keyframes monster-enter {
   0% {
-    transform: translateX(-140%);
+    transform: translateX(-140%) scale(0.9);
     opacity: 0;
+    filter: blur(16px);
   }
   65% {
-    transform: translateX(3%);
+    transform: translateX(3%) scale(1.04);
     opacity: 1;
+    filter: blur(0);
   }
   100% {
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
     opacity: 1;
+    filter: blur(0);
   }
 }
 
