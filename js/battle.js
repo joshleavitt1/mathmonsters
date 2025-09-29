@@ -9,8 +9,10 @@ const ENEMY_DEFEAT_ANIMATION_DELAY = 1000;
 const VICTORY_PROGRESS_UPDATE_DELAY = ENEMY_DEFEAT_ANIMATION_DELAY + 1000;
 const DEFEAT_PROGRESS_UPDATE_DELAY = 1000;
 const LEVEL_PROGRESS_ANIMATION_DELAY_MS = 0;
-const HERO_EVOLUTION_SWAP_DELAY_MS = 1400;
-const HERO_EVOLUTION_TOTAL_DURATION_MS = 2800;
+const REWARD_CARD_DELAY_MS = 2000;
+const HERO_EVOLUTION_GROWTH_DURATION_MS = 600;
+const HERO_EVOLUTION_GROWTH_ITERATIONS = 3;
+const HERO_EVOLUTION_REVEAL_DURATION_MS = 600;
 const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 
@@ -177,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const rewardOverlay = document.querySelector('[data-reward-overlay]');
   const rewardSprite = rewardOverlay?.querySelector('[data-reward-sprite]');
   const rewardCard = rewardOverlay?.querySelector('[data-reward-card]');
+  const rewardCardText = rewardCard?.querySelector('.reward-overlay__card-text');
   const rewardCardButton = rewardCard?.querySelector('[data-reward-card-button]');
   const evolutionOverlay = document.querySelector('[data-evolution-overlay]');
   const evolutionCurrentSprite = evolutionOverlay?.querySelector(
@@ -194,6 +197,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
   const summaryTimeText = ensureStatValueText(summaryTimeValue);
+
+  const defaultRewardCardText =
+    rewardCardText && typeof rewardCardText.textContent === 'string'
+      ? rewardCardText.textContent.trim()
+      : 'I made this potion from the monster. Can you guess what it does?';
+  const defaultRewardCardButtonText =
+    rewardCardButton && typeof rewardCardButton.textContent === 'string'
+      ? rewardCardButton.textContent.trim()
+      : 'Use Potion';
+  const REGISTER_REWARD_CARD_TEXT =
+    'Your creature just evolved! It’s stronger now and ready for new adventures!';
+  const REGISTER_REWARD_CARD_BUTTON_TEXT = 'Register Now';
 
   if (bannerAccuracyValue) bannerAccuracyValue.textContent = '100%';
   if (bannerTimeValue) bannerTimeValue.textContent = '0s';
@@ -250,10 +265,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let rewardAnimationPlayed = false;
   let levelProgressUpdateTimeout = null;
   let levelProgressAnimationTimeout = null;
-  let rewardSpriteAnimationEndHandler = null;
   let rewardCardButtonHandler = null;
   let evolutionCompletionTimeout = null;
   let evolutionInProgress = false;
+  let rewardCardDisplayTimeout = null;
 
   const rewardGlowStyleProperties = [
     '--pulsating-glow-color',
@@ -267,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
     '--pulsating-glow-blur',
   ];
 
-  const REWARD_CHEST_SRC = '../images/complete/chest.png';
   const REWARD_POTION_SRC = '../images/complete/potion.png';
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_level_1.png';
   const HERO_LEVEL_2_SRC = '../images/hero/shellfin_level_2.png';
@@ -406,14 +420,29 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    evolutionOverlay.classList.remove(
-      'evolution-overlay--animating',
-      'evolution-overlay--visible'
-    );
+    evolutionOverlay.classList.remove('evolution-overlay--visible');
     evolutionOverlay.setAttribute('aria-hidden', 'true');
+
+    if (evolutionCurrentSprite) {
+      evolutionCurrentSprite.classList.remove(
+        'evolution-overlay__sprite--visible',
+        'evolution-overlay__sprite--growth',
+        'evolution-overlay__sprite--hidden'
+      );
+    }
+
+    if (evolutionNextSprite) {
+      evolutionNextSprite.classList.remove(
+        'evolution-overlay__sprite--visible',
+        'evolution-overlay__sprite--reveal',
+        'evolution-overlay__sprite--hidden'
+      );
+    }
   };
 
   const hideRewardOverlayInstantly = () => {
+    clearRewardCardDisplayTimeout();
+
     if (rewardOverlay) {
       rewardOverlay.classList.remove('reward-overlay--visible');
       rewardOverlay.setAttribute('aria-hidden', 'true');
@@ -484,14 +513,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body?.classList.remove('is-evolution-active');
 
     window.setTimeout(() => {
-      resetRewardOverlay();
-      hideRewardOverlayInstantly();
       markRegistrationAsRequired();
-      const overlayShown = showEvolutionCompleteOverlay();
-      if (!overlayShown) {
-        window.location.assign(REGISTER_PAGE_URL);
-      }
-    }, 600);
+      showRegisterRewardCard();
+    }, 400);
   };
 
   const startEvolutionSequence = () => {
@@ -506,10 +530,11 @@ document.addEventListener('DOMContentLoaded', () => {
       rewardCardButton.disabled = true;
     }
 
-    hideRewardIntroCard();
+    hideRewardCard();
     disableRewardSpriteInteraction();
     clearRewardAnimation();
     hideRewardOverlayInstantly();
+    clearRewardCardDisplayTimeout();
 
     const currentSpriteSrc = getCurrentHeroSprite();
     const nextSpriteSrc = deriveNextHeroSprite();
@@ -522,6 +547,18 @@ document.addEventListener('DOMContentLoaded', () => {
     evolutionCurrentSprite.src = currentSpriteSrc;
     evolutionNextSprite.src = nextSpriteSrc;
 
+    evolutionCurrentSprite.classList.remove(
+      'evolution-overlay__sprite--hidden',
+      'evolution-overlay__sprite--growth',
+      'evolution-overlay__sprite--visible'
+    );
+    evolutionNextSprite.classList.remove(
+      'evolution-overlay__sprite--hidden',
+      'evolution-overlay__sprite--reveal',
+      'evolution-overlay__sprite--visible'
+    );
+    evolutionNextSprite.classList.add('evolution-overlay__sprite--hidden');
+
     evolutionOverlay.setAttribute('aria-hidden', 'false');
     evolutionOverlay.classList.add('evolution-overlay--visible');
 
@@ -531,50 +568,64 @@ document.addEventListener('DOMContentLoaded', () => {
       heroImg.classList.remove('battle-shellfin--evolved');
     }
 
-    void evolutionOverlay.offsetWidth;
-    evolutionOverlay.classList.add('evolution-overlay--animating');
+    let growthHandled = false;
 
-    const handleTransitionEnd = (event) => {
-      if (event.target !== evolutionNextSprite) {
+    const handleGrowthComplete = () => {
+      if (growthHandled) {
         return;
       }
+      growthHandled = true;
 
-      evolutionNextSprite.removeEventListener('transitionend', handleTransitionEnd);
-      finishEvolutionSequence(nextSpriteSrc);
+      evolutionCurrentSprite.classList.remove(
+        'evolution-overlay__sprite--growth',
+        'evolution-overlay__sprite--visible'
+      );
+      evolutionCurrentSprite.classList.add('evolution-overlay__sprite--hidden');
+
+      clearEvolutionTimers();
+
+      const handleRevealComplete = () => {
+        evolutionNextSprite.removeEventListener('animationend', handleRevealComplete);
+        clearEvolutionTimers();
+        finishEvolutionSequence(nextSpriteSrc);
+      };
+
+      evolutionNextSprite.classList.remove('evolution-overlay__sprite--hidden');
+      evolutionNextSprite.classList.add('evolution-overlay__sprite--visible');
+      void evolutionNextSprite.offsetWidth;
+      evolutionNextSprite.classList.add('evolution-overlay__sprite--reveal');
+      evolutionNextSprite.addEventListener('animationend', handleRevealComplete, {
+        once: true,
+      });
+
+      evolutionCompletionTimeout = window.setTimeout(() => {
+        evolutionCompletionTimeout = null;
+        handleRevealComplete();
+      }, HERO_EVOLUTION_REVEAL_DURATION_MS + 400);
     };
 
-    evolutionNextSprite.addEventListener('transitionend', handleTransitionEnd);
+    evolutionCurrentSprite.classList.add('evolution-overlay__sprite--visible');
+    void evolutionCurrentSprite.offsetWidth;
+    evolutionCurrentSprite.classList.add('evolution-overlay__sprite--growth');
+    evolutionCurrentSprite.addEventListener('animationend', handleGrowthComplete, {
+      once: true,
+    });
 
     evolutionCompletionTimeout = window.setTimeout(() => {
       evolutionCompletionTimeout = null;
-      evolutionNextSprite.removeEventListener('transitionend', handleTransitionEnd);
-      finishEvolutionSequence(nextSpriteSrc);
-    }, Math.max(0, HERO_EVOLUTION_TRANSITION_DURATION_MS) + 400);
+      handleGrowthComplete();
+    },
+    HERO_EVOLUTION_GROWTH_DURATION_MS * HERO_EVOLUTION_GROWTH_ITERATIONS + 400);
   };
 
-  const detachRewardSpriteAnimationHandler = () => {
-    if (rewardSprite && rewardSpriteAnimationEndHandler) {
-      rewardSprite.removeEventListener('animationend', rewardSpriteAnimationEndHandler);
-      rewardSpriteAnimationEndHandler = null;
+  const clearRewardCardDisplayTimeout = () => {
+    if (rewardCardDisplayTimeout !== null) {
+      window.clearTimeout(rewardCardDisplayTimeout);
+      rewardCardDisplayTimeout = null;
     }
   };
 
-  const setRewardSpriteAnimationHandler = (handler) => {
-    if (!rewardSprite) {
-      return;
-    }
-
-    detachRewardSpriteAnimationHandler();
-    rewardSpriteAnimationEndHandler = (event) => {
-      rewardSpriteAnimationEndHandler = null;
-      handler(event);
-    };
-    rewardSprite.addEventListener('animationend', rewardSpriteAnimationEndHandler, {
-      once: true,
-    });
-  };
-
-  const hideRewardIntroCard = () => {
+  const hideRewardCard = () => {
     if (!rewardCard) {
       return;
     }
@@ -582,16 +633,39 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardCard.classList.remove('card--pop');
     rewardCard.setAttribute('aria-hidden', 'true');
     rewardCard.hidden = true;
+    if (rewardCardButton) {
+      rewardCardButton.disabled = true;
+    }
     if (rewardCardButton && rewardCardButtonHandler) {
       rewardCardButton.removeEventListener('click', rewardCardButtonHandler);
       rewardCardButtonHandler = null;
     }
   };
 
-  const showRewardIntroCard = () => {
-    if (!rewardCard) {
-      return;
+  const displayRewardCard = ({
+    text,
+    buttonText,
+    onClick,
+    focusButton = true,
+  }) => {
+    if (!rewardCard || !rewardCardText || !rewardCardButton) {
+      return false;
     }
+
+    rewardCardText.textContent = text;
+    rewardCardButton.textContent = buttonText;
+    rewardCardButton.disabled = false;
+
+    if (rewardCardButtonHandler) {
+      rewardCardButton.removeEventListener('click', rewardCardButtonHandler);
+    }
+
+    rewardCardButtonHandler = () => {
+      if (typeof onClick === 'function') {
+        onClick();
+      }
+    };
+    rewardCardButton.addEventListener('click', rewardCardButtonHandler);
 
     rewardCard.hidden = false;
     rewardCard.setAttribute('aria-hidden', 'false');
@@ -599,25 +673,27 @@ document.addEventListener('DOMContentLoaded', () => {
     void rewardCard.offsetWidth;
     rewardCard.classList.add('card--pop');
 
-    if (rewardCardButton) {
-      if (rewardCardButtonHandler) {
-        rewardCardButton.removeEventListener('click', rewardCardButtonHandler);
-      }
-      rewardCardButtonHandler = () => {
+    if (focusButton && typeof rewardCardButton.focus === 'function') {
+      rewardCardButton.focus();
+    }
+
+    return true;
+  };
+
+  const showRewardIntroCard = () => {
+    displayRewardCard({
+      text: defaultRewardCardText,
+      buttonText: defaultRewardCardButtonText,
+      onClick: () => {
         if (battleGoalsMet && !battleLevelAdvanced) {
           advanceBattleLevel();
         }
         startEvolutionSequence();
-      };
-      rewardCardButton.addEventListener('click', rewardCardButtonHandler);
-      if (typeof rewardCardButton.focus === 'function') {
-        rewardCardButton.focus();
-      }
-    }
+      },
+    });
   };
 
   const clearRewardAnimation = () => {
-    detachRewardSpriteAnimationHandler();
     if (!rewardSprite) {
       return;
     }
@@ -625,7 +701,8 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardSprite.classList.remove(
       'reward-overlay__image--chest-pop',
       'reward-overlay__image--hatching',
-      'reward-overlay__image--potion-pop'
+      'reward-overlay__image--potion-pop',
+      'reward-overlay__image--visible'
     );
     rewardSprite.style.removeProperty('opacity');
     rewardSprite.style.removeProperty('transform');
@@ -637,42 +714,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     resetEvolutionOverlay();
+    clearRewardCardDisplayTimeout();
     clearRewardAnimation();
-    hideRewardIntroCard();
+    hideRewardCard();
     rewardOverlay.classList.remove('reward-overlay--visible');
     rewardOverlay.setAttribute('aria-hidden', 'true');
     document.body?.classList.remove('is-reward-active');
-    rewardSprite.src = REWARD_CHEST_SRC;
-    rewardSprite.alt = 'Treasure chest level-up reward';
+    rewardSprite.src = REWARD_POTION_SRC;
+    rewardSprite.alt = 'Potion level-up reward';
+    setRewardStage(null);
     disableRewardSpriteInteraction();
   };
 
-  const revealPotionReward = () => {
-    if (!rewardSprite) {
+  const showRegisterRewardCard = () => {
+    if (!rewardOverlay) {
+      window.location.assign(REGISTER_PAGE_URL);
       return;
     }
 
+    clearRewardCardDisplayTimeout();
     clearRewardAnimation();
-    rewardSprite.src = REWARD_POTION_SRC;
-    rewardSprite.alt = 'Potion level-up reward';
-    setRewardStage('potion');
-    void rewardSprite.offsetWidth;
-    rewardSprite.classList.add('reward-overlay__image--potion-pop');
-    setRewardSpriteAnimationHandler(() => {
-      showRewardIntroCard();
-    });
-  };
 
-  const startRewardChestHatch = () => {
-    if (!rewardSprite) {
-      return;
+    rewardOverlay.classList.add('reward-overlay--visible');
+    rewardOverlay.setAttribute('aria-hidden', 'false');
+    document.body?.classList.add('is-reward-active');
+    disableRewardSpriteInteraction();
+
+    if (rewardSprite) {
+      rewardSprite.classList.remove('reward-overlay__image--visible');
+      rewardSprite.style.opacity = '0';
     }
 
-    rewardSprite.classList.remove('reward-overlay__image--chest-pop');
-    rewardSprite.classList.add('reward-overlay__image--hatching');
-    setRewardSpriteAnimationHandler(() => {
-      revealPotionReward();
+    setRewardStage('register');
+
+    const displayed = displayRewardCard({
+      text: REGISTER_REWARD_CARD_TEXT,
+      buttonText: REGISTER_REWARD_CARD_BUTTON_TEXT,
+      onClick: () => {
+        window.location.assign(REGISTER_PAGE_URL);
+      },
     });
+
+    if (!displayed) {
+      window.location.assign(REGISTER_PAGE_URL);
+    }
   };
 
   const playLevelUpRewardAnimation = () => {
@@ -680,21 +765,25 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    clearRewardCardDisplayTimeout();
     clearRewardAnimation();
-    hideRewardIntroCard();
+    hideRewardCard();
+
     rewardOverlay.classList.add('reward-overlay--visible');
     rewardOverlay.setAttribute('aria-hidden', 'false');
     document.body?.classList.add('is-reward-active');
     disableRewardSpriteInteraction();
-    rewardSprite.src = REWARD_CHEST_SRC;
-    rewardSprite.alt = 'Treasure chest level-up reward';
+    rewardSprite.src = REWARD_POTION_SRC;
+    rewardSprite.alt = 'Potion level-up reward';
 
-    setRewardStage('chest');
+    setRewardStage('potion');
     void rewardSprite.offsetWidth;
-    rewardSprite.classList.add('reward-overlay__image--chest-pop');
-    setRewardSpriteAnimationHandler(() => {
-      startRewardChestHatch();
-    });
+    rewardSprite.classList.add('reward-overlay__image--visible');
+
+    rewardCardDisplayTimeout = window.setTimeout(() => {
+      rewardCardDisplayTimeout = null;
+      showRewardIntroCard();
+    }, REWARD_CARD_DELAY_MS);
   };
 
   disableRewardSpriteInteraction();
