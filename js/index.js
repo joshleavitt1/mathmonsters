@@ -20,7 +20,7 @@ const LEVEL_ONE_INTRO_EGG_AUTO_START_DELAY_MS = 1000;
 const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 2100;
 const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 700;
 const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 220;
-const HERO_PREBATTLE_CHARGE_DELAY_MS = 1000;
+const HERO_PREBATTLE_CHARGE_DELAY_MS = 0;
 const HERO_PREBATTLE_CHARGE_ANIMATION_NAME = 'hero-prebattle-charge';
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
@@ -274,12 +274,11 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
   };
 
   const scheduleHeroPrebattleCharge = () => {
-    if (!heroImage || HERO_PREBATTLE_CHARGE_DELAY_MS <= 0) {
+    if (!heroImage) {
       return;
     }
 
-    clearHeroPrebattleChargeTimeout();
-    heroPrebattleChargeTimeoutId = window.setTimeout(() => {
+    const triggerHeroPrebattleCharge = () => {
       heroPrebattleChargeTimeoutId = null;
 
       if (!heroImage || heroImage.classList.contains('is-exiting')) {
@@ -306,13 +305,26 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
       };
 
       heroImage.classList.remove('is-click-scaling');
+      void heroImage.offsetWidth;
       heroImage.addEventListener('animationend', handleHeroPrebattleChargeEnd);
       heroImage.addEventListener(
         'animationcancel',
         handleHeroPrebattleChargeEnd
       );
       heroImage.classList.add('is-click-scaling');
-    }, HERO_PREBATTLE_CHARGE_DELAY_MS);
+    };
+
+    clearHeroPrebattleChargeTimeout();
+
+    if (HERO_PREBATTLE_CHARGE_DELAY_MS <= 0) {
+      triggerHeroPrebattleCharge();
+      return;
+    }
+
+    heroPrebattleChargeTimeoutId = window.setTimeout(
+      triggerHeroPrebattleCharge,
+      HERO_PREBATTLE_CHARGE_DELAY_MS
+    );
   };
 
   if (
