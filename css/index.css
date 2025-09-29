@@ -437,17 +437,9 @@ body.is-battle-transition .bubbles {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
       scaleX(-1) scale(1);
   }
-  38% {
-    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.93);
-  }
-  70% {
-    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.82);
-  }
   100% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.9);
+      scaleX(-1) scale(0.8);
   }
 }
 
