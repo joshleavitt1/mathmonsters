@@ -276,7 +276,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 .level-one-intro__egg-button.is-visible::before {
   opacity: 1;
-  transition-delay: 0.25s;
+  transition-delay: 0s;
 }
 
 .level-one-intro__egg-button:hover,
