@@ -36,7 +36,7 @@
     <img id="battle-monster" src="../images/battle/monster_battle_1_1.png" alt="Monster" />
     <img
       id="battle-shellfin"
-      src="../images/characters/shellfin_level_1.png"
+      src="../images/hero/shellfin_level_1.png"
       alt="Shellfin"
     />
     <img
@@ -178,6 +178,49 @@
           data-reward-card-button
         >
           Use Potion
+        </button>
+      </section>
+    </div>
+    <div class="evolution-overlay" data-evolution-overlay aria-hidden="true">
+      <img
+        class="evolution-overlay__sprite evolution-overlay__sprite--current"
+        src="../images/hero/shellfin_level_1.png"
+        alt="Shellfin begins to evolve"
+        data-evolution-current
+      />
+      <img
+        class="evolution-overlay__sprite evolution-overlay__sprite--next"
+        src="../images/hero/shellfin_level_2.png"
+        alt="Shellfin evolved"
+        data-evolution-next
+      />
+    </div>
+    <div
+      class="post-evolution-overlay"
+      data-evolution-complete-overlay
+      aria-hidden="true"
+    >
+      <section
+        class="card card--home post-evolution-overlay__card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="post-evolution-title"
+      >
+        <h2
+          id="post-evolution-title"
+          class="post-evolution-overlay__title text-large text-dark"
+        >
+          Your creature just evolved!
+        </h2>
+        <p class="post-evolution-overlay__text text-medium text-dark">
+          It’s stronger now and ready for new adventures!
+        </p>
+        <button
+          type="button"
+          class="btn-primary post-evolution-overlay__button"
+          data-evolution-complete-button
+        >
+          Register Now
         </button>
       </section>
     </div>
