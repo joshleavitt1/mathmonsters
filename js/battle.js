@@ -460,9 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    nextMissionBtn.textContent = hasPendingLevelUpReward
-      ? 'Claim Reward'
-      : 'Next Battle';
+    nextMissionBtn.textContent = 'Claim Reward';
     nextMissionBtn.dataset.action = 'next';
   };
 
