@@ -271,6 +271,16 @@ body:not(.is-level-one-landing) .level-one-intro {
   overflow: visible;
 }
 
+.level-one-intro__egg-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 40px 0 #02ddff;
+  z-index: 0;
+  pointer-events: none;
+}
+
 .level-one-intro__egg-button:hover,
 .level-one-intro__egg-button:focus-visible {
   background: none;
