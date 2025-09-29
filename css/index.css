@@ -155,7 +155,7 @@ body:not(.is-preloading) main.landing {
 }
 
 .hero.is-exiting {
-  animation: hero-intro-exit 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: hero-intro-exit 0.75s cubic-bezier(0.32, 0, 0.67, 1) forwards;
 }
 
 .enemy {
@@ -223,7 +223,7 @@ body.is-level-one-landing .hero.is-revealed {
 
 body.is-level-one-landing .hero.is-exiting {
   visibility: visible;
-  animation: hero-intro-exit 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: hero-intro-exit 0.75s cubic-bezier(0.32, 0, 0.67, 1) forwards;
 }
 
 body:not(.is-level-one-landing) .level-one-intro {
@@ -263,17 +263,6 @@ body:not(.is-level-one-landing) .level-one-intro {
   transition: opacity 0.3s ease;
   z-index: 4;
   overflow: visible;
-}
-
-.level-one-intro__egg-button:focus {
-  outline: none;
-}
-
-.level-one-intro__egg-button:focus-visible {
-  outline: none;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(2, 221, 255, 0.75),
-    0 0 24px rgba(2, 221, 255, 0.55);
 }
 
 .level-one-intro__egg-button[disabled] {
@@ -511,19 +500,24 @@ body.is-battle-transition .bubbles {
       scaleX(-1) scale(1);
     opacity: 1;
   }
-  28% {
+  22% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.92);
+      scaleX(-1) scale(0.94);
     opacity: 1;
   }
-  62% {
+  48% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.76);
-    opacity: 0.9;
+      scaleX(-1) scale(0.84);
+    opacity: 0.96;
+  }
+  74% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(0.72);
+    opacity: 0.85;
   }
   100% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.62);
+      scaleX(-1) scale(0.6);
     opacity: 0;
   }
 }
@@ -923,11 +917,6 @@ body.is-battle-transition .bubbles {
 .pwa-install__link {
   color: #0a3d62;
   text-decoration: none;
-}
-
-.pwa-install__link:hover,
-.pwa-install__link:focus {
-  text-decoration: underline;
 }
 
 @media (min-width: 768px) {
