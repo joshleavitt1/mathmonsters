@@ -302,6 +302,74 @@ const readStoredProgress = () => {
       return result;
     };
 
+    const mergeCharacterSources = (...sources) => {
+      const merged = {};
+      let hasData = false;
+
+      sources.forEach((source) => {
+        if (!isPlainObject(source)) {
+          return;
+        }
+
+        hasData = true;
+        Object.entries(source).forEach(([key, value]) => {
+          if (value !== undefined) {
+            merged[key] = value;
+          }
+        });
+      });
+
+      return hasData ? merged : null;
+    };
+
+    const characterAssetSet = new Set();
+
+    const registerAsset = (path) => {
+      if (typeof path !== 'string') {
+        return;
+      }
+
+      const trimmed = path.trim();
+      if (trimmed) {
+        characterAssetSet.add(trimmed);
+      }
+    };
+
+    const prepareCharacter = (...sources) => {
+      const merged = mergeCharacterSources(...sources);
+      if (!merged) {
+        return null;
+      }
+
+      const normalized = { ...merged };
+
+      const resolvedSprite = resolveAssetPath(merged.sprite);
+      if (resolvedSprite) {
+        normalized.sprite = resolvedSprite;
+        registerAsset(resolvedSprite);
+      } else {
+        delete normalized.sprite;
+      }
+
+      const attackSprites = normalizeAttackSprites(merged);
+      if (Object.keys(attackSprites).length > 0) {
+        normalized.attackSprites = attackSprites;
+        Object.values(attackSprites).forEach((spritePath) => {
+          if (spritePath) {
+            registerAsset(spritePath);
+          }
+        });
+      } else {
+        delete normalized.attackSprites;
+      }
+
+      delete normalized.attackSprite;
+      delete normalized.basicAttack;
+      delete normalized.superAttack;
+
+      return normalized;
+    };
+
     const preloadImage = (path) =>
       new Promise((resolve) => {
         if (!path || typeof Image === 'undefined') {
@@ -375,84 +443,110 @@ const readStoredProgress = () => {
 
     const playerHeroBase =
       basePlayer && typeof basePlayer.hero === 'object' ? basePlayer.hero : {};
-    const playerLevelHero =
-      resolvePlayerLevelData(activeBattleLevel)?.hero ?? null;
-    const hero = {
-      ...playerHeroBase,
-      ...(levelBattle?.hero ?? {}),
-      ...(playerLevelHero ?? {}),
-    };
-    const enemyBase = (() => {
-      if (levelBattle && typeof levelBattle.enemy === 'object') {
-        return levelBattle.enemy;
+
+    const playerLevelHeroMap = new Map();
+    levels.forEach((level) => {
+      if (!level || typeof level.battleLevel !== 'number') {
+        return;
       }
-      if (Array.isArray(levelBattle?.enemies)) {
-        const match = levelBattle.enemies.find(
-          (candidate) => candidate && typeof candidate === 'object'
-        );
-        if (match) {
-          return match;
+      const levelData = resolvePlayerLevelData(level.battleLevel);
+      if (levelData && typeof levelData.hero === 'object') {
+        playerLevelHeroMap.set(level.battleLevel, levelData.hero);
+      }
+    });
+
+    const levelCharacters = levels.map((level) => {
+      const levelNumber = level?.battleLevel;
+      const battleConfig =
+        level && typeof level.battle === 'object' ? level.battle : {};
+      const heroOverride =
+        playerLevelHeroMap.get(levelNumber ?? undefined) ?? null;
+      const preparedHero = prepareCharacter(
+        playerHeroBase,
+        battleConfig?.hero,
+        heroOverride
+      );
+
+      const enemies = [];
+      const enemyLookup = new Set();
+      const addEnemy = (...sources) => {
+        const preparedEnemy = prepareCharacter(...sources);
+        if (!preparedEnemy) {
+          return;
         }
+        const key = JSON.stringify([
+          preparedEnemy.id ?? null,
+          preparedEnemy.name ?? null,
+          preparedEnemy.sprite ?? null,
+        ]);
+        if (enemyLookup.has(key)) {
+          return;
+        }
+        enemyLookup.add(key);
+        enemies.push(preparedEnemy);
+      };
+
+      if (Array.isArray(battleConfig?.enemies)) {
+        battleConfig.enemies.forEach((enemy) => addEnemy(enemy));
       }
-      return {};
-    })();
+
+      if (battleConfig?.enemy) {
+        addEnemy(battleConfig.enemy);
+      }
+
+      return {
+        battleLevel: Number.isFinite(levelNumber) ? levelNumber : null,
+        hero: preparedHero,
+        enemies,
+      };
+    });
+
+    const currentLevelCharacters =
+      levelCharacters.find(
+        (entry) => entry && entry.battleLevel === activeBattleLevel
+      ) ||
+      levelCharacters[0] ||
+      { hero: null, enemies: [] };
+
+    const hero = currentLevelCharacters.hero
+      ? { ...currentLevelCharacters.hero }
+      : prepareCharacter(
+          playerHeroBase,
+          levelBattle?.hero,
+          playerLevelHeroMap.get(activeBattleLevel)
+        ) || { ...playerHeroBase };
+
+    const normalizedEnemies = (currentLevelCharacters.enemies || []).map(
+      (enemy) => ({ ...enemy })
+    );
+
+    if (
+      normalizedEnemies.length === 0 &&
+      levelBattle &&
+      typeof levelBattle.enemy === 'object'
+    ) {
+      const fallbackEnemy = prepareCharacter(levelBattle.enemy);
+      if (fallbackEnemy) {
+        normalizedEnemies.push({ ...fallbackEnemy });
+      }
+    }
+
+    const primaryEnemy = normalizedEnemies[0] || {};
+
     const battle = {
       ...levelBattle,
       hero,
-      enemy: { ...(enemyBase ?? {}) },
+      enemy: { ...primaryEnemy },
     };
-    const enemy = battle.enemy;
 
-    const heroSprite = resolveAssetPath(hero?.sprite);
-    if (heroSprite) {
-      hero.sprite = heroSprite;
+    if (normalizedEnemies.length > 0) {
+      battle.enemies = normalizedEnemies;
     }
 
-    const heroAttackSprites = normalizeAttackSprites(hero);
-    if (Object.keys(heroAttackSprites).length > 0) {
-      hero.attackSprites = heroAttackSprites;
-    } else {
-      delete hero.attackSprites;
-    }
-    delete hero.attackSprite;
-    delete hero.basicAttack;
-    delete hero.superAttack;
-
-    const enemySprite = resolveAssetPath(enemy?.sprite);
-    if (enemySprite) {
-      battle.enemy.sprite = enemySprite;
-    }
-
-    const enemyAttackSprites = normalizeAttackSprites(enemy);
-    if (Object.keys(enemyAttackSprites).length > 0) {
-      enemy.attackSprites = enemyAttackSprites;
-    } else {
-      delete enemy.attackSprites;
-    }
-    delete enemy.attackSprite;
-    delete enemy.basicAttack;
-    delete enemy.superAttack;
-
-    const assetsToPreload = [];
-    if (heroSprite) {
-      assetsToPreload.push(heroSprite);
-    }
-    if (enemySprite) {
-      assetsToPreload.push(enemySprite);
-    }
-    Object.values(heroAttackSprites).forEach((spritePath) => {
-      if (spritePath) {
-        assetsToPreload.push(spritePath);
-      }
-    });
-    Object.values(enemyAttackSprites).forEach((spritePath) => {
-      if (spritePath) {
-        assetsToPreload.push(spritePath);
-      }
-    });
-    if (assetsToPreload.length) {
-      const uniqueAssets = Array.from(new Set(assetsToPreload));
-      await Promise.all(uniqueAssets.map(preloadImage));
+    if (characterAssetSet.size > 0) {
+      await Promise.all(
+        Array.from(characterAssetSet).map((assetPath) => preloadImage(assetPath))
+      );
     }
 
     window.preloadedData = {
@@ -467,7 +561,8 @@ const readStoredProgress = () => {
       level: currentLevel,
       battle,
       hero,
-      enemy,
+      enemy: battle.enemy,
+      charactersByLevel: levelCharacters,
       questions,
     };
 
