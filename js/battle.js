@@ -676,7 +676,9 @@ document.addEventListener('DOMContentLoaded', () => {
     levelExperienceEarned = nextTotal;
     maybeScheduleProgressUpdate();
 
-    hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
+    const requirementMetWithUpdate =
+      levelExperienceRequirement > 0 && nextTotal >= levelExperienceRequirement;
+    hasPendingLevelUpReward = requirementMetWithUpdate && !wasComplete;
     if (hasPendingLevelUpReward) {
       rewardAnimationPlayed = false;
     }
