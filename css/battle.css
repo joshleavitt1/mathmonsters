@@ -476,10 +476,19 @@ body.is-reward-active .reward-overlay {
 
 .reward-overlay__card {
   width: min(420px, 90vw);
+  align-items: flex-start;
+  text-align: left;
 }
 
 .reward-overlay__card[hidden] {
   display: none;
+}
+
+.reward-overlay__card-avatar {
+  align-self: flex-start;
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
 }
 
 .reward-overlay__card-text {
