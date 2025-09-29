@@ -257,6 +257,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   cursor: pointer;
   transition: opacity 0.3s ease;
   z-index: 4;
+  overflow: visible;
 }
 
 .level-one-intro__egg-button[disabled] {
@@ -278,6 +279,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   transform: scale(0.85);
   filter: blur(0px);
   pointer-events: none;
+  z-index: 0;
 }
 
 .level-one-intro__egg-button.is-glowing::after {
@@ -296,7 +298,8 @@ body:not(.is-level-one-landing) .level-one-intro {
   object-fit: contain;
   transform: scale(0.45);
   opacity: 0;
-  filter: drop-shadow(0 24px 32px rgba(0, 27, 65, 0.32));
+  position: relative;
+  z-index: 1;
 }
 
 .level-one-intro__egg-image.is-pop-in {
@@ -312,7 +315,8 @@ body:not(.is-level-one-landing) .level-one-intro {
   --card-translate-y: 24px;
   opacity: 0;
   pointer-events: none;
-  align-items: stretch;
+  align-items: flex-start;
+  text-align: left;
   transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translate3d(
     var(--card-translate-x, -50%),
@@ -335,13 +339,10 @@ body:not(.is-level-one-landing) .level-one-intro {
 }
 
 .level-one-intro__card-avatar {
-  align-self: center;
+  align-self: flex-start;
   width: 80px;
   height: 80px;
-  border-radius: 20px;
   object-fit: contain;
-  background: linear-gradient(180deg, rgba(2, 221, 255, 0.18), rgba(2, 221, 255, 0));
-  box-shadow: 0 14px 28px rgba(0, 46, 90, 0.28);
 }
 
 .level-one-intro__card-text {

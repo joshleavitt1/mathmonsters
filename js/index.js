@@ -14,7 +14,8 @@ const ENEMY_EXIT_DURATION_MS = 600;
 const BATTLE_CALL_POP_OUT_DURATION_MS = 450;
 const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
-const LEVEL_ONE_INTRO_EGG_DELAY_MS = 2000;
+const LEVEL_ONE_INTRO_EGG_DELAY_MS = 500;
+const LEVEL_ONE_INTRO_INITIAL_CARD_DELAY_MS = 2000;
 const LEVEL_ONE_INTRO_CARD_DELAY_MS = 400;
 const LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS = 350;
 const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 900;
@@ -480,7 +481,7 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     disableEgg();
     await wait(LEVEL_ONE_INTRO_EGG_DELAY_MS);
     showEgg();
-    await wait(LEVEL_ONE_INTRO_CARD_DELAY_MS);
+    await wait(LEVEL_ONE_INTRO_INITIAL_CARD_DELAY_MS);
     showCard(welcomeCard);
     if (typeof continueButton.focus === 'function') {
       try {
