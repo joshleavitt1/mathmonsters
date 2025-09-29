@@ -456,69 +456,45 @@ body.is-reward-active .reward-overlay {
 }
 
 .evolution-overlay {
-  --evolution-duration: 2.8s;
-
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
+  background: rgba(4, 15, 28, 0.82);
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.3s ease;
   z-index: 80;
-}
-
-.evolution-overlay::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at 50% 60%,
-    rgba(255, 255, 255, 0.12),
-    rgba(9, 33, 54, 0.85) 62%,
-    rgba(4, 15, 28, 0.95)
-  );
-  opacity: 0;
-  transition: opacity 0.35s ease;
 }
 
 .evolution-overlay--visible {
   opacity: 1;
   visibility: visible;
-}
-
-.evolution-overlay--animating::before {
-  opacity: 1;
-  animation: evolution-overlay-fade var(--evolution-duration) ease-in-out forwards;
-}
-
-.evolution-overlay__energy {
-  position: absolute;
-  width: clamp(260px, 45vmin, 420px);
-  height: clamp(260px, 45vmin, 420px);
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    rgba(73, 164, 255, 0.35),
-    rgba(255, 255, 255, 0.6),
-    rgba(73, 164, 255, 0.35)
-  );
-  filter: blur(24px);
-  opacity: 0;
-  transform: scale(0.6) rotate(0deg);
-}
-
-.evolution-overlay--animating .evolution-overlay__energy {
-  animation: evolution-energy var(--evolution-duration) ease-out forwards;
+  pointer-events: auto;
 }
 
 .evolution-overlay__sprite {
-  position: relative;
+  grid-area: 1 / 1;
   width: clamp(240px, 38vmin, 360px);
   max-width: 90vw;
   filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.45));
   opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.evolution-overlay__sprite--current {
+  opacity: 1;
+}
+
+.evolution-overlay--animating .evolution-overlay__sprite--current {
+  opacity: 0;
+}
+
+.evolution-overlay--animating .evolution-overlay__sprite--next {
+  opacity: 1;
+  transition-delay: 0.1s;
+=======
   transform: scale(0.85) rotate(0deg);
 }
 
