@@ -14,37 +14,11 @@ const ENEMY_EXIT_DURATION_MS = 600;
 const BATTLE_CALL_POP_OUT_DURATION_MS = 450;
 const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
-const LEVEL_ONE_SPEECH_DELAY_MS = 2000;
-const LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS = 90;
 const LEVEL_ONE_INTRO_EGG_DELAY_MS = 2000;
 const LEVEL_ONE_INTRO_CARD_DELAY_MS = 400;
 const LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS = 350;
 const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 900;
 const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 2000;
-const LEVEL_ONE_SPEECH_SEQUENCE = [
-  { text: 'Hi! I’m Shellfin.', pauseAfterMs: 1000 },
-  { text: ' Uh-oh…', pauseAfterMs: 1000 },
-  { text: ' monsters are here!', pauseAfterMs: 1000 },
-  { text: ' Let’s use math to fight back!', pauseAfterMs: 4000 },
-];
-
-const buildSpeechCharacters = (segments = []) =>
-  segments.flatMap((segment) => {
-    if (!segment || typeof segment.text !== 'string') {
-      return [];
-    }
-
-    const characters = Array.from(segment.text);
-    const pauseAfter = Math.max(0, Number(segment.pauseAfterMs) || 0);
-
-    return characters.map((character, index) => ({
-      character,
-      pauseAfterMs: index === characters.length - 1 ? pauseAfter : 0,
-    }));
-  });
-
-const LEVEL_ONE_SPEECH_CHARACTERS = buildSpeechCharacters(LEVEL_ONE_SPEECH_SEQUENCE);
-const LEVEL_ONE_SPEECH_TEXT = LEVEL_ONE_SPEECH_CHARACTERS.map(({ character }) => character).join('');
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
@@ -516,73 +490,6 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
       }
     }
   })();
-};
-
-const playLevelOneHeroSpeech = ({
-  container,
-  textElement,
-  delayMs,
-} = {}) => {
-  if (!container || !textElement) {
-    return Promise.resolve(false);
-  }
-
-  const delay = Number.isFinite(delayMs) && delayMs >= 0
-    ? delayMs
-    : LEVEL_ONE_SPEECH_DELAY_MS;
-
-  container.classList.remove('is-visible');
-  container.setAttribute('aria-hidden', 'true');
-  textElement.textContent = '';
-  if (textElement.dataset) {
-    delete textElement.dataset.typing;
-  } else {
-    textElement.removeAttribute('data-typing');
-  }
-
-  return new Promise((resolve) => {
-    const startTyping = () => {
-      container.setAttribute('aria-hidden', 'false');
-      container.classList.add('is-visible');
-
-      const prefersReducedMotion =
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      if (prefersReducedMotion) {
-        textElement.textContent = LEVEL_ONE_SPEECH_TEXT;
-        textElement.dataset.typing = 'false';
-        resolve(true);
-        return;
-      }
-
-      const characters = LEVEL_ONE_SPEECH_CHARACTERS;
-      let index = 0;
-      textElement.textContent = '';
-      textElement.dataset.typing = 'true';
-
-      const typeNextCharacter = () => {
-        if (index >= characters.length) {
-          textElement.dataset.typing = 'false';
-          resolve(true);
-          return;
-        }
-
-        const currentEntry = characters[index] || { character: '', pauseAfterMs: 0 };
-        textElement.textContent += currentEntry.character;
-        index += 1;
-
-        const baseDelay = Math.max(0, LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS);
-        const entryPause = Math.max(0, Number(currentEntry.pauseAfterMs) || 0);
-
-        window.setTimeout(typeNextCharacter, baseDelay + entryPause);
-      };
-
-      typeNextCharacter();
-    };
-
-    window.setTimeout(startTyping, Math.max(0, Number(delay) || 0));
-  });
 };
 
 (async () => {
@@ -1367,10 +1274,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
   let battleButton = document.querySelector('[data-battle-button]');
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
-  const heroSpeechElement = document.querySelector('[data-hero-speech]');
-  const heroSpeechTextElement = heroSpeechElement?.querySelector(
-    '[data-hero-speech-text]'
-  );
   let isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
 
   const buttonGlowProperties = [
@@ -1465,19 +1368,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
   await loadBattlePreview();
   isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
-
-  if (heroSpeechElement) {
-    heroSpeechElement.classList.remove('is-visible');
-    heroSpeechElement.setAttribute('aria-hidden', 'true');
-  }
-  if (heroSpeechTextElement) {
-    heroSpeechTextElement.textContent = '';
-    if (heroSpeechTextElement.dataset) {
-      delete heroSpeechTextElement.dataset.typing;
-    } else {
-      heroSpeechTextElement.removeAttribute('data-typing');
-    }
-  }
 
   if (isLevelOneLanding) {
     if (actionsElement) {
