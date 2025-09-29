@@ -290,47 +290,16 @@ body.is-evolution-active #battle-shellfin {
 
 @keyframes monster-enter {
   0% {
-    transform: translate3d(-150%, -12%, 0) scale(0.82) rotate(10deg);
+    transform: translateX(-140%);
     opacity: 0;
-    filter: blur(18px) saturate(0.85);
-  }
-  45% {
-    transform: translate3d(6%, 10%, 0) scale(1.08) rotate(-6deg);
-    opacity: 1;
-    filter: blur(3px) saturate(1.1);
-  }
-  70% {
-    transform: translate3d(-4%, -6%, 0) scale(0.98) rotate(4deg);
-    opacity: 1;
-    filter: blur(1px) saturate(1.05);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
-    opacity: 1;
-    filter: blur(0) saturate(1);
-  }
-}
-
-@keyframes monster-trail {
-  0% {
-    opacity: 0;
-    transform: translate3d(45%, -24%, 0) scaleX(1.45) scaleY(0.55);
-    filter: blur(20px) drop-shadow(0 0 22px rgba(255, 155, 102, 0.6));
-  }
-  30% {
-    opacity: 0.75;
-    transform: translate3d(25%, -10%, 0) scaleX(1.25) scaleY(0.75);
-    filter: blur(14px) drop-shadow(0 0 16px rgba(255, 155, 102, 0.55));
   }
   65% {
-    opacity: 0.4;
-    transform: translate3d(10%, 0, 0) scaleX(1) scaleY(0.9);
-    filter: blur(12px) drop-shadow(0 0 12px rgba(255, 155, 102, 0.4));
+    transform: translateX(3%);
+    opacity: 1;
   }
   100% {
-    opacity: 0;
-    transform: translate3d(-10%, 10%, 0) scaleX(0.7) scaleY(1.1);
-    filter: blur(24px) drop-shadow(0 0 6px rgba(255, 155, 102, 0));
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 
