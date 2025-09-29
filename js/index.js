@@ -409,6 +409,9 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     isEggInteractive = false;
     eggButton.disabled = true;
     eggButton.classList.remove('is-glowing');
+    if (typeof eggButton.blur === 'function') {
+      eggButton.blur();
+    }
   };
 
   const revealHero = () => {

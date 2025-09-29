@@ -221,6 +221,11 @@ body.is-level-one-landing .hero.is-revealed {
   visibility: visible;
 }
 
+body.is-level-one-landing .hero.is-exiting {
+  visibility: visible;
+  animation: hero-intro-exit 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 body:not(.is-level-one-landing) .level-one-intro {
   display: none;
 }
@@ -279,14 +284,14 @@ body:not(.is-level-one-landing) .level-one-intro {
 .level-one-intro__egg-button::after {
   content: '';
   position: absolute;
-  inset: -56px;
+  inset: -42px;
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(2, 221, 255, 0.78) 0%,
-    rgba(2, 221, 255, 0.42) 32%,
-    rgba(2, 221, 255, 0.16) 58%,
-    rgba(2, 221, 255, 0) 82%
+    rgba(0, 188, 255, 0.88) 0%,
+    rgba(0, 174, 255, 0.52) 32%,
+    rgba(0, 136, 255, 0.18) 58%,
+    rgba(0, 92, 255, 0) 82%
   );
   opacity: 0;
   transform: scale(0.74);
@@ -305,6 +310,13 @@ body:not(.is-level-one-landing) .level-one-intro {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  display: none;
+}
+
+.level-one-intro__egg-button.is-hidden::after {
+  animation: none;
+  opacity: 0;
+  background: none;
 }
 
 .level-one-intro__egg-button.is-hidden::after {
