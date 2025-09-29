@@ -20,6 +20,7 @@ const LEVEL_ONE_INTRO_CARD_DELAY_MS = 400;
 const LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS = 350;
 const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 900;
 const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 2000;
+const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 350;
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
@@ -226,12 +227,18 @@ const runBattleIntroSequence = async (options = {}) => {
     battleIntroImage.classList.add('is-pop-in');
   };
 
-  const hideBattleIntro = () => {
+  const hideBattleIntro = (onPopOutStart) => {
     if (!battleIntro || !battleIntroImage) {
+      if (typeof onPopOutStart === 'function') {
+        onPopOutStart();
+      }
       return 0;
     }
     battleIntroImage.classList.remove('is-pop-in');
     void battleIntroImage.offsetWidth;
+    if (typeof onPopOutStart === 'function') {
+      onPopOutStart();
+    }
     battleIntroImage.classList.add('is-pop-out');
     const duration = Math.max(0, BATTLE_CALL_POP_OUT_DURATION_MS);
     window.setTimeout(() => {
@@ -243,11 +250,13 @@ const runBattleIntroSequence = async (options = {}) => {
 
   const beginExitAnimations = () => {
     document.body.classList.add('is-battle-transition');
-    heroImage.classList.add('is-exiting');
-    if (enemyImage && !skipEnemyAppearance) {
-      enemyImage.classList.add('is-exiting');
-    }
-    return hideBattleIntro();
+    const syncCharacterExit = () => {
+      heroImage.classList.add('is-exiting');
+      if (enemyImage && !skipEnemyAppearance) {
+        enemyImage.classList.add('is-exiting');
+      }
+    };
+    return hideBattleIntro(syncCharacterExit);
   };
 
   const applySidePositionIfNeeded = () => {
@@ -442,6 +451,11 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     await wait(LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS);
     eggButton.classList.remove('is-visible');
     eggButton.classList.add('is-hidden');
+    window.setTimeout(() => {
+      if (eggButton?.parentElement) {
+        eggButton.parentElement.removeChild(eggButton);
+      }
+    }, LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS);
     revealHero();
     await wait(LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS);
     await showBattleCard();
