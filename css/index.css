@@ -268,7 +268,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   pointer-events: none;
   border-radius: 50%;
   background: rgba(2, 221, 255, 0.60);
-  filter: blur(40px);
+  filter: blur(64px);
   opacity: 0;
   transition: opacity 0.45s ease;
   transition-delay: 0s;
