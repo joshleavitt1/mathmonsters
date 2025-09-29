@@ -13,6 +13,8 @@ const LEVEL_PROGRESS_ANIMATION_DELAY_MS = 1000;
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
 
+const INTRO_QUESTION_LEVELS = new Set([1]);
+
 if (!progressUtils) {
   throw new Error('Progress utilities are not available.');
 }
@@ -198,6 +200,18 @@ document.addEventListener('DOMContentLoaded', () => {
   let totalQuestionCount = 0;
   let streak = 0;
   let streakMaxed = false;
+  let useIntroQuestionOrder = false;
+  let introQuestionIds = [];
+  let nextIntroQuestionIndex = 0;
+
+  const getResolvedBattleLevel = () => {
+    if (Number.isFinite(currentBattleLevel)) {
+      return currentBattleLevel;
+    }
+
+    const preloadedLevel = Number(window.preloadedData?.level?.battleLevel);
+    return Number.isFinite(preloadedLevel) ? preloadedLevel : null;
+  };
   let correctAnswers = 0;
   let totalAnswers = 0;
   let wrongAnswers = 0;
@@ -891,6 +905,9 @@ document.addEventListener('DOMContentLoaded', () => {
     questionIds = [];
     questionMap = new Map();
     currentQuestionId = null;
+    useIntroQuestionOrder = false;
+    introQuestionIds = [];
+    nextIntroQuestionIndex = 0;
 
     questions.forEach((question) => {
       const numericId = Number(question?.id);
@@ -905,6 +922,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     questionIds.sort((a, b) => a - b);
     totalQuestionCount = questionIds.length;
+
+    const resolvedLevel = getResolvedBattleLevel();
+    if (
+      typeof resolvedLevel === 'number' &&
+      Number.isFinite(resolvedLevel) &&
+      questionIds.length > 0 &&
+      INTRO_QUESTION_LEVELS.has(resolvedLevel)
+    ) {
+      useIntroQuestionOrder = true;
+      introQuestionIds = questionIds.slice();
+    }
   }
 
   function resolveQuestionByRoll(roll) {
@@ -934,6 +962,43 @@ document.addEventListener('DOMContentLoaded', () => {
   function chooseNextQuestion() {
     if (totalQuestionCount <= 0) {
       return questions[0] ?? null;
+    }
+
+    if (useIntroQuestionOrder && introQuestionIds.length > 0) {
+      const questionCount = introQuestionIds.length;
+
+      for (let attempt = 0; attempt < questionCount; attempt++) {
+        const index = (nextIntroQuestionIndex + attempt) % questionCount;
+        const candidateId = introQuestionIds[index];
+        if (!Number.isFinite(candidateId)) {
+          continue;
+        }
+
+        const candidateQuestion = questionMap.get(candidateId);
+        if (!candidateQuestion) {
+          continue;
+        }
+
+        if (questionCount > 1 && candidateId === currentQuestionId) {
+          continue;
+        }
+
+        nextIntroQuestionIndex = (index + 1) % questionCount;
+        currentQuestionId = candidateId;
+        return candidateQuestion;
+      }
+
+      const fallbackId =
+        introQuestionIds[nextIntroQuestionIndex] ?? introQuestionIds[0];
+      const fallbackQuestion = questionMap.get(fallbackId);
+      if (fallbackQuestion) {
+        currentQuestionId = fallbackId;
+        nextIntroQuestionIndex =
+          questionCount > 0
+            ? (nextIntroQuestionIndex + 1) % questionCount
+            : 0;
+        return fallbackQuestion;
+      }
     }
 
     if (totalQuestionCount === 1) {
@@ -1576,14 +1641,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     questionBox.classList.add('show');
 
-    const resolvedBattleLevel = (() => {
-      if (Number.isFinite(currentBattleLevel)) {
-        return currentBattleLevel;
-      }
-
-      const preloadedLevel = Number(window.preloadedData?.level?.battleLevel);
-      return Number.isFinite(preloadedLevel) ? preloadedLevel : null;
-    })();
+    const resolvedBattleLevel = getResolvedBattleLevel();
 
     document.dispatchEvent(
       new CustomEvent('question-opened', {
