@@ -175,6 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelProgressFill = levelProgressMeter?.querySelector('.progress__fill');
   const rewardOverlay = document.querySelector('[data-reward-overlay]');
   const rewardSprite = rewardOverlay?.querySelector('[data-reward-sprite]');
+  const rewardCard = rewardOverlay?.querySelector('[data-reward-card]');
+  const rewardCardButton = rewardCard?.querySelector('[data-reward-card-button]');
 
   const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
   const summaryTimeText = ensureStatValueText(summaryTimeValue);
@@ -234,8 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let rewardAnimationPlayed = false;
   let levelProgressUpdateTimeout = null;
   let levelProgressAnimationTimeout = null;
-  let rewardSpriteTransitionHandler = null;
-  let rewardAwaitingActivation = false;
+  let rewardSpriteAnimationEndHandler = null;
+  let rewardCardButtonHandler = null;
 
   const rewardGlowStyleProperties = [
     '--pulsating-glow-color',
@@ -251,22 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const REWARD_CHEST_SRC = '../images/complete/chest.png';
   const REWARD_POTION_SRC = '../images/complete/potion.png';
-
-  const applyRewardChestGlow = () => {
-    if (!rewardSprite) {
-      return;
-    }
-
-    rewardSprite.style.setProperty('--pulsating-glow-color', 'rgba(255, 232, 118, 0.9)');
-    rewardSprite.style.setProperty('--pulsating-glow-opacity', '0.9');
-    rewardSprite.style.setProperty('--pulsating-glow-opacity-peak', '1');
-    rewardSprite.style.setProperty('--pulsating-glow-spread', '42px');
-    rewardSprite.style.setProperty('--pulsating-glow-radius', '48px');
-    rewardSprite.style.setProperty('--pulsating-glow-duration', '1.8s');
-    rewardSprite.style.setProperty('--pulsating-glow-scale-start', '0.88');
-    rewardSprite.style.setProperty('--pulsating-glow-scale-peak', '1.08');
-    rewardSprite.style.setProperty('--pulsating-glow-blur', '12px');
-  };
 
   const hero = {
     attack: 1,
@@ -294,52 +280,118 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  const setRewardStage = (stage) => {
+    if (!rewardSprite) {
+      return;
+    }
+
+    if (!stage) {
+      if (rewardSprite.dataset && 'rewardStage' in rewardSprite.dataset) {
+        delete rewardSprite.dataset.rewardStage;
+      } else {
+        rewardSprite.removeAttribute('data-reward-stage');
+      }
+      return;
+    }
+
+    if (rewardSprite.dataset) {
+      rewardSprite.dataset.rewardStage = stage;
+    } else {
+      rewardSprite.setAttribute('data-reward-stage', stage);
+    }
+  };
+
   const disableRewardSpriteInteraction = () => {
     if (!rewardSprite) {
       return;
     }
 
-    rewardAwaitingActivation = false;
-    rewardSprite.classList.remove('reward-overlay__image--interactive');
+    rewardSprite.classList.remove('reward-overlay__image--interactive', 'pulsating-glow');
     rewardSprite.setAttribute('tabindex', '-1');
     rewardSprite.removeAttribute('aria-label');
     rewardSprite.removeAttribute('role');
-    if (rewardSprite.dataset) {
-      delete rewardSprite.dataset.rewardStage;
-    } else {
-      rewardSprite.removeAttribute('data-reward-stage');
-    }
+    setRewardStage(null);
     clearRewardGlowStyles();
   };
 
-  const enableRewardSpriteInteraction = () => {
+  const detachRewardSpriteAnimationHandler = () => {
+    if (rewardSprite && rewardSpriteAnimationEndHandler) {
+      rewardSprite.removeEventListener('animationend', rewardSpriteAnimationEndHandler);
+      rewardSpriteAnimationEndHandler = null;
+    }
+  };
+
+  const setRewardSpriteAnimationHandler = (handler) => {
     if (!rewardSprite) {
       return;
     }
 
-    rewardAwaitingActivation = true;
-    applyRewardChestGlow();
-    rewardSprite.classList.add(
-      'reward-overlay__image--interactive',
-      'pulsating-glow'
-    );
-    rewardSprite.setAttribute('tabindex', '0');
-    rewardSprite.setAttribute('role', 'button');
-    rewardSprite.setAttribute('aria-label', 'Open treasure chest reward');
-    if (rewardSprite.dataset) {
-      rewardSprite.dataset.rewardStage = 'chest';
-    } else {
-      rewardSprite.setAttribute('data-reward-stage', 'chest');
+    detachRewardSpriteAnimationHandler();
+    rewardSpriteAnimationEndHandler = (event) => {
+      rewardSpriteAnimationEndHandler = null;
+      handler(event);
+    };
+    rewardSprite.addEventListener('animationend', rewardSpriteAnimationEndHandler, {
+      once: true,
+    });
+  };
+
+  const hideRewardIntroCard = () => {
+    if (!rewardCard) {
+      return;
+    }
+
+    rewardCard.classList.remove('card--pop');
+    rewardCard.setAttribute('aria-hidden', 'true');
+    rewardCard.hidden = true;
+    if (rewardCardButton && rewardCardButtonHandler) {
+      rewardCardButton.removeEventListener('click', rewardCardButtonHandler);
+      rewardCardButtonHandler = null;
+    }
+  };
+
+  const showRewardIntroCard = () => {
+    if (!rewardCard) {
+      return;
+    }
+
+    rewardCard.hidden = false;
+    rewardCard.setAttribute('aria-hidden', 'false');
+    rewardCard.classList.remove('card--pop');
+    void rewardCard.offsetWidth;
+    rewardCard.classList.add('card--pop');
+
+    if (rewardCardButton) {
+      if (rewardCardButtonHandler) {
+        rewardCardButton.removeEventListener('click', rewardCardButtonHandler);
+      }
+      rewardCardButtonHandler = () => {
+        if (battleGoalsMet && !battleLevelAdvanced) {
+          advanceBattleLevel();
+        }
+        resetRewardOverlay();
+        window.location.href = '../index.html';
+      };
+      rewardCardButton.addEventListener('click', rewardCardButtonHandler);
+      if (typeof rewardCardButton.focus === 'function') {
+        rewardCardButton.focus();
+      }
     }
   };
 
   const clearRewardAnimation = () => {
-    if (rewardSprite && rewardSpriteTransitionHandler) {
-      rewardSprite.removeEventListener('transitionend', rewardSpriteTransitionHandler);
-      rewardSpriteTransitionHandler = null;
+    detachRewardSpriteAnimationHandler();
+    if (!rewardSprite) {
+      return;
     }
 
-    rewardAwaitingActivation = false;
+    rewardSprite.classList.remove(
+      'reward-overlay__image--chest-pop',
+      'reward-overlay__image--hatching',
+      'reward-overlay__image--potion-pop'
+    );
+    rewardSprite.style.removeProperty('opacity');
+    rewardSprite.style.removeProperty('transform');
   };
 
   const resetRewardOverlay = () => {
@@ -348,17 +400,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     clearRewardAnimation();
+    hideRewardIntroCard();
     rewardOverlay.classList.remove('reward-overlay--visible');
     rewardOverlay.setAttribute('aria-hidden', 'true');
     document.body?.classList.remove('is-reward-active');
-    rewardSprite.classList.remove(
-      'reward-overlay__image--pop-in',
-      'reward-overlay__image--shrink',
-      'reward-overlay__image--pop'
-    );
     rewardSprite.src = REWARD_CHEST_SRC;
     rewardSprite.alt = 'Treasure chest level-up reward';
     disableRewardSpriteInteraction();
+  };
+
+  const revealPotionReward = () => {
+    if (!rewardSprite) {
+      return;
+    }
+
+    rewardSprite.src = REWARD_POTION_SRC;
+    rewardSprite.alt = 'Potion level-up reward';
+    setRewardStage('potion');
+    rewardSprite.classList.remove('reward-overlay__image--hatching');
+    void rewardSprite.offsetWidth;
+    rewardSprite.classList.add('reward-overlay__image--potion-pop');
+    setRewardSpriteAnimationHandler(() => {
+      showRewardIntroCard();
+    });
+  };
+
+  const startRewardChestHatch = () => {
+    if (!rewardSprite) {
+      return;
+    }
+
+    rewardSprite.classList.remove('reward-overlay__image--chest-pop');
+    rewardSprite.classList.add('reward-overlay__image--hatching');
+    setRewardSpriteAnimationHandler(() => {
+      revealPotionReward();
+    });
   };
 
   const playLevelUpRewardAnimation = () => {
@@ -367,100 +443,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     clearRewardAnimation();
+    hideRewardIntroCard();
     rewardOverlay.classList.add('reward-overlay--visible');
     rewardOverlay.setAttribute('aria-hidden', 'false');
     document.body?.classList.add('is-reward-active');
     disableRewardSpriteInteraction();
-    rewardSprite.classList.remove(
-      'reward-overlay__image--pop-in',
-      'reward-overlay__image--shrink',
-      'reward-overlay__image--pop'
-    );
     rewardSprite.src = REWARD_CHEST_SRC;
     rewardSprite.alt = 'Treasure chest level-up reward';
-    applyRewardChestGlow();
-
-    void rewardSprite.offsetWidth;
-    rewardSprite.classList.add('reward-overlay__image--pop-in');
-    enableRewardSpriteInteraction();
-  };
-
-  const handleRewardSpriteActivation = (event) => {
-    if (!rewardAwaitingActivation || !rewardSprite) {
-      return;
-    }
-
-    if (event) {
-      event.preventDefault();
-    }
-
-    clearRewardAnimation();
-    disableRewardSpriteInteraction();
 
     if (prefersReducedMotion) {
+      rewardSprite.style.opacity = '1';
+      rewardSprite.style.transform = 'scale(1)';
       rewardSprite.src = REWARD_POTION_SRC;
       rewardSprite.alt = 'Potion level-up reward';
-      if (rewardSprite.dataset) {
-        rewardSprite.dataset.rewardStage = 'potion';
-      } else {
-        rewardSprite.setAttribute('data-reward-stage', 'potion');
-      }
-      rewardSprite.classList.add('reward-overlay__image--pop-in');
+      setRewardStage('potion');
+      showRewardIntroCard();
       return;
     }
 
-    rewardSprite.classList.remove('reward-overlay__image--pop');
-    rewardSprite.classList.remove('reward-overlay__image--pop-in');
+    setRewardStage('chest');
     void rewardSprite.offsetWidth;
-    rewardSprite.classList.add('reward-overlay__image--shrink');
-
-    const handleTransitionEnd = () => {
-      if (!rewardSprite) {
-        return;
-      }
-
-      rewardSprite.removeEventListener('transitionend', handleTransitionEnd);
-      rewardSpriteTransitionHandler = null;
-      rewardSprite.classList.remove('reward-overlay__image--shrink');
-      rewardSprite.src = REWARD_POTION_SRC;
-      rewardSprite.alt = 'Potion level-up reward';
-      if (rewardSprite.dataset) {
-        rewardSprite.dataset.rewardStage = 'potion';
-      } else {
-        rewardSprite.setAttribute('data-reward-stage', 'potion');
-      }
-      rewardSprite.classList.add('reward-overlay__image--pop-in');
-      void rewardSprite.offsetWidth;
-      rewardSprite.classList.add('reward-overlay__image--pop');
-      rewardSprite.addEventListener(
-        'animationend',
-        () => {
-          rewardSprite.classList.remove('reward-overlay__image--pop');
-        },
-        { once: true }
-      );
-    };
-
-    rewardSpriteTransitionHandler = handleTransitionEnd;
-    rewardSprite.addEventListener('transitionend', handleTransitionEnd, { once: true });
+    rewardSprite.classList.add('reward-overlay__image--chest-pop');
+    setRewardSpriteAnimationHandler(() => {
+      startRewardChestHatch();
+    });
   };
 
-  const handleRewardSpriteKeydown = (event) => {
-    if (!rewardSprite) {
-      return;
-    }
-
-    const { key } = event;
-    if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
-      handleRewardSpriteActivation(event);
-    }
-  };
-
-  if (rewardSprite) {
-    rewardSprite.addEventListener('click', handleRewardSpriteActivation);
-    rewardSprite.addEventListener('keydown', handleRewardSpriteKeydown);
-    disableRewardSpriteInteraction();
-  }
+  disableRewardSpriteInteraction();
 
   const updateNextMissionButton = (win = true) => {
     if (!nextMissionBtn) {
