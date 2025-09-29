@@ -265,17 +265,6 @@ body:not(.is-level-one-landing) .level-one-intro {
   overflow: visible;
 }
 
-.level-one-intro__egg-button:focus {
-  outline: none;
-}
-
-.level-one-intro__egg-button:focus-visible {
-  outline: none;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(2, 221, 255, 0.75),
-    0 0 24px rgba(2, 221, 255, 0.55);
-}
-
 .level-one-intro__egg-button[disabled] {
   cursor: default;
   pointer-events: none;
