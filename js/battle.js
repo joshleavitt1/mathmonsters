@@ -157,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
   const heroAttackInc = heroStats.querySelector('.attack .increase');
-  const heroHealthInc = heroStats.querySelector('.health .increase');
   const monsterAttackVal = monsterStats.querySelector('.attack .value');
   const monsterHealthVal = monsterStats.querySelector('.health .value');
 
@@ -707,27 +706,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (heroHealthVal) {
       heroHealthVal.textContent = hero.health;
     }
-  };
-
-  const adjustHeroAttack = (delta) => {
-    const amount = Number(delta) || 0;
-    if (amount === 0) {
-      return;
-    }
-    hero.attack += amount;
-    if (heroSuperAttackBase !== null) {
-      heroSuperAttackBase += amount;
-    }
-    updateHeroAttackDisplay();
-  };
-
-  const adjustHeroHealth = (delta) => {
-    const amount = Number(delta) || 0;
-    if (amount === 0) {
-      return;
-    }
-    hero.health += amount;
-    updateHeroHealthDisplay();
   };
 
   const applySuperAttackBoost = () => {
@@ -2158,39 +2136,15 @@ document.addEventListener('DOMContentLoaded', () => {
           applySuperAttackBoost();
           incEl = heroAttackInc;
           incText = 'x2';
-        } else {
-          const stats = ['attack', 'health'];
-          const stat = stats[Math.floor(Math.random() * stats.length)];
-          if (stat === 'attack') {
-            adjustHeroAttack(1);
-            incEl = heroAttackInc;
-            incText = '+1';
-          } else {
-            adjustHeroHealth(1);
-            incEl = heroHealthInc;
-            incText = '+1';
-            updateHealthBars();
-          }
-        }
-      } else {
-        const stats = ['attack', 'health'];
-        const stat = stats[Math.floor(Math.random() * stats.length)];
-        if (stat === 'attack') {
-          adjustHeroAttack(1);
-          incEl = heroAttackInc;
-          incText = '+1';
-        } else {
-          adjustHeroHealth(1);
-          incEl = heroHealthInc;
-          incText = '+1';
-          updateHealthBars();
         }
       }
 
       dispatchStreakMeterUpdate(true);
 
       scheduleQuestionClose(() => {
-        showIncrease(incEl, incText);
+        if (incEl && incText) {
+          showIncrease(incEl, incText);
+        }
         scheduleAttack(heroAttack);
       });
     } else {
