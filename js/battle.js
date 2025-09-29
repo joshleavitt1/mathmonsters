@@ -128,9 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroImg = document.getElementById('battle-shellfin');
   const monsterAttackEffect = document.getElementById('monster-attack-effect');
   const heroAttackEffect = document.getElementById('hero-attack-effect');
-  const prefersReducedMotion = window.matchMedia(
-    '(prefers-reduced-motion: reduce)'
-  ).matches;
   const monsterHpBar = document.querySelector('#monster-stats .battle-health');
   const monsterHpFill = monsterHpBar?.querySelector('.progress__fill') ?? null;
   const heroHpBar = document.querySelector('#shellfin-stats .battle-health');
@@ -451,16 +448,6 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardSprite.src = REWARD_CHEST_SRC;
     rewardSprite.alt = 'Treasure chest level-up reward';
 
-    if (prefersReducedMotion) {
-      rewardSprite.style.opacity = '1';
-      rewardSprite.style.transform = 'scale(1)';
-      rewardSprite.src = REWARD_POTION_SRC;
-      rewardSprite.alt = 'Potion level-up reward';
-      setRewardStage('potion');
-      showRewardIntroCard();
-      return;
-    }
-
     setRewardStage('chest');
     void rewardSprite.offsetWidth;
     rewardSprite.classList.add('reward-overlay__image--chest-pop');
@@ -533,9 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
         levelProgressAnimationTimeout = null;
       }
 
-      const animationDelay = prefersReducedMotion
-        ? 0
-        : LEVEL_PROGRESS_ANIMATION_DELAY_MS;
+      const animationDelay = LEVEL_PROGRESS_ANIMATION_DELAY_MS;
 
       if (animationDelay > 0) {
         levelProgressAnimationTimeout = window.setTimeout(() => {
@@ -738,9 +723,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const QUESTION_CLOSE_GAP_MS = 300;
   const PRE_ATTACK_DELAY_MS = 1000;
   const POST_CLOSE_ATTACK_DELAY_MS = 500;
-  const ATTACK_EFFECT_DELAY_MS = prefersReducedMotion ? 0 : 500;
-  const ATTACK_EFFECT_HOLD_MS = prefersReducedMotion ? 0 : 1000;
-  const ATTACK_SHAKE_DURATION_MS = prefersReducedMotion ? 0 : 1000;
+  const ATTACK_EFFECT_DELAY_MS = 500;
+  const ATTACK_EFFECT_HOLD_MS = 1000;
+  const ATTACK_SHAKE_DURATION_MS = 1000;
   const POST_ATTACK_RESUME_DELAY_MS = 1000;
 
   const clearAttackEffectAnimation = (effectEl) => {
@@ -814,15 +799,9 @@ document.addEventListener('DOMContentLoaded', () => {
         effectEl.classList.add('attack-effect--visible');
       }
 
-      if (prefersReducedMotion) {
-        if (!holdVisible) {
-          effectEl.classList.add('attack-effect--visible');
-        }
-      } else {
-        effectEl.classList.add('attack-effect--show');
-        if (!holdVisible) {
-          effectEl.classList.add('attack-effect--visible');
-        }
+      effectEl.classList.add('attack-effect--show');
+      if (!holdVisible) {
+        effectEl.classList.add('attack-effect--visible');
       }
     });
 
@@ -840,11 +819,6 @@ document.addEventListener('DOMContentLoaded', () => {
         effectEl.classList.remove('attack-effect--finishing');
       };
 
-      if (prefersReducedMotion) {
-        cleanupAttackEffect();
-        return;
-      }
-
       const handleFinishAnimation = (event) => {
         if (event && event.animationName !== 'attack-effect-scale-down') {
           return;
@@ -859,25 +833,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   };
 
-  if (prefersReducedMotion) {
-    markBattleReady(heroImg);
-    markBattleReady(monsterImg);
-  } else {
-    if (heroImg) {
-      heroImg.classList.add('slide-in');
-      heroImg.addEventListener('animationend', () => markBattleReady(heroImg), {
-        once: true,
-      });
-      window.setTimeout(() => markBattleReady(heroImg), 1400);
-    }
+  if (heroImg) {
+    heroImg.classList.add('slide-in');
+    heroImg.addEventListener('animationend', () => markBattleReady(heroImg), {
+      once: true,
+    });
+    window.setTimeout(() => markBattleReady(heroImg), 1400);
+  }
 
-    if (monsterImg) {
-      monsterImg.classList.add('slide-in');
-      monsterImg.addEventListener('animationend', () => markBattleReady(monsterImg), {
-        once: true,
-      });
-      window.setTimeout(() => markBattleReady(monsterImg), 1400);
-    }
+  if (monsterImg) {
+    monsterImg.classList.add('slide-in');
+    monsterImg.addEventListener('animationend', () => markBattleReady(monsterImg), {
+      once: true,
+    });
+    window.setTimeout(() => markBattleReady(monsterImg), 1400);
   }
 
   window.requestAnimationFrame(() => {
@@ -1811,12 +1780,6 @@ document.addEventListener('DOMContentLoaded', () => {
       startSequence();
     };
 
-    if (prefersReducedMotion) {
-      scheduleDelayedEffects();
-      queueDamage(() => releaseEffect());
-      return;
-    }
-
     const startHandler = (event) => {
       if (!event || event.animationName !== 'hero-attack') {
         return;
@@ -1980,12 +1943,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       startSequence();
     };
-
-    if (prefersReducedMotion) {
-      scheduleDelayedEffects();
-      queueDamage(() => releaseEffect());
-      return;
-    }
 
     const startHandler = (event) => {
       if (!event || event.animationName !== 'monster-attack') {

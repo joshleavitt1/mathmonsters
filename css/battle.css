@@ -308,27 +308,6 @@ body {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  #battle-monster,
-  #battle-shellfin,
-  .attack-effect {
-    opacity: 1;
-    filter: none;
-    animation: none !important;
-  }
-
-  .stat-box {
-    opacity: 1;
-    transform: none;
-    filter: none;
-    transition: none;
-  }
-
-  .attack-effect.attack-effect--visible {
-    opacity: 1;
-  }
-}
-
 @keyframes monster-attack {
   0% { transform: translateX(0); }
   50% { transform: translateX(-60px); }
