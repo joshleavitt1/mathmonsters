@@ -5,21 +5,22 @@ const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
 const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 const LANDING_MODE_STORAGE_KEY = 'reefRangersLandingMode';
 const MIN_PRELOAD_DURATION_MS = 2000;
-const HERO_TO_ENEMY_DELAY_MS = 2000;
+const HERO_TO_ENEMY_DELAY_MS = 1200;
 const ENEMY_ENTRANCE_DURATION_MS = 900;
-const HERO_EXIT_DURATION_MS = 700;
+const HERO_EXIT_DURATION_MS = 550;
 const ENEMY_EXIT_DURATION_MS = 600;
-const PRE_BATTLE_HOLD_DURATION_MS = 2000;
-const HERO_EXIT_SYNC_OFFSET_MS = 200;
+const PRE_BATTLE_HOLD_DURATION_MS = 1400;
+const HERO_EXIT_SYNC_OFFSET_MS = 120;
 const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
 const LEVEL_ONE_INTRO_EGG_DELAY_MS = 500;
 const LEVEL_ONE_INTRO_INITIAL_CARD_DELAY_MS = 2000;
 const LEVEL_ONE_INTRO_CARD_DELAY_MS = 400;
 const LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS = 350;
-const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 900;
-const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 2000;
-const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 350;
+const LEVEL_ONE_INTRO_EGG_AUTO_START_DELAY_MS = 1000;
+const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 1600;
+const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 700;
+const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 220;
 const HERO_CLICK_POP_DELAY_MS = 1000;
 const HERO_CLICK_POP_ANIMATION_NAME = 'hero-click-pop';
 
@@ -344,9 +345,9 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     return;
   }
 
-  let isEggInteractive = false;
   let isHatching = false;
   let hasStartedBattle = false;
+  let eggAutoHatchTimeoutId = null;
 
   if (heroImage) {
     heroImage.classList.remove('is-revealed');
@@ -385,26 +386,51 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     eggImage.classList.add('is-pop-in');
   };
 
-  const enableEgg = () => {
-    isEggInteractive = true;
-    eggButton.disabled = false;
-    eggButton.classList.add('is-glowing');
-    if (typeof eggButton.focus === 'function') {
-      try {
-        eggButton.focus({ preventScroll: true });
-      } catch (error) {
-        eggButton.focus();
-      }
+  const clearEggAutoHatchTimeout = () => {
+    if (eggAutoHatchTimeoutId !== null) {
+      window.clearTimeout(eggAutoHatchTimeoutId);
+      eggAutoHatchTimeoutId = null;
     }
   };
 
   const disableEgg = () => {
-    isEggInteractive = false;
     eggButton.disabled = true;
-    eggButton.classList.remove('is-glowing');
     if (typeof eggButton.blur === 'function') {
       eggButton.blur();
     }
+  };
+
+  const hatchEgg = async () => {
+    if (isHatching) {
+      return;
+    }
+
+    isHatching = true;
+    clearEggAutoHatchTimeout();
+    disableEgg();
+    eggButton.classList.add('is-hatching');
+    eggImage.classList.remove('is-pop-in');
+    void eggImage.offsetWidth;
+    eggImage.classList.add('is-hatching');
+    await wait(LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS);
+    eggButton.classList.remove('is-visible');
+    eggButton.classList.add('is-hidden');
+    window.setTimeout(() => {
+      if (eggButton?.parentElement) {
+        eggButton.parentElement.removeChild(eggButton);
+      }
+    }, LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS);
+    revealHero();
+    await wait(LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS);
+    await showBattleCard();
+  };
+
+  const scheduleEggAutoHatch = () => {
+    clearEggAutoHatchTimeout();
+    eggAutoHatchTimeoutId = window.setTimeout(() => {
+      eggAutoHatchTimeoutId = null;
+      void hatchEgg();
+    }, LEVEL_ONE_INTRO_EGG_AUTO_START_DELAY_MS);
   };
 
   const revealHero = () => {
@@ -432,30 +458,16 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     continueButton.setAttribute('aria-busy', 'true');
     await hideCard(welcomeCard);
     continueButton.removeAttribute('aria-busy');
-    enableEgg();
+    scheduleEggAutoHatch();
   };
 
-  const handleEggClick = async () => {
-    if (!isEggInteractive || isHatching) {
+  const handleEggClick = () => {
+    if (isHatching || eggButton.disabled) {
       return;
     }
-    isHatching = true;
-    disableEgg();
-    eggButton.classList.add('is-hatching');
-    eggImage.classList.remove('is-pop-in');
-    void eggImage.offsetWidth;
-    eggImage.classList.add('is-hatching');
-    await wait(LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS);
-    eggButton.classList.remove('is-visible');
-    eggButton.classList.add('is-hidden');
-    window.setTimeout(() => {
-      if (eggButton?.parentElement) {
-        eggButton.parentElement.removeChild(eggButton);
-      }
-    }, LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS);
-    revealHero();
-    await wait(LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS);
-    await showBattleCard();
+
+    clearEggAutoHatchTimeout();
+    void hatchEgg();
   };
 
   const handleBattleClick = async () => {
@@ -463,6 +475,7 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
       return;
     }
     hasStartedBattle = true;
+    clearEggAutoHatchTimeout();
     scheduleHeroClickPop();
     await hideCard(battleCard);
     introRoot.classList.remove('is-active');
