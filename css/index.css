@@ -260,6 +260,17 @@ body:not(.is-level-one-landing) .level-one-intro {
   overflow: visible;
 }
 
+.level-one-intro__egg-button:focus {
+  outline: none;
+}
+
+.level-one-intro__egg-button:focus-visible {
+  outline: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(2, 221, 255, 0.75),
+    0 0 24px rgba(2, 221, 255, 0.55);
+}
+
 .level-one-intro__egg-button[disabled] {
   cursor: default;
   pointer-events: none;
@@ -272,14 +283,18 @@ body:not(.is-level-one-landing) .level-one-intro {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(2, 221, 255, 0.45) 0%,
-    rgba(2, 221, 255, 0) 70%
+    rgba(2, 221, 255, 0.75) 0%,
+    rgba(2, 221, 255, 0.4) 36%,
+    rgba(2, 221, 255, 0.15) 68%,
+    rgba(2, 221, 255, 0) 100%
   );
   opacity: 0;
-  transform: scale(0.85);
-  filter: blur(0px);
+  transform: scale(0.82);
+  filter: blur(12px);
+  mix-blend-mode: screen;
   pointer-events: none;
   z-index: 0;
+  will-change: opacity, transform, filter;
 }
 
 .level-one-intro__egg-button.is-glowing::after {
@@ -371,15 +386,18 @@ body:not(.is-level-one-landing) .level-one-intro {
 @keyframes level-one-egg-glow {
   0% {
     opacity: 0;
-    transform: scale(0.85);
+    transform: scale(0.78);
+    filter: blur(18px);
   }
-  50% {
-    opacity: 0.65;
-    transform: scale(1);
+  45% {
+    opacity: 0.95;
+    transform: scale(1.08);
+    filter: blur(8px);
   }
   100% {
     opacity: 0;
-    transform: scale(0.85);
+    transform: scale(0.8);
+    filter: blur(16px);
   }
 }
 
@@ -476,15 +494,15 @@ body.is-battle-transition .bubbles {
       scaleX(-1) scale(1);
     opacity: 1;
   }
-  50% {
+  28% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(1.08);
+      scaleX(-1) scale(0.92);
     opacity: 1;
   }
-  60% {
+  62% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(1.05);
-    opacity: 0.96;
+      scaleX(-1) scale(0.76);
+    opacity: 0.9;
   }
   100% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
