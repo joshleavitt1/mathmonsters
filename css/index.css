@@ -288,9 +288,9 @@ body:not(.is-level-one-landing) .level-one-intro {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(0, 188, 255, 0.88) 0%,
-    rgba(0, 174, 255, 0.52) 32%,
-    rgba(0, 136, 255, 0.18) 58%,
+    rgba(0, 188, 255, 0.79) 0%,
+    rgba(0, 174, 255, 0.47) 32%,
+    rgba(0, 136, 255, 0.16) 58%,
     rgba(0, 92, 255, 0) 82%
   );
   opacity: 0;
@@ -306,17 +306,16 @@ body:not(.is-level-one-landing) .level-one-intro {
   animation: level-one-egg-glow 2s ease-in-out infinite;
 }
 
+.level-one-intro__egg-button.is-hatching::after {
+  opacity: 0;
+  background: none;
+}
+
 .level-one-intro__egg-button.is-hidden {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   display: none;
-}
-
-.level-one-intro__egg-button.is-hidden::after {
-  animation: none;
-  opacity: 0;
-  background: none;
 }
 
 .level-one-intro__egg-button.is-hidden::after {
@@ -773,83 +772,6 @@ body.is-battle-transition .bubbles {
   10%  {                            --sx: 0.98; --sy: 0.98; opacity: 0.45; }
   40%  {                            --sx: 1.02; --sy: 1.02; opacity: 0.92; }
   100% { --ty: -110vh;              --sx: 1.06; --sy: 1.06; opacity: 0; }
-}
-
-.battle-intro {
-  position: fixed;
-  left: var(--battle-intro-left, 50%);
-  top: var(--battle-intro-top, 50%);
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  z-index: 3;
-}
-
-.battle-intro__image {
-  width: min(350px, 90vw);
-  height: min(350px, 90vw);
-  object-fit: contain;
-  transform: scale(0.2);
-  transform-origin: center;
-  opacity: 0;
-}
-
-.battle-intro.is-visible {
-  opacity: 1;
-  visibility: visible;
-}
-
-.battle-intro__image.is-pop-in {
-  animation: battle-intro-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.battle-intro__image.is-pop-out {
-  animation: battle-intro-pop-out 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes battle-intro-pop {
-  0% {
-    transform: scale(0.2);
-    opacity: 0;
-  }
-  60% {
-    transform: scale(1.12);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes battle-intro-pop-out {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  40% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.2);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .battle-intro {
-    transition: none;
-  }
-
-  .battle-intro__image {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 
 /* Organic horizontal meander tied to --drift */

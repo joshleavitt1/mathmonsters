@@ -7,11 +7,10 @@ const LANDING_MODE_STORAGE_KEY = 'reefRangersLandingMode';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const HERO_TO_ENEMY_DELAY_MS = 2000;
 const ENEMY_ENTRANCE_DURATION_MS = 900;
-const BATTLE_CALL_INTRO_OFFSET_MS = 200;
-const BATTLE_CALL_VISIBLE_DURATION_MS = 2000;
 const HERO_EXIT_DURATION_MS = 700;
 const ENEMY_EXIT_DURATION_MS = 600;
-const BATTLE_CALL_POP_OUT_DURATION_MS = 450;
+const PRE_BATTLE_HOLD_DURATION_MS = 2000;
+const HERO_EXIT_SYNC_OFFSET_MS = 200;
 const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
 const LEVEL_ONE_INTRO_EGG_DELAY_MS = 500;
@@ -183,8 +182,6 @@ const startLandingExperience = () => {
 const runBattleIntroSequence = async (options = {}) => {
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
-  const battleIntro = document.querySelector('[data-battle-intro]');
-  const battleIntroImage = battleIntro?.querySelector('.battle-intro__image');
   const prefersReducedMotion =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -216,47 +213,12 @@ const runBattleIntroSequence = async (options = {}) => {
     enemyImage.removeAttribute('aria-hidden');
   };
 
-  const showBattleIntro = () => {
-    if (!battleIntro || !battleIntroImage) {
-      return;
-    }
-    battleIntro.setAttribute('aria-hidden', 'false');
-    battleIntro.classList.add('is-visible');
-    battleIntroImage.classList.remove('is-pop-in', 'is-pop-out');
-    void battleIntroImage.offsetWidth;
-    battleIntroImage.classList.add('is-pop-in');
-  };
-
-  const hideBattleIntro = (onPopOutStart) => {
-    if (!battleIntro || !battleIntroImage) {
-      if (typeof onPopOutStart === 'function') {
-        onPopOutStart();
-      }
-      return 0;
-    }
-    battleIntroImage.classList.remove('is-pop-in');
-    void battleIntroImage.offsetWidth;
-    if (typeof onPopOutStart === 'function') {
-      onPopOutStart();
-    }
-    battleIntroImage.classList.add('is-pop-out');
-    const duration = Math.max(0, BATTLE_CALL_POP_OUT_DURATION_MS);
-    window.setTimeout(() => {
-      battleIntro.classList.remove('is-visible');
-      battleIntro.setAttribute('aria-hidden', 'true');
-    }, duration);
-    return duration;
-  };
-
   const beginExitAnimations = () => {
     document.body.classList.add('is-battle-transition');
-    const syncCharacterExit = () => {
-      heroImage.classList.add('is-exiting');
-      if (enemyImage && !skipEnemyAppearance) {
-        enemyImage.classList.add('is-exiting');
-      }
-    };
-    return hideBattleIntro(syncCharacterExit);
+    heroImage.classList.add('is-exiting');
+    if (enemyImage && !skipEnemyAppearance) {
+      enemyImage.classList.add('is-exiting');
+    }
   };
 
   const applySidePositionIfNeeded = () => {
@@ -271,48 +233,33 @@ const runBattleIntroSequence = async (options = {}) => {
     showEnemy();
   };
 
+  const holdDuration = showIntroImmediately
+    ? PRE_BATTLE_HOLD_DURATION_MS
+    : HERO_TO_ENEMY_DELAY_MS;
+
   if (prefersReducedMotion) {
-    if (showIntroImmediately) {
-      showBattleIntro();
-      await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
-      prepareForBattle();
-    } else {
-      prepareForBattle();
-      showBattleIntro();
-    }
-    const exitDuration = beginExitAnimations();
+    await wait(holdDuration);
+    prepareForBattle();
+    beginExitAnimations();
     await wait(
       Math.max(
-        REDUCED_MOTION_SEQUENCE_DURATION_MS,
         HERO_EXIT_DURATION_MS,
         skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS,
-        exitDuration
+        REDUCED_MOTION_SEQUENCE_DURATION_MS
       )
     );
     return true;
   }
 
-  if (showIntroImmediately) {
-    showBattleIntro();
-    await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
-  } else {
-    await wait(HERO_TO_ENEMY_DELAY_MS);
-  }
-
+  await wait(holdDuration);
   prepareForBattle();
-
-  await wait(ENEMY_ENTRANCE_DURATION_MS + BATTLE_CALL_INTRO_OFFSET_MS);
-  if (!showIntroImmediately) {
-    showBattleIntro();
-    await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
-  }
-  const exitDuration = beginExitAnimations();
+  await wait(ENEMY_ENTRANCE_DURATION_MS + HERO_EXIT_SYNC_OFFSET_MS);
+  beginExitAnimations();
 
   await wait(
     Math.max(
       HERO_EXIT_DURATION_MS,
-      skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS,
-      exitDuration
+      skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS
     )
   );
 
@@ -385,6 +332,7 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
   const showEgg = () => {
     introRoot.classList.add('is-active');
     introRoot.setAttribute('aria-hidden', 'false');
+    eggButton.classList.remove('is-hatching');
     eggButton.classList.add('is-visible');
     eggImage.classList.remove('is-hatching');
     eggImage.classList.remove('is-pop-in');
@@ -448,6 +396,7 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     }
     isHatching = true;
     disableEgg();
+    eggButton.classList.add('is-hatching');
     eggImage.classList.remove('is-pop-in');
     void eggImage.offsetWidth;
     eggImage.classList.add('is-hatching');
