@@ -28,34 +28,6 @@
   align-items: stretch;
 }
 
-#question .question-dialogue {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(420px, 100%);
-  text-align: left;
-  opacity: 0;
-  transform: translate(-50%, calc(-50% - 8px));
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none;
-  --dialogue-tail-offset: 38%;
-  margin: 0;
-  z-index: 1;
-}
-
-#question .question-dialogue.is-visible {
-  opacity: 1;
-  transform: translate(-50%, calc(-50% - 20px));
-}
-
-#question .question-dialogue__text {
-  margin: 0;
-  font-size: var(--text-size-medium);
-  color: var(--text-color-dark);
-  text-align: left;
-  letter-spacing: 0.01em;
-}
-
 #question .card--question.card--hidden {
   display: none;
 }

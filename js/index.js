@@ -20,7 +20,7 @@ const LEVEL_ONE_SPEECH_SEQUENCE = [
   { text: 'Hi! I’m Shellfin.', pauseAfterMs: 1000 },
   { text: ' Uh-oh…', pauseAfterMs: 1000 },
   { text: ' monsters are here!', pauseAfterMs: 1000 },
-  { text: ' Can you help me stop them?', pauseAfterMs: 4000 },
+  { text: ' Let’s use math to fight back!', pauseAfterMs: 4000 },
 ];
 
 const buildSpeechCharacters = (segments = []) =>
@@ -46,8 +46,10 @@ const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 const BATTLE_PAGE_URL = 'html/battle.html';
 const BATTLE_PAGE_MODE_PARAM = 'mode';
 const BATTLE_PAGE_MODE_PLAY = 'play';
+const BATTLE_PAGE_MODE_DEV_TOOLS = 'devtools';
 
 let battleRedirectUrl = BATTLE_PAGE_URL;
+let shouldSkipLandingForDevTools = false;
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -75,7 +77,13 @@ const buildBattleUrl = (mode) => {
 };
 
 const requestBattleWithoutDevControls = () => {
+  shouldSkipLandingForDevTools = false;
   battleRedirectUrl = buildBattleUrl(BATTLE_PAGE_MODE_PLAY);
+};
+
+const requestBattleWithDevTools = () => {
+  shouldSkipLandingForDevTools = true;
+  battleRedirectUrl = BATTLE_PAGE_URL;
 };
 
 const redirectToBattle = () => {
@@ -955,10 +963,14 @@ const clearLandingModeRequestFromQuery = () => {
 };
 
 const applyLandingModeRequest = () => {
+  shouldSkipLandingForDevTools = false;
   const storedMode = readLandingModeRequestFromStorage();
   if (storedMode) {
-    if (storedMode.trim().toLowerCase() === BATTLE_PAGE_MODE_PLAY) {
+    const normalizedStoredMode = storedMode.trim().toLowerCase();
+    if (normalizedStoredMode === BATTLE_PAGE_MODE_PLAY) {
       requestBattleWithoutDevControls();
+    } else if (normalizedStoredMode === BATTLE_PAGE_MODE_DEV_TOOLS) {
+      requestBattleWithDevTools();
     }
     clearLandingModeRequestFromStorage();
     return;
@@ -969,8 +981,11 @@ const applyLandingModeRequest = () => {
     return;
   }
 
-  if (queryMode.trim().toLowerCase() === BATTLE_PAGE_MODE_PLAY) {
+  const normalizedQueryMode = queryMode.trim().toLowerCase();
+  if (normalizedQueryMode === BATTLE_PAGE_MODE_PLAY) {
     requestBattleWithoutDevControls();
+  } else if (normalizedQueryMode === BATTLE_PAGE_MODE_DEV_TOOLS) {
+    requestBattleWithDevTools();
   }
 
   clearLandingModeRequestFromQuery();
@@ -1152,6 +1167,11 @@ const initLandingInteractions = async (preloadedData = {}) => {
   battleRedirectUrl = BATTLE_PAGE_URL;
   markLandingVisited();
   applyLandingModeRequest();
+  if (shouldSkipLandingForDevTools) {
+    shouldSkipLandingForDevTools = false;
+    redirectToBattle();
+    return;
+  }
   randomizeBubbleTimings();
 
   const heroImage = document.querySelector('.hero');
@@ -1165,6 +1185,46 @@ const initLandingInteractions = async (preloadedData = {}) => {
   );
   let heroSpeechPromise = null;
   let isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
+
+  const buttonGlowProperties = [
+    '--pulsating-glow-color',
+    '--pulsating-glow-opacity',
+    '--pulsating-glow-opacity-peak',
+    '--pulsating-glow-spread',
+    '--pulsating-glow-radius',
+    '--pulsating-glow-duration',
+    '--pulsating-glow-scale-start',
+    '--pulsating-glow-scale-peak',
+    '--pulsating-glow-blur',
+  ];
+
+  const applyBattleButtonGlow = (button) => {
+    if (!button) {
+      return;
+    }
+
+    button.classList.add('pulsating-glow');
+    button.style.setProperty('--pulsating-glow-color', 'rgba(80, 188, 255, 0.65)');
+    button.style.setProperty('--pulsating-glow-opacity', '0.7');
+    button.style.setProperty('--pulsating-glow-opacity-peak', '0.95');
+    button.style.setProperty('--pulsating-glow-spread', '28px');
+    button.style.setProperty('--pulsating-glow-radius', '24px');
+    button.style.setProperty('--pulsating-glow-duration', '1.9s');
+    button.style.setProperty('--pulsating-glow-scale-start', '0.94');
+    button.style.setProperty('--pulsating-glow-scale-peak', '1.08');
+    button.style.setProperty('--pulsating-glow-blur', '8px');
+  };
+
+  const removeBattleButtonGlow = (button) => {
+    if (!button) {
+      return;
+    }
+
+    button.classList.remove('pulsating-glow');
+    buttonGlowProperties.forEach((property) => {
+      button.style.removeProperty(property);
+    });
+  };
 
   const loadBattlePreview = async () => {
     try {
@@ -1246,6 +1306,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
       heroInfoElement.setAttribute('aria-hidden', 'true');
     }
     if (battleButton) {
+      removeBattleButtonGlow(battleButton);
       battleButton.disabled = true;
       battleButton.setAttribute('aria-hidden', 'true');
       battleButton.setAttribute('tabindex', '-1');
@@ -1265,6 +1326,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
       battleButton.removeAttribute('aria-hidden');
       battleButton.removeAttribute('tabindex');
       battleButton.disabled = false;
+      applyBattleButtonGlow(battleButton);
     }
   }
 

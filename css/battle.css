@@ -456,6 +456,11 @@ body.is-reward-active .reward-overlay {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+.reward-overlay__image--interactive {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
 .reward-overlay__image--pop-in {
   transform: scale(1);
   opacity: 1;

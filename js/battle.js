@@ -5,7 +5,9 @@ const GUEST_SESSION_KEY = 'reefRangersGuestSession';
 
 const BATTLE_PAGE_MODE_PARAM = 'mode';
 const BATTLE_PAGE_MODE_PLAY = 'play';
-const ENEMY_DEFEAT_ANIMATION_DELAY = 2000;
+const ENEMY_DEFEAT_ANIMATION_DELAY = 1000;
+const VICTORY_PROGRESS_UPDATE_DELAY = ENEMY_DEFEAT_ANIMATION_DELAY + 1000;
+const DEFEAT_PROGRESS_UPDATE_DELAY = 1000;
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -216,12 +218,40 @@ document.addEventListener('DOMContentLoaded', () => {
   let levelUpAvailable = false;
   let hasPendingLevelUpReward = false;
   let rewardAnimationPlayed = false;
-  let rewardAnimationTimeoutId = null;
+  let levelProgressUpdateTimeout = null;
   let rewardSpriteTransitionHandler = null;
+  let rewardAwaitingActivation = false;
 
-  const REWARD_ANIMATION_DELAY_MS = 2000;
+  const rewardGlowStyleProperties = [
+    '--pulsating-glow-color',
+    '--pulsating-glow-opacity',
+    '--pulsating-glow-opacity-peak',
+    '--pulsating-glow-spread',
+    '--pulsating-glow-radius',
+    '--pulsating-glow-duration',
+    '--pulsating-glow-scale-start',
+    '--pulsating-glow-scale-peak',
+    '--pulsating-glow-blur',
+  ];
+
   const REWARD_CHEST_SRC = '../images/complete/chest.png';
   const REWARD_POTION_SRC = '../images/complete/potion.png';
+
+  const applyRewardChestGlow = () => {
+    if (!rewardSprite) {
+      return;
+    }
+
+    rewardSprite.style.setProperty('--pulsating-glow-color', 'rgba(255, 232, 118, 0.9)');
+    rewardSprite.style.setProperty('--pulsating-glow-opacity', '0.9');
+    rewardSprite.style.setProperty('--pulsating-glow-opacity-peak', '1');
+    rewardSprite.style.setProperty('--pulsating-glow-spread', '42px');
+    rewardSprite.style.setProperty('--pulsating-glow-radius', '48px');
+    rewardSprite.style.setProperty('--pulsating-glow-duration', '1.8s');
+    rewardSprite.style.setProperty('--pulsating-glow-scale-start', '0.88');
+    rewardSprite.style.setProperty('--pulsating-glow-scale-peak', '1.08');
+    rewardSprite.style.setProperty('--pulsating-glow-blur', '12px');
+  };
 
   const hero = {
     attack: 1,
@@ -238,16 +268,63 @@ document.addEventListener('DOMContentLoaded', () => {
     attackSprites: {},
   };
 
-  const clearRewardAnimation = () => {
-    if (rewardAnimationTimeoutId !== null) {
-      window.clearTimeout(rewardAnimationTimeoutId);
-      rewardAnimationTimeoutId = null;
+  const clearRewardGlowStyles = () => {
+    if (!rewardSprite) {
+      return;
     }
 
+    rewardSprite.classList.remove('pulsating-glow');
+    rewardGlowStyleProperties.forEach((property) => {
+      rewardSprite.style.removeProperty(property);
+    });
+  };
+
+  const disableRewardSpriteInteraction = () => {
+    if (!rewardSprite) {
+      return;
+    }
+
+    rewardAwaitingActivation = false;
+    rewardSprite.classList.remove('reward-overlay__image--interactive');
+    rewardSprite.setAttribute('tabindex', '-1');
+    rewardSprite.removeAttribute('aria-label');
+    rewardSprite.removeAttribute('role');
+    if (rewardSprite.dataset) {
+      delete rewardSprite.dataset.rewardStage;
+    } else {
+      rewardSprite.removeAttribute('data-reward-stage');
+    }
+    clearRewardGlowStyles();
+  };
+
+  const enableRewardSpriteInteraction = () => {
+    if (!rewardSprite) {
+      return;
+    }
+
+    rewardAwaitingActivation = true;
+    applyRewardChestGlow();
+    rewardSprite.classList.add(
+      'reward-overlay__image--interactive',
+      'pulsating-glow'
+    );
+    rewardSprite.setAttribute('tabindex', '0');
+    rewardSprite.setAttribute('role', 'button');
+    rewardSprite.setAttribute('aria-label', 'Open treasure chest reward');
+    if (rewardSprite.dataset) {
+      rewardSprite.dataset.rewardStage = 'chest';
+    } else {
+      rewardSprite.setAttribute('data-reward-stage', 'chest');
+    }
+  };
+
+  const clearRewardAnimation = () => {
     if (rewardSprite && rewardSpriteTransitionHandler) {
       rewardSprite.removeEventListener('transitionend', rewardSpriteTransitionHandler);
       rewardSpriteTransitionHandler = null;
     }
+
+    rewardAwaitingActivation = false;
   };
 
   const resetRewardOverlay = () => {
@@ -266,6 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     rewardSprite.src = REWARD_CHEST_SRC;
     rewardSprite.alt = 'Treasure chest level-up reward';
+    disableRewardSpriteInteraction();
   };
 
   const playLevelUpRewardAnimation = () => {
@@ -277,6 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardOverlay.classList.add('reward-overlay--visible');
     rewardOverlay.setAttribute('aria-hidden', 'false');
     document.body?.classList.add('is-reward-active');
+    disableRewardSpriteInteraction();
     rewardSprite.classList.remove(
       'reward-overlay__image--pop-in',
       'reward-overlay__image--shrink',
@@ -284,49 +363,89 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     rewardSprite.src = REWARD_CHEST_SRC;
     rewardSprite.alt = 'Treasure chest level-up reward';
-
-    if (prefersReducedMotion) {
-      rewardSprite.classList.add('reward-overlay__image--pop-in');
-      rewardAnimationTimeoutId = window.setTimeout(() => {
-        rewardAnimationTimeoutId = null;
-        rewardSprite.src = REWARD_POTION_SRC;
-        rewardSprite.alt = 'Potion level-up reward';
-      }, REWARD_ANIMATION_DELAY_MS);
-      return;
-    }
+    applyRewardChestGlow();
 
     void rewardSprite.offsetWidth;
     rewardSprite.classList.add('reward-overlay__image--pop-in');
-    rewardAnimationTimeoutId = window.setTimeout(() => {
-      rewardAnimationTimeoutId = null;
-      rewardSprite.classList.remove('reward-overlay__image--pop-in');
-      rewardSprite.classList.add('reward-overlay__image--shrink');
-
-      const handleTransitionEnd = () => {
-        if (!rewardSprite) {
-          return;
-        }
-
-        rewardSprite.removeEventListener('transitionend', handleTransitionEnd);
-        rewardSpriteTransitionHandler = null;
-        rewardSprite.classList.remove('reward-overlay__image--shrink');
-        rewardSprite.src = REWARD_POTION_SRC;
-        rewardSprite.alt = 'Potion level-up reward';
-        void rewardSprite.offsetWidth;
-        rewardSprite.classList.add('reward-overlay__image--pop');
-        rewardSprite.addEventListener(
-          'animationend',
-          () => {
-            rewardSprite.classList.remove('reward-overlay__image--pop');
-          },
-          { once: true }
-        );
-      };
-
-      rewardSpriteTransitionHandler = handleTransitionEnd;
-      rewardSprite.addEventListener('transitionend', handleTransitionEnd, { once: true });
-    }, REWARD_ANIMATION_DELAY_MS);
+    enableRewardSpriteInteraction();
   };
+
+  const handleRewardSpriteActivation = (event) => {
+    if (!rewardAwaitingActivation || !rewardSprite) {
+      return;
+    }
+
+    if (event) {
+      event.preventDefault();
+    }
+
+    clearRewardAnimation();
+    disableRewardSpriteInteraction();
+
+    if (prefersReducedMotion) {
+      rewardSprite.src = REWARD_POTION_SRC;
+      rewardSprite.alt = 'Potion level-up reward';
+      if (rewardSprite.dataset) {
+        rewardSprite.dataset.rewardStage = 'potion';
+      } else {
+        rewardSprite.setAttribute('data-reward-stage', 'potion');
+      }
+      rewardSprite.classList.add('reward-overlay__image--pop-in');
+      return;
+    }
+
+    rewardSprite.classList.remove('reward-overlay__image--pop');
+    rewardSprite.classList.remove('reward-overlay__image--pop-in');
+    void rewardSprite.offsetWidth;
+    rewardSprite.classList.add('reward-overlay__image--shrink');
+
+    const handleTransitionEnd = () => {
+      if (!rewardSprite) {
+        return;
+      }
+
+      rewardSprite.removeEventListener('transitionend', handleTransitionEnd);
+      rewardSpriteTransitionHandler = null;
+      rewardSprite.classList.remove('reward-overlay__image--shrink');
+      rewardSprite.src = REWARD_POTION_SRC;
+      rewardSprite.alt = 'Potion level-up reward';
+      if (rewardSprite.dataset) {
+        rewardSprite.dataset.rewardStage = 'potion';
+      } else {
+        rewardSprite.setAttribute('data-reward-stage', 'potion');
+      }
+      rewardSprite.classList.add('reward-overlay__image--pop-in');
+      void rewardSprite.offsetWidth;
+      rewardSprite.classList.add('reward-overlay__image--pop');
+      rewardSprite.addEventListener(
+        'animationend',
+        () => {
+          rewardSprite.classList.remove('reward-overlay__image--pop');
+        },
+        { once: true }
+      );
+    };
+
+    rewardSpriteTransitionHandler = handleTransitionEnd;
+    rewardSprite.addEventListener('transitionend', handleTransitionEnd, { once: true });
+  };
+
+  const handleRewardSpriteKeydown = (event) => {
+    if (!rewardSprite) {
+      return;
+    }
+
+    const { key } = event;
+    if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+      handleRewardSpriteActivation(event);
+    }
+  };
+
+  if (rewardSprite) {
+    rewardSprite.addEventListener('click', handleRewardSpriteActivation);
+    rewardSprite.addEventListener('keydown', handleRewardSpriteKeydown);
+    disableRewardSpriteInteraction();
+  }
 
   const updateNextMissionButton = (win = true) => {
     if (!nextMissionBtn) {
@@ -410,6 +529,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const cancelScheduledLevelProgressDisplayUpdate = () => {
+    if (levelProgressUpdateTimeout !== null) {
+      window.clearTimeout(levelProgressUpdateTimeout);
+      levelProgressUpdateTimeout = null;
+    }
+  };
+
+  const scheduleLevelProgressDisplayUpdate = (delayMs = 0) => {
+    cancelScheduledLevelProgressDisplayUpdate();
+
+    if (delayMs > 0) {
+      levelProgressUpdateTimeout = window.setTimeout(() => {
+        levelProgressUpdateTimeout = null;
+        updateLevelProgressDisplay();
+      }, delayMs);
+      return;
+    }
+
+    updateLevelProgressDisplay();
+  };
+
   const applyProgressUpdate = (baseProgress, update) => {
     const result = isPlainObject(baseProgress) ? { ...baseProgress } : {};
     if (!isPlainObject(update)) {
@@ -454,7 +594,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.max(0, Math.round(enemyXp));
   };
 
-  const awardExperiencePoints = () => {
+  const awardExperiencePoints = ({
+    delayProgressUpdateMs = 0,
+    scheduleProgressUpdate = true,
+  } = {}) => {
+    const maybeScheduleProgressUpdate = () => {
+      if (!scheduleProgressUpdate) {
+        return;
+      }
+      scheduleLevelProgressDisplayUpdate(delayProgressUpdateMs);
+    };
+
     const points = resolveExperiencePointsForEnemy();
     const level = resolveBattleLevelForExperience();
     const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
@@ -463,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!Number.isFinite(level)) {
       levelExperienceEarned = sanitizedEarned;
-      updateLevelProgressDisplay();
+      maybeScheduleProgressUpdate();
       hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
       if (hasPendingLevelUpReward) {
         rewardAnimationPlayed = false;
@@ -473,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (points <= 0) {
       levelExperienceEarned = sanitizedEarned;
-      updateLevelProgressDisplay();
+      maybeScheduleProgressUpdate();
       hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
       if (hasPendingLevelUpReward) {
         rewardAnimationPlayed = false;
@@ -486,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     persistProgress({ experience: { [levelKey]: nextTotal } });
     levelExperienceEarned = nextTotal;
-    updateLevelProgressDisplay();
+    maybeScheduleProgressUpdate();
 
     hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
     if (hasPendingLevelUpReward) {
@@ -2030,10 +2180,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win) {
       setBattleCompleteTitleLines('Monster Defeated');
-      awardExperiencePoints();
+      awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
       setBattleCompleteTitleLines('Keep Practicing');
-      updateLevelProgressDisplay();
     }
 
     battleGoalsMet = goalsAchieved;
@@ -2045,6 +2194,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const showCompleteMessage = () => {
+      const progressDelay = win
+        ? VICTORY_PROGRESS_UPDATE_DELAY
+        : DEFEAT_PROGRESS_UPDATE_DELAY;
+      scheduleLevelProgressDisplayUpdate(progressDelay);
+
       if (!completeMessage) {
         return;
       }
@@ -2058,6 +2212,7 @@ document.addEventListener('DOMContentLoaded', () => {
           applyEnemyDefeatStyles();
         }, ENEMY_DEFEAT_ANIMATION_DELAY);
       }
+
     };
 
     const waitForHpDrainEl =
@@ -2119,6 +2274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     levelUpAvailable = false;
     hasPendingLevelUpReward = false;
     rewardAnimationPlayed = false;
+    cancelScheduledLevelProgressDisplayUpdate();
     clearRewardAnimation();
     updateLevelProgressDisplay();
     if (completeMessage) {

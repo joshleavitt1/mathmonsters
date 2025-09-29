@@ -178,6 +178,50 @@ button:focus-visible {
   outline-offset: 3px;
 }
 
+.pulsating-glow {
+  position: relative;
+  isolation: isolate;
+  z-index: 0;
+}
+
+.pulsating-glow::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--pulsating-glow-spread, 20px));
+  border-radius: var(--pulsating-glow-radius, 999px);
+  background: radial-gradient(
+    circle,
+    var(--pulsating-glow-color, rgba(255, 255, 255, 0.7)) 0%,
+    transparent 70%
+  );
+  opacity: var(--pulsating-glow-opacity, 0.85);
+  transform: scale(var(--pulsating-glow-scale-start, 0.9));
+  filter: blur(var(--pulsating-glow-blur, 0px));
+  pointer-events: none;
+  z-index: -1;
+  animation: pulsating-glow-pulse var(--pulsating-glow-duration, 1.6s)
+    ease-in-out infinite;
+}
+
+.pulsating-glow:disabled::after,
+.pulsating-glow[aria-disabled='true']::after {
+  opacity: 0;
+  animation: none;
+}
+
+@keyframes pulsating-glow-pulse {
+  0%,
+  100% {
+    opacity: var(--pulsating-glow-opacity, 0.85);
+    transform: scale(var(--pulsating-glow-scale-start, 0.9));
+  }
+
+  50% {
+    opacity: var(--pulsating-glow-opacity-peak, 1);
+    transform: scale(var(--pulsating-glow-scale-peak, 1.05));
+  }
+}
+
 .progress {
   --progress-value: 0;
   --progress-gradient-start: #36dc36;
