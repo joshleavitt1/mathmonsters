@@ -319,6 +319,12 @@ body:not(.is-level-one-landing) .level-one-intro {
   background: none;
 }
 
+.level-one-intro__egg-button.is-hidden::after {
+  animation: none;
+  opacity: 0;
+  background: none;
+}
+
 .level-one-intro__egg-image {
   width: 100%;
   height: 100%;
