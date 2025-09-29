@@ -35,14 +35,38 @@
   </div>
   <main class="landing">
     <div class="bubbles" aria-hidden="true">
-      <span class="bubble" style="--size: 18px; --duration: 6.5s; --delay: 0s;"></span>
-      <span class="bubble" style="--size: 24px; --duration: 7.2s; --delay: 0.6s;"></span>
-      <span class="bubble" style="--size: 14px; --duration: 6s; --delay: 1.1s;"></span>
-      <span class="bubble" style="--size: 20px; --duration: 6.8s; --delay: 0.3s;"></span>
-      <span class="bubble" style="--size: 26px; --duration: 7.5s; --delay: 1.4s;"></span>
-      <span class="bubble" style="--size: 16px; --duration: 6.2s; --delay: 0.9s;"></span>
-      <span class="bubble" style="--size: 22px; --duration: 7s; --delay: 1.7s;"></span>
-      <span class="bubble" style="--size: 18px; --duration: 6.4s; --delay: 0.5s;"></span>
+      <span
+        class="bubble"
+        style="--size: 18px; --duration: 6.5s; --delay: -1.8s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 24px; --duration: 7.2s; --delay: -3.1s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 14px; --duration: 6s; --delay: -0.9s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 20px; --duration: 6.8s; --delay: -2.6s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 26px; --duration: 7.5s; --delay: -4.4s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 16px; --duration: 6.2s; --delay: -1.4s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 22px; --duration: 7s; --delay: -3.7s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 18px; --duration: 6.4s; --delay: -0.6s;"
+      ></span>
     </div>
 
     <section class="landing__hero-info" aria-live="polite">
@@ -72,16 +96,6 @@
       alt="Shellfin ready for battle"
     />
 
-    <div
-      class="landing__hero-speech dialogue-box"
-      data-hero-speech
-      role="status"
-      aria-live="polite"
-      aria-hidden="true"
-    >
-      <p class="landing__hero-speech-text" data-hero-speech-text></p>
-    </div>
-
     <div class="landing__actions">
       <button class="landing__battle-button" type="button" data-battle-button>
         Battle
@@ -99,14 +113,72 @@
     />
 
   </main>
-  <div class="battle-intro" data-battle-intro aria-hidden="true">
-    <img
-      class="battle-intro__image"
-      src="./images/battle/battle_time.png"
-      alt="Battle time"
-      width="350"
-      height="350"
-    />
+  <div class="level-one-intro" data-level-one-intro aria-hidden="true">
+    <button
+      class="level-one-intro__egg-button"
+      type="button"
+      data-level-one-egg-button
+      aria-label="Inspect the mysterious egg"
+      disabled
+    >
+      <img
+        class="level-one-intro__egg-image"
+        src="./images/intro/egg.png"
+        alt="Glowing egg"
+        width="250"
+        height="250"
+        data-level-one-egg-image
+      />
+    </button>
+
+    <div
+      class="card card--home level-one-intro__card"
+      data-level-one-card="welcome"
+      aria-hidden="true"
+    >
+      <img
+        class="level-one-intro__card-avatar"
+        src="./images/intro/doctor.png"
+        alt="Dr. Wave"
+        width="80"
+        height="80"
+      />
+      <p class="level-one-intro__card-text">
+        Hi! I’m Dr. Wave. I study the ocean… and I think this egg is about to
+        hatch!
+      </p>
+      <button
+        class="btn-primary"
+        type="button"
+        data-level-one-card-continue
+      >
+        Continue
+      </button>
+    </div>
+
+    <div
+      class="card card--home level-one-intro__card"
+      data-level-one-card="battle"
+      aria-hidden="true"
+    >
+      <img
+        class="level-one-intro__card-avatar"
+        src="./images/intro/doctor.png"
+        alt="Dr. Wave"
+        width="80"
+        height="80"
+      />
+      <p class="level-one-intro__card-text">
+        Wow! This creature fights monsters with math. Give it a try and see!
+      </p>
+      <button
+        class="btn-primary"
+        type="button"
+        data-level-one-card-battle
+      >
+        Battle
+      </button>
+    </div>
   </div>
   <script>
     window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';

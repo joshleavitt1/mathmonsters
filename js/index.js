@@ -7,39 +7,19 @@ const LANDING_MODE_STORAGE_KEY = 'reefRangersLandingMode';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const HERO_TO_ENEMY_DELAY_MS = 2000;
 const ENEMY_ENTRANCE_DURATION_MS = 900;
-const BATTLE_CALL_INTRO_OFFSET_MS = 200;
-const BATTLE_CALL_VISIBLE_DURATION_MS = 2000;
 const HERO_EXIT_DURATION_MS = 700;
 const ENEMY_EXIT_DURATION_MS = 600;
-const BATTLE_CALL_POP_OUT_DURATION_MS = 450;
+const PRE_BATTLE_HOLD_DURATION_MS = 2000;
+const HERO_EXIT_SYNC_OFFSET_MS = 200;
 const REDUCED_MOTION_SEQUENCE_DURATION_MS = 300;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
-const LEVEL_ONE_SPEECH_DELAY_MS = 2000;
-const LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS = 90;
-const LEVEL_ONE_SPEECH_SEQUENCE = [
-  { text: 'Hi! I’m Shellfin.', pauseAfterMs: 1000 },
-  { text: ' Uh-oh…', pauseAfterMs: 1000 },
-  { text: ' monsters are here!', pauseAfterMs: 1000 },
-  { text: ' Let’s use math to fight back!', pauseAfterMs: 4000 },
-];
-
-const buildSpeechCharacters = (segments = []) =>
-  segments.flatMap((segment) => {
-    if (!segment || typeof segment.text !== 'string') {
-      return [];
-    }
-
-    const characters = Array.from(segment.text);
-    const pauseAfter = Math.max(0, Number(segment.pauseAfterMs) || 0);
-
-    return characters.map((character, index) => ({
-      character,
-      pauseAfterMs: index === characters.length - 1 ? pauseAfter : 0,
-    }));
-  });
-
-const LEVEL_ONE_SPEECH_CHARACTERS = buildSpeechCharacters(LEVEL_ONE_SPEECH_SEQUENCE);
-const LEVEL_ONE_SPEECH_TEXT = LEVEL_ONE_SPEECH_CHARACTERS.map(({ character }) => character).join('');
+const LEVEL_ONE_INTRO_EGG_DELAY_MS = 500;
+const LEVEL_ONE_INTRO_INITIAL_CARD_DELAY_MS = 2000;
+const LEVEL_ONE_INTRO_CARD_DELAY_MS = 400;
+const LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS = 350;
+const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 900;
+const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 2000;
+const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 350;
 
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
@@ -202,8 +182,6 @@ const startLandingExperience = () => {
 const runBattleIntroSequence = async (options = {}) => {
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
-  const battleIntro = document.querySelector('[data-battle-intro]');
-  const battleIntroImage = battleIntro?.querySelector('.battle-intro__image');
   const prefersReducedMotion =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -235,39 +213,12 @@ const runBattleIntroSequence = async (options = {}) => {
     enemyImage.removeAttribute('aria-hidden');
   };
 
-  const showBattleIntro = () => {
-    if (!battleIntro || !battleIntroImage) {
-      return;
-    }
-    battleIntro.setAttribute('aria-hidden', 'false');
-    battleIntro.classList.add('is-visible');
-    battleIntroImage.classList.remove('is-pop-in', 'is-pop-out');
-    void battleIntroImage.offsetWidth;
-    battleIntroImage.classList.add('is-pop-in');
-  };
-
-  const hideBattleIntro = () => {
-    if (!battleIntro || !battleIntroImage) {
-      return 0;
-    }
-    battleIntroImage.classList.remove('is-pop-in');
-    void battleIntroImage.offsetWidth;
-    battleIntroImage.classList.add('is-pop-out');
-    const duration = Math.max(0, BATTLE_CALL_POP_OUT_DURATION_MS);
-    window.setTimeout(() => {
-      battleIntro.classList.remove('is-visible');
-      battleIntro.setAttribute('aria-hidden', 'true');
-    }, duration);
-    return duration;
-  };
-
   const beginExitAnimations = () => {
     document.body.classList.add('is-battle-transition');
     heroImage.classList.add('is-exiting');
     if (enemyImage && !skipEnemyAppearance) {
       enemyImage.classList.add('is-exiting');
     }
-    return hideBattleIntro();
   };
 
   const applySidePositionIfNeeded = () => {
@@ -282,119 +233,230 @@ const runBattleIntroSequence = async (options = {}) => {
     showEnemy();
   };
 
+  const holdDuration = showIntroImmediately
+    ? PRE_BATTLE_HOLD_DURATION_MS
+    : HERO_TO_ENEMY_DELAY_MS;
+
   if (prefersReducedMotion) {
-    if (showIntroImmediately) {
-      showBattleIntro();
-      await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
-      prepareForBattle();
-    } else {
-      prepareForBattle();
-      showBattleIntro();
-    }
-    const exitDuration = beginExitAnimations();
+    await wait(holdDuration);
+    prepareForBattle();
+    beginExitAnimations();
     await wait(
       Math.max(
-        REDUCED_MOTION_SEQUENCE_DURATION_MS,
         HERO_EXIT_DURATION_MS,
         skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS,
-        exitDuration
+        REDUCED_MOTION_SEQUENCE_DURATION_MS
       )
     );
     return true;
   }
 
-  if (showIntroImmediately) {
-    showBattleIntro();
-    await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
-  } else {
-    await wait(HERO_TO_ENEMY_DELAY_MS);
-  }
-
+  await wait(holdDuration);
   prepareForBattle();
-
-  await wait(ENEMY_ENTRANCE_DURATION_MS + BATTLE_CALL_INTRO_OFFSET_MS);
-  if (!showIntroImmediately) {
-    showBattleIntro();
-    await wait(BATTLE_CALL_VISIBLE_DURATION_MS);
-  }
-  const exitDuration = beginExitAnimations();
+  await wait(ENEMY_ENTRANCE_DURATION_MS + HERO_EXIT_SYNC_OFFSET_MS);
+  beginExitAnimations();
 
   await wait(
     Math.max(
       HERO_EXIT_DURATION_MS,
-      skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS,
-      exitDuration
+      skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS
     )
   );
 
   return true;
 };
 
-const playLevelOneHeroSpeech = ({
-  container,
-  textElement,
-  delayMs,
-} = {}) => {
-  if (!container || !textElement) {
-    return Promise.resolve(false);
+const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
+  const introRoot = document.querySelector('[data-level-one-intro]');
+  const eggButton = introRoot?.querySelector('[data-level-one-egg-button]');
+  const eggImage = introRoot?.querySelector('[data-level-one-egg-image]');
+  const welcomeCard = introRoot?.querySelector('[data-level-one-card="welcome"]');
+  const continueButton = introRoot?.querySelector('[data-level-one-card-continue]');
+  const battleCard = introRoot?.querySelector('[data-level-one-card="battle"]');
+  const battleButton = introRoot?.querySelector('[data-level-one-card-battle]');
+  const wait = (durationMs) =>
+    new Promise((resolve) =>
+      window.setTimeout(resolve, Math.max(0, Number(durationMs) || 0))
+    );
+
+  if (
+    !introRoot ||
+    !eggButton ||
+    !eggImage ||
+    !welcomeCard ||
+    !continueButton ||
+    !battleCard ||
+    !battleButton
+  ) {
+    if (typeof beginBattle === 'function') {
+      beginBattle({ showIntroImmediately: true }).catch((error) => {
+        console.warn('Level one intro fallback failed.', error);
+        redirectToBattle();
+      });
+    } else {
+      redirectToBattle();
+    }
+    return;
   }
 
-  const delay = Number.isFinite(delayMs) && delayMs >= 0
-    ? delayMs
-    : LEVEL_ONE_SPEECH_DELAY_MS;
+  let isEggInteractive = false;
+  let isHatching = false;
+  let hasStartedBattle = false;
 
-  container.classList.remove('is-visible');
-  container.setAttribute('aria-hidden', 'true');
-  textElement.textContent = '';
-  if (textElement.dataset) {
-    delete textElement.dataset.typing;
-  } else {
-    textElement.removeAttribute('data-typing');
+  if (heroImage) {
+    heroImage.classList.remove('is-revealed');
+    heroImage.setAttribute('aria-hidden', 'true');
   }
 
-  return new Promise((resolve) => {
-    const startTyping = () => {
-      container.setAttribute('aria-hidden', 'false');
-      container.classList.add('is-visible');
+  const showCard = (card) => {
+    if (!card) {
+      return;
+    }
+    card.classList.remove('is-exiting');
+    card.setAttribute('aria-hidden', 'false');
+    void card.offsetWidth;
+    card.classList.add('is-visible');
+  };
 
-      const prefersReducedMotion =
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hideCard = async (card) => {
+    if (!card) {
+      return;
+    }
+    card.classList.remove('is-visible');
+    card.classList.add('is-exiting');
+    await wait(LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS);
+    card.classList.remove('is-exiting');
+    card.setAttribute('aria-hidden', 'true');
+  };
 
-      if (prefersReducedMotion) {
-        textElement.textContent = LEVEL_ONE_SPEECH_TEXT;
-        textElement.dataset.typing = 'false';
-        resolve(true);
-        return;
+  const showEgg = () => {
+    introRoot.classList.add('is-active');
+    introRoot.setAttribute('aria-hidden', 'false');
+    eggButton.classList.remove('is-hatching');
+    eggButton.classList.add('is-visible');
+    eggImage.classList.remove('is-hatching');
+    eggImage.classList.remove('is-pop-in');
+    void eggImage.offsetWidth;
+    eggImage.classList.add('is-pop-in');
+  };
+
+  const enableEgg = () => {
+    isEggInteractive = true;
+    eggButton.disabled = false;
+    eggButton.classList.add('is-glowing');
+    if (typeof eggButton.focus === 'function') {
+      try {
+        eggButton.focus({ preventScroll: true });
+      } catch (error) {
+        eggButton.focus();
       }
+    }
+  };
 
-      const characters = LEVEL_ONE_SPEECH_CHARACTERS;
-      let index = 0;
-      textElement.textContent = '';
-      textElement.dataset.typing = 'true';
+  const disableEgg = () => {
+    isEggInteractive = false;
+    eggButton.disabled = true;
+    eggButton.classList.remove('is-glowing');
+    if (typeof eggButton.blur === 'function') {
+      eggButton.blur();
+    }
+  };
 
-      const typeNextCharacter = () => {
-        if (index >= characters.length) {
-          textElement.dataset.typing = 'false';
-          resolve(true);
-          return;
-        }
+  const revealHero = () => {
+    if (!heroImage) {
+      return;
+    }
+    heroImage.classList.add('is-revealed');
+    heroImage.removeAttribute('aria-hidden');
+  };
 
-        const currentEntry = characters[index] || { character: '', pauseAfterMs: 0 };
-        textElement.textContent += currentEntry.character;
-        index += 1;
+  const showBattleCard = async () => {
+    showCard(battleCard);
+    await wait(LEVEL_ONE_INTRO_CARD_DELAY_MS);
+    if (typeof battleButton.focus === 'function') {
+      try {
+        battleButton.focus({ preventScroll: true });
+      } catch (error) {
+        battleButton.focus();
+      }
+    }
+  };
 
-        const baseDelay = Math.max(0, LEVEL_ONE_SPEECH_CHARACTER_INTERVAL_MS);
-        const entryPause = Math.max(0, Number(currentEntry.pauseAfterMs) || 0);
+  const handleContinue = async () => {
+    continueButton.disabled = true;
+    continueButton.setAttribute('aria-busy', 'true');
+    await hideCard(welcomeCard);
+    continueButton.removeAttribute('aria-busy');
+    enableEgg();
+  };
 
-        window.setTimeout(typeNextCharacter, baseDelay + entryPause);
-      };
+  const handleEggClick = async () => {
+    if (!isEggInteractive || isHatching) {
+      return;
+    }
+    isHatching = true;
+    disableEgg();
+    eggButton.classList.add('is-hatching');
+    eggImage.classList.remove('is-pop-in');
+    void eggImage.offsetWidth;
+    eggImage.classList.add('is-hatching');
+    await wait(LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS);
+    eggButton.classList.remove('is-visible');
+    eggButton.classList.add('is-hidden');
+    window.setTimeout(() => {
+      if (eggButton?.parentElement) {
+        eggButton.parentElement.removeChild(eggButton);
+      }
+    }, LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS);
+    revealHero();
+    await wait(LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS);
+    await showBattleCard();
+  };
 
-      typeNextCharacter();
-    };
+  const handleBattleClick = async () => {
+    if (hasStartedBattle) {
+      return;
+    }
+    hasStartedBattle = true;
+    await hideCard(battleCard);
+    introRoot.classList.remove('is-active');
+    introRoot.setAttribute('aria-hidden', 'true');
 
-    window.setTimeout(startTyping, Math.max(0, Number(delay) || 0));
-  });
+    if (typeof beginBattle === 'function') {
+      try {
+        await beginBattle({
+          triggerButton: battleButton,
+          showIntroImmediately: true,
+        });
+      } catch (error) {
+        console.warn('Unable to launch battle from level one intro.', error);
+        redirectToBattle();
+      }
+    } else {
+      redirectToBattle();
+    }
+  };
+
+  continueButton.addEventListener('click', handleContinue);
+  eggButton.addEventListener('click', handleEggClick);
+  battleButton.addEventListener('click', handleBattleClick);
+
+  (async () => {
+    introRoot.classList.add('is-active');
+    introRoot.setAttribute('aria-hidden', 'false');
+    disableEgg();
+    await wait(LEVEL_ONE_INTRO_EGG_DELAY_MS);
+    showEgg();
+    await wait(LEVEL_ONE_INTRO_INITIAL_CARD_DELAY_MS);
+    showCard(welcomeCard);
+    if (typeof continueButton.focus === 'function') {
+      try {
+        continueButton.focus({ preventScroll: true });
+      } catch (error) {
+        continueButton.focus();
+      }
+    }
+  })();
 };
 
 (async () => {
@@ -991,25 +1053,6 @@ const applyLandingModeRequest = () => {
   clearLandingModeRequestFromQuery();
 };
 
-const randomizeBubbleTimings = () => {
-  const bubbles = document.querySelectorAll('.bubble');
-
-  bubbles.forEach((bubble) => {
-    const computedStyles = window.getComputedStyle(bubble);
-    const durationValue = computedStyles.getPropertyValue('--duration').trim();
-    const durationInSeconds = Number.parseFloat(durationValue);
-
-    if (!Number.isFinite(durationInSeconds) || durationInSeconds <= 0) {
-      const fallbackOffset = -(Math.random() * 2);
-      bubble.style.setProperty('--delay', `${fallbackOffset.toFixed(3)}s`);
-      return;
-    }
-
-    const randomOffset = Math.random() * durationInSeconds;
-    bubble.style.setProperty('--delay', `${-randomOffset.toFixed(3)}s`);
-  });
-};
-
 const preloadLandingAssets = async () => {
   const results = { levelsData: null, playerData: null, previewData: null };
   const imageAssets = new Set([
@@ -1172,18 +1215,11 @@ const initLandingInteractions = async (preloadedData = {}) => {
     redirectToBattle();
     return;
   }
-  randomizeBubbleTimings();
-
   const heroImage = document.querySelector('.hero');
   const enemyImage = document.querySelector('[data-enemy]');
   let battleButton = document.querySelector('[data-battle-button]');
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
-  const heroSpeechElement = document.querySelector('[data-hero-speech]');
-  const heroSpeechTextElement = heroSpeechElement?.querySelector(
-    '[data-hero-speech-text]'
-  );
-  let heroSpeechPromise = null;
   let isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
 
   const buttonGlowProperties = [
@@ -1279,25 +1315,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
   await loadBattlePreview();
   isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
 
-  if (isLevelOneLanding && heroSpeechElement && heroSpeechTextElement) {
-    heroSpeechPromise = playLevelOneHeroSpeech({
-      container: heroSpeechElement,
-      textElement: heroSpeechTextElement,
-      delayMs: LEVEL_ONE_SPEECH_DELAY_MS,
-    });
-  } else if (heroSpeechElement) {
-    heroSpeechElement.classList.remove('is-visible');
-    heroSpeechElement.setAttribute('aria-hidden', 'true');
-    if (heroSpeechTextElement) {
-      heroSpeechTextElement.textContent = '';
-      if (heroSpeechTextElement.dataset) {
-        delete heroSpeechTextElement.dataset.typing;
-      } else {
-        heroSpeechTextElement.removeAttribute('data-typing');
-      }
-    }
-  }
-
   if (isLevelOneLanding) {
     if (actionsElement) {
       actionsElement.setAttribute('aria-hidden', 'true');
@@ -1352,22 +1369,23 @@ const initLandingInteractions = async (preloadedData = {}) => {
     awaitImageReady(enemyImage),
   ]);
 
-  if (!battleButton) {
+  let isLaunchingBattle = false;
+
+  const beginBattle = async ({ triggerButton, showIntroImmediately } = {}) => {
+    if (isLaunchingBattle) {
+      return;
+    }
+    isLaunchingBattle = true;
+
+    const buttonToDisable = triggerButton || battleButton;
+    if (buttonToDisable) {
+      buttonToDisable.disabled = true;
+      buttonToDisable.setAttribute('aria-busy', 'true');
+    }
+
     await waitForImages;
-    if (heroSpeechPromise) {
-      try {
-        await heroSpeechPromise;
-      } catch (error) {
-        console.warn('Level one hero speech failed.', error);
-      }
-    }
 
-    if (heroSpeechElement && isLevelOneLanding) {
-      heroSpeechElement.classList.remove('is-visible');
-      heroSpeechElement.setAttribute('aria-hidden', 'true');
-    }
-
-    if (!heroSpeechPromise && CENTER_IMAGE_HOLD_DURATION_MS > 0) {
+    if (CENTER_IMAGE_HOLD_DURATION_MS > 0 && !isLevelOneLanding) {
       await new Promise((resolve) =>
         window.setTimeout(
           resolve,
@@ -1378,27 +1396,26 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
     try {
       await runBattleIntroSequence({
+        showIntroImmediately:
+          typeof showIntroImmediately === 'boolean'
+            ? showIntroImmediately
+            : true,
         skipHeroSidePosition: isLevelOneLanding,
-        showIntroImmediately: isLevelOneLanding,
         hideEnemy: isLevelOneLanding,
       });
+    } catch (error) {
+      console.warn('Battle intro sequence failed.', error);
     } finally {
       redirectToBattle();
     }
+  };
+
+  if (isLevelOneLanding) {
+    setupLevelOneIntro({ heroImage, beginBattle });
     return;
   }
 
-  let isLaunchingBattle = false;
-
-  const beginBattle = async () => {
-    if (isLaunchingBattle) {
-      return;
-    }
-    isLaunchingBattle = true;
-
-    battleButton.disabled = true;
-    battleButton.setAttribute('aria-busy', 'true');
-
+  if (!battleButton) {
     await waitForImages;
 
     if (CENTER_IMAGE_HOLD_DURATION_MS > 0) {
@@ -1410,19 +1427,13 @@ const initLandingInteractions = async (preloadedData = {}) => {
       );
     }
 
-    try {
-      await runBattleIntroSequence({
-        showIntroImmediately: true,
-        skipHeroSidePosition: isLevelOneLanding,
-      });
-    } catch (error) {
-      console.warn('Battle intro sequence failed.', error);
-    } finally {
-      redirectToBattle();
-    }
-  };
+    await beginBattle({ showIntroImmediately: true });
+    return;
+  }
 
-  battleButton.addEventListener('click', beginBattle);
+  battleButton.addEventListener('click', () =>
+    beginBattle({ triggerButton: battleButton, showIntroImmediately: true })
+  );
 };
 
 const bootstrapLanding = async () => {

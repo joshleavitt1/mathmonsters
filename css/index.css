@@ -150,61 +150,12 @@ body:not(.is-preloading) main.landing {
   transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.landing__hero-speech {
-  position: absolute;
-  top: calc(clamp(18%, 32vh, 44%) - 80px);
-  left: 50%;
-  transform: translate(-50%, -8px);
-  max-width: min(420px, 100%);
-  text-align: left;
-  align-items: flex-start;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 3;
-  transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  --dialogue-tail-offset: 60%;
-}
-
-.landing__hero-speech.is-visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.landing__hero-speech-text {
-  margin: 0;
-  width: 100%;
-  font-size: var(--text-size-medium);
-  color: rgba(39, 43, 52, 0.95);
-  letter-spacing: 0.01em;
-}
-
-.landing__hero-speech-text[data-typing='true']::after {
-  content: none;
-  animation: none;
-}
-
-.landing__hero-speech-text[data-typing='false']::after,
-.landing__hero-speech-text:not([data-typing])::after {
-  content: '';
-}
-
-@keyframes hero-speech-caret {
-  0%,
-  50% {
-    opacity: 1;
-  }
-  51%,
-  100% {
-    opacity: 0;
-  }
-}
-
 .hero.is-side-position {
   left: calc(50% - var(--intro-sprite-offset));
 }
 
 .hero.is-exiting {
-  animation: hero-intro-exit 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: hero-intro-exit 0.75s cubic-bezier(0.32, 0, 0.67, 1) forwards;
 }
 
 .enemy {
@@ -258,8 +209,218 @@ body.is-level-one-landing .enemy {
   display: none;
 }
 
-body:not(.is-level-one-landing) .landing__hero-speech {
+body.is-level-one-landing .hero {
+  opacity: 0;
+  visibility: hidden;
+  animation: none;
+  transition: opacity 0.4s ease;
+}
+
+body.is-level-one-landing .hero.is-revealed {
+  opacity: 1;
+  visibility: visible;
+}
+
+body.is-level-one-landing .hero.is-exiting {
+  visibility: visible;
+  animation: hero-intro-exit 0.75s cubic-bezier(0.32, 0, 0.67, 1) forwards;
+}
+
+body:not(.is-level-one-landing) .level-one-intro {
   display: none;
+}
+
+.level-one-intro {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 5vw, 32px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  z-index: 4;
+}
+
+.level-one-intro.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.level-one-intro__egg-button {
+  position: relative;
+  width: min(250px, 62vw);
+  height: min(250px, 62vw);
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+  z-index: 4;
+  overflow: visible;
+}
+
+.level-one-intro__egg-button[disabled] {
+  cursor: default;
+  pointer-events: none;
+}
+
+.level-one-intro__egg-button::after {
+  content: '';
+  position: absolute;
+  inset: -42px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(0, 188, 255, 0.79) 0%,
+    rgba(0, 174, 255, 0.47) 32%,
+    rgba(0, 136, 255, 0.16) 58%,
+    rgba(0, 92, 255, 0) 82%
+  );
+  opacity: 0;
+  transform: scale(0.74);
+  filter: blur(10px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+  will-change: opacity, transform, filter;
+}
+
+.level-one-intro__egg-button.is-glowing::after {
+  animation: level-one-egg-glow 2s ease-in-out infinite;
+}
+
+.level-one-intro__egg-button.is-hatching::after {
+  opacity: 0;
+  background: none;
+}
+
+.level-one-intro__egg-button.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  display: none;
+}
+
+.level-one-intro__egg-button.is-hidden::after {
+  animation: none;
+  opacity: 0;
+  background: none;
+}
+
+.level-one-intro__egg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scale(0.45);
+  opacity: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.level-one-intro__egg-image.is-pop-in {
+  animation: level-one-egg-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.level-one-intro__egg-image.is-hatching {
+  animation: level-one-egg-hatch 0.9s cubic-bezier(0.36, 0, 0.66, -0.01) forwards;
+}
+
+
+.level-one-intro__card {
+  --card-translate-y: 24px;
+  opacity: 0;
+  pointer-events: none;
+  align-items: flex-start;
+  text-align: left;
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(
+    var(--card-translate-x, -50%),
+    var(--card-translate-y, 24px),
+    var(--card-translate-z, 0)
+  );
+}
+
+.level-one-intro__card.is-visible {
+  --card-translate-y: 0px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.level-one-intro__card.is-exiting {
+  --card-translate-y: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.45, 0, 0.75, 0.45);
+}
+
+.level-one-intro__card-avatar {
+  align-self: flex-start;
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.level-one-intro__card-text {
+  margin: 0;
+  color: rgba(31, 45, 72, 0.96);
+  font-size: var(--text-size-medium);
+  line-height: 1.4;
+  text-align: left;
+}
+
+@keyframes level-one-egg-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes level-one-egg-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+    filter: blur(14px);
+  }
+  45% {
+    opacity: 0.95;
+    transform: scale(0.98);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.72);
+    filter: blur(12px);
+  }
+}
+
+@keyframes level-one-egg-hatch {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1.24);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.38);
+    opacity: 0;
+    filter: blur(2px);
+  }
 }
 
 body.is-battle-transition {
@@ -339,19 +500,24 @@ body.is-battle-transition .bubbles {
       scaleX(-1) scale(1);
     opacity: 1;
   }
-  50% {
+  22% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(1.08);
+      scaleX(-1) scale(0.94);
     opacity: 1;
   }
-  60% {
+  48% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(1.05);
+      scaleX(-1) scale(0.84);
     opacity: 0.96;
+  }
+  74% {
+    transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
+      scaleX(-1) scale(0.72);
+    opacity: 0.85;
   }
   100% {
     transform: translate(-50%, calc(-50% - var(--hero-float-range, 32px)))
-      scaleX(-1) scale(0.62);
+      scaleX(-1) scale(0.6);
     opacity: 0;
   }
 }
@@ -602,83 +768,6 @@ body.is-battle-transition .bubbles {
   100% { --ty: -110vh;              --sx: 1.06; --sy: 1.06; opacity: 0; }
 }
 
-.battle-intro {
-  position: fixed;
-  left: var(--battle-intro-left, 50%);
-  top: var(--battle-intro-top, 50%);
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  z-index: 3;
-}
-
-.battle-intro__image {
-  width: min(350px, 90vw);
-  height: min(350px, 90vw);
-  object-fit: contain;
-  transform: scale(0.2);
-  transform-origin: center;
-  opacity: 0;
-}
-
-.battle-intro.is-visible {
-  opacity: 1;
-  visibility: visible;
-}
-
-.battle-intro__image.is-pop-in {
-  animation: battle-intro-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.battle-intro__image.is-pop-out {
-  animation: battle-intro-pop-out 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes battle-intro-pop {
-  0% {
-    transform: scale(0.2);
-    opacity: 0;
-  }
-  60% {
-    transform: scale(1.12);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes battle-intro-pop-out {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  40% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.2);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .battle-intro {
-    transition: none;
-  }
-
-  .battle-intro__image {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
 /* Organic horizontal meander tied to --drift */
 @keyframes bubble-drift {
   0%   { --tx: calc(var(--drift) * -1); }
@@ -828,11 +917,6 @@ body.is-battle-transition .bubbles {
 .pwa-install__link {
   color: #0a3d62;
   text-decoration: none;
-}
-
-.pwa-install__link:hover,
-.pwa-install__link:focus {
-  text-decoration: underline;
 }
 
 @media (min-width: 768px) {
