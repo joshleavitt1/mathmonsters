@@ -13,6 +13,8 @@ const REWARD_CARD_DELAY_MS = 2000;
 const HERO_EVOLUTION_GROWTH_DURATION_MS = 600;
 const HERO_EVOLUTION_GROWTH_ITERATIONS = 3;
 const HERO_EVOLUTION_REVEAL_DURATION_MS = 600;
+const HERO_EVOLUTION_GROWTH_START_DELAY_MS = 1000;
+const HERO_EVOLUTION_CARD_REVEAL_DELAY_MS = 2000;
 const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 
@@ -266,7 +268,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let levelProgressUpdateTimeout = null;
   let levelProgressAnimationTimeout = null;
   let rewardCardButtonHandler = null;
-  let evolutionCompletionTimeout = null;
+  let evolutionGrowthStartTimeout = null;
+  let evolutionGrowthFallbackTimeout = null;
+  let evolutionRevealFallbackTimeout = null;
+  let evolutionCardDelayTimeout = null;
   let evolutionInProgress = false;
   let rewardCardDisplayTimeout = null;
 
@@ -299,6 +304,13 @@ document.addEventListener('DOMContentLoaded', () => {
     damage: 0,
     name: 'Monster',
     attackSprites: {},
+  };
+
+  const clearTimeoutSafe = (timeoutId) => {
+    if (timeoutId !== null) {
+      window.clearTimeout(timeoutId);
+    }
+    return null;
   };
 
   const clearRewardGlowStyles = () => {
@@ -407,10 +419,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const clearEvolutionTimers = () => {
-    if (evolutionCompletionTimeout !== null) {
-      window.clearTimeout(evolutionCompletionTimeout);
-      evolutionCompletionTimeout = null;
-    }
+    evolutionGrowthStartTimeout = clearTimeoutSafe(evolutionGrowthStartTimeout);
+    evolutionGrowthFallbackTimeout = clearTimeoutSafe(
+      evolutionGrowthFallbackTimeout
+    );
+    evolutionRevealFallbackTimeout = clearTimeoutSafe(
+      evolutionRevealFallbackTimeout
+    );
+    evolutionCardDelayTimeout = clearTimeoutSafe(evolutionCardDelayTimeout);
   };
 
   const resetEvolutionOverlay = () => {
@@ -496,26 +512,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const finishEvolutionSequence = (nextSpriteSrc) => {
-    if (!evolutionInProgress) {
-      resetEvolutionOverlay();
-      return;
-    }
+  const finishEvolutionSequence = (nextSpriteSrc, options = {}) => {
+    const { skipDelays = false } = options;
+    const shouldDelay = !skipDelays && evolutionInProgress;
 
-    resetEvolutionOverlay();
-    evolutionInProgress = false;
+    clearEvolutionTimers();
 
     if (heroImg && typeof nextSpriteSrc === 'string') {
       heroImg.src = nextSpriteSrc;
       heroImg.classList.add('battle-shellfin--evolved');
     }
 
-    document.body?.classList.remove('is-evolution-active');
-
-    window.setTimeout(() => {
+    const completeEvolution = () => {
+      resetEvolutionOverlay();
+      document.body?.classList.remove('is-evolution-active');
       markRegistrationAsRequired();
       showRegisterRewardCard();
-    }, 400);
+    };
+
+    evolutionInProgress = false;
+
+    if (!shouldDelay) {
+      completeEvolution();
+      return;
+    }
+
+    evolutionCardDelayTimeout = window.setTimeout(() => {
+      evolutionCardDelayTimeout = null;
+      completeEvolution();
+    }, HERO_EVOLUTION_CARD_REVEAL_DELAY_MS);
   };
 
   const startEvolutionSequence = () => {
@@ -540,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextSpriteSrc = deriveNextHeroSprite();
 
     if (!evolutionOverlay || !evolutionCurrentSprite || !evolutionNextSprite) {
-      finishEvolutionSequence(nextSpriteSrc);
+      finishEvolutionSequence(nextSpriteSrc, { skipDelays: true });
       return;
     }
 
@@ -576,17 +601,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       growthHandled = true;
 
+      evolutionGrowthFallbackTimeout = clearTimeoutSafe(
+        evolutionGrowthFallbackTimeout
+      );
+
       evolutionCurrentSprite.classList.remove(
         'evolution-overlay__sprite--growth',
         'evolution-overlay__sprite--visible'
       );
       evolutionCurrentSprite.classList.add('evolution-overlay__sprite--hidden');
 
-      clearEvolutionTimers();
-
       const handleRevealComplete = () => {
         evolutionNextSprite.removeEventListener('animationend', handleRevealComplete);
-        clearEvolutionTimers();
+        evolutionRevealFallbackTimeout = clearTimeoutSafe(
+          evolutionRevealFallbackTimeout
+        );
         finishEvolutionSequence(nextSpriteSrc);
       };
 
@@ -598,24 +627,37 @@ document.addEventListener('DOMContentLoaded', () => {
         once: true,
       });
 
-      evolutionCompletionTimeout = window.setTimeout(() => {
-        evolutionCompletionTimeout = null;
+      evolutionRevealFallbackTimeout = window.setTimeout(() => {
+        evolutionRevealFallbackTimeout = null;
         handleRevealComplete();
       }, HERO_EVOLUTION_REVEAL_DURATION_MS + 400);
     };
 
-    evolutionCurrentSprite.classList.add('evolution-overlay__sprite--visible');
-    void evolutionCurrentSprite.offsetWidth;
-    evolutionCurrentSprite.classList.add('evolution-overlay__sprite--growth');
+    const beginGrowth = () => {
+      void evolutionCurrentSprite.offsetWidth;
+      evolutionCurrentSprite.classList.add('evolution-overlay__sprite--growth');
+
+      evolutionGrowthFallbackTimeout = window.setTimeout(() => {
+        evolutionGrowthFallbackTimeout = null;
+        handleGrowthComplete();
+      },
+      HERO_EVOLUTION_GROWTH_DURATION_MS * HERO_EVOLUTION_GROWTH_ITERATIONS + 400);
+    };
+
     evolutionCurrentSprite.addEventListener('animationend', handleGrowthComplete, {
       once: true,
     });
 
-    evolutionCompletionTimeout = window.setTimeout(() => {
-      evolutionCompletionTimeout = null;
-      handleGrowthComplete();
-    },
-    HERO_EVOLUTION_GROWTH_DURATION_MS * HERO_EVOLUTION_GROWTH_ITERATIONS + 400);
+    evolutionCurrentSprite.classList.add('evolution-overlay__sprite--visible');
+
+    if (HERO_EVOLUTION_GROWTH_START_DELAY_MS > 0) {
+      evolutionGrowthStartTimeout = window.setTimeout(() => {
+        evolutionGrowthStartTimeout = null;
+        beginGrowth();
+      }, HERO_EVOLUTION_GROWTH_START_DELAY_MS);
+    } else {
+      beginGrowth();
+    }
   };
 
   const clearRewardCardDisplayTimeout = () => {
