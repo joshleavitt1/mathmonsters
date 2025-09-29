@@ -65,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : (id) => window.clearTimeout(id);
   let pendingMeterFrame = null;
   let pendingMeterFillFrame = null;
+  let isMeterDisabled = false;
 
   if (!choicesContainer || !button) {
     return;
@@ -121,6 +122,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const syncMeterDisabledAttribute = () => {
+    if (!meter) {
+      return;
+    }
+
+    if (isMeterDisabled) {
+      meter.setAttribute('hidden', 'hidden');
+    } else {
+      meter.removeAttribute('hidden');
+    }
+  };
+
   const hideMeter = () => {
     if (!meter) {
       return;
@@ -140,10 +153,17 @@ document.addEventListener('DOMContentLoaded', () => {
       meterFill.style.transition = '';
       meterFill.style.width = '0%';
     }
+
+    syncMeterDisabledAttribute();
   };
 
   const showMeter = () => {
     if (!meter) {
+      return;
+    }
+
+    if (isMeterDisabled) {
+      syncMeterDisabledAttribute();
       return;
     }
 
@@ -412,7 +432,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('close-question', closeQuestion);
 
-  document.addEventListener('question-opened', () => {
+  document.addEventListener('question-opened', (event) => {
+    const levelDetail = Number(event?.detail?.battleLevel);
+    isMeterDisabled = Number.isFinite(levelDetail) && levelDetail === 1;
+    syncMeterDisabledAttribute();
     button.classList.remove('result', 'correct', 'incorrect');
     button.textContent = 'Submit';
     clearChoiceSelections();
@@ -434,6 +457,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const detail = event?.detail ?? {};
     resetMeterAnimation();
+    if (isMeterDisabled) {
+      hideMeter();
+      return;
+    }
     if (!detail.correct) {
       hideMeter();
       return;
