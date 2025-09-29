@@ -150,55 +150,6 @@ body:not(.is-preloading) main.landing {
   transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.landing__hero-speech {
-  position: absolute;
-  top: calc(clamp(18%, 32vh, 44%) - 80px);
-  left: 50%;
-  transform: translate(-50%, -8px);
-  max-width: min(420px, 100%);
-  text-align: left;
-  align-items: flex-start;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 3;
-  transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  --dialogue-tail-offset: 60%;
-}
-
-.landing__hero-speech.is-visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.landing__hero-speech-text {
-  margin: 0;
-  width: 100%;
-  font-size: var(--text-size-medium);
-  color: rgba(39, 43, 52, 0.95);
-  letter-spacing: 0.01em;
-}
-
-.landing__hero-speech-text[data-typing='true']::after {
-  content: none;
-  animation: none;
-}
-
-.landing__hero-speech-text[data-typing='false']::after,
-.landing__hero-speech-text:not([data-typing])::after {
-  content: '';
-}
-
-@keyframes hero-speech-caret {
-  0%,
-  50% {
-    opacity: 1;
-  }
-  51%,
-  100% {
-    opacity: 0;
-  }
-}
-
 .hero.is-side-position {
   left: calc(50% - var(--intro-sprite-offset));
 }
@@ -255,11 +206,6 @@ body.is-level-one-landing .landing__actions {
 }
 
 body.is-level-one-landing .enemy {
-  display: none;
-}
-
-body.is-level-one-landing .landing__hero-speech,
-body:not(.is-level-one-landing) .landing__hero-speech {
   display: none;
 }
 
@@ -361,37 +307,35 @@ body:not(.is-level-one-landing) .level-one-intro {
   animation: level-one-egg-hatch 0.9s cubic-bezier(0.36, 0, 0.66, -0.01) forwards;
 }
 
+
 .level-one-intro__card {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(40px, 12vh, 110px);
-  transform: translate(-50%, 24px) scale(0.9);
-  width: min(360px, calc(100vw - 48px));
-  padding: clamp(20px, 4vw, 28px);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 26px 48px rgba(0, 27, 65, 0.32);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  text-align: center;
+  --card-translate-y: 24px;
   opacity: 0;
   pointer-events: none;
-  z-index: 5;
+  align-items: stretch;
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(
+    var(--card-translate-x, -50%),
+    var(--card-translate-y, 24px),
+    var(--card-translate-z, 0)
+  );
 }
 
 .level-one-intro__card.is-visible {
+  --card-translate-y: 0px;
+  opacity: 1;
   pointer-events: auto;
-  animation: level-one-card-pop 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .level-one-intro__card.is-exiting {
+  --card-translate-y: 24px;
+  opacity: 0;
   pointer-events: none;
-  animation: level-one-card-exit 0.35s cubic-bezier(0.45, 0, 0.75, 0.45) forwards;
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.45, 0, 0.75, 0.45);
 }
 
 .level-one-intro__card-avatar {
+  align-self: center;
   width: 80px;
   height: 80px;
   border-radius: 20px;
@@ -405,35 +349,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   color: rgba(31, 45, 72, 0.96);
   font-size: var(--text-size-medium);
   line-height: 1.4;
-}
-
-.level-one-intro__card-button {
-  width: 100%;
-  padding: 14px 24px;
-  border: none;
-  border-radius: 999px;
-  font-size: var(--text-size-medium);
-  font-weight: 600;
-  color: #ffffff;
-  background: linear-gradient(180deg, #4de7ff 0%, #008aff 100%);
-  box-shadow: 0 18px 32px rgba(0, 58, 128, 0.35);
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.level-one-intro__card-button:focus-visible {
-  outline: 3px solid rgba(2, 221, 255, 0.7);
-  outline-offset: 2px;
-}
-
-.level-one-intro__card-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 20px 36px rgba(0, 58, 128, 0.38);
-}
-
-.level-one-intro__card-button:active {
-  transform: translateY(0);
-  box-shadow: 0 12px 24px rgba(0, 58, 128, 0.32);
+  text-align: left;
 }
 
 @keyframes level-one-egg-pop {
@@ -479,32 +395,6 @@ body:not(.is-level-one-landing) .level-one-intro {
     transform: scale(1.38);
     opacity: 0;
     filter: blur(2px);
-  }
-}
-
-@keyframes level-one-card-pop {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, 24px) scale(0.9);
-  }
-  60% {
-    opacity: 1;
-    transform: translate(-50%, -6px) scale(1.04);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, 0) scale(1);
-  }
-}
-
-@keyframes level-one-card-exit {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, 0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, 12px) scale(0.94);
   }
 }
 
