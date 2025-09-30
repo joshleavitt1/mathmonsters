@@ -97,7 +97,6 @@ body.is-evolution-active #battle-shellfin {
   transform-origin: center;
   will-change: transform, opacity;
   z-index: 15;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
 }
 
 .attack-effect.attack-effect--show {
@@ -481,9 +480,8 @@ body.is-reward-active .reward-overlay {
   grid-area: 1 / 1;
   width: clamp(240px, 38vmin, 360px);
   max-width: 90vw;
-  filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.45));
   opacity: 0;
-  transform: scaleX(-1);
+  transform: scaleX(1);
   transform-origin: center;
 }
 
@@ -513,7 +511,7 @@ body.is-reward-active .reward-overlay {
   align-items: center;
   justify-content: center;
   padding: clamp(24px, 5vmin, 48px);
-  background: rgba(3, 12, 28, 0.92);
+  background: rgba(3, 12, 28, 0.6);
   backdrop-filter: blur(6px);
   opacity: 0;
   visibility: hidden;
@@ -533,13 +531,13 @@ body.is-reward-active .reward-overlay {
   flex-direction: column;
   align-items: center;
   gap: clamp(24px, 4vmin, 40px);
-  text-align: center;
+  text-align: left;
 }
 
 .post-evolution-overlay__sprite {
   width: clamp(240px, 38vmin, 360px);
   max-width: 90vw;
-  transform: scaleX(-1);
+  transform: scaleX(1);
   pointer-events: none;
 }
 
@@ -547,15 +545,16 @@ body.is-reward-active .reward-overlay {
   width: min(440px, 94vw);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
-  text-align: center;
+  text-align: left;
 }
 
 .post-evolution-overlay__card-avatar {
   width: 80px;
   height: 80px;
   object-fit: contain;
+  align-self: flex-start;
 }
 
 .post-evolution-overlay__card-text {
@@ -609,7 +608,7 @@ body.is-reward-active .reward-overlay {
 }
 
 .reward-overlay__image[data-reward-stage='hero'] {
-  --reward-direction: -1;
+  --reward-direction: 1;
 }
 
 .reward-overlay__card {
@@ -814,46 +813,46 @@ body.is-reward-active .reward-overlay {
 @keyframes evolution-overlay-growth {
   0% {
     opacity: 1;
-    transform: scaleX(-1) scale(0.9);
+    transform: scaleX(1) scale(0.9);
   }
 
   32% {
     opacity: 1;
-    transform: scaleX(-1) scale(1.14);
+    transform: scaleX(1) scale(1.14);
   }
 
   58% {
     opacity: 1;
-    transform: scaleX(-1) scale(1.02);
+    transform: scaleX(1) scale(1.02);
   }
 
   82% {
     opacity: 1;
-    transform: scaleX(-1) scale(1.18);
+    transform: scaleX(1) scale(1.18);
   }
 
   100% {
     opacity: 1;
-    transform: scaleX(-1) scale(1);
+    transform: scaleX(1) scale(1);
   }
 }
 
 @keyframes evolution-overlay-reveal {
   0% {
     opacity: 0;
-    transform: scaleX(-1) scale(0.88);
+    transform: scaleX(1) scale(0.88);
     filter: brightness(1.35) saturate(1.3);
   }
 
   60% {
     opacity: 1;
-    transform: scaleX(-1) scale(1.12);
+    transform: scaleX(1) scale(1.12);
     filter: brightness(1.5) saturate(1.4);
   }
 
   100% {
     opacity: 1;
-    transform: scaleX(-1) scale(1);
+    transform: scaleX(1) scale(1);
     filter: brightness(1) saturate(1);
   }
 }

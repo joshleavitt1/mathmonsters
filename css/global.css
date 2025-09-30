@@ -203,7 +203,7 @@ button:focus-visible {
   filter: blur(var(--pulsating-glow-blur, 0px));
   pointer-events: none;
   z-index: -1;
-  animation: pulsating-glow-pulse var(--pulsating-glow-duration, 1.6s)
+  animation: pulsating-glow-pulse var(--pulsating-glow-duration, 3s)
     ease-in-out infinite;
 }
 
