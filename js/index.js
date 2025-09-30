@@ -342,8 +342,6 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
         return;
       }
 
-      cancelHeroPrebattleChargeAnimation();
-
       const inlineHeroChargeScale = heroImage.style.getPropertyValue(
         '--hero-charge-scale'
       );
@@ -354,6 +352,8 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
         );
       const startingChargeScale =
         (computedHeroChargeScale || '').trim() || '1';
+
+      cancelHeroPrebattleChargeAnimation();
 
       heroPrebattleChargeAnimation = heroImage.animate(
         [
