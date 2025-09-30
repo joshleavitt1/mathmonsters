@@ -13,8 +13,10 @@ body {
 }
 
 :root {
-  --hero-sprite-width: 300px;
-  --hero-sprite-max-width: 80vw;
+  --battle-hero-sprite-width: 300px;
+  --battle-hero-sprite-max-width: 80vw;
+  --battle-monster-sprite-width: 300px;
+  --battle-monster-sprite-max-width: 80vw;
 }
 
 body.is-evolution-active .battle-dev-controls,
@@ -62,12 +64,20 @@ body.is-post-evolution-active #complete-message {
 #battle-monster,
 #battle-shellfin {
   position: absolute;
-  width: var(--hero-sprite-width);
-  max-width: var(--hero-sprite-max-width);
   opacity: 0;
   filter: blur(18px);
   transform: translateZ(0);
   will-change: transform, opacity, filter;
+}
+
+#battle-monster {
+  width: var(--battle-monster-sprite-width);
+  max-width: var(--battle-monster-sprite-max-width);
+}
+
+#battle-shellfin {
+  width: var(--battle-hero-sprite-width);
+  max-width: var(--battle-hero-sprite-max-width);
 }
 
 #battle-monster.battle-ready,
@@ -497,8 +507,8 @@ body.is-reward-active .reward-overlay {
 
 .evolution-overlay__sprite {
   grid-area: 1 / 1;
-  width: var(--hero-sprite-width);
-  max-width: var(--hero-sprite-max-width);
+  width: var(--battle-hero-sprite-width);
+  max-width: var(--battle-hero-sprite-max-width);
   opacity: 0;
   transform: scaleX(1);
   transform-origin: center;
@@ -552,8 +562,8 @@ body.is-reward-active .reward-overlay {
 }
 
 .post-evolution-overlay__sprite {
-  width: var(--hero-sprite-width);
-  max-width: var(--hero-sprite-max-width);
+  width: var(--battle-hero-sprite-width);
+  max-width: var(--battle-hero-sprite-max-width);
   transform: scaleX(1);
   pointer-events: none;
 }
