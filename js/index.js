@@ -12,7 +12,7 @@ const ENEMY_ENTRANCE_DURATION_MS = 900;
 const HERO_EXIT_DURATION_MS = 550;
 const ENEMY_EXIT_DURATION_MS = 600;
 const PRE_BATTLE_HOLD_DURATION_MS = 1000;
-const HERO_EXIT_SYNC_OFFSET_MS = 120;
+const HERO_EXIT_SYNC_BUFFER_MS = 0;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
 const LEVEL_ONE_INTRO_EGG_DELAY_MS = 500;
 const LEVEL_ONE_INTRO_INITIAL_CARD_DELAY_MS = 2000;
@@ -209,6 +209,10 @@ const runBattleIntroSequence = async (options = {}) => {
   const skipEnemyAppearance = Boolean(
     options?.hideEnemy || options?.skipEnemyAppearance
   );
+  const heroExitSyncBufferMs = Math.max(
+    0,
+    Number(options?.heroExitSyncBufferMs ?? HERO_EXIT_SYNC_BUFFER_MS) || 0
+  );
 
   const wait = (durationMs) =>
     new Promise((resolve) =>
@@ -256,7 +260,10 @@ const runBattleIntroSequence = async (options = {}) => {
 
   await wait(holdDuration);
   prepareForBattle();
-  await wait(ENEMY_ENTRANCE_DURATION_MS + HERO_EXIT_SYNC_OFFSET_MS);
+  const heroExitWaitDuration =
+    (skipEnemyAppearance ? 0 : ENEMY_ENTRANCE_DURATION_MS) +
+    heroExitSyncBufferMs;
+  await wait(heroExitWaitDuration);
   beginExitAnimations();
 
   await wait(
