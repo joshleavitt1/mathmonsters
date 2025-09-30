@@ -34,7 +34,7 @@ function setupInstallPrompt() {
 
   if (installMessage) {
     if (isStandalone) {
-      installMessage.textContent = 'All set! Reef Rangers is ready on your device.';
+      installMessage.textContent = 'All set! MathMonsters is ready on your device.';
     } else if (isIos) {
       installMessage.textContent = 'Tap the share button and choose "Add to Home Screen" to install the app.';
     } else {
@@ -65,7 +65,7 @@ function setupInstallPrompt() {
 
     if (choice.outcome === 'accepted') {
       if (installMessage) {
-        installMessage.textContent = 'Great! Finish installing Reef Rangers from your browser prompt.';
+        installMessage.textContent = 'Great! Finish installing MathMonsters from your browser prompt.';
       }
     } else if (installMessage) {
       installMessage.textContent = 'No worries. You can install the app later from your browser menu.';
@@ -77,7 +77,7 @@ function setupInstallPrompt() {
 
   window.addEventListener('appinstalled', () => {
     if (installMessage) {
-      installMessage.textContent = 'All set! Reef Rangers is now installed on your device.';
+      installMessage.textContent = 'All set! MathMonsters is now installed on your device.';
     }
     installButton.hidden = true;
   });

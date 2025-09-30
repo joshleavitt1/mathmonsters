@@ -1,6 +1,6 @@
 {
-  "name": "Reef Rangers",
-  "short_name": "ReefRangers",
+  "name": "MathMonsters",
+  "short_name": "MathMonsters",
   "description": "Battle sea monsters and sharpen your math skills wherever you are.",
   "start_url": "./index.html",
   "scope": "./",
