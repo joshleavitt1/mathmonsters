@@ -15,6 +15,7 @@
   <link rel="apple-touch-icon" sizes="300x300" href="./images/brand/logo.png" />
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/index.css" />
+  <link rel="stylesheet" href="css/home.css" />
 </head>
 <body class="is-preloading">
   <div
@@ -69,48 +70,114 @@
       ></span>
     </div>
 
-    <section class="landing__hero-info" aria-live="polite">
-      <p class="landing__hero-name text-large text-white" data-hero-name>
-        Shellfin
-      </p>
-      <p class="landing__hero-level text-small text-white" data-hero-level>
-        Level 1
-      </p>
-      <div
-        class="progress landing__hero-progress"
-        role="progressbar"
-        aria-label="Level progress"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow="0"
-        aria-valuetext="0 of 0 experience"
-        data-battle-progress
-      >
-        <div class="progress__fill" aria-hidden="true"></div>
+    <div data-level-one-landing>
+      <section class="landing__hero-info" aria-live="polite">
+        <p class="landing__hero-name text-large text-white" data-hero-name>
+          Shellfin
+        </p>
+        <p class="landing__hero-level text-small text-white" data-hero-level>
+          Level 1
+        </p>
+        <div
+          class="progress landing__hero-progress"
+          role="progressbar"
+          aria-label="Level progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          aria-valuetext="0 of 0 experience"
+          data-battle-progress
+        >
+          <div class="progress__fill" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <img
+        class="hero"
+        src="./images/hero/shellfin_level_1.png"
+        alt="Shellfin ready for battle"
+        data-hero-sprite
+      />
+
+      <div class="landing__actions">
+        <button class="landing__battle-button" type="button" data-battle-button>
+          Battle
+        </button>
       </div>
-    </section>
 
-    <img
-      class="hero"
-      src="./images/hero/shellfin_level_1.png"
-      alt="Shellfin ready for battle"
-    />
-
-    <div class="landing__actions">
-      <button class="landing__battle-button" type="button" data-battle-button>
-        Battle
-      </button>
+      <img
+        class="enemy"
+        data-enemy
+        src="./images/battle/monster_battle_1_1.png"
+        alt="Enemy ready for battle"
+        width="300"
+        height="300"
+        aria-hidden="true"
+      />
     </div>
 
-    <img
-      class="enemy"
-      data-enemy
-      src="./images/battle/monster_battle_1_1.png"
-      alt="Enemy ready for battle"
-      width="300"
-      height="300"
-      aria-hidden="true"
-    />
+    <div class="landing__standard" data-standard-landing aria-live="polite">
+      <header class="home__top-bar">
+        <button class="home__icon-button" type="button" aria-label="Open settings">
+          <img
+            src="./images/home/settings.png"
+            alt="Settings"
+            width="64"
+            height="64"
+          />
+        </button>
+        <div class="home__status" aria-live="polite">
+          <img
+            src="./images/home/gemcount.png"
+            alt="Gems"
+            width="64"
+            height="64"
+          />
+        </div>
+      </header>
+
+      <section class="home__hero">
+        <h1 class="home__hero-name text-white" data-hero-name>Shellfin</h1>
+        <p class="home__hero-level text-small text-white" data-hero-level>Level 2</p>
+        <img
+          class="home__hero-badge"
+          src="./images/home/addition.png"
+          alt="Addition badge"
+          width="100"
+          height="100"
+        />
+        <img
+          class="home__hero-sprite"
+          src="./images/hero/shellfin_level_2.png"
+          alt="Shellfin ready for the next adventure"
+          data-hero-sprite
+        />
+      </section>
+
+      <footer class="home__actions">
+        <button
+          class="home__action home__action--battle"
+          type="button"
+          aria-label="Battle"
+          data-battle-button
+        >
+          <img
+            src="./images/home/battle.png"
+            alt="Battle"
+            width="100"
+            height="100"
+          />
+        </button>
+        <button class="home__action home__action--store" type="button" aria-label="Store">
+          <img
+            src="./images/home/store.png"
+            alt="Store"
+            width="100"
+            height="100"
+          />
+        </button>
+      </footer>
+    </div>
 
   </main>
   <div class="level-one-intro" data-level-one-intro aria-hidden="true">
