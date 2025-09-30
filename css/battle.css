@@ -589,8 +589,8 @@ body.is-reward-active .reward-overlay {
 .reward-overlay__image {
   --reward-direction: 1;
   --reward-scale: 1;
-  width: 250px;
-  height: 250px;
+  width: 300px;
+  height: 300px;
   object-fit: contain;
   opacity: 0;
   transform: scaleX(var(--reward-direction)) scale(var(--reward-scale));
