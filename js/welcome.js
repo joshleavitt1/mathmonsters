@@ -18,13 +18,10 @@ const persistGuestSession = () => {
       return false;
     }
     storage.setItem(GUEST_SESSION_KEY, GUEST_SESSION_ACTIVE_VALUE);
-    const existingProgress = storage.getItem(PROGRESS_STORAGE_KEY);
-    if (!existingProgress) {
-      storage.setItem(
-        PROGRESS_STORAGE_KEY,
-        JSON.stringify(createDefaultProgress())
-      );
-    }
+    storage.setItem(
+      PROGRESS_STORAGE_KEY,
+      JSON.stringify(createDefaultProgress())
+    );
     return true;
   } catch (error) {
     console.warn('Guest session could not be saved.', error);
