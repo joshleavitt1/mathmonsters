@@ -506,15 +506,45 @@ document.addEventListener('DOMContentLoaded', () => {
       return false;
     }
 
+    const revealOverlay = () => {
+      evolutionCompleteOverlay.setAttribute('aria-hidden', 'false');
+      evolutionCompleteOverlay.classList.add('post-evolution-overlay--visible');
+      document.body?.classList.add('is-post-evolution-active');
+      focusWithoutScroll(evolutionCompleteButton);
+    };
+
     if (evolutionCompleteSprite && typeof spriteSrc === 'string' && spriteSrc) {
       evolutionCompleteSprite.src = spriteSrc;
       evolutionCompleteSprite.alt = 'Shellfin evolved';
+
+      if (typeof evolutionCompleteSprite.decode === 'function') {
+        evolutionCompleteSprite
+          .decode()
+          .then(revealOverlay)
+          .catch((error) => {
+            console.warn('Unable to decode evolution sprite before showing overlay.', error);
+            revealOverlay();
+          });
+      } else if (!evolutionCompleteSprite.complete) {
+        const handleSpriteReady = () => {
+          evolutionCompleteSprite.removeEventListener('error', handleSpriteReady);
+          evolutionCompleteSprite.removeEventListener('load', handleSpriteReady);
+          revealOverlay();
+        };
+
+        evolutionCompleteSprite.addEventListener('load', handleSpriteReady, {
+          once: true,
+        });
+        evolutionCompleteSprite.addEventListener('error', handleSpriteReady, {
+          once: true,
+        });
+      } else {
+        revealOverlay();
+      }
+    } else {
+      revealOverlay();
     }
 
-    evolutionCompleteOverlay.setAttribute('aria-hidden', 'false');
-    evolutionCompleteOverlay.classList.add('post-evolution-overlay--visible');
-    document.body?.classList.add('is-post-evolution-active');
-    focusWithoutScroll(evolutionCompleteButton);
     return true;
   };
 
