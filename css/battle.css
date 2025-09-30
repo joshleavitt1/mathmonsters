@@ -525,7 +525,7 @@ body.is-reward-active .reward-overlay {
   align-items: center;
   justify-content: center;
   padding: clamp(24px, 5vmin, 48px);
-  background: transparent;
+  background: url('../images/background/background.png') no-repeat center/cover;
   backdrop-filter: none;
   opacity: 0;
   visibility: hidden;
@@ -540,11 +540,37 @@ body.is-reward-active .reward-overlay {
   pointer-events: auto;
 }
 
+.post-evolution-overlay__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(24px, 5vmin, 40px);
+}
+
 .post-evolution-overlay__sprite {
   width: clamp(240px, 38vmin, 360px);
   max-width: 90vw;
   transform: scaleX(1);
   pointer-events: none;
+}
+
+.post-evolution-overlay__card {
+  width: min(420px, 90vw);
+  align-items: flex-start;
+  text-align: left;
+}
+
+.post-evolution-overlay__card-avatar {
+  align-self: flex-start;
+}
+
+.post-evolution-overlay__card-text {
+  margin: 0;
+}
+
+.post-evolution-overlay__card-button {
+  width: 100%;
 }
 
 .reward-overlay__image {
