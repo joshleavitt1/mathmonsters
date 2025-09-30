@@ -795,7 +795,7 @@ body.is-reward-active .reward-overlay {
 @keyframes evolution-overlay-growth {
   0% {
     opacity: 1;
-    transform: scaleX(1) scale(0.9);
+    transform: scaleX(1) scale(1);
   }
 
   32% {
@@ -822,7 +822,7 @@ body.is-reward-active .reward-overlay {
 @keyframes evolution-overlay-reveal {
   0% {
     opacity: 0;
-    transform: scaleX(1) scale(0.88);
+    transform: scaleX(1) scale(1);
     filter: brightness(1.35) saturate(1.3);
   }
 
