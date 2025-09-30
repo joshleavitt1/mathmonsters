@@ -252,16 +252,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-  const updateHeroSpriteCustomProperties = (image) => {
+  const HERO_SPRITE_WIDTH_PROPERTY = '--battle-hero-sprite-width';
+  const HERO_SPRITE_MAX_WIDTH_PROPERTY = '--battle-hero-sprite-max-width';
+
+  const createHeroSpriteCustomPropertyUpdater = (image) => {
     if (!image) {
-      return Promise.resolve(false);
+      return () => Promise.resolve(false);
     }
 
     const rootElement = image.ownerDocument?.documentElement ?? document.documentElement;
 
     if (!rootElement) {
-      return Promise.resolve(false);
+      return () => Promise.resolve(false);
     }
+
+    let latestUpdateId = 0;
+
+    const clearSpriteDimensions = () => {
+      rootElement.style.removeProperty(HERO_SPRITE_WIDTH_PROPERTY);
+      rootElement.style.removeProperty(HERO_SPRITE_MAX_WIDTH_PROPERTY);
+    };
 
     const applySpriteDimensions = () => {
       const naturalWidth = Math.round(image.naturalWidth || 0);
@@ -270,22 +280,47 @@ document.addEventListener('DOMContentLoaded', () => {
       if (naturalWidth > 0 && naturalHeight > 0) {
         const widthValue = `${naturalWidth}px`;
         const maxWidthValue = `min(${widthValue}, 80vw)`;
-        rootElement.style.setProperty('--battle-hero-sprite-width', widthValue);
-        rootElement.style.setProperty('--battle-hero-sprite-max-width', maxWidthValue);
+        rootElement.style.setProperty(HERO_SPRITE_WIDTH_PROPERTY, widthValue);
+        rootElement.style.setProperty(HERO_SPRITE_MAX_WIDTH_PROPERTY, maxWidthValue);
         return true;
       }
 
-      rootElement.style.removeProperty('--battle-hero-sprite-width');
-      rootElement.style.removeProperty('--battle-hero-sprite-max-width');
+      clearSpriteDimensions();
       return false;
     };
 
-    if (image.complete) {
-      return Promise.resolve(applySpriteDimensions());
-    }
+    return () => {
+      const updateId = ++latestUpdateId;
 
-    return waitForImageToSettle(image).then(() => applySpriteDimensions());
+      const finalize = () => {
+        if (updateId !== latestUpdateId) {
+          return false;
+        }
+
+        if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+          return applySpriteDimensions();
+        }
+
+        clearSpriteDimensions();
+        return false;
+      };
+
+      if (image.complete) {
+        return Promise.resolve(finalize());
+      }
+
+      return waitForImageToSettle(image)
+        .then(finalize)
+        .catch(() => {
+          if (updateId === latestUpdateId) {
+            clearSpriteDimensions();
+          }
+          return false;
+        });
+    };
   };
+
+  const updateHeroSpriteCustomProperties = createHeroSpriteCustomPropertyUpdater(heroImg);
 
   if (bannerAccuracyValue) bannerAccuracyValue.textContent = '100%';
   if (bannerTimeValue) bannerTimeValue.textContent = '0s';
@@ -352,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let heroSpriteReadyPromise = null;
 
   if (heroImg) {
-    heroSpriteReadyPromise = updateHeroSpriteCustomProperties(heroImg);
+    heroSpriteReadyPromise = updateHeroSpriteCustomProperties();
   }
 
   const rewardGlowStyleProperties = [
@@ -639,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (heroImg && typeof nextSpriteSrc === 'string') {
       heroImg.src = nextSpriteSrc;
-      heroSpriteReadyPromise = updateHeroSpriteCustomProperties(heroImg);
+      heroSpriteReadyPromise = updateHeroSpriteCustomProperties();
       spriteReadyPromise = heroSpriteReadyPromise;
       heroImg.classList.add('battle-shellfin--evolved');
     }
@@ -2025,7 +2060,7 @@ document.addEventListener('DOMContentLoaded', () => {
       heroImg.src = heroSprite;
     }
     if (heroImg) {
-      heroSpriteReadyPromise = updateHeroSpriteCustomProperties(heroImg);
+      heroSpriteReadyPromise = updateHeroSpriteCustomProperties();
     }
     if (heroImg && hero.name) {
       heroImg.alt = `${hero.name} ready for battle`;
