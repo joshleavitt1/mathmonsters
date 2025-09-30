@@ -1,7 +1,7 @@
-const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
+const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const VISITED_VALUE = 'true';
-const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
-const GUEST_SESSION_KEY = 'reefRangersGuestSession';
+const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
+const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 
 const BATTLE_PAGE_MODE_PARAM = 'mode';
 const BATTLE_PAGE_MODE_PLAY = 'play';

@@ -1,5 +1,5 @@
 (() => {
-const STORAGE_KEY_PROGRESS = 'reefRangersProgress';
+const STORAGE_KEY_PROGRESS = 'mathmonstersProgress';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
 
 const deriveBaseFromLocation = (fallbackBase) => {

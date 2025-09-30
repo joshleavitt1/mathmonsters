@@ -1,11 +1,11 @@
-const LANDING_VISITED_KEY = 'reefRangersVisitedLanding';
+const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 
 const VISITED_VALUE = 'true';
-const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
-const GUEST_SESSION_KEY = 'reefRangersGuestSession';
+const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
+const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
-const LANDING_MODE_STORAGE_KEY = 'reefRangersLandingMode';
+const LANDING_MODE_STORAGE_KEY = 'mathmonstersLandingMode';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const HERO_TO_ENEMY_DELAY_MS = 1200;
 const ENEMY_ENTRANCE_DURATION_MS = 900;

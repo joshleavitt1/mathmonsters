@@ -1,4 +1,4 @@
-const GUEST_SESSION_KEY = 'reefRangersGuestSession';
+const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 
 const clearGuestSessionFlag = () => {
   try {

@@ -1,5 +1,5 @@
-const GUEST_SESSION_KEY = 'reefRangersGuestSession';
-const PROGRESS_STORAGE_KEY = 'reefRangersProgress';
+const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
+const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const LEVEL_TWO_BATTLE_LEVEL = 2;
 
 const clearGuestSessionFlag = () => {

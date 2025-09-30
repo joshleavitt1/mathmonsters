@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reef-rangers-cache-v2';
+const CACHE_NAME = 'mathmonsters-cache-v2';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
