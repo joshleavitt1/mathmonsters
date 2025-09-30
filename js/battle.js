@@ -900,6 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rewardSprite.classList.remove('reward-overlay__image--swap-out');
         rewardSprite.src = heroLevelOneSrc;
         rewardSprite.alt = 'Shellfin prepares to evolve';
+        setRewardStage('hero');
         void rewardSprite.offsetWidth;
         beginFadeIn();
       }, REWARD_SPRITE_SWAP_DURATION_MS);

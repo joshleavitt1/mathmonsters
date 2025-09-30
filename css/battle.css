@@ -81,7 +81,7 @@ body.is-evolution-active #battle-shellfin {
 }
 
 #battle-shellfin.battle-shellfin--evolved {
-  filter: blur(0) drop-shadow(0 0 28px rgba(73, 164, 255, 0.55));
+  filter: blur(0);
   transition: filter 0.6s ease;
 }
 
@@ -539,7 +539,6 @@ body.is-reward-active .reward-overlay {
 .post-evolution-overlay__sprite {
   width: clamp(240px, 38vmin, 360px);
   max-width: 90vw;
-  filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.45));
   transform: scaleX(-1);
   pointer-events: none;
 }
@@ -553,12 +552,13 @@ body.is-reward-active .reward-overlay {
   text-align: center;
 }
 
-.post-evolution-overlay__title {
-  margin: 0;
-  width: 100%;
+.post-evolution-overlay__card-avatar {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
 }
 
-.post-evolution-overlay__text {
+.post-evolution-overlay__card-text {
   margin: 0;
 }
 
@@ -567,11 +567,13 @@ body.is-reward-active .reward-overlay {
 }
 
 .reward-overlay__image {
+  --reward-direction: 1;
+  --reward-scale: 1;
   width: 250px;
   height: 250px;
   object-fit: contain;
   opacity: 0;
-  transform: scale(1);
+  transform: scaleX(var(--reward-direction)) scale(var(--reward-scale));
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
@@ -598,12 +600,16 @@ body.is-reward-active .reward-overlay {
 
 .reward-overlay__image--swap-out {
   opacity: 0;
-  transform: scale(0.85);
+  --reward-scale: 0.85;
 }
 
 .reward-overlay__image--swap-in {
   opacity: 1;
-  transform: scale(1);
+  --reward-scale: 1;
+}
+
+.reward-overlay__image[data-reward-stage='hero'] {
+  --reward-direction: -1;
 }
 
 .reward-overlay__card {
@@ -633,54 +639,54 @@ body.is-reward-active .reward-overlay {
 
 @keyframes reward-overlay-egg-pop {
   0% {
-    transform: scale(0.24);
+    transform: scaleX(var(--reward-direction)) scale(0.24);
     opacity: 0;
   }
 
   52% {
-    transform: scale(1.05);
+    transform: scaleX(var(--reward-direction)) scale(1.05);
     opacity: 1;
   }
 
   100% {
-    transform: scale(1);
+    transform: scaleX(var(--reward-direction)) scale(1);
     opacity: 1;
   }
 }
 
 @keyframes reward-overlay-egg-hatch {
   0% {
-    transform: scale(1);
+    transform: scaleX(var(--reward-direction)) scale(1);
     opacity: 1;
   }
 
   28% {
-    transform: scale(1.12);
+    transform: scaleX(var(--reward-direction)) scale(1.12);
     opacity: 1;
   }
 
   46% {
-    transform: scale(1.04);
+    transform: scaleX(var(--reward-direction)) scale(1.04);
     opacity: 1;
   }
 
   72% {
-    transform: scale(1.22);
+    transform: scaleX(var(--reward-direction)) scale(1.22);
     opacity: 1;
   }
 
   86% {
-    transform: scale(1.12);
+    transform: scaleX(var(--reward-direction)) scale(1.12);
     opacity: 1;
   }
 
   94% {
-    transform: scale(1.28);
+    transform: scaleX(var(--reward-direction)) scale(1.28);
     opacity: 1;
   }
 
   100% {
-    transform: scale(0.7);
+    transform: scaleX(var(--reward-direction)) scale(0.7);
     opacity: 0;
   }
 }
