@@ -10,9 +10,9 @@ const VICTORY_PROGRESS_UPDATE_DELAY = ENEMY_DEFEAT_ANIMATION_DELAY + 1000;
 const DEFEAT_PROGRESS_UPDATE_DELAY = 1000;
 const LEVEL_PROGRESS_ANIMATION_DELAY_MS = 0;
 const REWARD_CARD_DELAY_MS = 2000;
-const HERO_EVOLUTION_GROWTH_DURATION_MS = 600;
+const HERO_EVOLUTION_GROWTH_DURATION_MS = 1100;
 const HERO_EVOLUTION_GROWTH_ITERATIONS = 3;
-const HERO_EVOLUTION_REVEAL_DURATION_MS = 600;
+const HERO_EVOLUTION_REVEAL_DURATION_MS = 1100;
 const HERO_EVOLUTION_GROWTH_START_DELAY_MS = 1000;
 const HERO_EVOLUTION_CARD_REVEAL_DELAY_MS = 2000;
 const REWARD_CARD_CLOSE_DURATION_MS = 1000;
@@ -513,6 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     evolutionCompleteOverlay.setAttribute('aria-hidden', 'false');
     evolutionCompleteOverlay.classList.add('post-evolution-overlay--visible');
+    document.body?.classList.add('is-post-evolution-active');
     focusWithoutScroll(evolutionCompleteButton);
     return true;
   };
@@ -535,6 +536,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const completeEvolution = () => {
+      hideRewardOverlayInstantly();
+      if (completeMessage) {
+        completeMessage.classList.remove('show');
+        completeMessage.setAttribute('aria-hidden', 'true');
+      }
       const overlayShown = showEvolutionCompleteOverlay(nextSpriteSrc);
       resetEvolutionOverlay();
       document.body?.classList.remove('is-evolution-active');
@@ -924,6 +930,13 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardSprite.alt = 'Potion level-up reward';
     setRewardStage(null);
     disableRewardSpriteInteraction();
+
+    if (evolutionCompleteOverlay) {
+      evolutionCompleteOverlay.classList.remove('post-evolution-overlay--visible');
+      evolutionCompleteOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    document.body?.classList.remove('is-post-evolution-active');
   };
 
   const showRegisterRewardCard = () => {
