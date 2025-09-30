@@ -641,8 +641,123 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const showEvolutionCompleteOverlay = (spriteSrc) => {
     if (!evolutionCompleteOverlay) {
-      return false;
+      return { shown: false, onVisible: Promise.resolve() };
     }
+
+    const parseTimeToMs = (value) => {
+      if (typeof value !== 'string') {
+        return 0;
+      }
+
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return 0;
+      }
+
+      if (trimmed.endsWith('ms')) {
+        const numeric = Number.parseFloat(trimmed.slice(0, -2));
+        return Number.isFinite(numeric) ? numeric : 0;
+      }
+
+      if (trimmed.endsWith('s')) {
+        const numeric = Number.parseFloat(trimmed.slice(0, -1));
+        return Number.isFinite(numeric) ? numeric * 1000 : 0;
+      }
+
+      const numeric = Number.parseFloat(trimmed);
+      return Number.isFinite(numeric) ? numeric : 0;
+    };
+
+    const resolveNextFrame = (resolve) => {
+      if (typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(() => resolve());
+      } else {
+        window.setTimeout(() => resolve(), 0);
+      }
+    };
+
+    const createOverlayVisibilityPromise = (overlay) => {
+      if (typeof window === 'undefined') {
+        return Promise.resolve();
+      }
+
+      const { getComputedStyle } = window;
+      if (typeof getComputedStyle !== 'function') {
+        return new Promise((resolve) => {
+          resolveNextFrame(resolve);
+        });
+      }
+
+      let maxDuration = 0;
+
+      try {
+        const computedStyle = getComputedStyle(overlay);
+        const durationParts = (computedStyle?.transitionDuration ?? '').split(',');
+        const delayParts = (computedStyle?.transitionDelay ?? '').split(',');
+        const maxParts = Math.max(durationParts.length, delayParts.length, 1);
+
+        for (let index = 0; index < maxParts; index += 1) {
+          const durationPart =
+            durationParts[index] ?? durationParts[durationParts.length - 1] ?? '0s';
+          const delayPart = delayParts[index] ?? delayParts[delayParts.length - 1] ?? '0s';
+          const total = parseTimeToMs(durationPart) + parseTimeToMs(delayPart);
+          if (total > maxDuration) {
+            maxDuration = total;
+          }
+        }
+      } catch (error) {
+        console.warn(
+          'Unable to determine post-evolution overlay transition duration.',
+          error
+        );
+        maxDuration = 0;
+      }
+
+      if (maxDuration <= 0) {
+        return new Promise((resolve) => {
+          resolveNextFrame(resolve);
+        });
+      }
+
+      return new Promise((resolve) => {
+        let resolved = false;
+        let timeoutId = null;
+
+        const finish = () => {
+          if (resolved) {
+            return;
+          }
+          resolved = true;
+          overlay.removeEventListener('transitionend', handleTransitionEnd);
+          if (timeoutId !== null) {
+            window.clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+          resolve();
+        };
+
+        const handleTransitionEnd = (event) => {
+          if (event?.target !== overlay) {
+            return;
+          }
+          finish();
+        };
+
+        overlay.addEventListener('transitionend', handleTransitionEnd);
+
+        timeoutId = window.setTimeout(() => {
+          finish();
+        }, Math.max(50, maxDuration + 50));
+      });
+    };
+
+    const overlayAlreadyVisible = evolutionCompleteOverlay.classList.contains(
+      'post-evolution-overlay--visible'
+    );
+
+    const overlayVisibilityPromise = overlayAlreadyVisible
+      ? Promise.resolve()
+      : createOverlayVisibilityPromise(evolutionCompleteOverlay);
 
     const revealOverlay = () => {
       evolutionCompleteOverlay.setAttribute('aria-hidden', 'false');
@@ -683,7 +798,10 @@ document.addEventListener('DOMContentLoaded', () => {
       revealOverlay();
     }
 
-    return true;
+    return {
+      shown: true,
+      onVisible: overlayVisibilityPromise,
+    };
   };
 
   if (evolutionCompleteButton) {
@@ -718,12 +836,43 @@ document.addEventListener('DOMContentLoaded', () => {
         completeMessage.classList.remove('show');
         completeMessage.setAttribute('aria-hidden', 'true');
       }
-      const overlayShown = showEvolutionCompleteOverlay(nextSpriteSrc);
-      resetEvolutionOverlay();
-      document.body?.classList.remove('is-evolution-active');
+      const overlayResult =
+        showEvolutionCompleteOverlay(nextSpriteSrc) ?? { shown: false, onVisible: null };
+      const overlayShown = overlayResult?.shown === true;
+      const overlayVisiblePromise = overlayResult?.onVisible;
+
+      let overlayCleanupComplete = false;
+      const cleanupEvolutionOverlay = () => {
+        if (overlayCleanupComplete) {
+          return;
+        }
+        overlayCleanupComplete = true;
+        resetEvolutionOverlay();
+        document.body?.classList.remove('is-evolution-active');
+      };
+
       markRegistrationAsRequired();
+
       if (!overlayShown) {
+        cleanupEvolutionOverlay();
         showRegisterRewardCard();
+        return;
+      }
+
+      if (overlayVisiblePromise && typeof overlayVisiblePromise.then === 'function') {
+        overlayVisiblePromise
+          .then(() => {
+            cleanupEvolutionOverlay();
+          })
+          .catch((error) => {
+            console.warn(
+              'Failed to confirm post-evolution overlay visibility before cleanup.',
+              error
+            );
+            cleanupEvolutionOverlay();
+          });
+      } else {
+        cleanupEvolutionOverlay();
       }
     };
 
