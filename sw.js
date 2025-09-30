@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mathmonsters-cache-v2';
+const CACHE_NAME = 'mathmonsters-cache-v3';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
