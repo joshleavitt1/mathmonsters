@@ -15,6 +15,9 @@ const HERO_EVOLUTION_GROWTH_ITERATIONS = 3;
 const HERO_EVOLUTION_REVEAL_DURATION_MS = 600;
 const HERO_EVOLUTION_GROWTH_START_DELAY_MS = 1000;
 const HERO_EVOLUTION_CARD_REVEAL_DELAY_MS = 2000;
+const REWARD_CARD_CLOSE_DURATION_MS = 1000;
+const REWARD_SPRITE_SWAP_DURATION_MS = 400;
+const REWARD_SPRITE_HOLD_DURATION_MS = 1000;
 const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 
@@ -195,6 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   const evolutionCompleteButton = evolutionCompleteOverlay?.querySelector(
     '[data-evolution-complete-button]'
+  );
+  const evolutionCompleteSprite = evolutionCompleteOverlay?.querySelector(
+    '[data-evolution-complete-sprite]'
   );
 
   const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
@@ -495,9 +501,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const showEvolutionCompleteOverlay = () => {
+  const showEvolutionCompleteOverlay = (spriteSrc) => {
     if (!evolutionCompleteOverlay) {
       return false;
+    }
+
+    if (evolutionCompleteSprite && typeof spriteSrc === 'string' && spriteSrc) {
+      evolutionCompleteSprite.src = spriteSrc;
+      evolutionCompleteSprite.alt = 'Shellfin evolved';
     }
 
     evolutionCompleteOverlay.setAttribute('aria-hidden', 'false');
@@ -524,10 +535,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const completeEvolution = () => {
+      const overlayShown = showEvolutionCompleteOverlay(nextSpriteSrc);
       resetEvolutionOverlay();
       document.body?.classList.remove('is-evolution-active');
       markRegistrationAsRequired();
-      showRegisterRewardCard();
+      if (!overlayShown) {
+        showRegisterRewardCard();
+      }
     };
 
     evolutionInProgress = false;
@@ -555,109 +569,131 @@ document.addEventListener('DOMContentLoaded', () => {
       rewardCardButton.disabled = true;
     }
 
-    hideRewardCard();
     disableRewardSpriteInteraction();
-    clearRewardAnimation();
-    hideRewardOverlayInstantly();
     clearRewardCardDisplayTimeout();
 
-    const currentSpriteSrc = getCurrentHeroSprite();
-    const nextSpriteSrc = deriveNextHeroSprite();
+    const runPrelude = async () => {
+      try {
+        await animateRewardCardClose();
+        const swapped = await animatePotionToHeroSprite();
+        if (swapped) {
+          await wait(REWARD_SPRITE_HOLD_DURATION_MS);
+        }
+      } finally {
+        hideRewardCard();
+        clearRewardAnimation();
+        hideRewardOverlayInstantly();
 
-    if (!evolutionOverlay || !evolutionCurrentSprite || !evolutionNextSprite) {
-      finishEvolutionSequence(nextSpriteSrc, { skipDelays: true });
-      return;
-    }
+        const currentSpriteSrc = getCurrentHeroSprite();
+        const nextSpriteSrc = deriveNextHeroSprite();
 
-    evolutionCurrentSprite.src = currentSpriteSrc;
-    evolutionNextSprite.src = nextSpriteSrc;
+        if (!evolutionOverlay || !evolutionCurrentSprite || !evolutionNextSprite) {
+          finishEvolutionSequence(nextSpriteSrc, { skipDelays: true });
+          return;
+        }
 
-    evolutionCurrentSprite.classList.remove(
-      'evolution-overlay__sprite--hidden',
-      'evolution-overlay__sprite--growth',
-      'evolution-overlay__sprite--visible'
-    );
-    evolutionNextSprite.classList.remove(
-      'evolution-overlay__sprite--hidden',
-      'evolution-overlay__sprite--reveal',
-      'evolution-overlay__sprite--visible'
-    );
-    evolutionNextSprite.classList.add('evolution-overlay__sprite--hidden');
+        evolutionCurrentSprite.src = currentSpriteSrc;
+        evolutionNextSprite.src = nextSpriteSrc;
 
-    evolutionOverlay.setAttribute('aria-hidden', 'false');
-    evolutionOverlay.classList.add('evolution-overlay--visible');
-
-    document.body?.classList.add('is-evolution-active');
-
-    if (heroImg) {
-      heroImg.classList.remove('battle-shellfin--evolved');
-    }
-
-    let growthHandled = false;
-
-    const handleGrowthComplete = () => {
-      if (growthHandled) {
-        return;
-      }
-      growthHandled = true;
-
-      evolutionGrowthFallbackTimeout = clearTimeoutSafe(
-        evolutionGrowthFallbackTimeout
-      );
-
-      evolutionCurrentSprite.classList.remove(
-        'evolution-overlay__sprite--growth',
-        'evolution-overlay__sprite--visible'
-      );
-      evolutionCurrentSprite.classList.add('evolution-overlay__sprite--hidden');
-
-      const handleRevealComplete = () => {
-        evolutionNextSprite.removeEventListener('animationend', handleRevealComplete);
-        evolutionRevealFallbackTimeout = clearTimeoutSafe(
-          evolutionRevealFallbackTimeout
+        evolutionCurrentSprite.classList.remove(
+          'evolution-overlay__sprite--hidden',
+          'evolution-overlay__sprite--growth',
+          'evolution-overlay__sprite--visible'
         );
-        finishEvolutionSequence(nextSpriteSrc);
-      };
+        evolutionNextSprite.classList.remove(
+          'evolution-overlay__sprite--hidden',
+          'evolution-overlay__sprite--reveal',
+          'evolution-overlay__sprite--visible'
+        );
+        evolutionNextSprite.classList.add('evolution-overlay__sprite--hidden');
 
-      evolutionNextSprite.classList.remove('evolution-overlay__sprite--hidden');
-      evolutionNextSprite.classList.add('evolution-overlay__sprite--visible');
-      void evolutionNextSprite.offsetWidth;
-      evolutionNextSprite.classList.add('evolution-overlay__sprite--reveal');
-      evolutionNextSprite.addEventListener('animationend', handleRevealComplete, {
-        once: true,
-      });
+        evolutionOverlay.setAttribute('aria-hidden', 'false');
+        evolutionOverlay.classList.add('evolution-overlay--visible');
 
-      evolutionRevealFallbackTimeout = window.setTimeout(() => {
-        evolutionRevealFallbackTimeout = null;
-        handleRevealComplete();
-      }, HERO_EVOLUTION_REVEAL_DURATION_MS + 400);
+        document.body?.classList.add('is-evolution-active');
+
+        if (heroImg) {
+          heroImg.classList.remove('battle-shellfin--evolved');
+        }
+
+        let growthHandled = false;
+
+        const handleGrowthComplete = () => {
+          if (growthHandled) {
+            return;
+          }
+          growthHandled = true;
+
+          evolutionGrowthFallbackTimeout = clearTimeoutSafe(
+            evolutionGrowthFallbackTimeout
+          );
+
+          evolutionCurrentSprite.classList.remove(
+            'evolution-overlay__sprite--growth',
+            'evolution-overlay__sprite--visible'
+          );
+          evolutionCurrentSprite.classList.add('evolution-overlay__sprite--hidden');
+
+          const handleRevealComplete = () => {
+            evolutionNextSprite.removeEventListener(
+              'animationend',
+              handleRevealComplete
+            );
+            evolutionRevealFallbackTimeout = clearTimeoutSafe(
+              evolutionRevealFallbackTimeout
+            );
+            finishEvolutionSequence(nextSpriteSrc);
+          };
+
+          evolutionNextSprite.classList.remove('evolution-overlay__sprite--hidden');
+          evolutionNextSprite.classList.add('evolution-overlay__sprite--visible');
+          void evolutionNextSprite.offsetWidth;
+          evolutionNextSprite.classList.add('evolution-overlay__sprite--reveal');
+          evolutionNextSprite.addEventListener('animationend', handleRevealComplete, {
+            once: true,
+          });
+
+          evolutionRevealFallbackTimeout = window.setTimeout(() => {
+            evolutionRevealFallbackTimeout = null;
+            handleRevealComplete();
+          }, HERO_EVOLUTION_REVEAL_DURATION_MS + 400);
+        };
+
+        const beginGrowth = () => {
+          void evolutionCurrentSprite.offsetWidth;
+          evolutionCurrentSprite.classList.add('evolution-overlay__sprite--growth');
+
+          evolutionGrowthFallbackTimeout = window.setTimeout(() => {
+            evolutionGrowthFallbackTimeout = null;
+            handleGrowthComplete();
+          },
+          HERO_EVOLUTION_GROWTH_DURATION_MS * HERO_EVOLUTION_GROWTH_ITERATIONS + 400);
+        };
+
+        evolutionCurrentSprite.addEventListener(
+          'animationend',
+          handleGrowthComplete,
+          {
+            once: true,
+          }
+        );
+
+        evolutionCurrentSprite.classList.add('evolution-overlay__sprite--visible');
+
+        if (HERO_EVOLUTION_GROWTH_START_DELAY_MS > 0) {
+          evolutionGrowthStartTimeout = window.setTimeout(() => {
+            evolutionGrowthStartTimeout = null;
+            beginGrowth();
+          }, HERO_EVOLUTION_GROWTH_START_DELAY_MS);
+        } else {
+          beginGrowth();
+        }
+      }
     };
 
-    const beginGrowth = () => {
-      void evolutionCurrentSprite.offsetWidth;
-      evolutionCurrentSprite.classList.add('evolution-overlay__sprite--growth');
-
-      evolutionGrowthFallbackTimeout = window.setTimeout(() => {
-        evolutionGrowthFallbackTimeout = null;
-        handleGrowthComplete();
-      },
-      HERO_EVOLUTION_GROWTH_DURATION_MS * HERO_EVOLUTION_GROWTH_ITERATIONS + 400);
-    };
-
-    evolutionCurrentSprite.addEventListener('animationend', handleGrowthComplete, {
-      once: true,
+    runPrelude().catch((error) => {
+      console.warn('Unable to complete reward animation before evolution.', error);
     });
-
-    evolutionCurrentSprite.classList.add('evolution-overlay__sprite--visible');
-
-    if (HERO_EVOLUTION_GROWTH_START_DELAY_MS > 0) {
-      evolutionGrowthStartTimeout = window.setTimeout(() => {
-        evolutionGrowthStartTimeout = null;
-        beginGrowth();
-      }, HERO_EVOLUTION_GROWTH_START_DELAY_MS);
-    } else {
-      beginGrowth();
-    }
   };
 
   const clearRewardCardDisplayTimeout = () => {
@@ -673,6 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     rewardCard.classList.remove('card--pop');
+    rewardCard.classList.remove('card--closing');
     rewardCard.setAttribute('aria-hidden', 'true');
     rewardCard.hidden = true;
     if (rewardCardButton) {
@@ -712,6 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardCard.hidden = false;
     rewardCard.setAttribute('aria-hidden', 'false');
     rewardCard.classList.remove('card--pop');
+    rewardCard.classList.remove('card--closing');
     void rewardCard.offsetWidth;
     rewardCard.classList.add('card--pop');
 
@@ -744,11 +782,130 @@ document.addEventListener('DOMContentLoaded', () => {
       'reward-overlay__image--chest-pop',
       'reward-overlay__image--hatching',
       'reward-overlay__image--potion-pop',
+      'reward-overlay__image--swap-in',
+      'reward-overlay__image--swap-out',
       'reward-overlay__image--visible'
     );
     rewardSprite.style.removeProperty('opacity');
     rewardSprite.style.removeProperty('transform');
   };
+
+  const wait = (duration) =>
+    new Promise((resolve) => {
+      const delay =
+        typeof duration === 'number' && Number.isFinite(duration)
+          ? Math.max(0, duration)
+          : 0;
+      window.setTimeout(resolve, delay);
+    });
+
+  const animateRewardCardClose = () =>
+    new Promise((resolve) => {
+      if (!rewardCard) {
+        hideRewardCard();
+        resolve(false);
+        return;
+      }
+
+      const isHidden =
+        rewardCard.hidden || rewardCard.getAttribute('aria-hidden') === 'true';
+      if (isHidden) {
+        hideRewardCard();
+        resolve(false);
+        return;
+      }
+
+      let finished = false;
+      let fallbackTimeout = null;
+
+      const finish = (played) => {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        if (fallbackTimeout !== null) {
+          window.clearTimeout(fallbackTimeout);
+          fallbackTimeout = null;
+        }
+        rewardCard.removeEventListener('animationend', handleAnimationEnd);
+        hideRewardCard();
+        resolve(played);
+      };
+
+      const handleAnimationEnd = (event) => {
+        if (!event || event.target !== rewardCard) {
+          return;
+        }
+
+        if (event.animationName !== 'card-close') {
+          return;
+        }
+
+        finish(true);
+      };
+
+      rewardCard.addEventListener('animationend', handleAnimationEnd);
+      rewardCard.classList.remove('card--pop');
+      rewardCard.classList.add('card--closing');
+
+      fallbackTimeout = window.setTimeout(() => {
+        finish(false);
+      }, REWARD_CARD_CLOSE_DURATION_MS + 120);
+    });
+
+  const animatePotionToHeroSprite = () =>
+    new Promise((resolve) => {
+      if (!rewardSprite) {
+        resolve(false);
+        return;
+      }
+
+      rewardSprite.classList.remove(
+        'reward-overlay__image--swap-out',
+        'reward-overlay__image--swap-in'
+      );
+
+      const heroLevelOneSrc =
+        resolveAbsoluteSpritePath(HERO_LEVEL_1_SRC) || HERO_LEVEL_1_SRC;
+      let fadeOutTimeoutId = null;
+      let fadeInTimeoutId = null;
+
+      const cleanup = () => {
+        if (fadeOutTimeoutId !== null) {
+          window.clearTimeout(fadeOutTimeoutId);
+          fadeOutTimeoutId = null;
+        }
+        if (fadeInTimeoutId !== null) {
+          window.clearTimeout(fadeInTimeoutId);
+          fadeInTimeoutId = null;
+        }
+        rewardSprite.classList.remove('reward-overlay__image--swap-out');
+        rewardSprite.classList.remove('reward-overlay__image--swap-in');
+      };
+
+      const finish = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      const beginFadeIn = () => {
+        rewardSprite.classList.add('reward-overlay__image--swap-in');
+        fadeInTimeoutId = window.setTimeout(() => {
+          rewardSprite.classList.remove('reward-overlay__image--swap-in');
+          finish();
+        }, REWARD_SPRITE_SWAP_DURATION_MS);
+      };
+
+      fadeOutTimeoutId = window.setTimeout(() => {
+        rewardSprite.classList.remove('reward-overlay__image--swap-out');
+        rewardSprite.src = heroLevelOneSrc;
+        rewardSprite.alt = 'Shellfin prepares to evolve';
+        void rewardSprite.offsetWidth;
+        beginFadeIn();
+      }, REWARD_SPRITE_SWAP_DURATION_MS);
+
+      rewardSprite.classList.add('reward-overlay__image--swap-out');
+    });
 
   const resetRewardOverlay = () => {
     if (!rewardOverlay || !rewardSprite) {
