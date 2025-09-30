@@ -218,6 +218,75 @@ document.addEventListener('DOMContentLoaded', () => {
     'Your creature just evolved! It’s stronger now and ready for new adventures!';
   const REGISTER_REWARD_CARD_BUTTON_TEXT = 'Register Now';
 
+  const waitForImageToSettle = (image) =>
+    new Promise((resolve) => {
+      if (!image) {
+        resolve(false);
+        return;
+      }
+
+      if (image.complete) {
+        resolve(image.naturalWidth > 0 && image.naturalHeight > 0);
+        return;
+      }
+
+      let settled = false;
+      const finalize = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        image.removeEventListener('load', finalize);
+        image.removeEventListener('error', finalize);
+        resolve(image.naturalWidth > 0 && image.naturalHeight > 0);
+      };
+
+      image.addEventListener('load', finalize, { once: true });
+      image.addEventListener('error', finalize, { once: true });
+
+      if (typeof image.decode === 'function') {
+        image
+          .decode()
+          .then(finalize)
+          .catch(() => {});
+      }
+    });
+
+  const updateHeroSpriteCustomProperties = (image) => {
+    if (!image) {
+      return Promise.resolve(false);
+    }
+
+    const rootElement = image.ownerDocument?.documentElement ?? document.documentElement;
+
+    if (!rootElement) {
+      return Promise.resolve(false);
+    }
+
+    const applySpriteDimensions = () => {
+      const naturalWidth = Math.round(image.naturalWidth || 0);
+      const naturalHeight = Math.round(image.naturalHeight || 0);
+
+      if (naturalWidth > 0 && naturalHeight > 0) {
+        const widthValue = `${naturalWidth}px`;
+        const maxWidthValue = `min(${widthValue}, 80vw)`;
+        rootElement.style.setProperty('--battle-hero-sprite-width', widthValue);
+        rootElement.style.setProperty('--battle-hero-sprite-max-width', maxWidthValue);
+        return true;
+      }
+
+      rootElement.style.removeProperty('--battle-hero-sprite-width');
+      rootElement.style.removeProperty('--battle-hero-sprite-max-width');
+      return false;
+    };
+
+    if (image.complete) {
+      return Promise.resolve(applySpriteDimensions());
+    }
+
+    return waitForImageToSettle(image).then(() => applySpriteDimensions());
+  };
+
   if (bannerAccuracyValue) bannerAccuracyValue.textContent = '100%';
   if (bannerTimeValue) bannerTimeValue.textContent = '0s';
   if (summaryAccuracyText) summaryAccuracyText.textContent = '100%';
@@ -280,6 +349,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let evolutionCardDelayTimeout = null;
   let evolutionInProgress = false;
   let rewardCardDisplayTimeout = null;
+  let heroSpriteReadyPromise = null;
+
+  if (heroImg) {
+    heroSpriteReadyPromise = updateHeroSpriteCustomProperties(heroImg);
+  }
 
   const rewardGlowStyleProperties = [
     '--pulsating-glow-color',
@@ -560,12 +634,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     clearEvolutionTimers();
 
+    let spriteReadyPromise = heroSpriteReadyPromise;
+    let evolutionFinalized = false;
+
     if (heroImg && typeof nextSpriteSrc === 'string') {
       heroImg.src = nextSpriteSrc;
+      heroSpriteReadyPromise = updateHeroSpriteCustomProperties(heroImg);
+      spriteReadyPromise = heroSpriteReadyPromise;
       heroImg.classList.add('battle-shellfin--evolved');
     }
 
-    const completeEvolution = () => {
+    const finalizeEvolution = () => {
+      if (evolutionFinalized) {
+        return;
+      }
+      evolutionFinalized = true;
       hideRewardOverlayInstantly();
       if (completeMessage) {
         completeMessage.classList.remove('show');
@@ -577,6 +660,14 @@ document.addEventListener('DOMContentLoaded', () => {
       markRegistrationAsRequired();
       if (!overlayShown) {
         showRegisterRewardCard();
+      }
+    };
+
+    const completeEvolution = () => {
+      if (spriteReadyPromise && typeof spriteReadyPromise.finally === 'function') {
+        spriteReadyPromise.finally(finalizeEvolution);
+      } else {
+        finalizeEvolution();
       }
     };
 
@@ -1932,6 +2023,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const heroSprite = resolveAssetPath(heroData.sprite);
     if (heroSprite && heroImg) {
       heroImg.src = heroSprite;
+    }
+    if (heroImg) {
+      heroSpriteReadyPromise = updateHeroSpriteCustomProperties(heroImg);
     }
     if (heroImg && hero.name) {
       heroImg.alt = `${hero.name} ready for battle`;
