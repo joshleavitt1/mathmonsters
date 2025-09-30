@@ -587,17 +587,37 @@ const sanitizeAssetPath = (path) => {
   if (typeof path !== 'string') {
     return null;
   }
+
   let trimmed = path.trim();
   if (!trimmed || trimmed.startsWith('data:')) {
     return null;
   }
-  while (trimmed.startsWith('./') || trimmed.startsWith('../')) {
-    if (trimmed.startsWith('./')) {
+
+  const hasProtocol = /^[a-z]+:/i.test(trimmed);
+  const isProtocolRelative = trimmed.startsWith('//');
+  const hadRootSlash =
+    !hasProtocol && !isProtocolRelative && trimmed.startsWith('/');
+
+  trimmed = trimmed.replace(/\\/g, '/');
+
+  if (!hasProtocol && !isProtocolRelative) {
+    trimmed = trimmed.replace(/\/{2,}/g, '/');
+
+    while (trimmed.startsWith('./')) {
       trimmed = trimmed.slice(2);
-    } else if (trimmed.startsWith('../')) {
+    }
+
+    while (trimmed.startsWith('../')) {
       trimmed = trimmed.slice(3);
     }
   }
+
+  if (hadRootSlash) {
+    trimmed = `/${trimmed.replace(/^\/+/, '')}`;
+  } else if (!hasProtocol && !isProtocolRelative) {
+    trimmed = trimmed.replace(/^\/+/, '');
+  }
+
   return trimmed;
 };
 
