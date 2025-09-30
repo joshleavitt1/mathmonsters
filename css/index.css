@@ -475,7 +475,7 @@ body.is-battle-transition .bubbles {
       scale(1);
     opacity: 1;
   }
-  18% {
+  70% {
     transform: translate3d(
         calc(-50% + var(--hero-side-shift, 0px)),
         calc(-50% - var(--hero-float-range, 32px)),
@@ -485,36 +485,6 @@ body.is-battle-transition .bubbles {
       scale(1.1);
     opacity: 1;
   }
-  38% {
-    transform: translate3d(
-        calc(-50% + var(--hero-side-shift, 0px)),
-        calc(-50% - var(--hero-float-range, 32px)),
-        0
-      )
-      scaleX(-1)
-      scale(0.84);
-    opacity: 0.92;
-  }
-  58% {
-    transform: translate3d(
-        calc(-50% + var(--hero-side-shift, 0px)),
-        calc(-50% - var(--hero-float-range, 32px)),
-        0
-      )
-      scaleX(-1)
-      scale(0.56);
-    opacity: 0.6;
-  }
-  78% {
-    transform: translate3d(
-        calc(-50% + var(--hero-side-shift, 0px)),
-        calc(-50% - var(--hero-float-range, 32px)),
-        0
-      )
-      scaleX(-1)
-      scale(0.32);
-    opacity: 0.28;
-  }
   100% {
     transform: translate3d(
         calc(-50% + var(--hero-side-shift, 0px)),
@@ -522,7 +492,7 @@ body.is-battle-transition .bubbles {
         0
       )
       scaleX(-1)
-      scale(0.22);
+      scale(0.2);
     opacity: 0;
   }
 }
