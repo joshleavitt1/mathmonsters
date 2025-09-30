@@ -273,12 +273,41 @@ document.addEventListener('DOMContentLoaded', () => {
       rootElement.style.removeProperty(HERO_SPRITE_MAX_WIDTH_PROPERTY);
     };
 
+    const readHeroSpriteDefaultWidth = () => {
+      const defaultView =
+        rootElement.ownerDocument?.defaultView ??
+        (typeof window !== 'undefined' ? window : null);
+
+      if (!defaultView || typeof defaultView.getComputedStyle !== 'function') {
+        return null;
+      }
+
+      try {
+        const computedStyle = defaultView.getComputedStyle(rootElement);
+        const propertyValue = computedStyle.getPropertyValue(HERO_SPRITE_WIDTH_PROPERTY);
+        const parsedWidth = Number.parseFloat(propertyValue);
+
+        if (Number.isFinite(parsedWidth) && parsedWidth > 0) {
+          return parsedWidth;
+        }
+      } catch (error) {
+        console.warn('Unable to read default hero sprite width.', error);
+      }
+
+      return null;
+    };
+
+    const heroSpriteDefaultWidth = readHeroSpriteDefaultWidth();
+
     const applySpriteDimensions = () => {
       const naturalWidth = Math.round(image.naturalWidth || 0);
       const naturalHeight = Math.round(image.naturalHeight || 0);
 
       if (naturalWidth > 0 && naturalHeight > 0) {
-        const widthValue = `${naturalWidth}px`;
+        const clampedWidth = heroSpriteDefaultWidth
+          ? Math.min(naturalWidth, heroSpriteDefaultWidth)
+          : naturalWidth;
+        const widthValue = `${clampedWidth}px`;
         const maxWidthValue = `min(${widthValue}, 80vw)`;
         rootElement.style.setProperty(HERO_SPRITE_WIDTH_PROPERTY, widthValue);
         rootElement.style.setProperty(HERO_SPRITE_MAX_WIDTH_PROPERTY, maxWidthValue);
