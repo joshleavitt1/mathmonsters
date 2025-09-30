@@ -355,6 +355,12 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
 
       cancelHeroPrebattleChargeAnimation();
 
+      // Preserve the current charge scale so canceling the previous animation
+      // doesn't immediately revert the CSS variable back to its base style.
+      // Without this, the hero element's transform transition kicks in before
+      // the new animation starts, causing a visible jump.
+      heroImage.style.setProperty('--hero-charge-scale', startingChargeScale);
+
       heroPrebattleChargeAnimation = heroImage.animate(
         [
           { '--hero-charge-scale': startingChargeScale },
