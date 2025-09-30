@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#001b41" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Home | Reef Rangers</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="300x300" href="../images/brand/logo.png" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/home.css" />
+  </head>
+  <body class="home-page">
+    <main class="home app-safe-area">
+      <header class="home__top-bar">
+        <button class="home__icon-button" type="button" aria-label="Open settings">
+          <img
+            src="../images/home/settings.png"
+            alt="Settings"
+            width="64"
+            height="64"
+          />
+        </button>
+        <div class="home__status" aria-live="polite">
+          <img
+            src="../images/home/gemcount.png"
+            alt="Gems"
+            width="64"
+            height="64"
+          />
+        </div>
+      </header>
+
+      <section class="home__hero" aria-live="polite">
+        <h1 class="home__hero-name">Shellfin</h1>
+        <p class="home__hero-level text-small text-white">Level <span data-hero-level>2</span></p>
+        <img
+          class="home__hero-badge"
+          src="../images/home/addition.png"
+          alt="Addition badge"
+          width="100"
+          height="100"
+        />
+        <img
+          class="home__hero-sprite"
+          src="../images/hero/shellfin_level_2.png"
+          alt="Shellfin ready for the next adventure"
+        />
+      </section>
+
+      <footer class="home__actions">
+        <button class="home__action" type="button" aria-label="Battle">
+          <img
+            src="../images/home/battle.png"
+            alt="Battle"
+            width="100"
+            height="100"
+          />
+        </button>
+        <button class="home__action" type="button" aria-label="Store">
+          <img
+            src="../images/home/store.png"
+            alt="Store"
+            width="100"
+            height="100"
+          />
+        </button>
+      </footer>
+    </main>
+  </body>
+</html>
