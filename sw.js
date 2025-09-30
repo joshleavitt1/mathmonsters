@@ -39,7 +39,11 @@ const OFFLINE_ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_ASSETS))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll(OFFLINE_ASSETS);
+      self.skipWaiting();
+    })()
   );
 });
 
