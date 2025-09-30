@@ -1465,7 +1465,14 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
     await waitForImages;
 
-    if (CENTER_IMAGE_HOLD_DURATION_MS > 0 && !isLevelOneLanding) {
+    const shouldShowIntroImmediately =
+      typeof showIntroImmediately === 'boolean' ? showIntroImmediately : true;
+
+    if (
+      CENTER_IMAGE_HOLD_DURATION_MS > 0 &&
+      !isLevelOneLanding &&
+      !shouldShowIntroImmediately
+    ) {
       await new Promise((resolve) =>
         window.setTimeout(
           resolve,
@@ -1476,10 +1483,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
     try {
       await runBattleIntroSequence({
-        showIntroImmediately:
-          typeof showIntroImmediately === 'boolean'
-            ? showIntroImmediately
-            : true,
+        showIntroImmediately: shouldShowIntroImmediately,
         skipHeroSidePosition: isLevelOneLanding,
         hideEnemy: isLevelOneLanding,
       });
@@ -1498,7 +1502,9 @@ const initLandingInteractions = async (preloadedData = {}) => {
   if (!battleButton) {
     await waitForImages;
 
-    if (CENTER_IMAGE_HOLD_DURATION_MS > 0) {
+    const showIntroImmediately = true;
+
+    if (CENTER_IMAGE_HOLD_DURATION_MS > 0 && !showIntroImmediately) {
       await new Promise((resolve) =>
         window.setTimeout(
           resolve,
@@ -1507,7 +1513,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
       );
     }
 
-    await beginBattle({ showIntroImmediately: true });
+    await beginBattle({ showIntroImmediately });
     return;
   }
 
