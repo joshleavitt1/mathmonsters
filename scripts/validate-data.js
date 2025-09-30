@@ -29,9 +29,20 @@ function resolveAssetToDisk(assetPath) {
   }
 
   cleaned = cleaned.replace(/[?#].*$/, '');
+  cleaned = cleaned.replace(/\\/g, '/');
 
   if (/^(?:https?:)?\/\//i.test(cleaned) || cleaned.startsWith('data:')) {
     return null;
+  }
+
+  cleaned = cleaned.replace(/\/{2,}/g, '/');
+
+  while (cleaned.startsWith('./')) {
+    cleaned = cleaned.slice(2);
+  }
+
+  while (cleaned.startsWith('../')) {
+    cleaned = cleaned.slice(3);
   }
 
   if (cleaned.startsWith('/mathmonsters/')) {
