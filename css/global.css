@@ -17,6 +17,13 @@
   --button-hover-gradient-start: #33aaff;
   --button-hover-gradient-end: #1a73ff;
   --surface-padding: 24px;
+  --space-3xs: clamp(4px, 0.5vw, 6px);
+  --space-2xs: clamp(6px, 0.75vw, 8px);
+  --space-xs: clamp(8px, 1vw, 12px);
+  --space-sm: clamp(12px, 1.5vw, 16px);
+  --space-md: clamp(16px, 2.5vw, 24px);
+  --space-lg: clamp(24px, 3.5vw, 32px);
+  --space-xl: clamp(32px, 5vw, 48px);
 }
 
 html {
@@ -30,7 +37,7 @@ body {
   font-family: var(--font-family-rounded);
   color: #272b34;
   background-color: #001b41;
-  padding: 16px;
+  padding: var(--space-sm);
   box-sizing: border-box;
 }
 
