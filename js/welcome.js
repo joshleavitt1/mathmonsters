@@ -1,6 +1,8 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
+const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
+const LEGACY_PROGRESS_STORAGE_KEYS = Object.freeze(['reefRangersProgress']);
 const LANDING_MODE_STORAGE_KEY = 'mathmonstersLandingMode';
 const BATTLE_PAGE_MODE_PLAY = 'play';
 const BATTLE_PAGE_MODE_DEV_TOOLS = 'devtools';
@@ -10,6 +12,23 @@ const REGISTER_PAGE_URL = 'register.html';
 const createDefaultProgress = () => ({
   battleLevel: 1,
 });
+
+const clearLandingVisitState = (localStorageRef) => {
+  try {
+    window.sessionStorage?.removeItem(LANDING_VISITED_KEY);
+  } catch (error) {
+    console.warn('Unable to clear landing visit state from session storage.', error);
+  }
+
+  try {
+    const storage = localStorageRef ?? window.localStorage;
+    if (storage && typeof storage.removeItem === 'function') {
+      storage.removeItem(LANDING_VISITED_KEY);
+    }
+  } catch (error) {
+    console.warn('Unable to clear landing visit state from local storage.', error);
+  }
+};
 
 const persistGuestSession = () => {
   try {
@@ -22,6 +41,16 @@ const persistGuestSession = () => {
       PROGRESS_STORAGE_KEY,
       JSON.stringify(createDefaultProgress())
     );
+
+    LEGACY_PROGRESS_STORAGE_KEYS.forEach((key) => {
+      try {
+        storage.removeItem(key);
+      } catch (error) {
+        console.warn(`Unable to clear legacy progress key: ${key}`, error);
+      }
+    });
+
+    clearLandingVisitState(storage);
     return true;
   } catch (error) {
     console.warn('Guest session could not be saved.', error);
