@@ -156,7 +156,6 @@ body:not(.is-preloading) main.landing {
       calc(-50% + var(--hero-float-offset)),
       0
     )
-    scaleX(-1)
     scale(var(--hero-charge-scale, 1));
   transform-origin: 50% 85%;
   image-rendering: auto;
@@ -471,7 +470,6 @@ body.is-battle-transition .bubbles {
         calc(-50% - var(--hero-float-range, 32px)),
         0
       )
-      scaleX(-1)
       scale(1);
     opacity: 1;
   }
@@ -481,7 +479,6 @@ body.is-battle-transition .bubbles {
         calc(-50% - var(--hero-float-range, 32px)),
         0
       )
-      scaleX(-1)
       scale(1.1);
     opacity: 1;
   }
@@ -491,7 +488,6 @@ body.is-battle-transition .bubbles {
         calc(-50% - var(--hero-float-range, 32px)),
         0
       )
-      scaleX(-1)
       scale(0.2);
     opacity: 0;
   }
