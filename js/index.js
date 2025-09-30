@@ -73,6 +73,31 @@ const redirectToBattle = () => {
   window.location.href = battleRedirectUrl;
 };
 
+const getLevelOneHeroElement = () =>
+  document.querySelector('[data-level-one-landing] [data-hero-sprite]');
+
+const getStandardHeroElement = () =>
+  document.querySelector('[data-standard-landing] [data-hero-sprite]');
+
+const getActiveHeroElement = () => {
+  const isLevelOne = document.body.classList.contains('is-level-one-landing');
+  const isStandard = document.body.classList.contains('is-standard-landing');
+  if (isStandard) {
+    return getStandardHeroElement() ?? getLevelOneHeroElement();
+  }
+  if (isLevelOne) {
+    return getLevelOneHeroElement() ?? getStandardHeroElement();
+  }
+  return getLevelOneHeroElement() ?? getStandardHeroElement();
+};
+
+const getActiveBattleButton = () => {
+  if (document.body.classList.contains('is-standard-landing')) {
+    return document.querySelector('[data-standard-landing] [data-battle-button]');
+  }
+  return document.querySelector('[data-level-one-landing] [data-battle-button]');
+};
+
 const updateViewportOffsetVariable = () => {
   const root = document.documentElement;
   if (!root) {
@@ -202,7 +227,7 @@ const startLandingExperience = () => {
 };
 
 const runBattleIntroSequence = async (options = {}) => {
-  const heroImage = document.querySelector('.hero');
+  const heroImage = getActiveHeroElement();
   const enemyImage = document.querySelector('[data-enemy]');
   const showIntroImmediately = Boolean(options?.showIntroImmediately);
   const skipHeroSidePosition = Boolean(options?.skipHeroSidePosition);
@@ -769,7 +794,7 @@ const determineBattlePreview = (levelsData, playerData) => {
 };
 
 const applyBattlePreview = (previewData = {}) => {
-  const heroImage = document.querySelector('.hero');
+  const heroImageElements = document.querySelectorAll('[data-hero-sprite]');
   const enemyImage = document.querySelector('[data-enemy]');
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
   const battleTitleElements = document.querySelectorAll('[data-battle-title]');
@@ -780,7 +805,11 @@ const applyBattlePreview = (previewData = {}) => {
   const actionsElement = document.querySelector('.landing__actions');
   const landingRoot = document.body;
 
-  if (heroImage) {
+  heroImageElements.forEach((heroImage) => {
+    if (!heroImage) {
+      return;
+    }
+
     const heroSprite =
       typeof previewData?.hero?.sprite === 'string' ? previewData.hero.sprite : '';
     if (heroSprite) {
@@ -790,7 +819,7 @@ const applyBattlePreview = (previewData = {}) => {
       typeof previewData?.heroAlt === 'string' && previewData.heroAlt.trim()
         ? previewData.heroAlt
         : 'Hero ready for battle';
-  }
+  });
 
   if (enemyImage) {
     const enemySprite =
@@ -1302,9 +1331,11 @@ const initLandingInteractions = async (preloadedData = {}) => {
     redirectToBattle();
     return;
   }
-  const heroImage = document.querySelector('.hero');
+  const levelOneHeroImage = getLevelOneHeroElement();
+  const standardHeroImage = getStandardHeroElement();
+  const heroImages = [levelOneHeroImage, standardHeroImage].filter(Boolean);
   const enemyImage = document.querySelector('[data-enemy]');
-  let battleButton = document.querySelector('[data-battle-button]');
+  let battleButton = getActiveBattleButton();
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
   let isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
@@ -1393,6 +1424,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
       if (previewData) {
         applyBattlePreview(previewData);
         isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
+        battleButton = getActiveBattleButton();
       }
     } catch (error) {
       console.error('Failed to load battle preview', error);
@@ -1401,6 +1433,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
   await loadBattlePreview();
   isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
+  battleButton = getActiveBattleButton();
 
   if (isLevelOneLanding) {
     if (actionsElement) {
@@ -1452,7 +1485,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
     });
   };
   const waitForImages = Promise.all([
-    awaitImageReady(heroImage),
+    ...heroImages.map((image) => awaitImageReady(image)),
     awaitImageReady(enemyImage),
   ]);
 
@@ -1502,7 +1535,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   };
 
   if (isLevelOneLanding) {
-    setupLevelOneIntro({ heroImage, beginBattle });
+    setupLevelOneIntro({ heroImage: levelOneHeroImage, beginBattle });
     return;
   }
 

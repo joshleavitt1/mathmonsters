@@ -34,6 +34,18 @@ main.landing {
   will-change: opacity, transform, filter;
 }
 
+[data-standard-landing] {
+  display: none;
+}
+
+body.is-standard-landing [data-standard-landing] {
+  display: flex;
+}
+
+body.is-standard-landing [data-level-one-landing] {
+  display: none;
+}
+
 main.landing.is-battle-transition {
   animation: landing-battle-shift 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }

@@ -1,24 +1,31 @@
-body.home-page {
-  margin: 0;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  background: url('../images/background/background.png') no-repeat center/cover;
-  color: var(--text-color-light);
-}
-
-.home {
+.landing__standard {
   position: relative;
   flex: 1;
+  width: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   padding: clamp(16px, 4vw, 32px);
+  padding-bottom: calc(
+    clamp(16px, 4vw, 32px) + var(--viewport-bottom-offset, 0px)
+  );
+  padding-bottom: calc(
+    clamp(16px, 4vw, 32px) + var(--viewport-bottom-offset, 0px) +
+      constant(safe-area-inset-bottom)
+  );
+  padding-bottom: calc(
+    clamp(16px, 4vw, 32px) + var(--viewport-bottom-offset, 0px) +
+      env(safe-area-inset-bottom, 0px)
+  );
   gap: 24px;
+  color: var(--text-color-light);
+}
+
+body.is-standard-landing main.landing {
+  display: flex;
+  flex-direction: column;
 }
 
 .home__top-bar {
@@ -35,7 +42,7 @@ body.home-page {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.24);
   border-radius: 20px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
@@ -43,6 +50,7 @@ body.home-page {
 
 .home__icon-button {
   padding: 0;
+  border: none;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -64,23 +72,23 @@ body.home-page {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 16px;
 }
 
 .home__hero-name {
-  margin: 0;
+  margin: 0 0 8px;
   font-size: 32px;
   font-weight: 600;
   color: var(--text-color-light);
 }
 
 .home__hero-level {
-  margin: -8px 0 0;
+  margin: 0 0 16px;
 }
 
 .home__hero-badge {
   width: 100px;
   height: 100px;
+  margin: 0 0 16px;
 }
 
 .home__hero-sprite {
@@ -88,6 +96,23 @@ body.home-page {
   max-width: 360px;
   height: auto;
   filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.45));
+  --hero-float-range: 24px;
+  --hero-float-duration: 3.6s;
+  animation: hero-float var(--hero-float-duration) cubic-bezier(0.42, 0, 0.58, 1) 1.35s
+    infinite;
+  transition: transform 0.45s cubic-bezier(0.36, 0, 0.66, 1),
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.home__hero-sprite.is-side-position {
+  transform: translate3d(-32px, 0, 0);
+}
+
+.home__hero-sprite.is-exiting {
+  opacity: 0;
+  transform: translate3d(-32px, 36px, 0) scale(0.68);
 }
 
 .home__actions {
@@ -101,7 +126,11 @@ body.home-page {
   flex: 1;
   max-width: 140px;
   padding: 0;
-  background: rgba(0, 0, 0, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.24);
+  border: none;
   border-radius: 24px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
@@ -120,7 +149,7 @@ body.home-page {
 }
 
 @media (min-width: 768px) {
-  .home {
+  .landing__standard {
     padding: clamp(24px, 6vw, 48px);
   }
 
