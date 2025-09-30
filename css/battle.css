@@ -829,17 +829,7 @@ body.is-reward-active .reward-overlay {
     transform: scaleX(1) scale(1);
   }
 
-  32% {
-    opacity: 1;
-    transform: scaleX(1) scale(1.14);
-  }
-
-  58% {
-    opacity: 1;
-    transform: scaleX(1) scale(1.02);
-  }
-
-  82% {
+  50% {
     opacity: 1;
     transform: scaleX(1) scale(1.18);
   }
