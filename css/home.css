@@ -26,6 +26,16 @@ body.home-page {
   );
 }
 
+.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: calc(100dvh - 32px);
+  gap: clamp(16px, 5vh, 32px);
+}
+
 .home__top-bar {
   width: 100%;
   display: flex;
