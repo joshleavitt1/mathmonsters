@@ -252,9 +252,7 @@ const runBattleIntroSequence = async (options = {}) => {
     showEnemy();
   };
 
-  const holdDuration = showIntroImmediately
-    ? PRE_BATTLE_HOLD_DURATION_MS
-    : HERO_TO_ENEMY_DELAY_MS;
+  const holdDuration = showIntroImmediately ? 0 : HERO_TO_ENEMY_DELAY_MS;
 
   await wait(holdDuration);
   prepareForBattle();
