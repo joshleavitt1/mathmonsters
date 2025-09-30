@@ -76,7 +76,7 @@ body.is-evolution-active #battle-shellfin {
 #battle-shellfin {
   bottom: 10%;
   right: 55%;
-  transform: translateZ(0) scaleX(-1);
+  transform: translateZ(0) scaleX(1);
   transform-origin: center;
 }
 
@@ -271,17 +271,17 @@ body.is-evolution-active #battle-shellfin {
 
 @keyframes hero-enter {
   0% {
-    transform: translateX(140%) scale(0.9) scaleX(-1);
+    transform: translateX(140%) scale(0.9) scaleX(1);
     opacity: 0;
     filter: blur(16px);
   }
   65% {
-    transform: translateX(-3%) scale(1.04) scaleX(-1);
+    transform: translateX(-3%) scale(1.04) scaleX(1);
     opacity: 1;
     filter: blur(0);
   }
   100% {
-    transform: translateX(0) scale(1) scaleX(-1);
+    transform: translateX(0) scale(1) scaleX(1);
     opacity: 1;
     filter: blur(0);
   }
@@ -307,32 +307,32 @@ body.is-evolution-active #battle-shellfin {
 
 @keyframes hero-attack {
   0% {
-    transform: translateX(0) scaleX(-1);
+    transform: translateX(0) scaleX(1);
   }
   50% {
-    transform: translateX(60px) scaleX(-1);
+    transform: translateX(60px) scaleX(1);
   }
   100% {
-    transform: translateX(0) scaleX(-1);
+    transform: translateX(0) scaleX(1);
   }
 }
 
 @keyframes hero-hit-shake {
   0%,
   100% {
-    transform: translateX(0) scaleX(-1);
+    transform: translateX(0) scaleX(1);
   }
   20% {
-    transform: translate(-12px, 0) scaleX(-1);
+    transform: translate(-12px, 0) scaleX(1);
   }
   40% {
-    transform: translate(14px, 0) scaleX(-1);
+    transform: translate(14px, 0) scaleX(1);
   }
   60% {
-    transform: translate(-10px, 0) scaleX(-1);
+    transform: translate(-10px, 0) scaleX(1);
   }
   80% {
-    transform: translate(8px, 0) scaleX(-1);
+    transform: translate(8px, 0) scaleX(1);
   }
 }
 
@@ -511,8 +511,8 @@ body.is-reward-active .reward-overlay {
   align-items: center;
   justify-content: center;
   padding: clamp(24px, 5vmin, 48px);
-  background: rgba(3, 12, 28, 0.6);
-  backdrop-filter: blur(6px);
+  background: transparent;
+  backdrop-filter: none;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -526,43 +526,11 @@ body.is-reward-active .reward-overlay {
   pointer-events: auto;
 }
 
-.post-evolution-overlay__content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(24px, 4vmin, 40px);
-  text-align: left;
-}
-
 .post-evolution-overlay__sprite {
   width: clamp(240px, 38vmin, 360px);
   max-width: 90vw;
   transform: scaleX(1);
   pointer-events: none;
-}
-
-.post-evolution-overlay__card {
-  width: min(440px, 94vw);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  text-align: left;
-}
-
-.post-evolution-overlay__card-avatar {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  align-self: flex-start;
-}
-
-.post-evolution-overlay__card-text {
-  margin: 0;
-}
-
-.post-evolution-overlay__button {
-  width: 100%;
 }
 
 .reward-overlay__image {
@@ -859,6 +827,7 @@ body.is-reward-active .reward-overlay {
 
 .battle-complete-card {
   gap: 24px;
+  align-items: stretch;
 }
 
 .battle-complete-card__title {
@@ -866,21 +835,79 @@ body.is-reward-active .reward-overlay {
   text-align: center;
 }
 
-.battle-complete-card__meter {
+.battle-complete-card__sprite-surface {
   width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  background-color: #f4f6fa;
+  border-radius: 12px;
+  box-sizing: border-box;
 }
 
-.battle-complete-card__meter .progress__fill {
-  transition: width 0.25s ease;
+.battle-complete-card__sprite-frame {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.battle-complete-card__meter .meter__heading {
-  margin: 0;
+.battle-complete-card .enemy-image {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  transition: opacity 0.4s ease, filter 0.4s ease;
 }
 
-.battle-complete-card__meter .meter__icon {
-  width: 80px;
-  height: 80px;
+.battle-complete-card .enemy-image.enemy-image--defeated {
+  opacity: 0.1;
+  filter: saturate(0);
+}
+
+.battle-complete-card__sprite-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+.enemy-defeat-overlay--visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.battle-complete-card__check-icon {
+  width: 96px;
+  height: 96px;
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.enemy-defeat-overlay--visible .battle-complete-card__check-icon {
+  animation: battle-complete-check-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)
+    forwards;
+}
+
+@keyframes battle-complete-check-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 
