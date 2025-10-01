@@ -419,7 +419,6 @@ button:focus-visible {
   gap: var(--space-xs);
   flex: 1 1 auto;
 }
-
 .medal__title,
 .medal__description {
   margin: 0;
@@ -434,7 +433,6 @@ button:focus-visible {
   height: 56px;
   flex: 0 0 auto;
 }
-
 @media (prefers-reduced-motion: reduce) {
   .medal {
     transition: none;
