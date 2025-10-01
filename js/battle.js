@@ -24,6 +24,9 @@ const progressUtils =
 
 const INTRO_QUESTION_LEVELS = new Set([1]);
 
+const MEDAL_DISPLAY_DURATION_MS = 3000;
+const LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY = 'level-1:first-correct';
+
 if (!progressUtils) {
   throw new Error('Progress utilities are not available.');
 }
@@ -149,6 +152,105 @@ document.addEventListener('DOMContentLoaded', () => {
   const evolutionCompleteSprite = evolutionCompleteOverlay?.querySelector(
     '[data-evolution-complete-sprite]'
   );
+
+  const medalElement = document.querySelector('[data-medal]');
+  let medalHideTimeoutId = null;
+  let medalFinalizeTimeoutId = null;
+  const displayedMedals = new Set();
+
+  const finalizeMedalHide = () => {
+    if (!medalElement || medalElement.classList.contains('medal--visible')) {
+      return;
+    }
+
+    medalElement.setAttribute('aria-hidden', 'true');
+    if (!medalElement.hasAttribute('hidden')) {
+      medalElement.setAttribute('hidden', 'hidden');
+    }
+  };
+
+  const hideMedal = ({ immediate = false } = {}) => {
+    if (!medalElement) {
+      return;
+    }
+
+    if (medalHideTimeoutId !== null) {
+      window.clearTimeout(medalHideTimeoutId);
+      medalHideTimeoutId = null;
+    }
+
+    if (medalFinalizeTimeoutId !== null) {
+      window.clearTimeout(medalFinalizeTimeoutId);
+      medalFinalizeTimeoutId = null;
+    }
+
+    const removeVisibility = () => {
+      medalElement.classList.remove('medal--visible');
+      medalElement.classList.remove('medal--pop');
+    };
+
+    if (immediate) {
+      removeVisibility();
+      finalizeMedalHide();
+      return;
+    }
+
+    const handleTransitionEnd = (event) => {
+      if (event.target !== medalElement || event.propertyName !== 'opacity') {
+        return;
+      }
+      medalElement.removeEventListener('transitionend', handleTransitionEnd);
+      finalizeMedalHide();
+    };
+
+    medalElement.addEventListener('transitionend', handleTransitionEnd, {
+      once: true,
+    });
+
+    removeVisibility();
+
+    medalFinalizeTimeoutId = window.setTimeout(() => {
+      medalFinalizeTimeoutId = null;
+      finalizeMedalHide();
+    }, 450);
+  };
+
+  const showMedal = () => {
+    if (!medalElement) {
+      return;
+    }
+
+    if (medalHideTimeoutId !== null) {
+      window.clearTimeout(medalHideTimeoutId);
+      medalHideTimeoutId = null;
+    }
+
+    if (medalFinalizeTimeoutId !== null) {
+      window.clearTimeout(medalFinalizeTimeoutId);
+      medalFinalizeTimeoutId = null;
+    }
+
+    medalElement.classList.remove('medal--pop');
+    medalElement.removeAttribute('hidden');
+    void medalElement.offsetWidth;
+    medalElement.setAttribute('aria-hidden', 'false');
+    medalElement.classList.add('medal--visible', 'medal--pop');
+
+    medalHideTimeoutId = window.setTimeout(() => {
+      medalHideTimeoutId = null;
+      hideMedal();
+    }, MEDAL_DISPLAY_DURATION_MS);
+  };
+
+  if (medalElement) {
+    medalElement.addEventListener('animationend', (event) => {
+      if (event.target !== medalElement || event.animationName !== 'medal-pop') {
+        return;
+      }
+
+      medalElement.classList.remove('medal--pop');
+    });
+  }
 
   const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
   const summaryTimeText = ensureStatValueText(summaryTimeValue);
@@ -358,6 +460,27 @@ document.addEventListener('DOMContentLoaded', () => {
   let evolutionGrowthFallbackTimeout = null;
   let evolutionRevealFallbackTimeout = null;
   let evolutionCardDelayTimeout = null;
+
+  const maybeShowFirstCorrectMedal = (resolvedLevel, correctCount) => {
+    if (!medalElement) {
+      return;
+    }
+
+    if (!Number.isFinite(resolvedLevel) || resolvedLevel !== 1) {
+      return;
+    }
+
+    if (displayedMedals.has(LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY)) {
+      return;
+    }
+
+    if (correctCount !== 1) {
+      return;
+    }
+
+    displayedMedals.add(LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY);
+    showMedal();
+  };
   let evolutionInProgress = false;
   let rewardCardDisplayTimeout = null;
   let heroSpriteReadyPromise = null;
@@ -2833,6 +2956,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const correct = e.detail.correct;
+    const resolvedLevel = getResolvedBattleLevel();
     totalAnswers++;
     if (correct) {
       correctAnswers++;
@@ -2841,6 +2965,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateAccuracyDisplays();
     if (correct) {
+      maybeShowFirstCorrectMedal(resolvedLevel, correctAnswers);
       let incEl = null;
       let incText = '';
       if (!streakMaxed) {
@@ -3034,6 +3159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelScheduledLevelProgressDisplayUpdate();
     clearRewardAnimation();
     updateLevelProgressDisplay();
+    hideMedal({ immediate: true });
     if (completeMessage) {
       completeMessage.classList.remove('show');
       completeMessage.setAttribute('aria-hidden', 'true');
