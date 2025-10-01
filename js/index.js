@@ -360,6 +360,7 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
 
       const startingChargeScale = computedHeroChargeScale || '1';
 
+      heroImage.classList.add('is-prebattle-restarting');
       cancelHeroPrebattleChargeAnimation();
 
       // Preserve the current charge scale so canceling the previous animation
@@ -387,6 +388,13 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
       heroPrebattleChargeAnimation.oncancel = () => {
         heroPrebattleChargeAnimation = null;
       };
+
+      window.requestAnimationFrame(() => {
+        if (!heroImage) {
+          return;
+        }
+        heroImage.classList.remove('is-prebattle-restarting');
+      });
     };
 
     clearHeroPrebattleChargeTimeout();

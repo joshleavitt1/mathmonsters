@@ -177,6 +177,10 @@ body:not(.is-preloading) main.landing {
   transition: transform 0.45s cubic-bezier(0.36, 0, 0.66, 1);
 }
 
+.hero.is-prebattle-restarting {
+  transition: none !important;
+}
+
 .hero.is-side-position {
   --hero-side-shift: calc(-1 * var(--intro-sprite-offset));
 }
