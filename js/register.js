@@ -1,6 +1,8 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
+const STARTING_BATTLE_LEVEL = 2;
+const HOME_PAGE_PATH = '../html/home.html';
 
 const isPlainObject = (value) =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -16,6 +18,70 @@ const clonePlainObject = (value) => {
     console.warn('Unable to clone player data object.', error);
     return null;
   }
+};
+
+const applyStartingBattleLevel = (playerData) => {
+  const clonedData = clonePlainObject(playerData) ?? {};
+
+  if (!isPlainObject(clonedData)) {
+    return {
+      progress: {
+        battleLevel: STARTING_BATTLE_LEVEL,
+      },
+      battleVariables: {
+        timeRemainingSeconds: null,
+      },
+      battleLevel: {
+        1: {
+          hero: {
+            sprite: '/mathmonsters/images/hero/shellfin_level_1.png',
+          },
+        },
+        [STARTING_BATTLE_LEVEL]: {
+          hero: {
+            sprite: '/mathmonsters/images/hero/shellfin_level_2.png',
+          },
+        },
+      },
+    };
+  }
+
+  const progressSection = isPlainObject(clonedData.progress)
+    ? clonedData.progress
+    : {};
+
+  clonedData.progress = {
+    ...progressSection,
+    battleLevel: STARTING_BATTLE_LEVEL,
+  };
+
+  if (!isPlainObject(clonedData.battleVariables)) {
+    clonedData.battleVariables = {
+      timeRemainingSeconds: null,
+    };
+  }
+
+  if (!isPlainObject(clonedData.battleLevel)) {
+    clonedData.battleLevel = {};
+  }
+
+  if (!isPlainObject(clonedData.battleLevel[1])) {
+    clonedData.battleLevel[1] = {
+      hero: {
+        sprite: '/mathmonsters/images/hero/shellfin_level_1.png',
+      },
+    };
+  }
+
+  if (!isPlainObject(clonedData.battleLevel[STARTING_BATTLE_LEVEL])) {
+    clonedData.battleLevel[STARTING_BATTLE_LEVEL] = {
+      hero: {
+        sprite: '/mathmonsters/images/hero/shellfin_level_2.png',
+      },
+    };
+  }
+
+  return clonedData;
 };
 
 const loadDefaultPlayerData = async () => {
@@ -174,7 +240,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (data?.session) {
       clearGuestSessionFlag();
-      window.location.replace('../index.html');
+      window.location.replace(HOME_PAGE_PATH);
       return;
     }
   } catch (error) {
@@ -209,6 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       const defaultPlayerData = await loadDefaultPlayerData();
+      const startingPlayerData = applyStartingBattleLevel(defaultPlayerData);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -216,7 +283,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           data: {
             gradeLevel,
             referralSource,
-            ...(defaultPlayerData ? { playerData: defaultPlayerData } : {}),
+            accountLevel: STARTING_BATTLE_LEVEL,
+            playerData: startingPlayerData,
           },
         },
       });
@@ -228,11 +296,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       let latestUser = data?.user ?? null;
+      const persistStartingPlayerData = startingPlayerData;
 
       const completeRegistration = async (sessionUser) => {
         const user = sessionUser ?? latestUser;
-        if (user?.id && defaultPlayerData) {
-          await storePlayerDataForAccount(supabase, user.id, defaultPlayerData);
+        if (user?.id && persistStartingPlayerData) {
+          await storePlayerDataForAccount(
+            supabase,
+            user.id,
+            persistStartingPlayerData
+          );
+        }
+        try {
+          await supabase.auth.updateUser({
+            data: { accountLevel: STARTING_BATTLE_LEVEL },
+          });
+        } catch (error) {
+          console.warn(
+            'Unable to update the account level metadata for the new player.',
+            error
+          );
         }
         try {
           window.localStorage?.removeItem(PROGRESS_STORAGE_KEY);
@@ -240,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           console.warn('Unable to clear stored battle progress for the new player.', error);
         }
         clearGuestSessionFlag();
-        window.location.replace('../index.html');
+        window.location.replace(HOME_PAGE_PATH);
       };
 
       if (data?.session) {
