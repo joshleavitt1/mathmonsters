@@ -1027,7 +1027,7 @@ const applyBattlePreview = (previewData = {}) => {
   const resolvedBattleLevel = Number(previewData?.battleLevel);
   const isLevelOneLanding = Number.isFinite(resolvedBattleLevel)
     ? resolvedBattleLevel <= 1
-    : false;
+    : true;
 
   if (landingRoot) {
     landingRoot.classList.toggle('is-level-one-landing', isLevelOneLanding);
