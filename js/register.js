@@ -1,6 +1,5 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
-const LEVEL_TWO_BATTLE_LEVEL = 2;
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 
 const isPlainObject = (value) =>
@@ -108,7 +107,26 @@ const updateSelectPlaceholderState = (select) => {
   select.classList.toggle('has-value', hasValue);
 };
 
-const persistLevelTwoProgress = () => {
+const readBattleLevel = (value) => {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  const level = value.battleLevel;
+
+  if (typeof level === 'number' && Number.isFinite(level)) {
+    return level;
+  }
+
+  if (typeof level === 'string') {
+    const parsed = Number.parseInt(level, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+};
+
+const persistBattleProgress = (defaultProgress) => {
   try {
     const storage = window.localStorage;
     if (!storage) {
@@ -121,7 +139,7 @@ const persistLevelTwoProgress = () => {
     if (raw) {
       try {
         const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === 'object') {
+        if (isPlainObject(parsed)) {
           progress = { ...parsed };
         }
       } catch (error) {
@@ -129,7 +147,10 @@ const persistLevelTwoProgress = () => {
       }
     }
 
-    progress.battleLevel = LEVEL_TWO_BATTLE_LEVEL;
+    const existingLevel = readBattleLevel(progress);
+    const defaultLevel = readBattleLevel(defaultProgress ?? null) ?? 1;
+    progress.battleLevel = existingLevel ?? defaultLevel;
+
     storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
   } catch (error) {
     console.warn('Unable to update level progress for the new player.', error);
@@ -263,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (user?.id && defaultPlayerData) {
           await storePlayerDataForAccount(supabase, user.id, defaultPlayerData);
         }
-        persistLevelTwoProgress();
+        persistBattleProgress(defaultPlayerData?.progress ?? null);
         clearGuestSessionFlag();
         window.location.replace('../index.html');
       };
