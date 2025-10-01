@@ -85,7 +85,6 @@ body.home-page {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
 }
 
 .home__identity-text {
@@ -106,12 +105,6 @@ body.home-page {
 .home__level {
   margin: 0;
   font-size: clamp(18px, 4vw, 24px);
-}
-
-.home__badge {
-  width: min(96px, 18vh);
-  height: min(96px, 18vh);
-  object-fit: contain;
 }
 
 .home__hero-sprite {
