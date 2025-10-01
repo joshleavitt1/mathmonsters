@@ -1,39 +1,22 @@
 body.home-page {
-  padding: 0;
   color: var(--text-color-light);
   background: #001b41 url('../images/background/background.png') no-repeat center/cover;
 }
 
 .home {
   --home-max-width: min(420px, 100%);
-  --home-hero-offset: clamp(36px, calc(var(--space-lg) + var(--space-sm)), 56px);
-  --app-safe-area-padding: var(--space-md);
+  --app-safe-area-padding: clamp(20px, 5vw, 28px);
 
   width: var(--home-max-width);
   margin: 0 auto;
-  min-height: 100dvh;
+  min-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-lg);
+  align-items: stretch;
+  justify-content: space-between;
+  gap: clamp(24px, 6vh, 48px);
   color: inherit;
   box-sizing: border-box;
-  padding-bottom: calc(
-    var(--app-safe-area-padding) + var(--space-lg) + constant(safe-area-inset-bottom)
-  );
-  padding-bottom: calc(
-    var(--app-safe-area-padding) + var(--space-lg) + env(safe-area-inset-bottom, 0px)
-  );
-}
-
-.home {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-height: calc(100dvh - 32px);
-  gap: clamp(16px, 5vh, 32px);
 }
 
 .home__top-bar {
@@ -48,8 +31,8 @@ body.home-page {
 
 .home__icon-button,
 .home__status {
-  width: clamp(52px, 14vw, 72px);
-  height: clamp(52px, 14vw, 72px);
+  width: 64px;
+  height: 64px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -58,6 +41,7 @@ body.home-page {
   border: none;
   box-shadow: none;
   border-radius: 0;
+  flex: 0 0 64px;
 }
 
 .home__status {
@@ -67,8 +51,8 @@ body.home-page {
 .home__icon-button img,
 .home__status img {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
 
@@ -80,13 +64,18 @@ body.home-page {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: var(--space-sm);
-  margin-top: calc(-1 * var(--home-hero-offset));
+  gap: clamp(16px, 4vh, 32px);
+}
+
+.home__hero-info {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-xs);
 }
 
 .home__hero-name {
   margin: 0;
-  font-size: clamp(28px, 6vw, 40px);
+  font-size: clamp(28px, 6vw, 42px);
   font-weight: 600;
   color: inherit;
 }
@@ -97,8 +86,8 @@ body.home-page {
 }
 
 .home__hero-badge {
-  width: clamp(84px, 22vw, 112px);
-  height: clamp(84px, 22vw, 112px);
+  width: min(100px, 28vw);
+  height: min(100px, 28vw);
 }
 
 .home__hero-sprite {
@@ -118,7 +107,7 @@ body.home-page {
   align-items: flex-end;
   flex-wrap: nowrap;
   margin-top: auto;
-  gap: 0;
+  gap: var(--space-xs);
 }
 
 .home__action {
@@ -133,24 +122,18 @@ body.home-page {
 
 .home__action img {
   display: block;
-  width: clamp(72px, 24vw, 132px);
-  height: auto;
+  width: min(100px, 32vw);
+  height: min(100px, 32vw);
   object-fit: contain;
 }
 
 @media (min-width: 768px) {
   .home {
     --app-safe-area-padding: var(--space-lg);
-    padding-bottom: calc(
-      var(--app-safe-area-padding) + var(--space-lg) + constant(safe-area-inset-bottom)
-    );
-    padding-bottom: calc(
-      var(--app-safe-area-padding) + var(--space-lg) + env(safe-area-inset-bottom, 0px)
-    );
   }
 
   .home__hero {
-    margin-top: calc(-1 * var(--space-xl));
+    gap: clamp(20px, 5vh, 36px);
   }
 }
 
