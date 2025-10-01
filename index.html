@@ -121,9 +121,9 @@
       data-standard-landing
       aria-live="polite"
     >
-      <header class="home__top-bar">
+      <header class="home__bar home__bar--top">
         <div
-          class="home__icon-button"
+          class="home__bar-item home__bar-item--action"
           role="link"
           tabindex="0"
           data-initial-tabindex="0"
@@ -133,32 +133,30 @@
           <img
             src="./images/home/settings.png"
             alt="Settings"
-            width="64"
-            height="64"
-          />
-        </div>
-        <div class="home__status" aria-live="polite">
-          <img
-            src="./images/home/gems.png"
-            alt="Gems"
-            width="64"
-            height="64"
-          />
-        </div>
-      </header>
-
-      <section class="home__hero" aria-live="polite">
-        <div class="home__hero-info">
-          <h1 class="home__hero-name text-white" data-hero-name>Shellfin</h1>
-          <p class="home__hero-level text-small text-white" data-hero-level>Level 2</p>
-          <img
-            class="home__hero-badge"
-            src="./images/home/addition.png"
-            alt="Addition badge"
             width="100"
             height="100"
           />
         </div>
+        <div class="home__bar-item home__bar-item--status" aria-live="polite">
+          <img
+            src="./images/home/gems.png"
+            alt="Gems"
+            width="100"
+            height="100"
+          />
+        </div>
+      </header>
+
+      <section class="home__content" aria-live="polite">
+        <h1 class="home__title" data-hero-name>Shellfin</h1>
+        <p class="home__level text-small text-white" data-hero-level>Level 2</p>
+        <img
+          class="home__badge"
+          src="./images/home/addition.png"
+          alt="Addition badge"
+          width="100"
+          height="100"
+        />
         <img
           class="home__hero-sprite"
           src="./images/hero/shellfin_level_2.png"
@@ -167,9 +165,9 @@
         />
       </section>
 
-      <footer class="home__actions">
+      <footer class="home__bar home__bar--bottom">
         <div
-          class="home__action home__action--battle"
+          class="home__bar-item home__bar-item--action"
           role="link"
           tabindex="0"
           data-initial-tabindex="0"
@@ -184,7 +182,7 @@
           />
         </div>
         <div
-          class="home__action home__action--store"
+          class="home__bar-item home__bar-item--action"
           role="link"
           tabindex="0"
           data-initial-tabindex="0"
