@@ -9,7 +9,8 @@ body.home-page {
 
   width: var(--home-max-width);
   margin: 0 auto;
-  min-height: calc(100dvh - 32px);
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: stretch;
