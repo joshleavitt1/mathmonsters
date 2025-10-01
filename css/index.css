@@ -488,6 +488,24 @@ body.is-battle-transition .bubbles {
       scale(var(--hero-charge-scale, 1));
     opacity: 1;
   }
+  25% {
+    transform: translate3d(
+        calc(-50% + var(--hero-side-shift, 0px)),
+        calc(-50% - var(--hero-float-range, 32px)),
+        0
+      )
+      scale(calc(var(--hero-charge-scale, 1) * 1.1));
+    opacity: 1;
+  }
+  55% {
+    transform: translate3d(
+        calc(-50% + var(--hero-side-shift, 0px)),
+        calc(-50% - var(--hero-float-range, 32px)),
+        0
+      )
+      scale(calc(var(--hero-charge-scale, 1) * 0.92));
+    opacity: 1;
+  }
   100% {
     transform: translate3d(
         calc(-50% + var(--hero-side-shift, 0px)),
