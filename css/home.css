@@ -91,6 +91,7 @@ body.home-page {
 .home__level {
   margin: 0;
   font-size: clamp(18px, 4vw, 24px);
+  color: #ffffff50;
 }
 
 .home__badge {
