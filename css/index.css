@@ -26,11 +26,15 @@ body.is-standard-landing main.landing {
   justify-content: center;
   min-height: 100vh;
   min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
 }
 
 body.is-standard-landing .landing__standard {
-  min-height: 100vh;
-  min-height: 100dvh;
+  flex: 0 1 auto;
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
 }
 
 :root {
