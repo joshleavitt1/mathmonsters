@@ -323,15 +323,26 @@ const readStoredProgress = () => {
     };
 
     const characterAssetSet = new Set();
+    let assetRegistrationEnabled = true;
 
     const registerAsset = (path) => {
-      if (typeof path !== 'string') {
+      if (!assetRegistrationEnabled || typeof path !== 'string') {
         return;
       }
 
       const trimmed = path.trim();
       if (trimmed) {
         characterAssetSet.add(trimmed);
+      }
+    };
+
+    const withAssetRegistration = (enabled, callback) => {
+      const previousValue = assetRegistrationEnabled;
+      assetRegistrationEnabled = Boolean(enabled);
+      try {
+        return callback();
+      } finally {
+        assetRegistrationEnabled = previousValue;
       }
     };
 
@@ -461,44 +472,53 @@ const readStoredProgress = () => {
         level && typeof level.battle === 'object' ? level.battle : {};
       const heroOverride =
         playerLevelHeroMap.get(levelNumber ?? undefined) ?? null;
-      const preparedHero = prepareCharacter(
-        playerHeroBase,
-        battleConfig?.hero,
-        heroOverride
-      );
 
-      const enemies = [];
-      const enemyLookup = new Set();
-      const addEnemy = (...sources) => {
-        const preparedEnemy = prepareCharacter(...sources);
-        if (!preparedEnemy) {
-          return;
+      const shouldRegisterAssets =
+        (Number.isFinite(activeBattleLevel) &&
+          Number.isFinite(levelNumber) &&
+          levelNumber === activeBattleLevel) ||
+        level === currentLevel;
+
+      return withAssetRegistration(shouldRegisterAssets, () => {
+        const preparedHero = prepareCharacter(
+          playerHeroBase,
+          battleConfig?.hero,
+          heroOverride
+        );
+
+        const enemies = [];
+        const enemyLookup = new Set();
+        const addEnemy = (...sources) => {
+          const preparedEnemy = prepareCharacter(...sources);
+          if (!preparedEnemy) {
+            return;
+          }
+          const key = JSON.stringify([
+            preparedEnemy.id ?? null,
+            preparedEnemy.name ?? null,
+            preparedEnemy.sprite ?? null,
+          ]);
+          if (enemyLookup.has(key)) {
+            return;
+          }
+          enemyLookup.add(key);
+          enemies.push(preparedEnemy);
+        };
+
+        if (Array.isArray(battleConfig?.enemies)) {
+          battleConfig.enemies.forEach((enemy) => addEnemy(enemy));
         }
-        const key = JSON.stringify([
-          preparedEnemy.id ?? null,
-          preparedEnemy.name ?? null,
-          preparedEnemy.sprite ?? null,
-        ]);
-        if (enemyLookup.has(key)) {
-          return;
+
+        if (battleConfig?.enemy) {
+          addEnemy(battleConfig.enemy);
         }
-        enemyLookup.add(key);
-        enemies.push(preparedEnemy);
-      };
 
-      if (Array.isArray(battleConfig?.enemies)) {
-        battleConfig.enemies.forEach((enemy) => addEnemy(enemy));
-      }
-
-      if (battleConfig?.enemy) {
-        addEnemy(battleConfig.enemy);
-      }
-
-      return {
-        battleLevel: Number.isFinite(levelNumber) ? levelNumber : null,
-        hero: preparedHero,
-        enemies,
-      };
+        return {
+          battleLevel: Number.isFinite(levelNumber) ? levelNumber : null,
+          hero: preparedHero,
+          enemies,
+        };
+      });
     });
 
     const currentLevelCharacters =
@@ -541,6 +561,42 @@ const readStoredProgress = () => {
 
     if (normalizedEnemies.length > 0) {
       battle.enemies = normalizedEnemies;
+    }
+
+    const sortedLevelsByBattle = levels
+      .slice()
+      .filter((level) => Number.isFinite(level?.battleLevel))
+      .sort((a, b) => a.battleLevel - b.battleLevel);
+
+    const effectiveBattleLevel = Number.isFinite(activeBattleLevel)
+      ? activeBattleLevel
+      : Number.isFinite(currentLevel?.battleLevel)
+      ? currentLevel.battleLevel
+      : null;
+
+    const currentLevelIndex = sortedLevelsByBattle.findIndex(
+      (level) => level?.battleLevel === effectiveBattleLevel
+    );
+
+    if (currentLevelIndex !== -1) {
+      const immediateNextLevel = sortedLevelsByBattle[currentLevelIndex + 1];
+      if (immediateNextLevel && typeof immediateNextLevel === 'object') {
+        const nextLevelBattle =
+          typeof immediateNextLevel.battle === 'object'
+            ? immediateNextLevel.battle
+            : {};
+        const nextLevelOverride = playerLevelHeroMap.get(
+          immediateNextLevel.battleLevel
+        );
+
+        withAssetRegistration(true, () =>
+          prepareCharacter(
+            playerHeroBase,
+            nextLevelBattle?.hero,
+            nextLevelOverride
+          )
+        );
+      }
     }
 
     if (characterAssetSet.size > 0) {
