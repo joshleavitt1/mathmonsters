@@ -37,7 +37,7 @@ main.landing {
   will-change: opacity, transform, filter;
 }
 
-[data-standard-landing] {
+body:not(.is-standard-landing) [data-standard-landing] {
   display: none;
 }
 
