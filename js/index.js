@@ -342,23 +342,23 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
         return;
       }
 
-      const computedHeroChargeScaleRaw = window
-        .getComputedStyle(heroImage)
-        .getPropertyValue('--hero-charge-scale');
-      const inlineHeroChargeScaleRaw = heroImage.style.getPropertyValue(
-        '--hero-charge-scale'
-      );
-
-      const inlineHeroChargeScale = (inlineHeroChargeScaleRaw || '').trim();
       const computedHeroChargeScale = (() => {
-        const trimmedComputed = (computedHeroChargeScaleRaw || '').trim();
-        if (trimmedComputed !== '') {
-          return trimmedComputed;
-        }
-        return inlineHeroChargeScale;
+        const rawComputed = window
+          .getComputedStyle(heroImage)
+          .getPropertyValue('--hero-charge-scale');
+        return (rawComputed || '').trim();
       })();
 
-      const startingChargeScale = computedHeroChargeScale || '1';
+      const resolvedHeroChargeScale = (() => {
+        if (computedHeroChargeScale !== '') {
+          return computedHeroChargeScale;
+        }
+
+        const rawInline = heroImage.style.getPropertyValue('--hero-charge-scale');
+        return (rawInline || '').trim();
+      })();
+
+      const startingChargeScale = resolvedHeroChargeScale || '1';
 
       heroImage.classList.add('is-prebattle-restarting');
       cancelHeroPrebattleChargeAnimation();
@@ -367,7 +367,10 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
       // doesn't immediately revert the CSS variable back to its base style.
       // Without this, the hero element's transform transition kicks in before
       // the new animation starts, causing a visible jump.
-      heroImage.style.setProperty('--hero-charge-scale', startingChargeScale);
+      heroImage.style.setProperty(
+        '--hero-charge-scale',
+        (startingChargeScale || '').trim()
+      );
 
       heroPrebattleChargeAnimation = heroImage.animate(
         [
