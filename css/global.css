@@ -113,7 +113,7 @@ textarea {
   color: var(--text-color-dark);
 }
 
-button {
+button:not(.home__action):not(.home__icon-button) {
   --btn-gradient-start: var(--button-gradient-start);
   --btn-gradient-end: var(--button-gradient-end);
   --btn-text-color: var(--button-text-color);
