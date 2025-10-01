@@ -982,7 +982,6 @@ const preloadLandingAssets = async () => {
     '../images/background/background.png',
     '../images/battle/battle_time.png',
   ]);
-  const questionFiles = new Set();
 
   const addImageAsset = (path) => {
     const normalized = sanitizeAssetPath(path);
@@ -1037,17 +1036,6 @@ const preloadLandingAssets = async () => {
         const battle = level?.battle ?? {};
         addImageAsset(battle?.hero?.sprite);
         addImageAsset(battle?.enemy?.sprite);
-
-        const questionFile = battle?.questionReference?.file;
-        if (typeof questionFile === 'string') {
-          const sanitizedFile = sanitizeAssetPath(questionFile);
-          if (sanitizedFile) {
-            const normalized = sanitizedFile.startsWith('data/')
-              ? sanitizedFile
-              : `data/${sanitizedFile.replace(/^\/+/, '')}`;
-            questionFiles.add(normalized);
-          }
-        }
       });
     }
 
@@ -1079,19 +1067,6 @@ const preloadLandingAssets = async () => {
     const imagePaths = Array.from(
       new Set([...prioritizedImages.filter(Boolean), ...imageAssets])
     );
-    const questionPaths = Array.from(questionFiles);
-
-    const preloadQuestion = async (url) => {
-      try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Failed to preload ${url}`);
-        }
-        await response.json();
-      } catch (error) {
-        console.warn(error);
-      }
-    };
 
     const preloadImage = (src) =>
       new Promise((resolve) => {
@@ -1112,10 +1087,7 @@ const preloadLandingAssets = async () => {
         image.src = src;
       });
 
-    await Promise.allSettled([
-      ...questionPaths.map(preloadQuestion),
-      ...imagePaths.map(preloadImage),
-    ]);
+    await Promise.allSettled(imagePaths.map(preloadImage));
 
     if (preview) {
       applyBattlePreview(preview);
