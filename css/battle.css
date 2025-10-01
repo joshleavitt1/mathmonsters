@@ -298,22 +298,12 @@ body.is-post-evolution-active #complete-message {
 
 @keyframes hero-enter {
   0% {
-    transform: translateX(140%) scale(1) scaleX(1);
+    transform: translateX(140%) scale(1.1) scaleX(1);
     opacity: 0;
     filter: blur(16px);
   }
-  45% {
-    transform: translateX(12%) scale(1.1) scaleX(1);
-    opacity: 1;
-    filter: blur(8px);
-  }
-  70% {
-    transform: translateX(-4%) scale(0.96) scaleX(1);
-    opacity: 1;
-    filter: blur(0);
-  }
-  85% {
-    transform: translateX(1%) scale(1.02) scaleX(1);
+  65% {
+    transform: translateX(-3%) scale(1.02) scaleX(1);
     opacity: 1;
     filter: blur(0);
   }
