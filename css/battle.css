@@ -305,7 +305,7 @@ body.is-post-evolution-active #complete-message {
   45% {
     transform: translateX(12%) scale(1.1) scaleX(1);
     opacity: 1;
-    filter: blur(8px);
+    filter: blur(0);
   }
   70% {
     transform: translateX(-4%) scale(0.96) scaleX(1);
