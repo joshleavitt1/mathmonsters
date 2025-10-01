@@ -19,14 +19,21 @@
   <body class="home-page">
     <main class="home app-safe-area">
       <header class="home__top-bar">
-        <button class="home__icon-button" type="button" aria-label="Open settings">
+        <div
+          class="home__icon-button"
+          role="link"
+          tabindex="0"
+          data-initial-tabindex="0"
+          aria-label="Open settings"
+          data-settings-logout
+        >
           <img
             src="../images/home/settings.png"
             alt="Settings"
             width="64"
             height="64"
           />
-        </button>
+        </div>
         <div class="home__status" aria-live="polite">
           <img
             src="../images/home/gems.png"
@@ -59,23 +66,43 @@
       </section>
 
       <footer class="home__actions">
-        <button class="home__action" type="button" aria-label="Battle">
+        <div
+          class="home__action"
+          role="link"
+          tabindex="0"
+          data-initial-tabindex="0"
+          aria-label="Battle"
+        >
           <img
             src="../images/home/battle.png"
             alt="Battle"
             width="100"
             height="100"
           />
-        </button>
-        <button class="home__action" type="button" aria-label="Store">
+        </div>
+        <div
+          class="home__action"
+          role="link"
+          tabindex="0"
+          data-initial-tabindex="0"
+          aria-label="Store"
+        >
           <img
             src="../images/home/store.png"
             alt="Store"
             width="100"
             height="100"
           />
-        </button>
+        </div>
       </footer>
     </main>
+    <script>
+      window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
+      window.SUPABASE_ANON_KEY =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bHhwdW1jb2loZmFwbXJzYXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjE3MDcsImV4cCI6MjA3Mjk5NzcwN30.PJiDPZ_Dqli_42isJexeYgsf0ebWbCSOwHtR7lsQTN0';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../js/supabaseClient.js" defer></script>
+    <script src="../js/home.js" defer></script>
   </body>
 </html>

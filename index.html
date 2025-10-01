@@ -122,14 +122,21 @@
       aria-live="polite"
     >
       <header class="home__top-bar">
-        <button class="home__icon-button" type="button" aria-label="Open settings">
+        <div
+          class="home__icon-button"
+          role="link"
+          tabindex="0"
+          data-initial-tabindex="0"
+          aria-label="Open settings"
+          data-settings-logout
+        >
           <img
             src="./images/home/settings.png"
             alt="Settings"
             width="64"
             height="64"
           />
-        </button>
+        </div>
         <div class="home__status" aria-live="polite">
           <img
             src="./images/home/gems.png"
@@ -161,9 +168,11 @@
       </section>
 
       <footer class="home__actions">
-        <button
+        <div
           class="home__action home__action--battle"
-          type="button"
+          role="link"
+          tabindex="0"
+          data-initial-tabindex="0"
           aria-label="Battle"
           data-battle-button
         >
@@ -173,15 +182,21 @@
             width="100"
             height="100"
           />
-        </button>
-        <button class="home__action home__action--store" type="button" aria-label="Store">
+        </div>
+        <div
+          class="home__action home__action--store"
+          role="link"
+          tabindex="0"
+          data-initial-tabindex="0"
+          aria-label="Store"
+        >
           <img
             src="./images/home/store.png"
             alt="Store"
             width="100"
             height="100"
           />
-        </button>
+        </div>
       </footer>
     </div>
 

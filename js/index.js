@@ -153,6 +153,157 @@ const clearGuestMode = () => {
   }
 };
 
+const supportsNativeDisabled = (element) => {
+  if (!element || typeof element !== 'object') {
+    return false;
+  }
+
+  return (
+    element instanceof HTMLButtonElement ||
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLSelectElement ||
+    element instanceof HTMLTextAreaElement ||
+    element instanceof HTMLFieldSetElement
+  );
+};
+
+const setInteractiveDisabled = (element, disabled) => {
+  if (!element) {
+    return;
+  }
+
+  const shouldDisable = Boolean(disabled);
+
+  if (supportsNativeDisabled(element)) {
+    element.disabled = shouldDisable;
+    if (shouldDisable) {
+      element.setAttribute('aria-disabled', 'true');
+    } else {
+      element.removeAttribute('aria-disabled');
+    }
+    return;
+  }
+
+  if (shouldDisable) {
+    element.setAttribute('aria-disabled', 'true');
+    if (element.hasAttribute('data-initial-tabindex')) {
+      element.setAttribute('tabindex', '-1');
+    } else if (element.hasAttribute('tabindex')) {
+      const currentTabIndex = element.getAttribute('tabindex') ?? '';
+      element.setAttribute('data-previous-tabindex', currentTabIndex);
+      element.setAttribute('tabindex', '-1');
+    }
+  } else {
+    element.removeAttribute('aria-disabled');
+    if (element.hasAttribute('data-initial-tabindex')) {
+      const initialTabIndex = element.getAttribute('data-initial-tabindex') || '0';
+      element.setAttribute('tabindex', initialTabIndex);
+    } else if (element.hasAttribute('data-previous-tabindex')) {
+      const previous = element.getAttribute('data-previous-tabindex');
+      if (previous) {
+        element.setAttribute('tabindex', previous);
+      } else {
+        element.removeAttribute('tabindex');
+      }
+      element.removeAttribute('data-previous-tabindex');
+    } else if (!element.hasAttribute('tabindex')) {
+      element.setAttribute('tabindex', '0');
+    }
+  }
+};
+
+const isInteractiveElementDisabled = (element) => {
+  if (!element) {
+    return false;
+  }
+
+  if (supportsNativeDisabled(element)) {
+    return Boolean(element.disabled);
+  }
+
+  return element.getAttribute('aria-disabled') === 'true';
+};
+
+const attachInteractiveHandler = (element, handler) => {
+  if (!element || typeof handler !== 'function') {
+    return;
+  }
+
+  const handleClick = (event) => {
+    if (isInteractiveElementDisabled(element)) {
+      if (typeof event?.preventDefault === 'function') {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    handler(event);
+  };
+
+  element.addEventListener('click', handleClick);
+
+  if (supportsNativeDisabled(element)) {
+    return;
+  }
+
+  element.addEventListener('keydown', (event) => {
+    if (isInteractiveElementDisabled(element)) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handler(event);
+    }
+  });
+};
+
+const logoutAndRedirect = async () => {
+  const supabase = window.supabaseClient;
+  if (supabase?.auth?.signOut) {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.warn('Failed to sign out user.', error);
+      }
+    } catch (error) {
+      console.warn('Unexpected error while signing out.', error);
+    }
+  }
+
+  clearGuestMode();
+  redirectToWelcome();
+};
+
+const setupSettingsLogout = () => {
+  const settingsTrigger = document.querySelector('[data-settings-logout]');
+  if (!settingsTrigger) {
+    return;
+  }
+
+  if (settingsTrigger.dataset.logoutBound === 'true') {
+    return;
+  }
+  settingsTrigger.dataset.logoutBound = 'true';
+
+  const handleLogout = async (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    if (isInteractiveElementDisabled(settingsTrigger)) {
+      return;
+    }
+
+    setInteractiveDisabled(settingsTrigger, true);
+    settingsTrigger.setAttribute('aria-busy', 'true');
+
+    await logoutAndRedirect();
+  };
+
+  attachInteractiveHandler(settingsTrigger, handleLogout);
+};
+
 const ensureAuthenticated = async () => {
   const guestSessionState = readGuestSessionState();
 
@@ -1112,6 +1263,8 @@ const initLandingInteractions = async (preloadedData = {}) => {
   const heroInfoElement = document.querySelector('.landing__hero-info');
   let isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
 
+  setupSettingsLogout();
+
   const buttonGlowProperties = [
     '--pulsating-glow-color',
     '--pulsating-glow-opacity',
@@ -1216,9 +1369,8 @@ const initLandingInteractions = async (preloadedData = {}) => {
     }
     if (battleButton) {
       removeBattleButtonGlow(battleButton);
-      battleButton.disabled = true;
+      setInteractiveDisabled(battleButton, true);
       battleButton.setAttribute('aria-hidden', 'true');
-      battleButton.setAttribute('tabindex', '-1');
     }
     if (enemyImage) {
       enemyImage.setAttribute('aria-hidden', 'true');
@@ -1233,8 +1385,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
     }
     if (battleButton) {
       battleButton.removeAttribute('aria-hidden');
-      battleButton.removeAttribute('tabindex');
-      battleButton.disabled = false;
+      setInteractiveDisabled(battleButton, false);
       applyBattleButtonGlow(battleButton);
     }
   }
@@ -1271,7 +1422,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
     const buttonToDisable = triggerButton || battleButton;
     if (buttonToDisable) {
-      buttonToDisable.disabled = true;
+      setInteractiveDisabled(buttonToDisable, true);
       buttonToDisable.setAttribute('aria-busy', 'true');
     }
 
@@ -1329,9 +1480,13 @@ const initLandingInteractions = async (preloadedData = {}) => {
     return;
   }
 
-  battleButton.addEventListener('click', () =>
-    beginBattle({ triggerButton: battleButton, showIntroImmediately: true })
-  );
+  attachInteractiveHandler(battleButton, (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    beginBattle({ triggerButton: battleButton, showIntroImmediately: true });
+  });
 };
 
 const bootstrapLanding = async () => {
