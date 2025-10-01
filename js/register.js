@@ -1,6 +1,5 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
-const LEVEL_TWO_BATTLE_LEVEL = 2;
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 
 const isPlainObject = (value) =>
@@ -106,34 +105,6 @@ const updateSelectPlaceholderState = (select) => {
   }
   const hasValue = Boolean(readTrimmedValue(select.value));
   select.classList.toggle('has-value', hasValue);
-};
-
-const persistLevelTwoProgress = () => {
-  try {
-    const storage = window.localStorage;
-    if (!storage) {
-      return;
-    }
-
-    const raw = storage.getItem(PROGRESS_STORAGE_KEY);
-    let progress = {};
-
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === 'object') {
-          progress = { ...parsed };
-        }
-      } catch (error) {
-        console.warn('Existing progress could not be parsed.', error);
-      }
-    }
-
-    progress.battleLevel = LEVEL_TWO_BATTLE_LEVEL;
-    storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
-  } catch (error) {
-    console.warn('Unable to update level progress for the new player.', error);
-  }
 };
 
 const readTrimmedValue = (value) =>
@@ -263,7 +234,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (user?.id && defaultPlayerData) {
           await storePlayerDataForAccount(supabase, user.id, defaultPlayerData);
         }
-        persistLevelTwoProgress();
+        try {
+          window.localStorage?.removeItem(PROGRESS_STORAGE_KEY);
+        } catch (error) {
+          console.warn('Unable to clear stored battle progress for the new player.', error);
+        }
         clearGuestSessionFlag();
         window.location.replace('../index.html');
       };
