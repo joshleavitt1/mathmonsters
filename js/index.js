@@ -1265,46 +1265,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
   setupSettingsLogout();
 
-  const buttonGlowProperties = [
-    '--pulsating-glow-color',
-    '--pulsating-glow-opacity',
-    '--pulsating-glow-opacity-peak',
-    '--pulsating-glow-spread',
-    '--pulsating-glow-radius',
-    '--pulsating-glow-duration',
-    '--pulsating-glow-scale-start',
-    '--pulsating-glow-scale-peak',
-    '--pulsating-glow-blur',
-  ];
-
-  const applyBattleButtonGlow = (button) => {
-    if (!button) {
-      return;
-    }
-
-    button.classList.add('pulsating-glow');
-    button.style.setProperty('--pulsating-glow-color', 'rgba(80, 188, 255, 0.65)');
-    button.style.setProperty('--pulsating-glow-opacity', '0.7');
-    button.style.setProperty('--pulsating-glow-opacity-peak', '0.95');
-    button.style.setProperty('--pulsating-glow-spread', '28px');
-    button.style.setProperty('--pulsating-glow-radius', '24px');
-    button.style.setProperty('--pulsating-glow-duration', '1.9s');
-    button.style.setProperty('--pulsating-glow-scale-start', '0.94');
-    button.style.setProperty('--pulsating-glow-scale-peak', '1.08');
-    button.style.setProperty('--pulsating-glow-blur', '8px');
-  };
-
-  const removeBattleButtonGlow = (button) => {
-    if (!button) {
-      return;
-    }
-
-    button.classList.remove('pulsating-glow');
-    buttonGlowProperties.forEach((property) => {
-      button.style.removeProperty(property);
-    });
-  };
-
   const loadBattlePreview = async () => {
     try {
       let levelsData = preloadedData?.levelsData ?? null;
@@ -1368,7 +1328,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
       heroInfoElement.setAttribute('aria-hidden', 'true');
     }
     if (battleButton) {
-      removeBattleButtonGlow(battleButton);
       setInteractiveDisabled(battleButton, true);
       battleButton.setAttribute('aria-hidden', 'true');
     }
@@ -1386,7 +1345,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
     if (battleButton) {
       battleButton.removeAttribute('aria-hidden');
       setInteractiveDisabled(battleButton, false);
-      applyBattleButtonGlow(battleButton);
     }
   }
 
