@@ -22,7 +22,6 @@ const LEVEL_ONE_INTRO_EGG_AUTO_START_DELAY_MS = 1000;
 const LEVEL_ONE_INTRO_EGG_HATCH_DURATION_MS = 2100;
 const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 700;
 const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 220;
-const HERO_PREBATTLE_CHARGE_DELAY_MS = 0;
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
 const BATTLE_PAGE_URL = 'html/battle.html';
@@ -313,157 +312,6 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     new Promise((resolve) =>
       window.setTimeout(resolve, Math.max(0, Number(durationMs) || 0))
     );
-  let heroPrebattleChargeTimeoutId = null;
-  let heroPrebattleChargeAnimation = null;
-
-  const clearHeroPrebattleChargeTimeout = () => {
-    if (heroPrebattleChargeTimeoutId !== null) {
-      window.clearTimeout(heroPrebattleChargeTimeoutId);
-      heroPrebattleChargeTimeoutId = null;
-    }
-  };
-
-  const cancelHeroPrebattleChargeAnimation = () => {
-    if (heroPrebattleChargeAnimation) {
-      if (typeof heroPrebattleChargeAnimation.commitStyles === 'function') {
-        try {
-          heroPrebattleChargeAnimation.commitStyles();
-        } catch (error) {
-          console.warn(
-            'Failed to commit hero prebattle charge animation styles.',
-            error
-          );
-        }
-      }
-      heroPrebattleChargeAnimation.cancel();
-      heroPrebattleChargeAnimation = null;
-    }
-  };
-
-  const scheduleHeroPrebattleCharge = () => {
-    if (!heroImage) {
-      return;
-    }
-
-    const triggerHeroPrebattleCharge = () => {
-      heroPrebattleChargeTimeoutId = null;
-
-      if (!heroImage || heroImage.classList.contains('is-exiting')) {
-        return;
-      }
-
-      const heroImageComputedStyle = window.getComputedStyle(heroImage);
-
-      const computedHeroChargeScale = (() => {
-        const rawComputed = heroImageComputedStyle.getPropertyValue(
-          '--hero-charge-scale'
-        );
-        return (rawComputed || '').trim();
-      })();
-
-      const inlineHeroChargeScale = (() => {
-        const rawInline = heroImage.style.getPropertyValue('--hero-charge-scale');
-        return (rawInline || '').trim();
-      })();
-
-      const fallbackTransformChargeScale = (() => {
-        if (
-          !heroImageComputedStyle ||
-          typeof heroImageComputedStyle.transform !== 'string'
-        ) {
-          return '';
-        }
-
-        const transformValue = heroImageComputedStyle.transform;
-
-        if (!transformValue || transformValue === 'none') {
-          return '';
-        }
-
-        const MatrixConstructor =
-          typeof DOMMatrixReadOnly === 'function'
-            ? DOMMatrixReadOnly
-            : typeof DOMMatrix === 'function'
-            ? DOMMatrix
-            : null;
-
-        if (!MatrixConstructor) {
-          return '';
-        }
-
-        try {
-          const matrix = new MatrixConstructor(transformValue);
-          const uniformScale = 'm11' in matrix ? matrix.m11 : matrix.a;
-
-          if (!Number.isFinite(uniformScale) || uniformScale <= 0) {
-            return '';
-          }
-
-          return String(uniformScale);
-        } catch (error) {
-          return '';
-        }
-      })();
-
-      const startingChargeScale =
-        computedHeroChargeScale ||
-        inlineHeroChargeScale ||
-        fallbackTransformChargeScale ||
-        '1';
-
-      heroImage.classList.add('is-prebattle-restarting');
-      cancelHeroPrebattleChargeAnimation();
-
-      // Preserve the current charge scale so canceling the previous animation
-      // doesn't immediately revert the CSS variable back to its base style.
-      // Without this, the hero element's transform transition kicks in before
-      // the new animation starts, causing a visible jump.
-      heroImage.style.setProperty(
-        '--hero-charge-scale',
-        (startingChargeScale || '').trim()
-      );
-
-      heroPrebattleChargeAnimation = heroImage.animate(
-        [
-          { '--hero-charge-scale': startingChargeScale },
-          { '--hero-charge-scale': '0.86' },
-          { '--hero-charge-scale': '0.8' },
-        ],
-        {
-          duration: 220,
-          easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)',
-          fill: 'forwards',
-        }
-      );
-
-      heroPrebattleChargeAnimation.onfinish = () => {
-        heroPrebattleChargeAnimation = null;
-      };
-      heroPrebattleChargeAnimation.oncancel = () => {
-        heroPrebattleChargeAnimation = null;
-      };
-
-      window.requestAnimationFrame(() => {
-        if (!heroImage) {
-          return;
-        }
-        heroImage.classList.remove('is-prebattle-restarting');
-      });
-    };
-
-    clearHeroPrebattleChargeTimeout();
-
-    if (HERO_PREBATTLE_CHARGE_DELAY_MS <= 0) {
-      triggerHeroPrebattleCharge();
-      return;
-    }
-
-    heroPrebattleChargeTimeoutId = window.setTimeout(
-      triggerHeroPrebattleCharge,
-      HERO_PREBATTLE_CHARGE_DELAY_MS
-    );
-  };
-
   if (
     !introRoot ||
     !eggButton ||
@@ -615,7 +463,6 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     }
     hasStartedBattle = true;
     clearEggAutoHatchTimeout();
-    scheduleHeroPrebattleCharge();
     await hideCard(battleCard);
     introRoot.classList.remove('is-active');
     introRoot.setAttribute('aria-hidden', 'true');
