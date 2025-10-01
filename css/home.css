@@ -77,7 +77,7 @@ body.home-page {
 .home__hero-name {
   margin: 0;
   font-size: clamp(28px, 6vw, 42px);
-  font-weight: 600;
+  font-weight: 400;
   color: #ffffff;
 }
 
