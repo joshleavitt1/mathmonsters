@@ -20,6 +20,19 @@ body.is-standard-landing {
   overflow: hidden;
 }
 
+body.is-standard-landing main.landing {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body.is-standard-landing .landing__standard {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 :root {
   --intro-sprite-offset: clamp(200px, 24vw, 280px);
 }
