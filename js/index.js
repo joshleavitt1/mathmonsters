@@ -342,23 +342,64 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
         return;
       }
 
+      const heroImageComputedStyle = window.getComputedStyle(heroImage);
+
       const computedHeroChargeScale = (() => {
-        const rawComputed = window
-          .getComputedStyle(heroImage)
-          .getPropertyValue('--hero-charge-scale');
+        const rawComputed = heroImageComputedStyle.getPropertyValue(
+          '--hero-charge-scale'
+        );
         return (rawComputed || '').trim();
       })();
 
-      const resolvedHeroChargeScale = (() => {
-        if (computedHeroChargeScale !== '') {
-          return computedHeroChargeScale;
-        }
-
+      const inlineHeroChargeScale = (() => {
         const rawInline = heroImage.style.getPropertyValue('--hero-charge-scale');
         return (rawInline || '').trim();
       })();
 
-      const startingChargeScale = resolvedHeroChargeScale || '1';
+      const fallbackTransformChargeScale = (() => {
+        if (
+          !heroImageComputedStyle ||
+          typeof heroImageComputedStyle.transform !== 'string'
+        ) {
+          return '';
+        }
+
+        const transformValue = heroImageComputedStyle.transform;
+
+        if (!transformValue || transformValue === 'none') {
+          return '';
+        }
+
+        const MatrixConstructor =
+          typeof DOMMatrixReadOnly === 'function'
+            ? DOMMatrixReadOnly
+            : typeof DOMMatrix === 'function'
+            ? DOMMatrix
+            : null;
+
+        if (!MatrixConstructor) {
+          return '';
+        }
+
+        try {
+          const matrix = new MatrixConstructor(transformValue);
+          const uniformScale = 'm11' in matrix ? matrix.m11 : matrix.a;
+
+          if (!Number.isFinite(uniformScale) || uniformScale <= 0) {
+            return '';
+          }
+
+          return String(uniformScale);
+        } catch (error) {
+          return '';
+        }
+      })();
+
+      const startingChargeScale =
+        computedHeroChargeScale ||
+        inlineHeroChargeScale ||
+        fallbackTransformChargeScale ||
+        '1';
 
       heroImage.classList.add('is-prebattle-restarting');
       cancelHeroPrebattleChargeAnimation();
