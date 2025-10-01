@@ -325,6 +325,16 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
 
   const cancelHeroPrebattleChargeAnimation = () => {
     if (heroPrebattleChargeAnimation) {
+      if (typeof heroPrebattleChargeAnimation.commitStyles === 'function') {
+        try {
+          heroPrebattleChargeAnimation.commitStyles();
+        } catch (error) {
+          console.warn(
+            'Failed to commit hero prebattle charge animation styles.',
+            error
+          );
+        }
+      }
       heroPrebattleChargeAnimation.cancel();
       heroPrebattleChargeAnimation = null;
     }
