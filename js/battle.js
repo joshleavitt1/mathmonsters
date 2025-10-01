@@ -3,8 +3,6 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 
-const BATTLE_PAGE_MODE_PARAM = 'mode';
-const BATTLE_PAGE_MODE_PLAY = 'play';
 const ENEMY_DEFEAT_ANIMATION_DELAY = 1000;
 const VICTORY_PROGRESS_UPDATE_DELAY = ENEMY_DEFEAT_ANIMATION_DELAY + 1000;
 const DEFEAT_PROGRESS_UPDATE_DELAY = 1000;
@@ -37,47 +35,6 @@ const {
   readExperienceForLevel,
   computeExperienceProgress,
 } = progressUtils;
-
-const isDevControlsHiddenMode = () => {
-  if (typeof window === 'undefined' || typeof window.location === 'undefined') {
-    return false;
-  }
-
-  const search = window.location.search || '';
-
-  if (typeof URLSearchParams === 'function') {
-    try {
-      const params = new URLSearchParams(search);
-      const mode = params.get(BATTLE_PAGE_MODE_PARAM);
-      return typeof mode === 'string' && mode.toLowerCase() === BATTLE_PAGE_MODE_PLAY;
-    } catch (error) {
-      console.warn('Unable to read battle mode from URL parameters.', error);
-    }
-  }
-
-  const trimmed = search.startsWith('?') ? search.slice(1) : search;
-  if (!trimmed) {
-    return false;
-  }
-
-  return trimmed.split('&').some((pair) => {
-    if (!pair) {
-      return false;
-    }
-
-    const [rawKey, rawValue = ''] = pair.split('=');
-    if (!rawKey) {
-      return false;
-    }
-
-    const key = rawKey.trim().toLowerCase();
-    if (key !== BATTLE_PAGE_MODE_PARAM) {
-      return false;
-    }
-
-    return rawValue.trim().toLowerCase() === BATTLE_PAGE_MODE_PLAY;
-  });
-};
 
 const readVisitedFlag = (storage, label) => {
   if (!storage) {
@@ -133,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!landingVisited) {
     return;
   }
-  const hideDevControls = isDevControlsHiddenMode();
   const battleField = document.getElementById('battle');
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
@@ -153,15 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const choicesEl = questionBox.querySelector('.choices');
   const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
   const bannerTimeValue = document.querySelector('[data-banner-time]');
-  const setStreakButton = document.querySelector('[data-dev-set-streak]');
-  const endBattleButton = document.querySelector('[data-dev-end-battle]');
-  const loseBattleButton = document.querySelector('[data-dev-lose-battle]');
-  const resetLevelButton = document.querySelector('[data-dev-reset-level]');
-  const logOutButton = document.querySelector('[data-dev-log-out]');
-  const devControls = document.querySelector('.battle-dev-controls');
-  if (hideDevControls) {
-    devControls?.classList.add('battle-dev-controls--hidden');
-  }
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
   const heroAttackInc = heroStats.querySelector('.attack .increase');
@@ -2857,86 +2804,6 @@ document.addEventListener('DOMContentLoaded', () => {
     monsterImg.classList.add('attack');
   }
 
-  setStreakButton?.addEventListener('click', () => {
-    if (battleEnded) {
-      return;
-    }
-    const targetStreak = Math.max(0, STREAK_GOAL - 1);
-    streak = targetStreak;
-    streakMaxed = false;
-    dispatchStreakMeterUpdate(true);
-  });
-
-  loseBattleButton?.addEventListener('click', () => {
-    if (battleEnded) {
-      return;
-    }
-    const previousHealth = hero.health;
-    hero.health = 0;
-    hero.damage = Math.max(hero.damage, previousHealth);
-    updateHeroHealthDisplay();
-    updateHealthBars();
-    document.dispatchEvent(new Event('close-question'));
-    window.setTimeout(() => {
-      endBattle(false, { waitForHpDrain: heroHpFill });
-    }, 0);
-  });
-
-  endBattleButton?.addEventListener('click', () => {
-    if (battleEnded) {
-      return;
-    }
-    document.dispatchEvent(new Event('close-question'));
-    window.setTimeout(() => {
-      endBattle(true);
-    }, 0);
-  });
-
-  resetLevelButton?.addEventListener('click', () => {
-    persistProgress({ battleLevel: 1 });
-    currentBattleLevel = 1;
-    battleLevelAdvanced = false;
-    battleGoalsMet = false;
-  });
-
-  logOutButton?.addEventListener('click', async () => {
-    const supabase = window.supabaseClient;
-
-    if (supabase?.auth?.signOut) {
-      try {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.warn('Supabase sign out failed', error);
-        }
-      } catch (error) {
-        console.warn('Unexpected error during sign out', error);
-      }
-    }
-
-    try {
-      window.localStorage?.removeItem(PROGRESS_STORAGE_KEY);
-      window.localStorage?.removeItem(LANDING_VISITED_KEY);
-      window.localStorage?.removeItem(GUEST_SESSION_KEY);
-      window.sessionStorage?.removeItem(LANDING_VISITED_KEY);
-    } catch (error) {
-      console.warn('Unable to clear local player data', error);
-    }
-
-    if (window.preloadedData && typeof window.preloadedData === 'object') {
-      if (
-        window.preloadedData.player &&
-        typeof window.preloadedData.player === 'object'
-      ) {
-        delete window.preloadedData.player.progress;
-        delete window.preloadedData.player.battleVariables;
-      }
-      delete window.preloadedData.progress;
-      delete window.preloadedData.battleVariables;
-    }
-
-    window.location.replace('https://joshleavitt1.github.io/mathmonsters/html/welcome.html');
-  });
-
   const scheduleQuestionClose = (afterClose) => {
     window.setTimeout(() => {
       if (battleEnded) {
@@ -3011,7 +2878,6 @@ document.addEventListener('DOMContentLoaded', () => {
     battleEnded = true;
     resetEnemyDefeatAnimation();
     resetSuperAttackBoost();
-    devControls?.classList.add('battle-dev-controls--hidden');
     document.dispatchEvent(new Event('close-question'));
     stopBattleTimer();
     updateAccuracyDisplays();

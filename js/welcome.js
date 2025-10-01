@@ -3,9 +3,6 @@ const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const LEGACY_PROGRESS_STORAGE_KEYS = Object.freeze(['reefRangersProgress']);
-const LANDING_MODE_STORAGE_KEY = 'mathmonstersLandingMode';
-const BATTLE_PAGE_MODE_PLAY = 'play';
-const BATTLE_PAGE_MODE_DEV_TOOLS = 'devtools';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const REGISTER_PAGE_URL = 'register.html';
 
@@ -87,39 +84,12 @@ const isRegistrationRequiredForGuest = () => {
   }
 };
 
-const persistLandingModeRequest = (mode) => {
-  try {
-    const storage = window.sessionStorage;
-    if (!storage) {
-      return false;
-    }
-    if (!mode) {
-      storage.removeItem(LANDING_MODE_STORAGE_KEY);
-      return true;
-    }
-    storage.setItem(LANDING_MODE_STORAGE_KEY, mode);
-    return true;
-  } catch (error) {
-    console.warn('Landing mode preference could not be saved.', error);
-    return false;
-  }
-};
-
-const clearLandingModeRequest = () => {
-  try {
-    window.sessionStorage?.removeItem(LANDING_MODE_STORAGE_KEY);
-  } catch (error) {
-    console.warn('Unable to clear landing mode preference.', error);
-  }
-};
-
 document.addEventListener('DOMContentLoaded', async () => {
   const newGameButton = document.querySelector('[data-new-game]');
-  const noDevButton = document.querySelector('[data-new-game-no-dev]');
   const supabase = window.supabaseClient;
 
   const setButtonsState = (isDisabled) => {
-    const buttons = [newGameButton, noDevButton];
+    const buttons = [newGameButton];
     buttons.forEach((button) => {
       if (!button) {
         return;
@@ -150,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  const startGuestSession = (hideDevControls) => {
+  const startGuestSession = () => {
     setButtonsState(true);
     const success = persistGuestSession();
     if (!success) {
@@ -158,26 +128,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    let redirectTarget = '../index.html';
-    if (hideDevControls) {
-      persistLandingModeRequest(BATTLE_PAGE_MODE_PLAY);
-      redirectTarget = '../index.html?mode=play';
-    } else {
-      persistLandingModeRequest(BATTLE_PAGE_MODE_DEV_TOOLS);
-    }
-
-    window.location.replace(redirectTarget);
+    window.location.replace('../index.html');
   };
 
   if (newGameButton) {
     newGameButton.addEventListener('click', () => {
-      startGuestSession(false);
-    });
-  }
-
-  if (noDevButton) {
-    noDevButton.addEventListener('click', () => {
-      startGuestSession(true);
+      startGuestSession();
     });
   }
 });
