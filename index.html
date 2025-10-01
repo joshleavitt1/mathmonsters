@@ -116,7 +116,11 @@
       />
     </div>
 
-    <div class="landing__standard" data-standard-landing aria-live="polite">
+    <div
+      class="landing__standard home app-safe-area"
+      data-standard-landing
+      aria-live="polite"
+    >
       <header class="home__top-bar">
         <button class="home__icon-button" type="button" aria-label="Open settings">
           <img
@@ -136,16 +140,18 @@
         </div>
       </header>
 
-      <section class="home__hero">
-        <h1 class="home__hero-name text-white" data-hero-name>Shellfin</h1>
-        <p class="home__hero-level text-small text-white" data-hero-level>Level 2</p>
-        <img
-          class="home__hero-badge"
-          src="./images/home/addition.png"
-          alt="Addition badge"
-          width="100"
-          height="100"
-        />
+      <section class="home__hero" aria-live="polite">
+        <div class="home__hero-info">
+          <h1 class="home__hero-name text-white" data-hero-name>Shellfin</h1>
+          <p class="home__hero-level text-small text-white" data-hero-level>Level 2</p>
+          <img
+            class="home__hero-badge"
+            src="./images/home/addition.png"
+            alt="Addition badge"
+            width="100"
+            height="100"
+          />
+        </div>
         <img
           class="home__hero-sprite"
           src="./images/hero/shellfin_level_2.png"
