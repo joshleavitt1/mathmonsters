@@ -3,13 +3,16 @@
 }
 
 body {
-  margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
   color: #272B34;
   background: url('../images/background/background.png') no-repeat center/cover;
   position: relative;
   overflow: hidden;
+}
+
+body.is-level-one-landing {
+  margin: 0;
 }
 
 :root {
