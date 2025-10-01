@@ -8,19 +8,19 @@ body {
 
 .preloader {
   --app-safe-area-padding: clamp(16px, 5vw, 48px);
-  position: fixed;
-  inset: 0;
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 40px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
   background-color: #001b41;
   text-align: center;
   box-sizing: border-box;
-  padding-top: calc(
-    var(--app-safe-area-padding) + env(safe-area-inset-top, 0px)
-  );
+  padding-top: calc(40px + env(safe-area-inset-top, 0px));
   padding-bottom: calc(
     var(--app-safe-area-padding) + env(safe-area-inset-bottom, 0px)
   );
@@ -30,7 +30,6 @@ body {
   padding-right: calc(
     var(--app-safe-area-padding) + env(safe-area-inset-right, 0px)
   );
-  overflow-y: auto;
 }
 
 .preloader__logo {
