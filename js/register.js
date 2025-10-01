@@ -1,6 +1,82 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const LEVEL_TWO_BATTLE_LEVEL = 2;
+const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
+
+const isPlainObject = (value) =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const clonePlainObject = (value) => {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (error) {
+    console.warn('Unable to clone player data object.', error);
+    return null;
+  }
+};
+
+const loadDefaultPlayerData = async () => {
+  const fetchFn =
+    typeof window !== 'undefined' && typeof window.fetch === 'function'
+      ? window.fetch.bind(window)
+      : typeof fetch === 'function'
+      ? fetch
+      : null;
+
+  if (!fetchFn) {
+    return null;
+  }
+
+  try {
+    const response = await fetchFn(DEFAULT_PLAYER_DATA_PATH, {
+      headers: {
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response?.ok) {
+      throw new Error(`Request failed with status ${response?.status ?? 'unknown'}`);
+    }
+
+    const data = await response.json();
+    return clonePlainObject(data);
+  } catch (error) {
+    console.warn('Unable to load default player data for the new account.', error);
+    return null;
+  }
+};
+
+const storePlayerDataForAccount = async (supabase, userId, playerData) => {
+  if (!supabase?.from || !userId || !isPlainObject(playerData)) {
+    return false;
+  }
+
+  const payload = clonePlainObject(playerData);
+  if (!payload) {
+    return false;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('player_profiles')
+      .upsert({ id: userId, player_data: payload }, { onConflict: 'id' });
+
+    if (error) {
+      console.warn('Supabase rejected the request to persist player data.', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn('Unable to persist player data for the new account.', error);
+    return false;
+  }
+};
 
 const clearGuestSessionFlag = () => {
   try {
@@ -161,6 +237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setLoading(true);
 
     try {
+      const defaultPlayerData = await loadDefaultPlayerData();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -168,6 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           data: {
             gradeLevel,
             referralSource,
+            ...(defaultPlayerData ? { playerData: defaultPlayerData } : {}),
           },
         },
       });
@@ -178,14 +256,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      const completeRegistration = () => {
+      let latestUser = data?.user ?? null;
+
+      const completeRegistration = async (sessionUser) => {
+        const user = sessionUser ?? latestUser;
+        if (user?.id && defaultPlayerData) {
+          await storePlayerDataForAccount(supabase, user.id, defaultPlayerData);
+        }
         persistLevelTwoProgress();
         clearGuestSessionFlag();
         window.location.replace('../index.html');
       };
 
       if (data?.session) {
-        completeRegistration();
+        await completeRegistration(data.user ?? null);
         return;
       }
 
@@ -194,6 +278,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           email,
           password,
         });
+
+      if (signInData?.user) {
+        latestUser = signInData.user;
+      }
 
       if (signInError || !signInData?.session) {
         showError(
@@ -204,7 +292,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      completeRegistration();
+      await completeRegistration(signInData.user ?? null);
     } catch (error) {
       console.error('Unexpected error during registration', error);
       showError('An unexpected error occurred. Please try again.');
