@@ -342,16 +342,20 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
         return;
       }
 
-      const computedHeroChargeScale = (
-        window
-          .getComputedStyle(heroImage)
-          .getPropertyValue('--hero-charge-scale') || ''
-      ).trim();
-      const inlineHeroChargeScale = (
-        heroImage.style.getPropertyValue('--hero-charge-scale') || ''
-      ).trim();
+      const computedHeroChargeScaleRaw = window
+        .getComputedStyle(heroImage)
+        .getPropertyValue('--hero-charge-scale');
+      const inlineHeroChargeScaleRaw = heroImage.style.getPropertyValue(
+        '--hero-charge-scale'
+      );
+
+      const computedHeroChargeScale = (computedHeroChargeScaleRaw || '').trim();
+      const inlineHeroChargeScale = (inlineHeroChargeScaleRaw || '').trim();
+
       const startingChargeScale =
-        computedHeroChargeScale || inlineHeroChargeScale || '1';
+        computedHeroChargeScale !== ''
+          ? computedHeroChargeScale
+          : inlineHeroChargeScale || '1';
 
       cancelHeroPrebattleChargeAnimation();
 
