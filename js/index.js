@@ -618,6 +618,23 @@ const mergePlayerWithProgress = (rawPlayerData) => {
   return player;
 };
 
+const normalizeBattleLevel = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+};
+
 const determineBattlePreview = (levelsData, playerData) => {
   const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
   const player = mergePlayerWithProgress(playerData);
@@ -626,9 +643,18 @@ const determineBattlePreview = (levelsData, playerData) => {
     return { levels, player, preview: null };
   }
 
-  const progressLevel = player?.progress?.battleLevel;
-  const activeLevel =
-    levels.find((level) => level?.battleLevel === progressLevel) ?? levels[0];
+  const progressLevel = normalizeBattleLevel(player?.progress?.battleLevel);
+  const activeLevel = (() => {
+    if (progressLevel !== null) {
+      const match = levels.find(
+        (level) => normalizeBattleLevel(level?.battleLevel) === progressLevel
+      );
+      if (match) {
+        return match;
+      }
+    }
+    return levels[0];
+  })();
 
   if (!activeLevel) {
     return { levels, player, preview: null };
