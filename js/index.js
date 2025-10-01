@@ -349,13 +349,16 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
         '--hero-charge-scale'
       );
 
-      const computedHeroChargeScale = (computedHeroChargeScaleRaw || '').trim();
       const inlineHeroChargeScale = (inlineHeroChargeScaleRaw || '').trim();
+      const computedHeroChargeScale = (() => {
+        const trimmedComputed = (computedHeroChargeScaleRaw || '').trim();
+        if (trimmedComputed !== '') {
+          return trimmedComputed;
+        }
+        return inlineHeroChargeScale;
+      })();
 
-      const startingChargeScale =
-        computedHeroChargeScale !== ''
-          ? computedHeroChargeScale
-          : inlineHeroChargeScale || '1';
+      const startingChargeScale = computedHeroChargeScale || '1';
 
       cancelHeroPrebattleChargeAnimation();
 
