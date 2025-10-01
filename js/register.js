@@ -107,56 +107,6 @@ const updateSelectPlaceholderState = (select) => {
   select.classList.toggle('has-value', hasValue);
 };
 
-const readBattleLevel = (value) => {
-  if (!isPlainObject(value)) {
-    return null;
-  }
-
-  const level = value.battleLevel;
-
-  if (typeof level === 'number' && Number.isFinite(level)) {
-    return level;
-  }
-
-  if (typeof level === 'string') {
-    const parsed = Number.parseInt(level, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  return null;
-};
-
-const persistBattleProgress = (defaultProgress) => {
-  try {
-    const storage = window.localStorage;
-    if (!storage) {
-      return;
-    }
-
-    const raw = storage.getItem(PROGRESS_STORAGE_KEY);
-    let progress = {};
-
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (isPlainObject(parsed)) {
-          progress = { ...parsed };
-        }
-      } catch (error) {
-        console.warn('Existing progress could not be parsed.', error);
-      }
-    }
-
-    const existingLevel = readBattleLevel(progress);
-    const defaultLevel = readBattleLevel(defaultProgress ?? null) ?? 1;
-    progress.battleLevel = existingLevel ?? defaultLevel;
-
-    storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
-  } catch (error) {
-    console.warn('Unable to update level progress for the new player.', error);
-  }
-};
-
 const readTrimmedValue = (value) =>
   typeof value === 'string' ? value.trim() : '';
 
@@ -284,7 +234,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (user?.id && defaultPlayerData) {
           await storePlayerDataForAccount(supabase, user.id, defaultPlayerData);
         }
-        persistBattleProgress(defaultPlayerData?.progress ?? null);
+        try {
+          window.localStorage?.removeItem(PROGRESS_STORAGE_KEY);
+        } catch (error) {
+          console.warn('Unable to clear stored battle progress for the new player.', error);
+        }
         clearGuestSessionFlag();
         window.location.replace('../index.html');
       };
