@@ -5,7 +5,6 @@ const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
-const LANDING_MODE_STORAGE_KEY = 'mathmonstersLandingMode';
 const MIN_PRELOAD_DURATION_MS = 2000;
 const HERO_TO_ENEMY_DELAY_MS = 1200;
 const ENEMY_ENTRANCE_DURATION_MS = 900;
@@ -25,13 +24,7 @@ const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 220;
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
 const BATTLE_PAGE_URL = 'html/battle.html';
-const BATTLE_PAGE_MODE_PARAM = 'mode';
-const BATTLE_PAGE_MODE_PLAY = 'play';
-const BATTLE_PAGE_MODE_DEV_TOOLS = 'devtools';
 const REGISTER_PAGE_URL = 'html/register.html';
-
-let battleRedirectUrl = BATTLE_PAGE_URL;
-let shouldSkipLandingForDevTools = false;
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -48,28 +41,8 @@ const {
   computeExperienceProgress,
 } = progressUtils;
 
-const buildBattleUrl = (mode) => {
-  if (!mode) {
-    return BATTLE_PAGE_URL;
-  }
-
-  const params = new URLSearchParams();
-  params.set(BATTLE_PAGE_MODE_PARAM, mode);
-  return `${BATTLE_PAGE_URL}?${params.toString()}`;
-};
-
-const requestBattleWithoutDevControls = () => {
-  shouldSkipLandingForDevTools = false;
-  battleRedirectUrl = buildBattleUrl(BATTLE_PAGE_MODE_PLAY);
-};
-
-const requestBattleWithDevTools = () => {
-  shouldSkipLandingForDevTools = true;
-  battleRedirectUrl = BATTLE_PAGE_URL;
-};
-
 const redirectToBattle = () => {
-  window.location.href = battleRedirectUrl;
+  window.location.href = BATTLE_PAGE_URL;
 };
 
 const getLevelOneHeroElement = () =>
@@ -1003,151 +976,6 @@ const markLandingVisited = () => {
   setVisitedFlag(localStorage, 'Local');
 };
 
-const readLandingModeRequestFromStorage = () => {
-  try {
-    const storage = window.sessionStorage;
-    if (!storage) {
-      return null;
-    }
-    const value = storage.getItem(LANDING_MODE_STORAGE_KEY);
-    return typeof value === 'string' && value ? value : null;
-  } catch (error) {
-    console.warn('Landing mode preference unavailable.', error);
-    return null;
-  }
-};
-
-const clearLandingModeRequestFromStorage = () => {
-  try {
-    window.sessionStorage?.removeItem(LANDING_MODE_STORAGE_KEY);
-  } catch (error) {
-    console.warn('Unable to clear landing mode preference.', error);
-  }
-};
-
-const readLandingModeRequestFromQuery = () => {
-  if (typeof window === 'undefined' || typeof window.location === 'undefined') {
-    return null;
-  }
-
-  const search = window.location.search || '';
-
-  if (typeof URLSearchParams === 'function') {
-    try {
-      const params = new URLSearchParams(search);
-      const mode = params.get(BATTLE_PAGE_MODE_PARAM);
-      return typeof mode === 'string' && mode ? mode : null;
-    } catch (error) {
-      console.warn('Unable to read landing mode from URL parameters.', error);
-    }
-  }
-
-  const trimmed = search.startsWith('?') ? search.slice(1) : search;
-  if (!trimmed) {
-    return null;
-  }
-
-  const pairs = trimmed.split('&');
-  for (const pair of pairs) {
-    if (!pair) {
-      continue;
-    }
-    const [rawKey, rawValue = ''] = pair.split('=');
-    if (!rawKey) {
-      continue;
-    }
-    const key = rawKey.trim().toLowerCase();
-    if (key !== BATTLE_PAGE_MODE_PARAM) {
-      continue;
-    }
-    const value = rawValue.trim();
-    return value ? value : null;
-  }
-
-  return null;
-};
-
-const clearLandingModeRequestFromQuery = () => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  const { history, location, document: doc } = window;
-  if (!history?.replaceState || !location) {
-    return;
-  }
-
-  try {
-    const url = new URL(location.href);
-    url.searchParams.delete(BATTLE_PAGE_MODE_PARAM);
-    history.replaceState(null, doc?.title || '', url.toString());
-    return;
-  } catch (error) {
-    console.warn('Unable to update URL search parameters.', error);
-  }
-
-  try {
-    const search = location.search || '';
-    const trimmed = search.startsWith('?') ? search.slice(1) : search;
-    if (!trimmed) {
-      return;
-    }
-
-    const filtered = trimmed
-      .split('&')
-      .filter((pair) => {
-        if (!pair) {
-          return false;
-        }
-        const [rawKey] = pair.split('=');
-        if (!rawKey) {
-          return true;
-        }
-        return rawKey.trim().toLowerCase() !== BATTLE_PAGE_MODE_PARAM;
-      })
-      .join('&');
-
-    const newSearch = filtered ? `?${filtered}` : '';
-    const origin =
-      location.origin || `${location.protocol}//${location.host || ''}`;
-    const newUrl = `${origin}${location.pathname}${newSearch}${
-      location.hash || ''
-    }`;
-    history.replaceState(null, doc?.title || '', newUrl);
-  } catch (fallbackError) {
-    console.warn('Unable to clear landing mode from URL parameters.', fallbackError);
-  }
-};
-
-const applyLandingModeRequest = () => {
-  shouldSkipLandingForDevTools = false;
-  const storedMode = readLandingModeRequestFromStorage();
-  if (storedMode) {
-    const normalizedStoredMode = storedMode.trim().toLowerCase();
-    if (normalizedStoredMode === BATTLE_PAGE_MODE_PLAY) {
-      requestBattleWithoutDevControls();
-    } else if (normalizedStoredMode === BATTLE_PAGE_MODE_DEV_TOOLS) {
-      requestBattleWithDevTools();
-    }
-    clearLandingModeRequestFromStorage();
-    return;
-  }
-
-  const queryMode = readLandingModeRequestFromQuery();
-  if (!queryMode) {
-    return;
-  }
-
-  const normalizedQueryMode = queryMode.trim().toLowerCase();
-  if (normalizedQueryMode === BATTLE_PAGE_MODE_PLAY) {
-    requestBattleWithoutDevControls();
-  } else if (normalizedQueryMode === BATTLE_PAGE_MODE_DEV_TOOLS) {
-    requestBattleWithDevTools();
-  }
-
-  clearLandingModeRequestFromQuery();
-};
-
 const preloadLandingAssets = async () => {
   const results = { levelsData: null, playerData: null, previewData: null };
   const imageAssets = new Set([
@@ -1302,14 +1130,7 @@ const preloadLandingAssets = async () => {
 };
 
 const initLandingInteractions = async (preloadedData = {}) => {
-  battleRedirectUrl = BATTLE_PAGE_URL;
   markLandingVisited();
-  applyLandingModeRequest();
-  if (shouldSkipLandingForDevTools) {
-    shouldSkipLandingForDevTools = false;
-    redirectToBattle();
-    return;
-  }
   const levelOneHeroImage = getLevelOneHeroElement();
   const standardHeroImage = getStandardHeroElement();
   const heroImages = [levelOneHeroImage, standardHeroImage].filter(Boolean);

@@ -19,7 +19,6 @@ body {
   --battle-monster-sprite-max-width: 80vw;
 }
 
-body.is-evolution-active .battle-dev-controls,
 body.is-evolution-active #question,
 body.is-evolution-active #complete-message,
 body.is-evolution-active .reward-overlay {
@@ -41,7 +40,6 @@ body.is-evolution-active #battle-shellfin {
   opacity: 0;
 }
 
-body.is-post-evolution-active .battle-dev-controls,
 body.is-post-evolution-active #battle,
 body.is-post-evolution-active #question,
 body.is-post-evolution-active #complete-message,
@@ -975,40 +973,4 @@ body.is-reward-active .reward-overlay {
     opacity: 1;
     transform: scale(1);
   }
-}
-
-
-
-.battle-dev-controls {
-  position: fixed;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  flex-direction: row;
-  gap: 4px;
-  padding: 0;
-  background: none;
-  border: none;
-  box-shadow: none;
-  z-index: 60;
-}
-
-.battle-dev-controls--hidden {
-  display: none;
-}
-
-.battle-dev-controls__btn {
-  border: 1px solid white;
-  color: white;
-  border-radius: 2px;
-  font: inherit;
-  font-size: 10px;
-  cursor: pointer;
-  box-shadow: none;
-  text-transform: none;
-}
-
-.battle-dev-controls__btn:focus-visible {
-  outline: 2px solid #1d2433;
-  outline-offset: 2px;
 }
