@@ -28,16 +28,17 @@
 
 html {
   height: 100%;
+  background-color: #001b41;
 }
 
 body {
-  margin: 0;
+  margin: 16px;
   min-height: 100vh;
   min-height: 100dvh;
   font-family: var(--font-family-rounded);
   color: #272b34;
   background-color: #001b41;
-  padding: var(--space-sm);
+  padding: 0;
   box-sizing: border-box;
 }
 
