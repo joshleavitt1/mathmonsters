@@ -8,11 +8,16 @@ body {
   color: #272B34;
   background: url('../images/background/background.png') no-repeat center/cover;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body.is-level-one-landing {
   margin: 0;
+}
+
+body.is-standard-landing {
+  overflow: hidden;
 }
 
 :root {
