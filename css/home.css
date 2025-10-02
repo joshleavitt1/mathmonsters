@@ -38,8 +38,8 @@ body.home-page {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: clamp(64px, 18vw, 96px);
-  height: clamp(64px, 18vw, 96px);
+  width: 84px;
+  height: 84px;
   padding: 0;
   background: none;
   border: none;
@@ -136,20 +136,19 @@ body.home-page {
 
 .home__title {
   margin: 0;
-  font-size: clamp(32px, 7vw, 48px);
+  font-size: 40px;
   font-weight: 400;
   color: #ffffff;
 }
 
 .home__level {
   margin: 0;
-  font-size: clamp(18px, 4vw, 24px);
+  font-size: 20px;
   color: rgba(255, 255, 255, 0.5);
 }
 
 .home__hero-sprite {
-  width: min(clamp(160px, 60vw, 320px), 36vh);
-  max-height: 36vh;
+  width: 220px;
   height: auto;
   object-fit: contain;
   animation: hero-swim 4.5s ease-in-out 0.6s infinite;
