@@ -1,0 +1,209 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Math Monsters Game Data",
+  "type": "object",
+  "properties": {
+    "player": {
+      "type": "object",
+      "required": [
+        "id",
+        "hero",
+        "currentMathType",
+        "currentLevel",
+        "gems",
+        "dailyStreak",
+        "totalAnswered",
+        "totalAccuracy",
+        "totalTime",
+        "progress",
+        "medals"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "hero": {
+          "type": "object",
+          "required": ["id", "name", "sprite"],
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "sprite": { "type": "string" }
+          }
+        },
+        "currentMathType": {
+          "type": "string"
+        },
+        "currentLevel": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "gems": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dailyStreak": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalAnswered": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalAccuracy": {
+          "type": "number",
+          "minimum": 0
+        },
+        "totalTime": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "progress": {
+          "type": "object",
+          "patternProperties": {
+            ".+": {
+              "type": "object",
+              "required": ["currentLevel", "totalLevels"],
+              "properties": {
+                "currentLevel": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "totalLevels": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        },
+        "medals": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "battleTracking": {
+      "type": "object",
+      "required": [
+        "mathType",
+        "level",
+        "battleAnswered",
+        "battleAccuracy",
+        "battleTime"
+      ],
+      "properties": {
+        "mathType": { "type": "string" },
+        "level": { "type": "integer", "minimum": 1 },
+        "battleAnswered": { "type": "integer", "minimum": 0 },
+        "battleAccuracy": { "type": "number", "minimum": 0 },
+        "battleTime": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "mathTypes": {
+      "type": "object",
+      "patternProperties": {
+        ".+": {
+          "type": "object",
+          "required": ["totalLevels", "levels"],
+          "properties": {
+            "totalLevels": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "levels": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["level", "name", "battle"],
+                "properties": {
+                  "level": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "battle": {
+                    "type": "object",
+                    "required": [
+                      "questions",
+                      "hero",
+                      "enemy",
+                      "winReward",
+                      "loseReward"
+                    ],
+                    "properties": {
+                      "questions": {
+                        "type": "object",
+                        "required": ["path"],
+                        "properties": {
+                          "path": { "type": "string" }
+                        }
+                      },
+                      "hero": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name",
+                          "sprite",
+                          "attack",
+                          "health",
+                          "damage",
+                          "attackSprite"
+                        ],
+                        "properties": {
+                          "id": { "type": "string" },
+                          "name": { "type": "string" },
+                          "sprite": { "type": "string" },
+                          "attack": { "type": "integer" },
+                          "health": { "type": "integer" },
+                          "damage": { "type": "integer" },
+                          "attackSprite": { "type": "string" }
+                        }
+                      },
+                      "enemy": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name",
+                          "sprite",
+                          "attack",
+                          "health",
+                          "damage",
+                          "attackSprite"
+                        ],
+                        "properties": {
+                          "id": { "type": "string" },
+                          "name": { "type": "string" },
+                          "sprite": { "type": "string" },
+                          "attack": { "type": "integer" },
+                          "health": { "type": "integer" },
+                          "damage": { "type": "integer" },
+                          "attackSprite": { "type": "string" }
+                        }
+                      },
+                      "winReward": {
+                        "type": "object",
+                        "required": ["gems"],
+                        "properties": {
+                          "gems": { "type": "integer", "minimum": 0 }
+                        }
+                      },
+                      "loseReward": {
+                        "type": "object",
+                        "required": ["gems"],
+                        "properties": {
+                          "gems": { "type": "integer", "minimum": 0 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }}

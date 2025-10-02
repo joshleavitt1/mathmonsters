@@ -1,20 +1,24 @@
 {
-  "progress": {
-    "battleLevel": 1
-  },
-  "battleVariables": {
-    "timeRemainingSeconds": null
-  },
-  "battleLevel": {
-    "1": {
-      "hero": {
-        "sprite": "/mathmonsters/images/hero/shellfin_evolution_1.png"
+  "player": {
+    "id": "player-001",
+    "hero": {
+      "id": "shellfin",
+      "name": "Shellfin",
+      "sprite": "/mathmonsters/images/hero/shellfin_evolution_1.png"
+    },
+    "currentMathType": "addition",
+    "currentLevel": 1,
+    "gems": 0,
+    "dailyStreak": 0,
+    "totalAnswered": 0,
+    "totalAccuracy": 0,
+    "progress": {
+      "addition": {
+        "currentLevel": 1,
+        "totalLevels": 20
       }
     },
-    "2": {
-      "hero": {
-        "sprite": "/mathmonsters/images/hero/shellfin_evolution_2.png"
-      }
-    }
+    "medals": [],
+    "totalTime": 0
   }
 }
