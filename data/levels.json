@@ -10,7 +10,7 @@
         "levelUp": 1,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/hero/shellfin_level_1.png",
+          "sprite": "/mathmonsters/images/hero/shellfin_evolution_1.png",
           "name": "Shellfin",
           "attack": 1,
           "health": 3,
@@ -19,16 +19,16 @@
             "basic": "/mathmonsters/images/hero/shellfin_attack_1.png"
           }
         },
-        "enemies": [
+        "monsters": [
           {
             "id": "octomurk",
-            "sprite": "/mathmonsters/images/battle/monster_battle_1_1.png",
+            "sprite": "/mathmonsters/images/monster/addition_battle_1.png",
             "name": "Octomurk",
             "attack": 1,
             "health": 3,
             "damage": 0,
             "attackSprite": {
-              "basic": "/mathmonsters/images/hero/enemy_attack.png"
+              "basic": "/mathmonsters/images/monster/monster_attack.png"
             },
             "experiencePoints": 1
           }
@@ -45,7 +45,7 @@
         "levelUp": 3,
         "hero": {
           "id": "shellfin",
-          "sprite": "/mathmonsters/images/hero/shellfin_level_2.png",
+          "sprite": "/mathmonsters/images/hero/shellfin_evolution_2.png",
           "name": "Shellfin",
           "attack": 1,
           "health": 3,
@@ -55,16 +55,16 @@
           },
           "experiencePoints": 1
         },
-        "enemies": [
+        "monsters": [
           {
             "id": "ripjaw",
-            "sprite": "/mathmonsters/images/battle/monster_battle_1_2.png",
+            "sprite": "/mathmonsters/images/monster/addition_battle_2.png",
             "name": "Ripjaw",
             "attack": 1,
             "health": 6,
             "damage": 0,
             "attackSprite": {
-              "basic": "/mathmonsters/images/hero/enemy_attack.png"
+              "basic": "/mathmonsters/images/monster/monster_attack.png"
             },
             "experiencePoints": 1
           }

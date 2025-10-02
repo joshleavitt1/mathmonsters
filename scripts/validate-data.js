@@ -130,30 +130,30 @@ function validateLevels(issues) {
     const label = `Level ${index + 1}`;
     const battle = level?.battle ?? {};
     const hero = battle.hero ?? {};
-    const enemyCandidates = [];
-    if (battle && typeof battle.enemy === 'object' && battle.enemy !== null) {
-      enemyCandidates.push(battle.enemy);
+    const monsterCandidates = [];
+    if (battle && typeof battle.monster === 'object' && battle.monster !== null) {
+      monsterCandidates.push(battle.monster);
     }
-    if (Array.isArray(battle.enemies)) {
-      battle.enemies.forEach((entry) => {
+    if (Array.isArray(battle.monsters)) {
+      battle.monsters.forEach((entry) => {
         if (entry && typeof entry === 'object') {
-          enemyCandidates.push(entry);
+          monsterCandidates.push(entry);
         }
       });
     }
-    const enemy = enemyCandidates[0] ?? {};
+    const monster = monsterCandidates[0] ?? {};
 
     if (typeof battle.levelUp !== 'number') {
       issues.push(`${label}: battle.levelUp should be a number`);
     }
 
-    if (!enemyCandidates.length) {
-      issues.push(`${label}: no enemy data found`);
+    if (!monsterCandidates.length) {
+      issues.push(`${label}: no monster data found`);
     } else {
-      enemyCandidates.forEach((candidate, enemyIndex) => {
+      monsterCandidates.forEach((candidate, monsterIndex) => {
         if (typeof candidate.experiencePoints !== 'number') {
           issues.push(
-            `${label}: enemy ${enemyIndex + 1} missing numeric experiencePoints`
+            `${label}: monster ${monsterIndex + 1} missing numeric experiencePoints`
           );
         }
       });
@@ -166,7 +166,7 @@ function validateLevels(issues) {
     }
 
     checkAssetExists(hero.sprite, `${label} hero sprite`, issues);
-    checkAssetExists(enemy.sprite, `${label} enemy sprite`, issues);
+    checkAssetExists(monster.sprite, `${label} monster sprite`, issues);
   });
 }
 

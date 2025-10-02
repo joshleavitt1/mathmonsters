@@ -533,37 +533,37 @@ const syncRemoteBattleLevel = (playerData) => {
           heroOverride
         );
 
-        const enemies = [];
-        const enemyLookup = new Set();
-        const addEnemy = (...sources) => {
-          const preparedEnemy = prepareCharacter(...sources);
-          if (!preparedEnemy) {
+        const monsters = [];
+        const monsterLookup = new Set();
+        const addMonster = (...sources) => {
+          const preparedMonster = prepareCharacter(...sources);
+          if (!preparedMonster) {
             return;
           }
           const key = JSON.stringify([
-            preparedEnemy.id ?? null,
-            preparedEnemy.name ?? null,
-            preparedEnemy.sprite ?? null,
+            preparedMonster.id ?? null,
+            preparedMonster.name ?? null,
+            preparedMonster.sprite ?? null,
           ]);
-          if (enemyLookup.has(key)) {
+          if (monsterLookup.has(key)) {
             return;
           }
-          enemyLookup.add(key);
-          enemies.push(preparedEnemy);
+          monsterLookup.add(key);
+          monsters.push(preparedMonster);
         };
 
-        if (Array.isArray(battleConfig?.enemies)) {
-          battleConfig.enemies.forEach((enemy) => addEnemy(enemy));
+        if (Array.isArray(battleConfig?.monsters)) {
+          battleConfig.monsters.forEach((monster) => addMonster(monster));
         }
 
-        if (battleConfig?.enemy) {
-          addEnemy(battleConfig.enemy);
+        if (battleConfig?.monster) {
+          addMonster(battleConfig.monster);
         }
 
         return {
           battleLevel: Number.isFinite(levelNumber) ? levelNumber : null,
           hero: preparedHero,
-          enemies,
+          monsters,
         };
       });
     });
@@ -573,7 +573,7 @@ const syncRemoteBattleLevel = (playerData) => {
         (entry) => entry && entry.battleLevel === activeBattleLevel
       ) ||
       levelCharacters[0] ||
-      { hero: null, enemies: [] };
+      { hero: null, monsters: [] };
 
     const hero = currentLevelCharacters.hero
       ? { ...currentLevelCharacters.hero }
@@ -583,31 +583,31 @@ const syncRemoteBattleLevel = (playerData) => {
           playerLevelHeroMap.get(activeBattleLevel)
         ) || { ...playerHeroBase };
 
-    const normalizedEnemies = (currentLevelCharacters.enemies || []).map(
-      (enemy) => ({ ...enemy })
+    const normalizedMonsters = (currentLevelCharacters.monsters || []).map(
+      (monster) => ({ ...monster })
     );
 
     if (
-      normalizedEnemies.length === 0 &&
+      normalizedMonsters.length === 0 &&
       levelBattle &&
-      typeof levelBattle.enemy === 'object'
+      typeof levelBattle.monster === 'object'
     ) {
-      const fallbackEnemy = prepareCharacter(levelBattle.enemy);
-      if (fallbackEnemy) {
-        normalizedEnemies.push({ ...fallbackEnemy });
+      const fallbackMonster = prepareCharacter(levelBattle.monster);
+      if (fallbackMonster) {
+        normalizedMonsters.push({ ...fallbackMonster });
       }
     }
 
-    const primaryEnemy = normalizedEnemies[0] || {};
+    const primaryMonster = normalizedMonsters[0] || {};
 
     const battle = {
       ...levelBattle,
       hero,
-      enemy: { ...primaryEnemy },
+      monster: { ...primaryMonster },
     };
 
-    if (normalizedEnemies.length > 0) {
-      battle.enemies = normalizedEnemies;
+    if (normalizedMonsters.length > 0) {
+      battle.monsters = normalizedMonsters;
     }
 
     const sortedLevelsByBattle = levels
@@ -664,7 +664,7 @@ const syncRemoteBattleLevel = (playerData) => {
       level: currentLevel,
       battle,
       hero,
-      enemy: battle.enemy,
+      monster: battle.monster,
       charactersByLevel: levelCharacters,
       questions,
     };
