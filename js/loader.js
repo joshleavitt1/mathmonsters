@@ -94,6 +94,10 @@ if (!progressUtils) {
 
 const { isPlainObject, normalizeExperienceMap, mergeExperienceMaps } = progressUtils;
 
+const playerProfileUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
+  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
+
 const normalizeAssetPath = (inputPath) => {
   if (typeof inputPath !== 'string') {
     return null;
@@ -174,6 +178,38 @@ const readStoredProgress = () => {
   }
 };
 
+const fetchPlayerProfile = async () => {
+  const fetchFn = playerProfileUtils?.fetchPlayerProfile;
+  if (typeof fetchFn !== 'function') {
+    return null;
+  }
+
+  try {
+    const profile = await fetchFn();
+    return profile && typeof profile === 'object' ? profile : null;
+  } catch (error) {
+    console.warn('Failed to fetch remote player profile in loader.', error);
+    return null;
+  }
+};
+
+const syncRemoteBattleLevel = (playerData) => {
+  if (!playerData) {
+    return;
+  }
+
+  const syncFn = playerProfileUtils?.syncBattleLevelToStorage;
+  if (typeof syncFn !== 'function') {
+    return;
+  }
+
+  try {
+    syncFn(playerData, STORAGE_KEY_PROGRESS);
+  } catch (error) {
+    console.warn('Failed to sync remote battle level in loader.', error);
+  }
+};
+
 (async function () {
   try {
     const [playerRes, levelsRes] = await Promise.all([
@@ -185,15 +221,26 @@ const readStoredProgress = () => {
       throw new Error('Failed to fetch required configuration data.');
     }
 
-    const [playerData, levelsData] = await Promise.all([
+    const [playerJson, levelsData] = await Promise.all([
       playerRes.json(),
       levelsRes.json(),
     ]);
 
+    let basePlayer =
+      playerJson && typeof playerJson === 'object' ? playerJson : {};
+
+    try {
+      const remotePlayerData = await fetchPlayerProfile();
+      if (remotePlayerData) {
+        syncRemoteBattleLevel(remotePlayerData);
+        basePlayer = remotePlayerData;
+      }
+    } catch (error) {
+      console.warn('Unable to load remote player profile for battle.', error);
+    }
+
     const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
     const storedProgress = readStoredProgress();
-    const basePlayer =
-      playerData && typeof playerData === 'object' ? playerData : {};
     const baseProgress =
       basePlayer && typeof basePlayer.progress === 'object'
         ? basePlayer.progress
