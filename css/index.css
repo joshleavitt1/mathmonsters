@@ -41,7 +41,7 @@ body.is-standard-landing .landing__standard {
   --intro-sprite-offset: clamp(200px, 24vw, 280px);
 }
 
-@property --enemy-float-offset {
+@property --monster-float-offset {
   syntax: '<length>';
   initial-value: 0px;
   inherits: false;
@@ -211,10 +211,10 @@ body:not(.is-preloading) main.landing {
 }
 
 
-.enemy {
-  --enemy-float-range: 28px;
-  --enemy-float-duration: 3.8s;
-  --enemy-float-offset: calc(-1 * var(--enemy-float-range));
+.monster {
+  --monster-float-range: 28px;
+  --monster-float-duration: 3.8s;
+  --monster-float-offset: calc(-1 * var(--monster-float-range));
   position: absolute;
   left: calc(50% + var(--intro-sprite-offset));
   top: 45%;
@@ -223,8 +223,8 @@ body:not(.is-preloading) main.landing {
   transform: translate(
       -50%,
       calc(
-        -50% - var(--enemy-drop-distance, 22vh) +
-          var(--enemy-float-offset)
+        -50% - var(--monster-drop-distance, 22vh) +
+          var(--monster-float-offset)
       )
     )
     scale(1.04);
@@ -237,20 +237,20 @@ body:not(.is-preloading) main.landing {
   z-index: 2;
 }
 
-.enemy.is-visible {
+.monster.is-visible {
   transform: translate(
       -50%,
-      calc(-50% + var(--enemy-float-offset))
+      calc(-50% + var(--monster-float-offset))
     )
     scale(1);
   opacity: 1;
-  animation: enemy-float var(--enemy-float-duration) cubic-bezier(0.42, 0, 0.58, 1)
+  animation: monster-float var(--monster-float-duration) cubic-bezier(0.42, 0, 0.58, 1)
       1.35s
       infinite;
 }
 
-.enemy.is-exiting {
-  animation: enemy-intro-exit 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.monster.is-exiting {
+  animation: monster-intro-exit 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 body.is-level-one-landing .landing__hero-info,
@@ -258,7 +258,7 @@ body.is-level-one-landing .landing__actions {
   display: none;
 }
 
-body.is-level-one-landing .enemy {
+body.is-level-one-landing .monster {
   display: none;
 }
 
@@ -488,15 +488,15 @@ body.is-battle-transition .bubbles {
   }
 }
 
-@keyframes enemy-float {
+@keyframes monster-float {
   0% {
-    --enemy-float-offset: calc(-1 * var(--enemy-float-range));
+    --monster-float-offset: calc(-1 * var(--monster-float-range));
   }
   50% {
-    --enemy-float-offset: var(--enemy-float-range);
+    --monster-float-offset: var(--monster-float-range);
   }
   100% {
-    --enemy-float-offset: calc(-1 * var(--enemy-float-range));
+    --monster-float-offset: calc(-1 * var(--monster-float-range));
   }
 }
 
@@ -539,7 +539,7 @@ body.is-battle-transition .bubbles {
   }
 }
 
-@keyframes enemy-intro-exit {
+@keyframes monster-intro-exit {
   0% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;

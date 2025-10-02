@@ -3,8 +3,8 @@ const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 
-const ENEMY_DEFEAT_ANIMATION_DELAY = 1000;
-const VICTORY_PROGRESS_UPDATE_DELAY = ENEMY_DEFEAT_ANIMATION_DELAY + 1000;
+const MONSTER_DEFEAT_ANIMATION_DELAY = 1000;
+const VICTORY_PROGRESS_UPDATE_DELAY = MONSTER_DEFEAT_ANIMATION_DELAY + 1000;
 const DEFEAT_PROGRESS_UPDATE_DELAY = 1000;
 const LEVEL_PROGRESS_ANIMATION_DELAY_MS = 0;
 const REWARD_CARD_DELAY_MS = 2000;
@@ -120,8 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const completeMessage = document.getElementById('complete-message');
   const battleCompleteTitle = completeMessage?.querySelector('#battle-complete-title');
-  const completeEnemyImg = completeMessage?.querySelector('.enemy-image');
-  const enemyDefeatOverlay = completeMessage?.querySelector('[data-enemy-defeat-overlay]');
+  const completeMonsterImg = completeMessage?.querySelector('.monster-image');
+  const monsterDefeatOverlay = completeMessage?.querySelector('[data-monster-defeat-overlay]');
   const summaryAccuracyStat = completeMessage?.querySelector('[data-goal="accuracy"]');
   const summaryTimeStat = completeMessage?.querySelector('[data-goal="time"]');
   const summaryAccuracyValue = summaryAccuracyStat?.querySelector('.summary-accuracy');
@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let battleLevelAdvanced = false;
   let battleGoalsMet = false;
   let heroSuperAttackBase = null;
-  let enemyDefeatAnimationTimeout = null;
+  let monsterDefeatAnimationTimeout = null;
   let levelExperienceEarned = 0;
   let levelExperienceRequirement = 0;
   let levelUpAvailable = false;
@@ -502,8 +502,8 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   const REWARD_POTION_SRC = '../images/complete/potion.png';
-  const HERO_LEVEL_1_SRC = '../images/hero/shellfin_level_1.png';
-  const HERO_LEVEL_2_SRC = '../images/hero/shellfin_level_2.png';
+  const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
+  const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
 
   const hero = {
     attack: 1,
@@ -1571,12 +1571,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return Number.isFinite(fallbackLevel) ? fallbackLevel : null;
   };
 
-  const resolveExperiencePointsForEnemy = () => {
-    const enemyXp = Number(window.preloadedData?.battle?.enemy?.experiencePoints);
-    if (!Number.isFinite(enemyXp)) {
+  const resolveExperiencePointsForMonster = () => {
+    const monsterXp = Number(window.preloadedData?.battle?.monster?.experiencePoints);
+    if (!Number.isFinite(monsterXp)) {
       return 0;
     }
-    return Math.max(0, Math.round(enemyXp));
+    return Math.max(0, Math.round(monsterXp));
   };
 
   const awardExperiencePoints = ({
@@ -1590,7 +1590,7 @@ document.addEventListener('DOMContentLoaded', () => {
       scheduleLevelProgressDisplayUpdate(delayProgressUpdateMs);
     };
 
-    const points = resolveExperiencePointsForEnemy();
+    const points = resolveExperiencePointsForMonster();
     const level = resolveBattleLevelForExperience();
     const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
     const wasComplete =
@@ -1949,27 +1949,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return span;
   }
 
-  function resetEnemyDefeatAnimation() {
-    if (enemyDefeatAnimationTimeout !== null) {
-      window.clearTimeout(enemyDefeatAnimationTimeout);
-      enemyDefeatAnimationTimeout = null;
+  function resetMonsterDefeatAnimation() {
+    if (monsterDefeatAnimationTimeout !== null) {
+      window.clearTimeout(monsterDefeatAnimationTimeout);
+      monsterDefeatAnimationTimeout = null;
     }
-    if (completeEnemyImg) {
-      completeEnemyImg.classList.remove('enemy-image--defeated');
+    if (completeMonsterImg) {
+      completeMonsterImg.classList.remove('monster-image--defeated');
     }
-    if (enemyDefeatOverlay) {
-      enemyDefeatOverlay.classList.remove('enemy-defeat-overlay--visible');
+    if (monsterDefeatOverlay) {
+      monsterDefeatOverlay.classList.remove('monster-defeat-overlay--visible');
     }
   }
 
-  function applyEnemyDefeatStyles() {
-    if (completeEnemyImg) {
-      completeEnemyImg.classList.add('enemy-image--defeated');
+  function applyMonsterDefeatStyles() {
+    if (completeMonsterImg) {
+      completeMonsterImg.classList.add('monster-image--defeated');
     }
-    if (enemyDefeatOverlay) {
-      enemyDefeatOverlay.classList.add('enemy-defeat-overlay--visible');
+    if (monsterDefeatOverlay) {
+      monsterDefeatOverlay.classList.add('monster-defeat-overlay--visible');
     }
-    enemyDefeatAnimationTimeout = null;
+    monsterDefeatAnimationTimeout = null;
   }
 
   function applyGoalResult(valueEl, textSpan, text, met) {
@@ -2109,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = window.preloadedData ?? {};
     const battleData = data.battle ?? {};
     const heroData = data.hero ?? {};
-    const enemyData = data.enemy ?? {};
+    const monsterData = data.monster ?? {};
     const progressData = data.progress ?? data.player?.progress ?? {};
     const experienceMap = normalizeExperienceMap(progressData?.experience);
     if (isPlainObject(data.progress)) {
@@ -2314,12 +2314,12 @@ document.addEventListener('DOMContentLoaded', () => {
       heroImg.alt = `${hero.name} ready for battle`;
     }
 
-    monster.attack = Number(enemyData.attack) || monster.attack;
-    monster.health = Number(enemyData.health) || monster.health;
-    monster.damage = Number(enemyData.damage) || monster.damage;
-    monster.name = enemyData.name || monster.name;
+    monster.attack = Number(monsterData.attack) || monster.attack;
+    monster.health = Number(monsterData.health) || monster.health;
+    monster.damage = Number(monsterData.damage) || monster.damage;
+    monster.name = monsterData.name || monster.name;
 
-    const monsterAttackSprites = normalizeAttackSprites(monster, enemyData);
+    const monsterAttackSprites = normalizeAttackSprites(monster, monsterData);
     if (Object.keys(monsterAttackSprites).length > 0) {
       monster.attackSprites = monsterAttackSprites;
     } else {
@@ -2329,15 +2329,15 @@ document.addEventListener('DOMContentLoaded', () => {
     delete monster.basicAttack;
     delete monster.superAttack;
 
-    const monsterSprite = resolveAssetPath(enemyData.sprite);
+    const monsterSprite = resolveAssetPath(monsterData.sprite);
     if (monsterSprite && monsterImg) {
       monsterImg.src = monsterSprite;
     }
     if (monsterImg && monster.name) {
       monsterImg.alt = `${monster.name} ready for battle`;
     }
-    if (monsterSprite && completeEnemyImg) {
-      completeEnemyImg.src = monsterSprite;
+    if (monsterSprite && completeMonsterImg) {
+      completeMonsterImg.src = monsterSprite;
     }
 
     updateHeroAttackDisplay();
@@ -2352,8 +2352,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (monsterHpBar && monster.name) {
       monsterHpBar.setAttribute('aria-label', `${monster.name} health`);
     }
-    if (completeEnemyImg && monster.name) {
-      completeEnemyImg.alt = `${monster.name} ready for battle`;
+    if (completeMonsterImg && monster.name) {
+      completeMonsterImg.alt = `${monster.name} ready for battle`;
     }
 
     const loadedQuestions = Array.isArray(data.questions)
@@ -3001,7 +3001,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     battleEnded = true;
-    resetEnemyDefeatAnimation();
+    resetMonsterDefeatAnimation();
     resetSuperAttackBoost();
     document.dispatchEvent(new Event('close-question'));
     stopBattleTimer();
@@ -3045,16 +3045,16 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
 
-    if (completeEnemyImg && monsterImg) {
-      completeEnemyImg.src = monsterImg.src;
+    if (completeMonsterImg && monsterImg) {
+      completeMonsterImg.src = monsterImg.src;
       if (monster.name) {
-        completeEnemyImg.alt = win
+        completeMonsterImg.alt = win
           ? `${monster.name} defeated`
           : `${monster.name} preparing for the next battle`;
       } else {
-        completeEnemyImg.alt = win
-          ? 'Enemy defeated'
-          : 'Enemy preparing for the next battle';
+        completeMonsterImg.alt = win
+          ? 'Monster defeated'
+          : 'Monster preparing for the next battle';
       }
     }
 
@@ -3090,9 +3090,9 @@ document.addEventListener('DOMContentLoaded', () => {
         completeMessage.focus();
       }
       if (win) {
-        enemyDefeatAnimationTimeout = window.setTimeout(() => {
-          applyEnemyDefeatStyles();
-        }, ENEMY_DEFEAT_ANIMATION_DELAY);
+        monsterDefeatAnimationTimeout = window.setTimeout(() => {
+          applyMonsterDefeatStyles();
+        }, MONSTER_DEFEAT_ANIMATION_DELAY);
       }
 
     };
@@ -3164,7 +3164,7 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMessage.classList.remove('show');
       completeMessage.setAttribute('aria-hidden', 'true');
     }
-    resetEnemyDefeatAnimation();
+    resetMonsterDefeatAnimation();
     resetRewardOverlay();
     setBattleCompleteTitleLines('Monster Defeated');
     updateNextMissionButton();

@@ -6,10 +6,10 @@ const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const MIN_PRELOAD_DURATION_MS = 2000;
-const HERO_TO_ENEMY_DELAY_MS = 1200;
-const ENEMY_ENTRANCE_DURATION_MS = 900;
+const HERO_TO_MONSTER_DELAY_MS = 1200;
+const MONSTER_ENTRANCE_DURATION_MS = 900;
 const HERO_EXIT_DURATION_MS = 550;
-const ENEMY_EXIT_DURATION_MS = 600;
+const MONSTER_EXIT_DURATION_MS = 600;
 const PRE_BATTLE_HOLD_DURATION_MS = 1000;
 const HERO_EXIT_SYNC_BUFFER_MS = 0;
 const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
@@ -391,11 +391,11 @@ const startLandingExperience = () => {
 
 const runBattleIntroSequence = async (options = {}) => {
   const heroImage = getActiveHeroElement();
-  const enemyImage = document.querySelector('[data-enemy]');
+  const monsterImage = document.querySelector('[data-monster]');
   const showIntroImmediately = Boolean(options?.showIntroImmediately);
   const skipHeroSidePosition = Boolean(options?.skipHeroSidePosition);
-  const skipEnemyAppearance = Boolean(
-    options?.hideEnemy || options?.skipEnemyAppearance
+  const skipMonsterAppearance = Boolean(
+    options?.hideMonster || options?.skipMonsterAppearance
   );
   const heroExitSyncBufferMs = Math.max(
     0,
@@ -411,24 +411,24 @@ const runBattleIntroSequence = async (options = {}) => {
     return false;
   }
 
-  if (skipEnemyAppearance && enemyImage) {
-    enemyImage.classList.remove('is-visible', 'is-exiting');
-    enemyImage.setAttribute('aria-hidden', 'true');
+  if (skipMonsterAppearance && monsterImage) {
+    monsterImage.classList.remove('is-visible', 'is-exiting');
+    monsterImage.setAttribute('aria-hidden', 'true');
   }
 
-  const showEnemy = () => {
-    if (!enemyImage || skipEnemyAppearance) {
+  const showMonster = () => {
+    if (!monsterImage || skipMonsterAppearance) {
       return;
     }
-    enemyImage.classList.add('is-visible');
-    enemyImage.removeAttribute('aria-hidden');
+    monsterImage.classList.add('is-visible');
+    monsterImage.removeAttribute('aria-hidden');
   };
 
   const beginExitAnimations = () => {
     document.body.classList.add('is-battle-transition');
     heroImage.classList.add('is-exiting');
-    if (enemyImage && !skipEnemyAppearance) {
-      enemyImage.classList.add('is-exiting');
+    if (monsterImage && !skipMonsterAppearance) {
+      monsterImage.classList.add('is-exiting');
     }
   };
 
@@ -441,15 +441,15 @@ const runBattleIntroSequence = async (options = {}) => {
 
   const prepareForBattle = () => {
     applySidePositionIfNeeded();
-    showEnemy();
+    showMonster();
   };
 
-  const holdDuration = showIntroImmediately ? 0 : HERO_TO_ENEMY_DELAY_MS;
+  const holdDuration = showIntroImmediately ? 0 : HERO_TO_MONSTER_DELAY_MS;
 
   await wait(holdDuration);
   prepareForBattle();
   const heroExitWaitDuration =
-    (skipEnemyAppearance ? 0 : ENEMY_ENTRANCE_DURATION_MS) +
+    (skipMonsterAppearance ? 0 : MONSTER_ENTRANCE_DURATION_MS) +
     heroExitSyncBufferMs;
   await wait(heroExitWaitDuration);
   beginExitAnimations();
@@ -457,7 +457,7 @@ const runBattleIntroSequence = async (options = {}) => {
   await wait(
     Math.max(
       HERO_EXIT_DURATION_MS,
-      skipEnemyAppearance ? 0 : ENEMY_EXIT_DURATION_MS
+      skipMonsterAppearance ? 0 : MONSTER_EXIT_DURATION_MS
     )
   );
 
@@ -871,12 +871,12 @@ const determineBattlePreview = (levelsData, playerData) => {
       : 'Math Mission';
   const mathLabel = mathLabelSource.trim() || 'Math Mission';
 
-  const enemyData = (() => {
-    if (battle && typeof battle.enemy === 'object' && battle.enemy !== null) {
-      return battle.enemy;
+  const monsterData = (() => {
+    if (battle && typeof battle.monster === 'object' && battle.monster !== null) {
+      return battle.monster;
     }
-    if (Array.isArray(battle?.enemies)) {
-      const match = battle.enemies.find(
+    if (Array.isArray(battle?.monsters)) {
+      const match = battle.monsters.find(
         (candidate) => candidate && typeof candidate === 'object'
       );
       if (match) {
@@ -885,12 +885,12 @@ const determineBattlePreview = (levelsData, playerData) => {
     }
     return {};
   })();
-  const rawEnemySprite =
-    typeof enemyData?.sprite === 'string' ? enemyData.sprite.trim() : '';
-  const enemySprite = sanitizeAssetPath(rawEnemySprite) || rawEnemySprite;
-  const enemyName =
-    typeof enemyData?.name === 'string' ? enemyData.name.trim() : '';
-  const enemyAlt = enemyName ? `${enemyName} ready for battle` : 'Enemy ready for battle';
+  const rawMonsterSprite =
+    typeof monsterData?.sprite === 'string' ? monsterData.sprite.trim() : '';
+  const monsterSprite = sanitizeAssetPath(rawMonsterSprite) || rawMonsterSprite;
+  const monsterName =
+    typeof monsterData?.name === 'string' ? monsterData.name.trim() : '';
+  const monsterAlt = monsterName ? `${monsterName} ready for battle` : 'Monster ready for battle';
 
   const levelName = typeof activeLevel?.name === 'string' ? activeLevel.name.trim() : '';
   const battleTitleLabel =
@@ -926,8 +926,8 @@ const determineBattlePreview = (levelsData, playerData) => {
       hero: { ...heroData, sprite: heroSprite },
       heroAlt,
       heroLevelLabel,
-      enemy: { ...enemyData, sprite: enemySprite },
-      enemyAlt,
+      monster: { ...monsterData, sprite: monsterSprite },
+      monsterAlt,
       progressExperience: experienceProgress.ratio,
       progressExperienceEarned: experienceProgress.earned,
       progressExperienceTotal: experienceProgress.total,
@@ -938,7 +938,7 @@ const determineBattlePreview = (levelsData, playerData) => {
 
 const applyBattlePreview = (previewData = {}) => {
   const heroImageElements = document.querySelectorAll('[data-hero-sprite]');
-  const enemyImage = document.querySelector('[data-enemy]');
+  const monsterImage = document.querySelector('[data-monster]');
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
   const battleTitleElements = document.querySelectorAll('[data-battle-title]');
   const progressElement = document.querySelector('[data-battle-progress]');
@@ -964,18 +964,18 @@ const applyBattlePreview = (previewData = {}) => {
         : 'Hero ready for battle';
   });
 
-  if (enemyImage) {
-    const enemySprite =
-      typeof previewData?.enemy?.sprite === 'string'
-        ? previewData.enemy.sprite
+  if (monsterImage) {
+    const monsterSprite =
+      typeof previewData?.monster?.sprite === 'string'
+        ? previewData.monster.sprite
         : '';
-    if (enemySprite) {
-      enemyImage.src = enemySprite;
+    if (monsterSprite) {
+      monsterImage.src = monsterSprite;
     }
-    enemyImage.alt =
-      typeof previewData?.enemyAlt === 'string' && previewData.enemyAlt.trim()
-        ? previewData.enemyAlt
-        : 'Enemy ready for battle';
+    monsterImage.alt =
+      typeof previewData?.monsterAlt === 'string' && previewData.monsterAlt.trim()
+        ? previewData.monsterAlt
+        : 'Monster ready for battle';
   }
 
   battleMathElements.forEach((element) => {
@@ -1240,7 +1240,7 @@ const preloadLandingAssets = async () => {
       levels.forEach((level) => {
         const battle = level?.battle ?? {};
         addImageAsset(battle?.hero?.sprite);
-        addImageAsset(battle?.enemy?.sprite);
+        addImageAsset(battle?.monster?.sprite);
       });
     }
 
@@ -1259,14 +1259,14 @@ const preloadLandingAssets = async () => {
 
     const prioritizedImages = [];
     const heroSprite = sanitizeAssetPath(preview?.hero?.sprite) || preview?.hero?.sprite;
-    const enemySprite =
-      sanitizeAssetPath(preview?.enemy?.sprite) || preview?.enemy?.sprite;
+    const monsterSprite =
+      sanitizeAssetPath(preview?.monster?.sprite) || preview?.monster?.sprite;
 
     if (heroSprite) {
       prioritizedImages.push(heroSprite);
     }
-    if (enemySprite) {
-      prioritizedImages.push(enemySprite);
+    if (monsterSprite) {
+      prioritizedImages.push(monsterSprite);
     }
 
     const imagePaths = Array.from(
@@ -1311,7 +1311,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   const levelOneHeroImage = getLevelOneHeroElement();
   const standardHeroImage = getStandardHeroElement();
   const heroImages = [levelOneHeroImage, standardHeroImage].filter(Boolean);
-  const enemyImage = document.querySelector('[data-enemy]');
+  const monsterImage = document.querySelector('[data-monster]');
   let battleButton = getActiveBattleButton();
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
@@ -1401,8 +1401,8 @@ const initLandingInteractions = async (preloadedData = {}) => {
       setInteractiveDisabled(battleButton, true);
       battleButton.setAttribute('aria-hidden', 'true');
     }
-    if (enemyImage) {
-      enemyImage.setAttribute('aria-hidden', 'true');
+    if (monsterImage) {
+      monsterImage.setAttribute('aria-hidden', 'true');
     }
     battleButton = null;
   } else {
@@ -1437,7 +1437,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   };
   const waitForImages = Promise.all([
     ...heroImages.map((image) => awaitImageReady(image)),
-    awaitImageReady(enemyImage),
+    awaitImageReady(monsterImage),
   ]);
 
   let isLaunchingBattle = false;
@@ -1476,7 +1476,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
       await runBattleIntroSequence({
         showIntroImmediately: shouldShowIntroImmediately,
         skipHeroSidePosition: isLevelOneLanding,
-        hideEnemy: isLevelOneLanding,
+        hideMonster: isLevelOneLanding,
       });
     } catch (error) {
       console.warn('Battle intro sequence failed.', error);
