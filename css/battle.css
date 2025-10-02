@@ -14,9 +14,9 @@ body {
 
 :root {
   --battle-hero-sprite-width: 300px;
-  --battle-hero-sprite-max-width: 80vw;
+  --battle-hero-sprite-max-width: 300px;
   --battle-monster-sprite-width: 300px;
-  --battle-monster-sprite-max-width: 80vw;
+  --battle-monster-sprite-max-width: 300px;
 }
 
 body.is-evolution-active #question,

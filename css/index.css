@@ -181,8 +181,8 @@ body:not(.is-preloading) main.landing {
   animation: hero-float var(--hero-float-duration, 3.5s)
       cubic-bezier(0.42, 0, 0.58, 1) 1.35s
       infinite;
-  max-width: min(320px, 70vw);
-  max-height: min(320px, 70vh);
+  max-width: 300px;
+  max-height: 300px;
   --hero-float-range: 32px;
   --hero-float-duration: 3.5s;
   --hero-float-offset: calc(-1 * var(--hero-float-range, 32px));
@@ -218,8 +218,8 @@ body:not(.is-preloading) main.landing {
   position: absolute;
   left: calc(50% + var(--intro-sprite-offset));
   top: 45%;
-  max-width: min(320px, 70vw);
-  max-height: min(320px, 70vh);
+  max-width: 300px;
+  max-height: 300px;
   transform: translate(
       -50%,
       calc(
@@ -303,8 +303,8 @@ body:not(.is-level-one-landing) .level-one-intro {
 }
 .level-one-intro__egg-button {
   position: relative;
-  width: min(250px, 62vw);
-  height: min(250px, 62vw);
+  width: 230px;
+  height: 230px;
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -832,8 +832,8 @@ body.is-battle-transition .bubbles {
 }
 
 .preloader__logo {
-  width: min(200px, 45vw);
-  height: min(200px, 45vw);
+  width: 180px;
+  height: 180px;
   max-width: 200px;
   max-height: 200px;
   object-fit: contain;
@@ -893,13 +893,13 @@ body.is-battle-transition .bubbles {
 
 .pwa-install__title {
   margin: 0;
-  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  font-size: 22px;
   letter-spacing: 0.03em;
 }
 
 .pwa-install__message {
   margin: 0;
-  font-size: clamp(0.95rem, 1.8vw, 1.05rem);
+  font-size: 16px;
   line-height: 1.5;
   color: rgba(10, 61, 98, 0.85);
 }

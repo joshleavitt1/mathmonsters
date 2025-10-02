@@ -20,8 +20,8 @@
 }
 
 .preloader__logo {
-  width: min(200px, 45vw);
-  height: min(200px, 45vw);
+  width: 180px;
+  height: 180px;
   max-width: 200px;
   max-height: 200px;
   object-fit: contain;
@@ -49,7 +49,7 @@
   border-radius: 8px;
   background-image: linear-gradient(180deg, #36dc36, #00b600);
   color: #ffffff;
-  font-size: clamp(14px, 4vw, 16px);
+  font-size: 15px;
   font-weight: 400;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -86,7 +86,7 @@
   border-radius: 12px;
   background-color: transparent;
   color: #ffffff;
-  font-size: clamp(18px, 5vw, 20px);
+  font-size: 20px;
 }
 
 .preloader__field:not(:placeholder-shown) {
@@ -134,7 +134,7 @@
 
 .preloader__field::placeholder {
   color: #949faf;
-  font-size: clamp(18px, 5vw, 20px);
+  font-size: 20px;
 }
 
 .preloader__field:focus {
@@ -170,7 +170,7 @@
   margin: 0;
   max-width: min(420px, 100%);
   color: #ffffff;
-  font-size: clamp(18px, 5vw, 20px);
+  font-size: 20px;
   text-wrap: balance;
 }
 
@@ -192,7 +192,7 @@
   border-radius: 12px;
   color: #ffffff;
   text-decoration: none;
-  font-size: clamp(18px, 5vw, 20px);
+  font-size: 20px;
   font-weight: 400;
   background-color: transparent;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -249,8 +249,8 @@
     align-items: center;
   }
   .preloader__logo {
-    width: min(200px, 60vw);
-    height: min(200px, 60vw);
+    width: 180px;
+    height: 180px;
   }
 }
 .visually-hidden {
