@@ -41,6 +41,10 @@ const {
   computeExperienceProgress,
 } = progressUtils;
 
+const playerProfileUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
+  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
+
 const redirectToBattle = () => {
   window.location.href = BATTLE_PAGE_URL;
 };
@@ -338,6 +342,42 @@ const ensureAuthenticated = async () => {
     console.warn('Unexpected authentication error', error);
     redirectToWelcome();
     return false;
+  }
+};
+
+const fetchPlayerProfile = async () => {
+  if (isGuestModeActive()) {
+    return null;
+  }
+
+  const fetchFn = playerProfileUtils?.fetchPlayerProfile;
+  if (typeof fetchFn !== 'function') {
+    return null;
+  }
+
+  try {
+    const profile = await fetchFn();
+    return profile && typeof profile === 'object' ? profile : null;
+  } catch (error) {
+    console.warn('Failed to fetch remote player profile.', error);
+    return null;
+  }
+};
+
+const syncRemoteBattleLevel = (playerData) => {
+  if (!playerData) {
+    return;
+  }
+
+  const syncFn = playerProfileUtils?.syncBattleLevelToStorage;
+  if (typeof syncFn !== 'function') {
+    return;
+  }
+
+  try {
+    syncFn(playerData, PROGRESS_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to sync remote battle level with storage.', error);
   }
 };
 
@@ -1165,14 +1205,28 @@ const preloadLandingAssets = async () => {
   };
 
   try {
-    const [levelsData, rawPlayerData] = await Promise.all([
+    const [levelsData, fallbackPlayerData] = await Promise.all([
       loadJson('data/levels.json'),
       loadJson('data/player.json'),
     ]);
 
+    let remotePlayerData = null;
+    try {
+      remotePlayerData = await fetchPlayerProfile();
+    } catch (error) {
+      console.warn('Unable to load remote player profile during preload.', error);
+      remotePlayerData = null;
+    }
+
+    if (remotePlayerData) {
+      syncRemoteBattleLevel(remotePlayerData);
+    }
+
+    const chosenPlayerData = remotePlayerData || fallbackPlayerData;
+
     const { levels, player, preview } = determineBattlePreview(
       levelsData,
-      rawPlayerData
+      chosenPlayerData
     );
 
     results.levelsData =
@@ -1280,14 +1334,30 @@ const initLandingInteractions = async (preloadedData = {}) => {
       }
 
       if (!playerData) {
+        let rawPlayerData = null;
         try {
-          const playerRes = await fetch('data/player.json');
-          if (playerRes.ok) {
-            playerData = await playerRes.json();
-          }
+          rawPlayerData = await fetchPlayerProfile();
         } catch (error) {
-          console.warn('Unable to load player data.', error);
+          console.warn('Unable to load remote player data.', error);
+          rawPlayerData = null;
         }
+
+        if (rawPlayerData) {
+          syncRemoteBattleLevel(rawPlayerData);
+        }
+
+        if (!rawPlayerData) {
+          try {
+            const playerRes = await fetch('data/player.json');
+            if (playerRes.ok) {
+              rawPlayerData = await playerRes.json();
+            }
+          } catch (error) {
+            console.warn('Unable to load player data.', error);
+          }
+        }
+
+        playerData = rawPlayerData;
       }
 
       if (!previewData) {
