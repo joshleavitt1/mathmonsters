@@ -715,6 +715,11 @@ const sanitizeAssetPath = (path) => {
     trimmed = trimmed.replace(/^\/+/, '');
   }
 
+  trimmed = trimmed.replace(
+    /(\/?hero\/shellfin)_level_(\d+)/gi,
+    (_, prefix, level) => `${prefix}_evolution_${level}`
+  );
+
   return trimmed;
 };
 
