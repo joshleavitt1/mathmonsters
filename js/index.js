@@ -799,9 +799,262 @@ const normalizeBattleLevel = (value) => {
   return null;
 };
 
+const collectMathTypeCandidates = (source, accumulator = new Set()) => {
+  if (!source || typeof source !== 'object') {
+    return accumulator;
+  }
+
+  const tryAdd = (value) => {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed) {
+        accumulator.add(trimmed.toLowerCase());
+      }
+    }
+  };
+
+  const candidateKeys = [
+    'currentMathType',
+    'activeMathType',
+    'mathType',
+    'selectedMathType',
+    'defaultMathType',
+  ];
+
+  candidateKeys.forEach((key) => tryAdd(source[key]));
+
+  if (source.battle && typeof source.battle === 'object') {
+    candidateKeys.forEach((key) => tryAdd(source.battle[key]));
+  }
+
+  if (source.battleVariables && typeof source.battleVariables === 'object') {
+    candidateKeys.forEach((key) => tryAdd(source.battleVariables[key]));
+  }
+
+  if (source.progress && typeof source.progress === 'object') {
+    candidateKeys.forEach((key) => tryAdd(source.progress[key]));
+  }
+
+  if (source.preferences && typeof source.preferences === 'object') {
+    candidateKeys.forEach((key) => tryAdd(source.preferences[key]));
+  }
+
+  if (source.player && typeof source.player === 'object') {
+    collectMathTypeCandidates(source.player, accumulator);
+  }
+
+  return accumulator;
+};
+
+const normalizeLevelList = (levels, mathTypeKey) => {
+  if (!Array.isArray(levels)) {
+    return [];
+  }
+
+  return levels
+    .map((level, index) => {
+      if (!level || typeof level !== 'object') {
+        return null;
+      }
+
+      const normalizedLevel = { ...level };
+
+      if (mathTypeKey && typeof mathTypeKey === 'string' && !normalizedLevel.mathType) {
+        normalizedLevel.mathType = mathTypeKey;
+      }
+
+      const resolvedBattleLevel =
+        normalizeBattleLevel(level?.battleLevel) ??
+        normalizeBattleLevel(level?.level) ??
+        normalizeBattleLevel(level?.id) ??
+        normalizeBattleLevel(index + 1);
+
+      if (resolvedBattleLevel !== null) {
+        normalizedLevel.battleLevel = resolvedBattleLevel;
+      } else {
+        delete normalizedLevel.battleLevel;
+      }
+
+      return normalizedLevel;
+    })
+    .filter(Boolean);
+};
+
+const collectLevelsFromMathType = (mathTypeConfig) => {
+  if (!mathTypeConfig || typeof mathTypeConfig !== 'object') {
+    return [];
+  }
+
+  const collected = [];
+  const seen = new Set();
+  let fallbackIndex = 0;
+
+  const addLevel = (level) => {
+    if (!level || typeof level !== 'object') {
+      return;
+    }
+
+    const normalizedBattleLevel =
+      normalizeBattleLevel(level?.battleLevel) ??
+      normalizeBattleLevel(level?.level) ??
+      normalizeBattleLevel(level?.id);
+
+    const dedupeKey =
+      normalizedBattleLevel !== null
+        ? `battle:${normalizedBattleLevel}`
+        : typeof level?.id === 'string'
+        ? `id:${level.id.trim().toLowerCase()}`
+        : `fallback:${fallbackIndex++}`;
+
+    if (seen.has(dedupeKey)) {
+      return;
+    }
+
+    seen.add(dedupeKey);
+    collected.push(level);
+  };
+
+  const visit = (node) => {
+    if (!node) {
+      return;
+    }
+
+    if (Array.isArray(node)) {
+      node.forEach((item) => visit(item));
+      return;
+    }
+
+    if (typeof node !== 'object') {
+      return;
+    }
+
+    if (Array.isArray(node.levels)) {
+      node.levels.forEach((level) => addLevel(level));
+    }
+
+    Object.keys(node).forEach((key) => {
+      if (key === 'levels') {
+        return;
+      }
+      visit(node[key]);
+    });
+  };
+
+  visit(mathTypeConfig);
+  return collected;
+};
+
+const deriveMathTypeLevels = (levelsData, ...playerSources) => {
+  const fallbackLevels = normalizeLevelList(
+    Array.isArray(levelsData?.levels) ? levelsData.levels : [],
+    null
+  );
+
+  const mathTypes =
+    levelsData && typeof levelsData.mathTypes === 'object'
+      ? levelsData.mathTypes
+      : null;
+
+  if (!mathTypes) {
+    return { levels: fallbackLevels, mathTypeKey: null };
+  }
+
+  const entries = Object.entries(mathTypes).filter(
+    ([, value]) => value && typeof value === 'object'
+  );
+
+  if (!entries.length) {
+    return { levels: fallbackLevels, mathTypeKey: null };
+  }
+
+  const candidateSet = new Set();
+  playerSources.forEach((source) => collectMathTypeCandidates(source, candidateSet));
+
+  const normalizedCandidates = Array.from(candidateSet);
+
+  const findMatch = (predicate) => entries.find(([key, value]) => predicate(key, value));
+
+  let selectedEntry =
+    findMatch((key) => normalizedCandidates.includes(String(key).trim().toLowerCase())) ??
+    findMatch((_, value) => {
+      if (!value || typeof value !== 'object') {
+        return false;
+      }
+      const metaKeys = ['id', 'key', 'code', 'name', 'label'];
+      return metaKeys.some((metaKey) => {
+        const metaValue = value[metaKey];
+        return (
+          typeof metaValue === 'string' &&
+          normalizedCandidates.includes(metaValue.trim().toLowerCase())
+        );
+      });
+    });
+
+  if (!selectedEntry) {
+    selectedEntry = entries[0];
+  }
+
+  const [selectedKey, selectedData] = selectedEntry;
+
+  const collectedLevels = collectLevelsFromMathType(selectedData);
+  const normalizedLevels = collectedLevels.length
+    ? normalizeLevelList(collectedLevels, selectedKey)
+    : normalizeLevelList(fallbackLevels, selectedKey);
+
+  const sortedLevels = normalizedLevels
+    .map((level, index) => ({ level, index }))
+    .sort((a, b) => {
+      const levelA = normalizeBattleLevel(a.level?.battleLevel);
+      const levelB = normalizeBattleLevel(b.level?.battleLevel);
+
+      if (levelA === null && levelB === null) {
+        return a.index - b.index;
+      }
+
+      if (levelA === null) {
+        return 1;
+      }
+
+      if (levelB === null) {
+        return -1;
+      }
+
+      if (levelA === levelB) {
+        return a.index - b.index;
+      }
+
+      return levelA - levelB;
+    })
+    .map(({ level }) => level);
+
+  const mathTypeLabelCandidate =
+    selectedData && typeof selectedData === 'object'
+      ? typeof selectedData.name === 'string'
+        ? selectedData.name
+        : typeof selectedData.label === 'string'
+        ? selectedData.label
+        : null
+      : null;
+
+  const mathTypeLabel =
+    typeof mathTypeLabelCandidate === 'string' && mathTypeLabelCandidate.trim()
+      ? mathTypeLabelCandidate.trim()
+      : null;
+
+  return {
+    levels: sortedLevels,
+    mathTypeKey: typeof selectedKey === 'string' ? selectedKey : null,
+    mathTypeLabel,
+  };
+};
+
 const determineBattlePreview = (levelsData, playerData) => {
-  const levels = Array.isArray(levelsData?.levels) ? levelsData.levels : [];
   const player = mergePlayerWithProgress(playerData);
+  const { levels, mathTypeLabel, mathTypeKey } = deriveMathTypeLevels(
+    levelsData,
+    playerData,
+    player
+  );
 
   if (!levels.length) {
     return { levels, player, preview: null };
@@ -864,10 +1117,18 @@ const determineBattlePreview = (levelsData, playerData) => {
 
   const battle = activeLevel?.battle ?? {};
   const mathLabelSource =
-    typeof activeLevel.mathType === 'string'
+    typeof activeLevel?.mathLabel === 'string'
+      ? activeLevel.mathLabel
+      : typeof battle?.mathLabel === 'string'
+      ? battle.mathLabel
+      : typeof mathTypeLabel === 'string'
+      ? mathTypeLabel
+      : typeof activeLevel?.mathType === 'string'
       ? activeLevel.mathType
       : typeof battle?.mathType === 'string'
       ? battle.mathType
+      : typeof mathTypeKey === 'string'
+      ? mathTypeKey
       : 'Math Mission';
   const mathLabel = mathLabelSource.trim() || 'Math Mission';
 
@@ -880,12 +1141,20 @@ const determineBattlePreview = (levelsData, playerData) => {
       if (candidate && typeof candidate === 'object') {
         monsterCandidates.push(candidate);
       }
-    });
-  }
-  const monsterData =
-    monsterCandidates.find(
-      (candidate) => candidate && typeof candidate === 'object'
-    ) || {};
+    }
+    if (battle && typeof battle.enemy === 'object' && battle.enemy !== null) {
+      return battle.enemy;
+    }
+    if (Array.isArray(battle?.enemies)) {
+      const match = battle.enemies.find(
+        (candidate) => candidate && typeof candidate === 'object'
+      );
+      if (match) {
+        return match;
+      }
+    }
+    return {};
+  })();
   const rawMonsterSprite =
     typeof monsterData?.sprite === 'string' ? monsterData.sprite.trim() : '';
   const monsterSprite = sanitizeAssetPath(rawMonsterSprite) || rawMonsterSprite;
@@ -937,7 +1206,7 @@ const determineBattlePreview = (levelsData, playerData) => {
   };
 };
 
-const applyBattlePreview = (previewData = {}) => {
+const applyBattlePreview = (previewData = {}, levels = []) => {
   const heroImageElements = document.querySelectorAll('[data-hero-sprite]');
   const monsterImage = document.querySelector('[data-monster]');
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
@@ -1062,10 +1331,30 @@ const applyBattlePreview = (previewData = {}) => {
     progressElement.setAttribute('aria-valuetext', ariaText);
   }
 
-  const resolvedBattleLevel = Number(previewData?.battleLevel);
-  const isLevelOneLanding = Number.isFinite(resolvedBattleLevel)
-    ? resolvedBattleLevel <= 1
-    : true;
+  const resolvedBattleLevel = (() => {
+    const fromPreview = normalizeBattleLevel(previewData?.battleLevel);
+    if (fromPreview !== null) {
+      return fromPreview;
+    }
+
+    const fromActiveLevel = normalizeBattleLevel(previewData?.activeLevel?.battleLevel);
+    if (fromActiveLevel !== null) {
+      return fromActiveLevel;
+    }
+
+    if (Array.isArray(levels)) {
+      for (const level of levels) {
+        const candidate = normalizeBattleLevel(level?.battleLevel);
+        if (candidate !== null) {
+          return candidate;
+        }
+      }
+    }
+
+    return null;
+  })();
+
+  const isLevelOneLanding = resolvedBattleLevel !== null ? resolvedBattleLevel <= 1 : true;
 
   if (landingRoot) {
     landingRoot.classList.toggle('is-level-one-landing', isLevelOneLanding);
@@ -1242,6 +1531,21 @@ const preloadLandingAssets = async () => {
         const battle = level?.battle ?? {};
         addImageAsset(battle?.hero?.sprite);
         addImageAsset(battle?.monster?.sprite);
+        addImageAsset(battle?.enemy?.sprite);
+        if (Array.isArray(battle?.monsters)) {
+          battle.monsters.forEach((monster) => {
+            if (monster && typeof monster === 'object') {
+              addImageAsset(monster?.sprite);
+            }
+          });
+        }
+        if (Array.isArray(battle?.enemies)) {
+          battle.enemies.forEach((enemy) => {
+            if (enemy && typeof enemy === 'object') {
+              addImageAsset(enemy?.sprite);
+            }
+          });
+        }
       });
     }
 
@@ -1296,7 +1600,7 @@ const preloadLandingAssets = async () => {
     await Promise.allSettled(imagePaths.map(preloadImage));
 
     if (preview) {
-      applyBattlePreview(preview);
+      applyBattlePreview(preview, levels);
     }
   } catch (error) {
     console.error('Failed to preload landing assets.', error);
@@ -1325,6 +1629,9 @@ const initLandingInteractions = async (preloadedData = {}) => {
       let levelsData = preloadedData?.levelsData ?? null;
       let playerData = preloadedData?.playerData ?? null;
       let previewData = preloadedData?.previewData ?? null;
+      let resolvedLevels = Array.isArray(preloadedData?.levelsData?.levels)
+        ? preloadedData.levelsData.levels
+        : [];
 
       if (!levelsData) {
         const levelsRes = await fetch('data/levels.json');
@@ -1332,6 +1639,9 @@ const initLandingInteractions = async (preloadedData = {}) => {
           throw new Error('Failed to load battle level data.');
         }
         levelsData = await levelsRes.json();
+        if (!resolvedLevels.length && Array.isArray(levelsData?.levels)) {
+          resolvedLevels = levelsData.levels;
+        }
       }
 
       if (!playerData) {
@@ -1369,16 +1679,19 @@ const initLandingInteractions = async (preloadedData = {}) => {
             : { levels: previewResult.levels };
         playerData = previewResult.player;
         previewData = previewResult.preview;
+        resolvedLevels = previewResult.levels;
 
         if (preloadedData && typeof preloadedData === 'object') {
           preloadedData.levelsData = levelsData;
           preloadedData.playerData = playerData;
           preloadedData.previewData = previewData;
         }
+      } else if (!resolvedLevels.length && Array.isArray(levelsData?.levels)) {
+        resolvedLevels = levelsData.levels;
       }
 
       if (previewData) {
-        applyBattlePreview(previewData);
+        applyBattlePreview(previewData, resolvedLevels);
         isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
         battleButton = getActiveBattleButton();
       }
