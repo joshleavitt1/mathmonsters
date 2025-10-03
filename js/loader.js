@@ -447,7 +447,15 @@ const syncRemoteBattleLevel = (playerData) => {
       });
 
     let questions = [];
-    const questionFile = currentLevel?.battle?.questionReference?.file;
+    const battleQuestions = currentLevel?.battle?.questions;
+    const derivedQuestionPath =
+      typeof battleQuestions === 'string'
+        ? battleQuestions
+        : battleQuestions && typeof battleQuestions === 'object'
+        ? battleQuestions.path || battleQuestions.file || null
+        : null;
+    const legacyQuestionFile = currentLevel?.battle?.questionReference?.file;
+    const questionFile = derivedQuestionPath || legacyQuestionFile;
 
     if (questionFile) {
       try {
