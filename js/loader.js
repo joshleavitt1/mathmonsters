@@ -14,8 +14,24 @@ const deriveBaseFromLocation = (fallbackBase) => {
       ? window.location.pathname
       : '';
 
-  if (rawFallback && locationPath.startsWith(rawFallback)) {
-    return fallbackBase;
+  if (rawFallback) {
+    let fallbackNormalized = rawFallback;
+    if (fallbackNormalized !== '/') {
+      fallbackNormalized = fallbackNormalized.replace(/\/+$/, '');
+    }
+    if (fallbackNormalized && !fallbackNormalized.startsWith('/')) {
+      fallbackNormalized = `/${fallbackNormalized}`;
+    }
+    if (!fallbackNormalized) {
+      fallbackNormalized = '/';
+    }
+    const matchesFallback =
+      locationPath === fallbackNormalized ||
+      (fallbackNormalized !== '/' &&
+        locationPath.startsWith(`${fallbackNormalized}/`));
+    if (matchesFallback) {
+      return fallbackBase;
+    }
   }
 
   const withoutQuery = locationPath.replace(/[?#].*$/, '');
