@@ -1132,21 +1132,12 @@ const determineBattlePreview = (levelsData, playerData) => {
       : 'Math Mission';
   const mathLabel = mathLabelSource.trim() || 'Math Mission';
 
-  const monsterCandidates = [];
-  if (battle && typeof battle.monster === 'object' && battle.monster !== null) {
-    monsterCandidates.push(battle.monster);
-  }
-  if (Array.isArray(battle?.monsters)) {
-    battle.monsters.forEach((candidate) => {
-      if (candidate && typeof candidate === 'object') {
-        monsterCandidates.push(candidate);
-      }
+  const monsterData = (() => {
+    if (battle && typeof battle.monster === 'object' && battle.monster !== null) {
+      return battle.monster;
     }
-    if (battle && typeof battle.enemy === 'object' && battle.enemy !== null) {
-      return battle.enemy;
-    }
-    if (Array.isArray(battle?.enemies)) {
-      const match = battle.enemies.find(
+    if (Array.isArray(battle?.monsters)) {
+      const match = battle.monsters.find(
         (candidate) => candidate && typeof candidate === 'object'
       );
       if (match) {
@@ -1531,18 +1522,10 @@ const preloadLandingAssets = async () => {
         const battle = level?.battle ?? {};
         addImageAsset(battle?.hero?.sprite);
         addImageAsset(battle?.monster?.sprite);
-        addImageAsset(battle?.enemy?.sprite);
         if (Array.isArray(battle?.monsters)) {
           battle.monsters.forEach((monster) => {
             if (monster && typeof monster === 'object') {
               addImageAsset(monster?.sprite);
-            }
-          });
-        }
-        if (Array.isArray(battle?.enemies)) {
-          battle.enemies.forEach((enemy) => {
-            if (enemy && typeof enemy === 'object') {
-              addImageAsset(enemy?.sprite);
             }
           });
         }

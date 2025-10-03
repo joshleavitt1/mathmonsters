@@ -767,11 +767,11 @@ const syncRemoteBattleLevel = (playerData) => {
       }
     }
 
-    const levelBattleRaw = currentLevel?.battle ?? {};
-    const levelBattle =
-      levelBattleRaw && typeof levelBattleRaw === 'object'
-        ? (({ enemy, enemies, ...rest }) => rest)(levelBattleRaw)
-        : {};
+      const levelBattleRaw = currentLevel?.battle ?? {};
+      const levelBattle =
+        levelBattleRaw && typeof levelBattleRaw === 'object'
+          ? { ...levelBattleRaw }
+          : {};
 
     const resolvePlayerLevelData = (level) => {
       if (!basePlayer || typeof basePlayer !== 'object') {
@@ -859,19 +859,11 @@ const syncRemoteBattleLevel = (playerData) => {
           addMonster(battleConfig.monster);
         }
 
-        if (Array.isArray(battleConfig?.enemies)) {
-          battleConfig.enemies.forEach((enemy) => addMonster(enemy));
-        }
-
-        if (battleConfig?.enemy) {
-          addMonster(battleConfig.enemy);
-        }
-
-        return {
-          battleLevel: Number.isFinite(levelNumber) ? levelNumber : null,
-          hero: preparedHero,
-          monsters,
-        };
+          return {
+            battleLevel: Number.isFinite(levelNumber) ? levelNumber : null,
+            hero: preparedHero,
+            monsters,
+          };
       });
     });
 
@@ -894,28 +886,22 @@ const syncRemoteBattleLevel = (playerData) => {
       (monster) => ({ ...monster })
     );
 
-    if (normalizedMonsters.length === 0) {
-      const fallbackCandidates = [];
+      if (normalizedMonsters.length === 0) {
+        const fallbackCandidates = [];
 
-      if (Array.isArray(levelBattle?.monsters)) {
-        fallbackCandidates.push(...levelBattle.monsters);
-      } else if (levelBattle && typeof levelBattle.monster === 'object') {
-        fallbackCandidates.push(levelBattle.monster);
-      }
-
-      if (Array.isArray(levelBattle?.enemies)) {
-        fallbackCandidates.push(...levelBattle.enemies);
-      } else if (levelBattle && typeof levelBattle.enemy === 'object') {
-        fallbackCandidates.push(levelBattle.enemy);
-      }
-
-      fallbackCandidates.forEach((candidate) => {
-        const fallbackMonster = prepareCharacter(candidate);
-        if (fallbackMonster) {
-          normalizedMonsters.push({ ...fallbackMonster });
+        if (Array.isArray(levelBattle?.monsters)) {
+          fallbackCandidates.push(...levelBattle.monsters);
+        } else if (levelBattle && typeof levelBattle.monster === 'object') {
+          fallbackCandidates.push(levelBattle.monster);
         }
-      });
-    }
+
+        fallbackCandidates.forEach((candidate) => {
+          const fallbackMonster = prepareCharacter(candidate);
+          if (fallbackMonster) {
+            normalizedMonsters.push({ ...fallbackMonster });
+          }
+        });
+      }
 
     const primaryMonster = normalizedMonsters[0] || {};
 
@@ -925,23 +911,9 @@ const syncRemoteBattleLevel = (playerData) => {
       monster: { ...primaryMonster },
     };
 
-    if (normalizedMonsters.length > 0) {
-      battle.monsters = normalizedMonsters;
-      if (!Array.isArray(levelBattle?.enemies)) {
-        battle.enemies = normalizedMonsters;
+      if (normalizedMonsters.length > 0) {
+        battle.monsters = normalizedMonsters;
       }
-    } else if (!Array.isArray(levelBattle?.enemies)) {
-      battle.enemies = [];
-    }
-
-    if (
-      !battle.enemy &&
-      primaryMonster &&
-      typeof primaryMonster === 'object' &&
-      Object.keys(primaryMonster).length > 0
-    ) {
-      battle.enemy = { ...primaryMonster };
-    }
 
     const sortedLevelsByBattle = levels
       .slice()
