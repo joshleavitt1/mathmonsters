@@ -19,7 +19,7 @@
               "damage": 1,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_1.png"
             },
-            "enemy": {
+            "monster": {
               "id": "octomurk",
               "name": "Octomurk",
               "sprite": "/mathmonsters/images/monster/addition_battle_1.png",
@@ -52,7 +52,7 @@
               "damage": 1,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_2.png"
             },
-            "enemy": {
+            "monster": {
               "id": "ripjaw",
               "name": "Ripjaw",
               "sprite": "/mathmonsters/images/monster/addition_battle_2.png",
@@ -85,7 +85,7 @@
               "damage": 2,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_2.png"
             },
-            "enemy": {
+            "monster": {
               "id": "gulper",
               "name": "Gulper",
               "sprite": "/mathmonsters/images/monster/addition_battle_3.png",
@@ -118,7 +118,7 @@
               "damage": 2,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_2.png"
             },
-            "enemy": {
+            "monster": {
               "id": "typhoon",
               "name": "Typhoon",
               "sprite": "/mathmonsters/images/monster/addition_battle_4.png",
@@ -151,7 +151,7 @@
               "damage": 3,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_2.png"
             },
-            "enemy": {
+            "monster": {
               "id": "maelstrom",
               "name": "Maelstrom",
               "sprite": "/mathmonsters/images/monster/addition_battle_5.png",
