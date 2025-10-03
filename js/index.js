@@ -1132,16 +1132,14 @@ const determineBattlePreview = (levelsData, playerData) => {
       : 'Math Mission';
   const mathLabel = mathLabelSource.trim() || 'Math Mission';
 
-  const monsterData = (() => {
-    if (battle && typeof battle.monster === 'object' && battle.monster !== null) {
-      return battle.monster;
-    }
-    if (Array.isArray(battle?.monsters)) {
-      const match = battle.monsters.find(
-        (candidate) => candidate && typeof candidate === 'object'
-      );
-      if (match) {
-        return match;
+  const monsterCandidates = [];
+  if (battle && typeof battle.monster === 'object' && battle.monster !== null) {
+    monsterCandidates.push(battle.monster);
+  }
+  if (Array.isArray(battle?.monsters)) {
+    battle.monsters.forEach((candidate) => {
+      if (candidate && typeof candidate === 'object') {
+        monsterCandidates.push(candidate);
       }
     }
     if (battle && typeof battle.enemy === 'object' && battle.enemy !== null) {

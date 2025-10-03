@@ -744,7 +744,6 @@ const syncRemoteBattleLevel = (playerData) => {
       }
       return null;
     })();
-
     if (questionFile) {
       try {
         const questionPath = resolveDataPath(questionFile);
@@ -768,7 +767,11 @@ const syncRemoteBattleLevel = (playerData) => {
       }
     }
 
-    const levelBattle = currentLevel?.battle ?? {};
+    const levelBattleRaw = currentLevel?.battle ?? {};
+    const levelBattle =
+      levelBattleRaw && typeof levelBattleRaw === 'object'
+        ? (({ enemy, enemies, ...rest }) => rest)(levelBattleRaw)
+        : {};
 
     const resolvePlayerLevelData = (level) => {
       if (!basePlayer || typeof basePlayer !== 'object') {

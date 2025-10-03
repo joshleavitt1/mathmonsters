@@ -129,9 +129,16 @@
                     "required": [
                       "questions",
                       "hero",
-                      "enemy",
                       "winReward",
                       "loseReward"
+                    ],
+                    "allOf": [
+                      {
+                        "anyOf": [
+                          { "required": ["monster"] },
+                          { "required": ["monsters"] }
+                        ]
+                      }
                     ],
                     "properties": {
                       "questions": {
@@ -162,7 +169,7 @@
                           "attackSprite": { "type": "string" }
                         }
                       },
-                      "enemy": {
+                      "monster": {
                         "type": "object",
                         "required": [
                           "id",
@@ -181,6 +188,30 @@
                           "health": { "type": "integer" },
                           "damage": { "type": "integer" },
                           "attackSprite": { "type": "string" }
+                        }
+                      },
+                      "monsters": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name",
+                            "sprite",
+                            "attack",
+                            "health",
+                            "damage",
+                            "attackSprite"
+                          ],
+                          "properties": {
+                            "id": { "type": "string" },
+                            "name": { "type": "string" },
+                            "sprite": { "type": "string" },
+                            "attack": { "type": "integer" },
+                            "health": { "type": "integer" },
+                            "damage": { "type": "integer" },
+                            "attackSprite": { "type": "string" }
+                          }
                         }
                       },
                       "winReward": {
