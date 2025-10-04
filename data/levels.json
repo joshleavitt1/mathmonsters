@@ -15,8 +15,8 @@
               "name": "Shellfin",
               "sprite": "/mathmonsters/images/hero/shellfin_evolution_1.png",
               "attack": 1,
-              "health": 3,
-              "damage": 1,
+              "health": 5,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_1.png"
             },
             "monster": {
@@ -24,15 +24,15 @@
               "name": "Octomurk",
               "sprite": "/mathmonsters/images/monster/addition_battle_1.png",
               "attack": 1,
-              "health": 3,
-              "damage": 1,
+              "health": 5,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/monster/monster_attack.png"
             },
             "winReward": {
               "gems": 10
             },
             "loseReward": {
-              "gems": 3
+              "gems": 5
             }
           }
         },
@@ -47,25 +47,25 @@
               "id": "shellfin",
               "name": "Shellfin",
               "sprite": "/mathmonsters/images/hero/shellfin_evolution_2.png",
-              "attack": 2,
-              "health": 4,
-              "damage": 1,
+              "attack": 1,
+              "health": 5,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_2.png"
             },
             "monster": {
               "id": "ripjaw",
               "name": "Ripjaw",
               "sprite": "/mathmonsters/images/monster/addition_battle_2.png",
-              "attack": 2,
-              "health": 4,
-              "damage": 1,
+              "attack": 1,
+              "health": 5,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/monster/monster_attack.png"
             },
             "winReward": {
-              "gems": 12
+              "gems": 10
             },
             "loseReward": {
-              "gems": 4
+              "gems": 5
             }
           }
         },
@@ -80,22 +80,22 @@
               "id": "shellfin",
               "name": "Shellfin",
               "sprite": "/mathmonsters/images/hero/shellfin_evolution_2.png",
-              "attack": 3,
+              "attack": 1,
               "health": 5,
-              "damage": 2,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_2.png"
             },
             "monster": {
               "id": "gulper",
               "name": "Gulper",
               "sprite": "/mathmonsters/images/monster/addition_battle_3.png",
-              "attack": 3,
+              "attack": 1,
               "health": 5,
-              "damage": 2,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/monster/monster_attack.png"
             },
             "winReward": {
-              "gems": 14
+              "gems": 10
             },
             "loseReward": {
               "gems": 5
@@ -113,25 +113,25 @@
               "id": "shellfin",
               "name": "Shellfin",
               "sprite": "/mathmonsters/images/hero/shellfin_evolution_2.png",
-              "attack": 4,
-              "health": 6,
-              "damage": 2,
+              "attack": 1,
+              "health": 5,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_2.png"
             },
             "monster": {
               "id": "typhoon",
               "name": "Typhoon",
               "sprite": "/mathmonsters/images/monster/addition_battle_4.png",
-              "attack": 4,
-              "health": 6,
-              "damage": 2,
+              "attack": 1,
+              "health": 5,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/monster/monster_attack.png"
             },
             "winReward": {
-              "gems": 16
+              "gems": 10
             },
             "loseReward": {
-              "gems": 6
+              "gems": 5
             }
           }
         },
@@ -146,25 +146,25 @@
               "id": "shellfin",
               "name": "Shellfin",
               "sprite": "/mathmonsters/images/hero/shellfin_evolution_2.png",
-              "attack": 5,
-              "health": 7,
-              "damage": 3,
+              "attack": 1,
+              "health": 5,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/hero/shellfin_attack_2.png"
             },
             "monster": {
               "id": "maelstrom",
               "name": "Maelstrom",
               "sprite": "/mathmonsters/images/monster/addition_battle_5.png",
-              "attack": 5,
-              "health": 7,
-              "damage": 3,
+              "attack": 1,
+              "health": 5,
+              "damage": 0,
               "attackSprite": "/mathmonsters/images/monster/monster_attack.png"
             },
             "winReward": {
-              "gems": 20
+              "gems": 10
             },
             "loseReward": {
-              "gems": 8
+              "gems": 5
             }
           }
         }
