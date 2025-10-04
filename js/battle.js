@@ -8,6 +8,7 @@ const VICTORY_PROGRESS_UPDATE_DELAY = MONSTER_DEFEAT_ANIMATION_DELAY + 1000;
 const DEFEAT_PROGRESS_UPDATE_DELAY = 1000;
 const LEVEL_PROGRESS_ANIMATION_DELAY_MS = 0;
 const REWARD_CARD_DELAY_MS = 2000;
+const INITIAL_QUESTION_DELAY_MS = 2000;
 const HERO_EVOLUTION_GROWTH_DURATION_MS = 1100;
 const HERO_EVOLUTION_GROWTH_ITERATIONS = 1;
 const HERO_EVOLUTION_REVEAL_DURATION_MS = 1100;
@@ -3179,26 +3180,12 @@ document.addEventListener('DOMContentLoaded', () => {
     startBattleTimer();
 
     const scheduleFirstQuestion = () => {
-      const resolvedBattleLevel = getResolvedBattleLevel();
-      const useInstantQuestion =
-        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel >= 2;
-
-      if (useInstantQuestion) {
-        if (
-          typeof window !== 'undefined' &&
-          typeof window.requestAnimationFrame === 'function'
-        ) {
-          window.requestAnimationFrame(() => {
-            showQuestion();
-          });
-          return;
-        }
-
-        window.setTimeout(showQuestion, 0);
+      if (INITIAL_QUESTION_DELAY_MS <= 0) {
+        showQuestion();
         return;
       }
 
-      window.setTimeout(showQuestion, 2000);
+      window.setTimeout(showQuestion, INITIAL_QUESTION_DELAY_MS);
     };
 
     scheduleFirstQuestion();
