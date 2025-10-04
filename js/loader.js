@@ -574,6 +574,12 @@ const syncRemoteBattleLevel = (playerData) => {
       progress.battleLevel = currentLevel.battleLevel;
     }
 
+    const levelBattleRaw = currentLevel?.battle ?? {};
+    const levelBattle =
+      levelBattleRaw && typeof levelBattleRaw === 'object'
+        ? { ...levelBattleRaw }
+        : {};
+
     const resolveAssetPath = (path) => normalizeAssetPath(path);
 
     const normalizeAttackSprites = (...spriteSources) => {
@@ -782,12 +788,6 @@ const syncRemoteBattleLevel = (playerData) => {
         console.error('Failed to load questions data', error);
       }
     }
-
-      const levelBattleRaw = currentLevel?.battle ?? {};
-      const levelBattle =
-        levelBattleRaw && typeof levelBattleRaw === 'object'
-          ? { ...levelBattleRaw }
-          : {};
 
     const resolvePlayerLevelData = (level) => {
       if (!basePlayer || typeof basePlayer !== 'object') {
