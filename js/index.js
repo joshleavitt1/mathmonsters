@@ -6,13 +6,210 @@ const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const MIN_PRELOAD_DURATION_MS = 2000;
-const HERO_TO_MONSTER_DELAY_MS = 1200;
-const MONSTER_ENTRANCE_DURATION_MS = 900;
-const HERO_EXIT_DURATION_MS = 550;
-const MONSTER_EXIT_DURATION_MS = 600;
-const PRE_BATTLE_HOLD_DURATION_MS = 1000;
+
+const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
+const MONSTER_ENTRANCE_DURATION_MS_BASE = 900;
+const HERO_EXIT_DURATION_MS_BASE = 550;
+const MONSTER_EXIT_DURATION_MS_BASE = 600;
+const MONSTER_INTRO_OPACITY_DURATION_MS_BASE = 600;
+const PRE_BATTLE_HOLD_DURATION_MS_BASE = 1000;
 const HERO_EXIT_SYNC_BUFFER_MS = 0;
-const CENTER_IMAGE_HOLD_DURATION_MS = 1000;
+const CENTER_IMAGE_HOLD_DURATION_MS_BASE = 1000;
+const HERO_INTRO_TRANSITION_DURATION_MS_BASE = 450;
+const LANDING_BATTLE_SHIFT_DURATION_MS_BASE = 600;
+
+const INTRO_TIMING_PREFERENCE_KEY = 'mathmonstersIntroTimingPreference';
+
+const getIntroTimingPreference = () => {
+  const readDatasetPreference = () => {
+    if (typeof document === 'undefined') {
+      return '';
+    }
+
+    const docElPreference = document.documentElement?.dataset?.introTimingPreference;
+    if (docElPreference) {
+      return docElPreference;
+    }
+
+    const bodyPreference = document.body?.dataset?.introTimingPreference;
+    if (bodyPreference) {
+      return bodyPreference;
+    }
+
+    return '';
+  };
+
+  const datasetPreference = readDatasetPreference();
+  if (datasetPreference) {
+    return datasetPreference;
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      const storedPreference = window.localStorage?.getItem(
+        INTRO_TIMING_PREFERENCE_KEY
+      );
+      if (storedPreference) {
+        return storedPreference;
+      }
+    } catch (error) {
+      // Ignore storage access failures (e.g., disabled cookies).
+    }
+  }
+
+  return '';
+};
+
+const computePreferredIntroTimingMultiplier = () => {
+  const preference = getIntroTimingPreference().trim().toLowerCase();
+
+  if (!preference) {
+    return 0.55;
+  }
+
+  if (preference === 'cinematic' || preference === 'full') {
+    return 1;
+  }
+
+  if (preference === 'instant' || preference === 'skip') {
+    return 0;
+  }
+
+  if (preference === 'fast') {
+    return 0.4;
+  }
+
+  if (preference === 'reduced') {
+    return 0.55;
+  }
+
+  const numericPreference = Number.parseFloat(preference);
+  if (Number.isFinite(numericPreference)) {
+    return Math.min(Math.max(numericPreference, 0), 1);
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)')?.matches) {
+        return 0.4;
+      }
+    } catch (error) {
+      // Ignore media query evaluation errors.
+    }
+  }
+
+  return 0.55;
+};
+
+const scaleIntroDuration = (value, multiplier) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return 0;
+  }
+
+  const safeMultiplier = Number.isFinite(multiplier) ? Math.max(multiplier, 0) : 0;
+
+  return Math.max(0, Math.round(numericValue * safeMultiplier));
+};
+
+const createIntroTimingDurations = (multiplier) => {
+  const safeMultiplier = Number.isFinite(multiplier) ? Math.max(0, multiplier) : 0;
+
+  return {
+    multiplier: safeMultiplier,
+    heroToMonsterDelay: scaleIntroDuration(
+      HERO_TO_MONSTER_DELAY_MS_BASE,
+      safeMultiplier
+    ),
+    monsterEntranceDuration: scaleIntroDuration(
+      MONSTER_ENTRANCE_DURATION_MS_BASE,
+      safeMultiplier
+    ),
+    heroExitDuration: scaleIntroDuration(HERO_EXIT_DURATION_MS_BASE, safeMultiplier),
+    monsterExitDuration: scaleIntroDuration(
+      MONSTER_EXIT_DURATION_MS_BASE,
+      safeMultiplier
+    ),
+    monsterIntroOpacityDuration: scaleIntroDuration(
+      MONSTER_INTRO_OPACITY_DURATION_MS_BASE,
+      safeMultiplier
+    ),
+    preBattleHoldDuration: scaleIntroDuration(
+      PRE_BATTLE_HOLD_DURATION_MS_BASE,
+      safeMultiplier
+    ),
+    centerImageHoldDuration: scaleIntroDuration(
+      CENTER_IMAGE_HOLD_DURATION_MS_BASE,
+      safeMultiplier
+    ),
+    heroIntroTransitionDuration: scaleIntroDuration(
+      HERO_INTRO_TRANSITION_DURATION_MS_BASE,
+      safeMultiplier
+    ),
+    landingBattleShiftDuration: scaleIntroDuration(
+      LANDING_BATTLE_SHIFT_DURATION_MS_BASE,
+      safeMultiplier
+    ),
+  };
+};
+
+let introTimingDurations = createIntroTimingDurations(1);
+
+const getIntroTimingDurations = () => introTimingDurations;
+
+const formatDurationSeconds = (durationMs) => {
+  const numericDuration = Math.max(0, Number(durationMs) || 0);
+  const seconds = numericDuration / 1000;
+  const trimmed = seconds.toFixed(3).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+  const value = trimmed === '' ? '0' : trimmed;
+  return `${value}s`;
+};
+
+const applyIntroDurationVariables = (timing = introTimingDurations) => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const root = document.documentElement;
+  if (!root) {
+    return;
+  }
+
+  const setDurationVariable = (name, durationMs) => {
+    if (!name) {
+      return;
+    }
+    root.style.setProperty(name, formatDurationSeconds(durationMs));
+  };
+
+  root.style.setProperty('--intro-duration-scale', String(timing.multiplier));
+  setDurationVariable(
+    '--hero-intro-transform-duration',
+    timing.heroIntroTransitionDuration
+  );
+  setDurationVariable('--hero-intro-exit-duration', timing.heroExitDuration);
+  setDurationVariable('--monster-intro-enter-duration', timing.monsterEntranceDuration);
+  setDurationVariable(
+    '--monster-intro-opacity-duration',
+    timing.monsterIntroOpacityDuration
+  );
+  setDurationVariable('--monster-intro-exit-duration', timing.monsterExitDuration);
+  setDurationVariable('--landing-battle-shift-duration', timing.landingBattleShiftDuration);
+};
+
+applyIntroDurationVariables();
+
+const setIntroTimingDurations = (timing) => {
+  introTimingDurations = timing;
+  applyIntroDurationVariables(introTimingDurations);
+};
+
+const updateIntroTimingForLanding = ({ isLevelOneLanding }) => {
+  const multiplier = isLevelOneLanding
+    ? 1
+    : computePreferredIntroTimingMultiplier();
+  setIntroTimingDurations(createIntroTimingDurations(multiplier));
+};
 const LEVEL_ONE_INTRO_EGG_DELAY_MS = 500;
 const LEVEL_ONE_INTRO_INITIAL_CARD_DELAY_MS = 2000;
 const LEVEL_ONE_INTRO_CARD_DELAY_MS = 400;
@@ -72,6 +269,18 @@ const getActiveBattleButton = () => {
     return document.querySelector('[data-standard-landing] [data-battle-button]');
   }
   return document.querySelector('[data-level-one-landing] [data-battle-button]');
+};
+
+const detectLevelOneLandingState = () => {
+  if (document.body.classList.contains('is-standard-landing')) {
+    return false;
+  }
+
+  if (document.body.classList.contains('is-level-one-landing')) {
+    return true;
+  }
+
+  return true;
 };
 
 const updateViewportOffsetVariable = () => {
@@ -411,6 +620,8 @@ const runBattleIntroSequence = async (options = {}) => {
     return false;
   }
 
+  const timing = getIntroTimingDurations();
+
   if (skipMonsterAppearance && monsterImage) {
     monsterImage.classList.remove('is-visible', 'is-exiting');
     monsterImage.setAttribute('aria-hidden', 'true');
@@ -444,20 +655,20 @@ const runBattleIntroSequence = async (options = {}) => {
     showMonster();
   };
 
-  const holdDuration = showIntroImmediately ? 0 : HERO_TO_MONSTER_DELAY_MS;
+  const holdDuration = showIntroImmediately ? 0 : timing.heroToMonsterDelay;
 
   await wait(holdDuration);
   prepareForBattle();
   const heroExitWaitDuration =
-    (skipMonsterAppearance ? 0 : MONSTER_ENTRANCE_DURATION_MS) +
+    (skipMonsterAppearance ? 0 : timing.monsterEntranceDuration) +
     heroExitSyncBufferMs;
   await wait(heroExitWaitDuration);
   beginExitAnimations();
 
   await wait(
     Math.max(
-      HERO_EXIT_DURATION_MS,
-      skipMonsterAppearance ? 0 : MONSTER_EXIT_DURATION_MS
+      timing.heroExitDuration,
+      skipMonsterAppearance ? 0 : timing.monsterExitDuration
     )
   );
 
@@ -1374,6 +1585,7 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
   }
 
   updateHeroFloat();
+  updateIntroTimingForLanding({ isLevelOneLanding });
 };
 
 const preloaderElement = document.querySelector('[data-preloader]');
@@ -1608,9 +1820,11 @@ const initLandingInteractions = async (preloadedData = {}) => {
   let battleButton = getActiveBattleButton();
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
-  let isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
+  let isLevelOneLanding = detectLevelOneLandingState();
 
   setupSettingsLogout();
+
+  updateIntroTimingForLanding({ isLevelOneLanding });
 
   const loadBattlePreview = async () => {
     try {
@@ -1680,7 +1894,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
       if (previewData) {
         applyBattlePreview(previewData, resolvedLevels);
-        isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
+        isLevelOneLanding = detectLevelOneLandingState();
         battleButton = getActiveBattleButton();
       }
     } catch (error) {
@@ -1689,7 +1903,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   };
 
   await loadBattlePreview();
-  isLevelOneLanding = document.body.classList.contains('is-level-one-landing');
+  isLevelOneLanding = detectLevelOneLandingState();
   battleButton = getActiveBattleButton();
 
   if (isLevelOneLanding) {
@@ -1761,15 +1975,17 @@ const initLandingInteractions = async (preloadedData = {}) => {
     const shouldShowIntroImmediately =
       typeof showIntroImmediately === 'boolean' ? showIntroImmediately : true;
 
+    const centerImageHoldDuration = getIntroTimingDurations().centerImageHoldDuration;
+
     if (
-      CENTER_IMAGE_HOLD_DURATION_MS > 0 &&
+      centerImageHoldDuration > 0 &&
       !isLevelOneLanding &&
       !shouldShowIntroImmediately
     ) {
       await new Promise((resolve) =>
         window.setTimeout(
           resolve,
-          Math.max(0, Number(CENTER_IMAGE_HOLD_DURATION_MS) || 0)
+          Math.max(0, Number(centerImageHoldDuration) || 0)
         )
       );
     }
@@ -1797,11 +2013,13 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
     const showIntroImmediately = true;
 
-    if (CENTER_IMAGE_HOLD_DURATION_MS > 0 && !showIntroImmediately) {
+    const centerImageHoldDuration = getIntroTimingDurations().centerImageHoldDuration;
+
+    if (centerImageHoldDuration > 0 && !showIntroImmediately) {
       await new Promise((resolve) =>
         window.setTimeout(
           resolve,
-          Math.max(0, Number(CENTER_IMAGE_HOLD_DURATION_MS) || 0)
+          Math.max(0, Number(centerImageHoldDuration) || 0)
         )
       );
     }

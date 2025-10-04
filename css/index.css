@@ -39,6 +39,13 @@ body.is-standard-landing .landing__standard {
 
 :root {
   --intro-sprite-offset: clamp(200px, 24vw, 280px);
+  --intro-duration-scale: 1;
+  --hero-intro-transform-duration: 0.45s;
+  --hero-intro-exit-duration: 0.55s;
+  --monster-intro-enter-duration: 0.9s;
+  --monster-intro-opacity-duration: 0.6s;
+  --monster-intro-exit-duration: 0.6s;
+  --landing-battle-shift-duration: 0.6s;
 }
 
 @property --monster-float-offset {
@@ -55,7 +62,9 @@ main.landing {
   opacity: 1;
   transform: translate3d(0, 0, 0);
   filter: none;
-  transition: opacity 0.6s ease, transform 0.6s ease, filter 0.6s ease;
+  transition: opacity var(--landing-battle-shift-duration, 0.6s) ease,
+    transform var(--landing-battle-shift-duration, 0.6s) ease,
+    filter var(--landing-battle-shift-duration, 0.6s) ease;
   will-change: opacity, transform, filter;
 }
 
@@ -72,7 +81,8 @@ body.is-standard-landing [data-level-one-landing] {
 }
 
 main.landing.is-battle-transition {
-  animation: landing-battle-shift 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: landing-battle-shift var(--landing-battle-shift-duration, 0.6s)
+    cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 body.is-preloading {
@@ -199,7 +209,8 @@ body:not(.is-preloading) main.landing {
   z-index: 2;
   pointer-events: none;
   will-change: transform, opacity;
-  transition: transform 0.45s cubic-bezier(0.36, 0, 0.66, 1);
+  transition: transform var(--hero-intro-transform-duration, 0.45s)
+    cubic-bezier(0.36, 0, 0.66, 1);
 }
 
 .hero.is-side-position {
@@ -207,7 +218,8 @@ body:not(.is-preloading) main.landing {
 }
 
 .hero.is-exiting {
-  animation: hero-intro-exit 0.55s cubic-bezier(0.36, 0, 0.66, 1) forwards;
+  animation: hero-intro-exit var(--hero-intro-exit-duration, 0.55s)
+    cubic-bezier(0.36, 0, 0.66, 1) forwards;
 }
 
 
@@ -230,8 +242,9 @@ body:not(.is-preloading) main.landing {
     scale(1.04);
   transform-origin: 50% 85%;
   opacity: 0;
-  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.6s ease-out;
+  transition: transform var(--monster-intro-enter-duration, 0.9s)
+      cubic-bezier(0.16, 1, 0.3, 1),
+    opacity var(--monster-intro-opacity-duration, 0.6s) ease-out;
   pointer-events: none;
   will-change: transform, opacity;
   z-index: 2;
@@ -250,7 +263,8 @@ body:not(.is-preloading) main.landing {
 }
 
 .monster.is-exiting {
-  animation: monster-intro-exit 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: monster-intro-exit var(--monster-intro-exit-duration, 0.6s)
+    cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 body.is-level-one-landing .landing__hero-info,
