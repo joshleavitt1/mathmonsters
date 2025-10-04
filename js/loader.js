@@ -541,8 +541,11 @@ const syncRemoteBattleLevel = (playerData) => {
     let experienceMap = normalizeExperienceMap(progress?.experience);
 
     if (storedProgress && typeof storedProgress === 'object') {
-      if (typeof storedProgress.battleLevel === 'number') {
-        progress.battleLevel = storedProgress.battleLevel;
+      const storedBattleLevel = normalizeBattleLevel(
+        storedProgress.battleLevel
+      );
+      if (storedBattleLevel !== null) {
+        progress.battleLevel = storedBattleLevel;
       }
       if (typeof storedProgress.timeRemainingSeconds === 'number') {
         battleVariables.timeRemainingSeconds =
@@ -558,8 +561,20 @@ const syncRemoteBattleLevel = (playerData) => {
       delete progress.experience;
     }
 
+    const normalizedProgressBattleLevel = normalizeBattleLevel(
+      progress.battleLevel
+    );
+
     const activeBattleLevel =
-      progress.battleLevel ?? levels[0]?.battleLevel ?? null;
+      normalizedProgressBattleLevel ?? levels[0]?.battleLevel ?? null;
+
+    if (normalizedProgressBattleLevel !== null) {
+      progress.battleLevel = normalizedProgressBattleLevel;
+    } else if (Number.isFinite(activeBattleLevel)) {
+      progress.battleLevel = activeBattleLevel;
+    } else {
+      delete progress.battleLevel;
+    }
 
     const currentLevel =
       levels.find((level) => level?.battleLevel === activeBattleLevel) ??
