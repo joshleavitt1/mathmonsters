@@ -20,10 +20,8 @@
 }
 
 .preloader__logo {
-  width: 180px;
-  height: 180px;
-  max-width: 200px;
-  max-height: 200px;
+  width: 200px;
+  height: 200px;
   object-fit: contain;
 }
 
@@ -242,8 +240,8 @@
     align-items: center;
   }
   .preloader__logo {
-    width: 180px;
-    height: 180px;
+    width: 200px;
+    height: 200px;
   }
 }
 .visually-hidden {
