@@ -42,17 +42,10 @@
 }
 
 .preloader__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 16px;
-  border-radius: 8px;
-  background-image: linear-gradient(180deg, #36dc36, #00b600);
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  display: block;
+  width: clamp(200px, 45vw, 320px);
+  max-width: 100%;
+  height: auto;
 }
 
 .preloader__form {
