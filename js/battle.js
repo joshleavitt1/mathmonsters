@@ -3177,7 +3177,31 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     updateAccuracyDisplays();
     startBattleTimer();
-    setTimeout(showQuestion, 2000);
+
+    const scheduleFirstQuestion = () => {
+      const resolvedBattleLevel = getResolvedBattleLevel();
+      const useInstantQuestion =
+        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel >= 2;
+
+      if (useInstantQuestion) {
+        if (
+          typeof window !== 'undefined' &&
+          typeof window.requestAnimationFrame === 'function'
+        ) {
+          window.requestAnimationFrame(() => {
+            showQuestion();
+          });
+          return;
+        }
+
+        window.setTimeout(showQuestion, 0);
+        return;
+      }
+
+      window.setTimeout(showQuestion, 2000);
+    };
+
+    scheduleFirstQuestion();
   }
 
   if (window.preloadedData) {
