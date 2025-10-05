@@ -1376,10 +1376,9 @@ const determineBattlePreview = (levelsData, playerData) => {
       ? `Battle ${activeLevel.battleLevel}`
       : 'Upcoming Battle');
   const heroLevelLabel =
-    levelName ||
-    (typeof activeLevel?.battleLevel === 'number'
+    typeof activeLevel?.battleLevel === 'number'
       ? `Level ${activeLevel.battleLevel}`
-      : 'Level');
+      : 'Level';
   const experienceMap = normalizeExperienceMap(player?.progress?.experience);
   const earnedExperience = readExperienceForLevel(
     experienceMap,
