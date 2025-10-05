@@ -506,6 +506,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
   const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
 
+  const sanitizeHeroSpritePath = (path) => {
+    if (typeof path !== 'string') {
+      return path;
+    }
+
+    return path.replace(
+      /(shellfin)_(?:level|evolution)_(\d+)((?:\.[a-z0-9]+)?)(?=[?#]|$)/gi,
+      (match, heroName, level, extension = '') => {
+        const parsedLevel = Number(level);
+        const safeLevel = Number.isFinite(parsedLevel)
+          ? Math.max(parsedLevel, 1)
+          : 1;
+
+        return `${heroName}_evolution_${safeLevel}${extension || ''}`;
+      }
+    );
+  };
+
   const hero = {
     attack: 1,
     health: 5,
@@ -583,27 +601,34 @@ document.addEventListener('DOMContentLoaded', () => {
       return null;
     }
 
+    const sanitized = sanitizeHeroSpritePath(trimmed);
+
     if (
-      /^(?:https?:)?\/\//i.test(trimmed) ||
-      trimmed.startsWith('data:') ||
-      trimmed.startsWith('blob:')
+      /^(?:https?:)?\/\//i.test(sanitized) ||
+      sanitized.startsWith('data:') ||
+      sanitized.startsWith('blob:')
     ) {
-      return trimmed;
+      return sanitized;
     }
 
     try {
-      return new URL(trimmed, document.baseURI).href;
+      return sanitizeHeroSpritePath(
+        new URL(sanitized, document.baseURI).href
+      );
     } catch (error) {
-      return trimmed;
+      return sanitized;
     }
   };
 
   const getCurrentHeroSprite = () => {
     if (heroImg && typeof heroImg.src === 'string' && heroImg.src) {
-      return heroImg.src;
+      return sanitizeHeroSpritePath(heroImg.src);
     }
 
-    return resolveAbsoluteSpritePath(HERO_LEVEL_1_SRC) || HERO_LEVEL_1_SRC;
+    const fallback =
+      resolveAbsoluteSpritePath(HERO_LEVEL_1_SRC) || HERO_LEVEL_1_SRC;
+
+    return sanitizeHeroSpritePath(fallback);
   };
 
   const deriveNextHeroSprite = () => {
@@ -630,7 +655,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    return resolveAbsoluteSpritePath(HERO_LEVEL_2_SRC) || HERO_LEVEL_2_SRC;
+    const fallback =
+      resolveAbsoluteSpritePath(HERO_LEVEL_2_SRC) || HERO_LEVEL_2_SRC;
+
+    return sanitizeHeroSpritePath(fallback);
   };
 
   const clearEvolutionTimers = () => {
@@ -2155,28 +2183,32 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
       }
 
-      if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) {
-        return trimmed;
+      const sanitized = sanitizeHeroSpritePath(trimmed);
+
+      if (/^https?:\/\//i.test(sanitized) || /^data:/i.test(sanitized)) {
+        return sanitized;
       }
 
-      if (trimmed.startsWith('../') || trimmed.startsWith('./')) {
-        return trimmed;
+      if (sanitized.startsWith('../') || sanitized.startsWith('./')) {
+        return sanitized;
       }
 
-      if (trimmed.startsWith('/')) {
-        return trimmed;
+      if (sanitized.startsWith('/')) {
+        return sanitized;
       }
 
       const normalizedBase = assetBasePath.endsWith('/')
         ? assetBasePath.slice(0, -1)
         : assetBasePath;
-      const normalizedPath = trimmed.replace(/^\/+/, '');
+      const normalizedPath = sanitizeHeroSpritePath(
+        sanitized.replace(/^\/+/, '')
+      );
 
       if (!normalizedBase || normalizedBase === '.') {
         return normalizedPath;
       }
 
-      return `${normalizedBase}/${normalizedPath}`;
+      return sanitizeHeroSpritePath(`${normalizedBase}/${normalizedPath}`);
     };
 
     const isPlainObjectValue = (value) =>
