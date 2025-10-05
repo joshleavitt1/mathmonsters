@@ -156,6 +156,13 @@ body.home-page {
   pointer-events: none;
 }
 
+.home__sword {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 @media (min-width: 768px) {
   .home {
     --app-safe-area-padding: var(--space-lg);
