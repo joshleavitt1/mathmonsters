@@ -114,6 +114,24 @@ const playerProfileUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
   (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
 
+const sanitizeHeroSpritePath = (path) => {
+  if (typeof path !== 'string') {
+    return path;
+  }
+
+  return path.replace(
+    /(shellfin)_(?:level|evolution)_(\d+)((?:\.[a-z0-9]+)?)(?=[?#]|$)/gi,
+    (match, heroName, level, extension = '') => {
+      const parsedLevel = Number(level);
+      const safeLevel = Number.isFinite(parsedLevel)
+        ? Math.max(parsedLevel, 1)
+        : 1;
+
+      return `${heroName}_evolution_${safeLevel}${extension || ''}`;
+    }
+  );
+};
+
 const normalizeAssetPath = (inputPath) => {
   if (typeof inputPath !== 'string') {
     return null;
@@ -709,7 +727,9 @@ const syncRemoteBattleLevel = (playerData) => {
 
       const normalized = { ...merged };
 
-      const resolvedSprite = resolveAssetPath(merged.sprite);
+      const resolvedSprite = resolveAssetPath(
+        sanitizeHeroSpritePath(merged.sprite)
+      );
       if (resolvedSprite) {
         normalized.sprite = resolvedSprite;
         registerAsset(resolvedSprite);
