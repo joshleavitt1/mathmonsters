@@ -85,13 +85,13 @@ body.home-page {
 
 .home__status-coin-count {
   position: absolute;
-  inset: 0;
+  inset: -4px 0 0 -4px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--text-size-small);
-  font-weight: 700;
-  color: #6c3b00;
+  font-weight: 400;
+  color: #000000;
 }
 
 .home__bar-item[aria-disabled='true'] {
