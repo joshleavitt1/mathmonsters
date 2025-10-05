@@ -119,18 +119,17 @@ body.home-page {
   justify-content: center;
 }
 
-.home__identity-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-}
-
-.home__identity-copy {
+.home__identity-statbox {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  padding: 16px 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background-color: rgba(0, 27, 65, 0.4);
+  backdrop-filter: blur(4px);
+  color: var(--text-color-light);
 }
 
 
@@ -153,6 +152,13 @@ body.home-page {
   object-fit: contain;
   animation: hero-swim 4.5s ease-in-out 0.6s infinite;
   will-change: transform;
+  pointer-events: none;
+}
+
+.home__sword {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
   pointer-events: none;
 }
 
