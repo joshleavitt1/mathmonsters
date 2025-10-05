@@ -733,6 +733,20 @@ const syncRemoteBattleLevel = (playerData) => {
       if (resolvedSprite) {
         normalized.sprite = resolvedSprite;
         registerAsset(resolvedSprite);
+        if (
+          typeof window !== 'undefined' &&
+          typeof document !== 'undefined' &&
+          typeof document.baseURI === 'string'
+        ) {
+          try {
+            const absoluteSprite = new URL(resolvedSprite, document.baseURI).href;
+            if (!characterAssetSet.has(absoluteSprite)) {
+              characterAssetSet.add(absoluteSprite);
+            }
+          } catch (error) {
+            // Ignore URL resolution errors and continue with normalized sprite only.
+          }
+        }
       } else {
         delete normalized.sprite;
       }
