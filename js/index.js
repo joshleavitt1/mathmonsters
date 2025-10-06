@@ -2002,12 +2002,54 @@ const initLandingInteractions = async (preloadedData = {}) => {
     }
   };
 
+  const battleImageTriggers = !isLevelOneLanding
+    ? Array.from(
+        document.querySelectorAll('[data-standard-landing] [data-battle-trigger]')
+      ).filter((element) => element instanceof HTMLElement)
+    : [];
+
+  if (!isLevelOneLanding) {
+    battleImageTriggers.forEach((trigger) => {
+      if (!trigger || trigger.dataset.battleTriggerBound === 'true') {
+        return;
+      }
+
+      trigger.dataset.battleTriggerBound = 'true';
+
+      if (!trigger.hasAttribute('role')) {
+        trigger.setAttribute('role', 'button');
+      }
+
+      if (!trigger.hasAttribute('aria-label')) {
+        trigger.setAttribute('aria-label', 'Start battle');
+      }
+
+      if (!trigger.hasAttribute('data-initial-tabindex')) {
+        trigger.setAttribute('data-initial-tabindex', '0');
+      }
+
+      setInteractiveDisabled(trigger, false);
+
+      attachInteractiveHandler(trigger, (event) => {
+        if (event && typeof event.preventDefault === 'function') {
+          event.preventDefault();
+        }
+
+        beginBattle({ triggerButton: trigger, showIntroImmediately: true });
+      });
+    });
+  }
+
   if (isLevelOneLanding) {
     setupLevelOneIntro({ heroImage: levelOneHeroImage, beginBattle });
     return;
   }
 
   if (!battleButton) {
+    if (battleImageTriggers.length) {
+      return;
+    }
+
     await waitForImages;
 
     const showIntroImmediately = true;
