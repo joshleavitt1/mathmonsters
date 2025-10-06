@@ -119,31 +119,72 @@ body.home-page {
   justify-content: center;
 }
 
-.home__identity-statbox {
+.home__stat-box {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 16px 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background-color: rgba(0, 27, 65, 0.4);
-  backdrop-filter: blur(4px);
-  color: var(--text-color-light);
+  width: min(100%, 320px);
+  padding: 20px 28px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  background:
+    linear-gradient(140deg, rgba(11, 61, 110, 0.78), rgba(4, 29, 68, 0.74));
+  box-shadow:
+    0 20px 36px rgba(1, 12, 32, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(2, 19, 43, 0.55);
+  backdrop-filter: blur(6px);
+  text-align: center;
 }
 
+.home__stat-box::after {
+  content: '';
+  position: absolute;
+  inset: 12px 18px auto 18px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0));
+  opacity: 0.8;
+}
 
-.home__title {
+.home__stat-box .name {
   margin: 0;
-  font-size: 40px;
-  font-weight: 400;
+  font-weight: 700;
+  font-size: clamp(22px, 5vw, 34px);
+  line-height: 1.1;
+  letter-spacing: 0.4px;
   color: #ffffff;
+  text-shadow:
+    0 3px 12px rgba(0, 12, 30, 0.55),
+    0 0 16px rgba(122, 210, 255, 0.4);
 }
 
-.home__level {
+.home__stat-box-level {
   margin: 0;
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.5);
+  padding: 4px 16px;
+  border-radius: 999px;
+  display: inline-block;
+  font-weight: 600;
+  font-size: clamp(13px, 3.6vw, 18px);
+  letter-spacing: 0.35px;
+  color: rgba(8, 209, 255, 0.9);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 22, 46, 0.4);
+}
+
+@media (max-width: 480px) {
+  .home__stat-box {
+    padding: 18px 22px;
+    border-radius: 14px;
+  }
+
+  .home__stat-box::after {
+    inset: 10px 16px auto 16px;
+  }
 }
 
 .home__hero-sprite {
