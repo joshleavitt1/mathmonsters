@@ -213,16 +213,6 @@ body:not(.is-preloading) main.landing {
     cubic-bezier(0.36, 0, 0.66, 1);
 }
 
-.hero[data-battle-trigger] {
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.hero[data-battle-trigger][aria-disabled='true'],
-.hero[data-battle-trigger][aria-busy='true'] {
-  cursor: default;
-}
-
 .hero.is-side-position {
   --hero-side-shift: calc(-1 * var(--intro-sprite-offset));
 }

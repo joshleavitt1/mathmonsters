@@ -155,21 +155,21 @@ body.home-page {
   pointer-events: none;
 }
 
-.home__hero-sprite[data-battle-trigger] {
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.home__hero-sprite[data-battle-trigger][aria-disabled='true'],
-.home__hero-sprite[data-battle-trigger][aria-busy='true'] {
-  cursor: default;
-}
-
 .home__sword {
   width: 160px;
   height: 160px;
   object-fit: contain;
   pointer-events: none;
+}
+
+.home__sword[data-battle-trigger] {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.home__sword[data-battle-trigger][aria-disabled='true'],
+.home__sword[data-battle-trigger][aria-busy='true'] {
+  cursor: default;
 }
 
 @media (min-width: 768px) {
