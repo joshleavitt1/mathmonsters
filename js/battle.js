@@ -480,7 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     displayedMedals.add(LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY);
-    showMedal();
+    hideMedal({ immediate: true });
   };
   let evolutionInProgress = false;
   let rewardCardDisplayTimeout = null;

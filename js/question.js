@@ -148,6 +148,10 @@ document.addEventListener('DOMContentLoaded', () => {
       meterProgress.setAttribute('aria-valuetext', '0 of 0');
     }
 
+    if (meterHeading) {
+      meterHeading.textContent = '';
+    }
+
     if (meterFill) {
       resetMeterAnimation();
       meterFill.style.transition = '';
@@ -434,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('question-opened', (event) => {
     const levelDetail = Number(event?.detail?.battleLevel);
-    isMeterDisabled = Number.isFinite(levelDetail) && levelDetail === 1;
+    isMeterDisabled = !Number.isFinite(levelDetail) || levelDetail < 5;
     syncMeterDisabledAttribute();
     button.classList.remove('result', 'correct', 'incorrect');
     button.textContent = 'Submit';
