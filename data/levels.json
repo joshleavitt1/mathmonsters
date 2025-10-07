@@ -39,7 +39,7 @@
                 "path": "questions/level_1_questions.json"
               },
               "monster": {
-                "spritePool": "standardPool"
+                "sprite": "/mathmonsters/images/monster/addition_boss_1.png"
               }
             }
           ]
