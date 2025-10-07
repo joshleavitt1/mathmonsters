@@ -892,6 +892,8 @@ const getNow = () =>
     ? performance.now()
     : Date.now();
 
+const PRELOADED_SPRITES_STORAGE_KEY = 'mathmonstersPreloadedSprites';
+
 const sanitizeAssetPath = (path) => {
   if (typeof path !== 'string') {
     return null;
@@ -933,6 +935,88 @@ const sanitizeAssetPath = (path) => {
   );
 
   return trimmed;
+};
+
+const toAbsoluteSpriteUrl = (path) => {
+  if (typeof path !== 'string' || !path) {
+    return null;
+  }
+
+  if (typeof document === 'undefined' || typeof document.baseURI !== 'string') {
+    return path;
+  }
+
+  try {
+    return new URL(path, document.baseURI).href;
+  } catch (error) {
+    return path;
+  }
+};
+
+const storePreloadedSprites = (paths) => {
+  if (!Array.isArray(paths) || paths.length === 0) {
+    return;
+  }
+
+  const absolutePaths = [];
+  paths.forEach((path) => {
+    if (typeof path !== 'string') {
+      return;
+    }
+
+    const normalized = sanitizeAssetPath(path) || path.trim();
+    if (!normalized) {
+      return;
+    }
+
+    const absolute = toAbsoluteSpriteUrl(normalized);
+    if (absolute) {
+      absolutePaths.push(absolute);
+    }
+  });
+
+  if (absolutePaths.length === 0) {
+    return;
+  }
+
+  if (typeof window !== 'undefined') {
+    if (!(window.mathMonstersPreloadedSprites instanceof Set)) {
+      window.mathMonstersPreloadedSprites = new Set();
+    }
+    absolutePaths.forEach((path) => {
+      window.mathMonstersPreloadedSprites.add(path);
+    });
+  }
+
+  if (typeof sessionStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    const existingRaw = sessionStorage.getItem(PRELOADED_SPRITES_STORAGE_KEY);
+    const existingArray = (() => {
+      if (!existingRaw) {
+        return [];
+      }
+      try {
+        const parsed = JSON.parse(existingRaw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    })();
+
+    const merged = new Set(
+      existingArray.filter((value) => typeof value === 'string' && value.trim())
+    );
+    absolutePaths.forEach((path) => merged.add(path));
+    sessionStorage.setItem(
+      PRELOADED_SPRITES_STORAGE_KEY,
+      JSON.stringify(Array.from(merged))
+    );
+  } catch (error) {
+    console.warn('Unable to persist preloaded sprites.', error);
+  }
 };
 
 const extractPlayerData = (rawPlayerData) => {
@@ -2291,9 +2375,80 @@ const preloadLandingAssets = async () => {
   ]);
 
   const addImageAsset = (path) => {
-    const normalized = sanitizeAssetPath(path);
-    if (normalized) {
-      imageAssets.add(normalized);
+    if (typeof path !== 'string') {
+      return;
+    }
+
+    const normalized = sanitizeAssetPath(path) || path.trim();
+    if (!normalized || !/[./]/.test(normalized)) {
+      return;
+    }
+
+    imageAssets.add(normalized);
+  };
+
+  const collectSpriteLikeValue = (value) => {
+    if (!value) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      addImageAsset(value);
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((entry) => collectSpriteLikeValue(entry));
+      return;
+    }
+
+    if (typeof value === 'object') {
+      Object.values(value).forEach((entry) => {
+        collectSpriteLikeValue(entry);
+      });
+    }
+  };
+
+  const collectCharacterSprites = (character) => {
+    if (!character || typeof character !== 'object') {
+      return;
+    }
+
+    collectSpriteLikeValue(character.sprite);
+    collectSpriteLikeValue(character.attackSprite);
+    collectSpriteLikeValue(character.attackSprites);
+    collectSpriteLikeValue(character.basicAttack);
+    collectSpriteLikeValue(character.superAttack);
+
+    if (character.attacks && typeof character.attacks === 'object') {
+      Object.values(character.attacks).forEach((attack) => {
+        if (attack && typeof attack === 'object') {
+          collectSpriteLikeValue(attack.sprite);
+          collectSpriteLikeValue(attack.attackSprite);
+          collectSpriteLikeValue(attack.attackSprites);
+        }
+      });
+    }
+  };
+
+  const collectMonsterPools = (pool) => {
+    if (!pool) {
+      return;
+    }
+
+    if (Array.isArray(pool)) {
+      pool.forEach((entry) => {
+        if (entry && typeof entry === 'object') {
+          collectSpriteLikeValue(entry.sprite);
+        } else {
+          collectSpriteLikeValue(entry);
+        }
+      });
+      return;
+    }
+
+    if (typeof pool === 'object') {
+      Object.values(pool).forEach((value) => collectMonsterPools(value));
     }
   };
 
@@ -2376,29 +2531,72 @@ const preloadLandingAssets = async () => {
     if (levels.length) {
       levels.forEach((level) => {
         const battle = level?.battle ?? {};
-        addImageAsset(battle?.hero?.sprite);
-        addImageAsset(battle?.monster?.sprite);
+        collectCharacterSprites(battle?.hero);
+        collectCharacterSprites(battle?.monster);
         if (Array.isArray(battle?.monsters)) {
-          battle.monsters.forEach((monster) => {
-            if (monster && typeof monster === 'object') {
-              addImageAsset(monster?.sprite);
-            }
-          });
+          battle.monsters.forEach((monster) => collectCharacterSprites(monster));
         }
+        collectMonsterPools(battle?.monsterSprites);
       });
     }
 
     if (player && typeof player === 'object') {
-      addImageAsset(player?.hero?.sprite);
+      collectCharacterSprites(player?.hero);
       const levelMap =
         player.battleLevel && typeof player.battleLevel === 'object'
           ? player.battleLevel
           : {};
       Object.values(levelMap).forEach((entry) => {
         if (entry && typeof entry === 'object') {
-          addImageAsset(entry?.hero?.sprite);
+          collectCharacterSprites(entry?.hero);
+          if (entry.monster) {
+            collectCharacterSprites(entry.monster);
+          }
+          if (Array.isArray(entry.monsters)) {
+            entry.monsters.forEach((monster) => collectCharacterSprites(monster));
+          }
         }
       });
+    }
+
+    collectCharacterSprites(preview?.hero);
+    collectCharacterSprites(preview?.monster);
+    if (Array.isArray(preview?.monsters)) {
+      preview.monsters.forEach((monster) => collectCharacterSprites(monster));
+    }
+
+    const mathTypeKey =
+      typeof preview?.mathTypeKey === 'string'
+        ? preview.mathTypeKey
+        : typeof results.playerData?.currentMathType === 'string'
+        ? results.playerData.currentMathType
+        : typeof results.playerData?.mathType === 'string'
+        ? results.playerData.mathType
+        : null;
+    const mathTypes =
+      levelsData && typeof levelsData === 'object' && levelsData.mathTypes
+        ? levelsData.mathTypes
+        : null;
+    if (mathTypeKey && mathTypes && typeof mathTypes === 'object') {
+      const mathEntry =
+        (mathTypes && typeof mathTypes[mathTypeKey] === 'object'
+          ? mathTypes[mathTypeKey]
+          : null) ||
+        Object.values(mathTypes).find((entry) => {
+          if (!entry || typeof entry !== 'object') {
+            return false;
+          }
+          const entryKey =
+            typeof entry.key === 'string'
+              ? entry.key
+              : typeof entry.mathType === 'string'
+              ? entry.mathType
+              : null;
+          return entryKey === mathTypeKey;
+        });
+      if (mathEntry && typeof mathEntry === 'object') {
+        collectMonsterPools(mathEntry.monsterSprites);
+      }
     }
 
     const prioritizedImages = [];
@@ -2413,9 +2611,12 @@ const preloadLandingAssets = async () => {
       prioritizedImages.push(monsterSprite);
     }
 
-    const imagePaths = Array.from(
+    const rawImagePaths = Array.from(
       new Set([...prioritizedImages.filter(Boolean), ...imageAssets])
     );
+    const imagePaths = rawImagePaths
+      .map((src) => sanitizeAssetPath(src) || src)
+      .filter(Boolean);
 
     const preloadImage = (src) =>
       new Promise((resolve) => {
@@ -2436,7 +2637,11 @@ const preloadLandingAssets = async () => {
         image.src = src;
       });
 
-    await Promise.allSettled(imagePaths.map(preloadImage));
+    const preloadResults = await Promise.all(imagePaths.map(preloadImage));
+    const successfullyLoaded = imagePaths.filter(
+      (_, index) => preloadResults[index]
+    );
+    storePreloadedSprites(successfullyLoaded);
 
     if (preview) {
       applyBattlePreview(preview, levels);

@@ -2,6 +2,7 @@
 const STORAGE_KEY_PROGRESS = 'mathmonstersProgress';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
+const PRELOADED_SPRITES_STORAGE_KEY = 'mathmonstersPreloadedSprites';
 
 const deriveBaseFromLocation = (fallbackBase) => {
   if (typeof window === 'undefined') {
@@ -98,6 +99,83 @@ const determineAssetBasePath = () => {
     window.mathMonstersAssetBase = derivedBase;
   }
   return derivedBase || fallbackBase;
+};
+
+const toAbsoluteAssetUrl = (path) => {
+  if (typeof path !== 'string' || !path) {
+    return null;
+  }
+
+  if (typeof document === 'undefined' || typeof document.baseURI !== 'string') {
+    return path;
+  }
+
+  try {
+    return new URL(path, document.baseURI).href;
+  } catch (error) {
+    return path;
+  }
+};
+
+const readPreloadedSpriteSet = () => {
+  const result = new Set();
+
+  if (
+    typeof window !== 'undefined' &&
+    window.mathMonstersPreloadedSprites instanceof Set
+  ) {
+    window.mathMonstersPreloadedSprites.forEach((value) => {
+      if (typeof value === 'string' && value.trim()) {
+        result.add(value.trim());
+      }
+    });
+  }
+
+  if (typeof sessionStorage === 'undefined') {
+    return result;
+  }
+
+  try {
+    const stored = sessionStorage.getItem(PRELOADED_SPRITES_STORAGE_KEY);
+    if (!stored) {
+      return result;
+    }
+    const parsed = JSON.parse(stored);
+    if (Array.isArray(parsed)) {
+      parsed.forEach((value) => {
+        if (typeof value === 'string' && value.trim()) {
+          result.add(value.trim());
+        }
+      });
+    }
+  } catch (error) {
+    console.warn('Unable to read preloaded sprite list.', error);
+  }
+
+  return result;
+};
+
+const writePreloadedSpriteSet = (spriteSet) => {
+  if (!(spriteSet instanceof Set)) {
+    return;
+  }
+
+  if (typeof window !== 'undefined') {
+    window.mathMonstersPreloadedSprites = new Set(spriteSet);
+  }
+
+  if (typeof sessionStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    const serialized = JSON.stringify(
+      Array.from(spriteSet).filter((value) => typeof value === 'string' && value.trim())
+    );
+    sessionStorage.setItem(PRELOADED_SPRITES_STORAGE_KEY, serialized);
+  } catch (error) {
+    console.warn('Unable to persist preloaded sprite list.', error);
+  }
 };
 
 const ASSET_BASE_PATH = determineAssetBasePath();
@@ -1376,6 +1454,7 @@ const syncRemoteBattleLevel = (playerData) => {
     };
 
     const characterAssetSet = new Set();
+    const preloadedSpriteSet = readPreloadedSpriteSet();
     let assetRegistrationEnabled = true;
 
     const registerAsset = (path) => {
@@ -1384,8 +1463,13 @@ const syncRemoteBattleLevel = (playerData) => {
       }
 
       const trimmed = path.trim();
-      if (trimmed) {
-        characterAssetSet.add(trimmed);
+      if (!trimmed) {
+        return;
+      }
+
+      const absolutePath = toAbsoluteAssetUrl(trimmed);
+      if (absolutePath && !characterAssetSet.has(absolutePath)) {
+        characterAssetSet.add(absolutePath);
       }
     };
 
@@ -1413,20 +1497,6 @@ const syncRemoteBattleLevel = (playerData) => {
       if (resolvedSprite) {
         normalized.sprite = resolvedSprite;
         registerAsset(resolvedSprite);
-        if (
-          typeof window !== 'undefined' &&
-          typeof document !== 'undefined' &&
-          typeof document.baseURI === 'string'
-        ) {
-          try {
-            const absoluteSprite = new URL(resolvedSprite, document.baseURI).href;
-            if (!characterAssetSet.has(absoluteSprite)) {
-              characterAssetSet.add(absoluteSprite);
-            }
-          } catch (error) {
-            // Ignore URL resolution errors and continue with normalized sprite only.
-          }
-        }
       } else {
         delete normalized.sprite;
       }
@@ -1453,18 +1523,19 @@ const syncRemoteBattleLevel = (playerData) => {
     const preloadImage = (path) =>
       new Promise((resolve) => {
         if (!path || typeof Image === 'undefined') {
-          resolve();
+          resolve(true);
           return;
         }
 
         const img = new Image();
-        const cleanup = () => {
+        img.decoding = 'async';
+        const finalize = (success) => {
           img.onload = null;
           img.onerror = null;
-          resolve();
+          resolve(success);
         };
-        img.onload = cleanup;
-        img.onerror = cleanup;
+        img.onload = () => finalize(true);
+        img.onerror = () => finalize(false);
         img.src = path;
       });
 
@@ -1697,9 +1768,25 @@ const syncRemoteBattleLevel = (playerData) => {
     }
 
     if (characterAssetSet.size > 0) {
-      await Promise.all(
-        Array.from(characterAssetSet).map((assetPath) => preloadImage(assetPath))
+      const assetList = Array.from(characterAssetSet);
+      const assetsToPreload = assetList.filter(
+        (assetPath) => !preloadedSpriteSet.has(assetPath)
       );
+
+      if (assetsToPreload.length > 0) {
+        const preloadResults = await Promise.all(
+          assetsToPreload.map((assetPath) => preloadImage(assetPath))
+        );
+        preloadResults.forEach((wasLoaded, index) => {
+          if (wasLoaded) {
+            preloadedSpriteSet.add(assetsToPreload[index]);
+          }
+        });
+      }
+
+      writePreloadedSpriteSet(preloadedSpriteSet);
+    } else {
+      writePreloadedSpriteSet(preloadedSpriteSet);
     }
 
     window.preloadedData = {
