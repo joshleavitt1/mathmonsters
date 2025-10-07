@@ -934,22 +934,38 @@ const sanitizeAssetPath = (path) => {
   return trimmed;
 };
 
+const extractPlayerData = (rawPlayerData) => {
+  if (!rawPlayerData || typeof rawPlayerData !== 'object') {
+    return {};
+  }
+
+  if (
+    typeof rawPlayerData.player === 'object' &&
+    rawPlayerData.player !== null &&
+    !Array.isArray(rawPlayerData.player)
+  ) {
+    return rawPlayerData.player;
+  }
+
+  return rawPlayerData;
+};
+
 const mergePlayerWithProgress = (rawPlayerData) => {
+  const sourceData = extractPlayerData(rawPlayerData);
+
   const player =
-    rawPlayerData && typeof rawPlayerData === 'object'
-      ? { ...rawPlayerData }
-      : {};
+    sourceData && typeof sourceData === 'object' ? { ...sourceData } : {};
 
   const storedProgress = readStoredProgress();
 
   const baseProgress =
-    rawPlayerData && typeof rawPlayerData.progress === 'object'
-      ? rawPlayerData.progress
+    sourceData && typeof sourceData.progress === 'object'
+      ? sourceData.progress
       : {};
   const mergedProgress = { ...baseProgress };
   const baseBattleVariables =
-    rawPlayerData && typeof rawPlayerData.battleVariables === 'object'
-      ? rawPlayerData.battleVariables
+    sourceData && typeof sourceData.battleVariables === 'object'
+      ? sourceData.battleVariables
       : {};
 
   const existingExperience = normalizeExperienceMap(player?.progress?.experience);
