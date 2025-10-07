@@ -18,14 +18,54 @@
       },
       "monsterSprites": {
         "standardPool": [
-          "/mathmonsters/images/monster/addition_mini_1.png",
-          "/mathmonsters/images/monster/addition_mini_2.png",
-          "/mathmonsters/images/monster/addition_mini_3.png",
-          "/mathmonsters/images/monster/addition_mini_4.png",
-          "/mathmonsters/images/monster/addition_mini_5.png"
+          {
+            "sprite": "/mathmonsters/images/monster/addition_mini_1.png",
+            "name": "Octomurk"
+          },
+          {
+            "sprite": "/mathmonsters/images/monster/addition_mini_2.png",
+            "name": "Lockjaw"
+          },
+          {
+            "sprite": "/mathmonsters/images/monster/addition_mini_3.png",
+            "name": "Spikewave"
+          },
+          {
+            "sprite": "/mathmonsters/images/monster/addition_mini_4.png",
+            "name": "Crabsnap"
+          },
+          {
+            "sprite": "/mathmonsters/images/monster/addition_mini_5.png",
+            "name": "Clamquake"
+          }
         ],
         "uniquePerLevel": true,
-        "bossTemplate": "/mathmonsters/images/monster/addition_boss_{level}.png"
+        "bosses": {
+          "1": {
+            "sprite": "/mathmonsters/images/monster/addition_boss_1.png",
+            "name": "Octomurk"
+          },
+          "2": {
+            "sprite": "/mathmonsters/images/monster/addition_boss_2.png",
+            "name": "Razorclaw"
+          },
+          "3": {
+            "sprite": "/mathmonsters/images/monster/addition_boss_3.png",
+            "name": "Lockjaw"
+          },
+          "4": {
+            "sprite": "/mathmonsters/images/monster/addition_boss_4.png",
+            "name": "Spikewave"
+          },
+          "5": {
+            "sprite": "/mathmonsters/images/monster/addition_boss_5.png",
+            "name": "Crabsnap"
+          },
+          "6": {
+            "sprite": "/mathmonsters/images/monster/addition_boss_6.png",
+            "name": "Clamquake"
+          }
+        }
       },
       "levels": [
         {
@@ -39,7 +79,7 @@
                 "path": "questions/level_1_questions.json"
               },
               "monster": {
-                "sprite": "/mathmonsters/images/monster/addition_boss_1.png"
+                "spritePool": "standardPool"
               }
             }
           ]
@@ -82,7 +122,8 @@
                 "path": "questions/level_2_questions.json"
               },
               "monster": {
-                "sprite": "/mathmonsters/images/monster/addition_boss_2.png"
+                "sprite": "/mathmonsters/images/monster/addition_boss_2.png",
+                "name": "Razorclaw"
               }
             }
           ]
@@ -125,7 +166,8 @@
                 "path": "questions/level_3_questions.json"
               },
               "monster": {
-                "sprite": "/mathmonsters/images/monster/addition_boss_3.png"
+                "sprite": "/mathmonsters/images/monster/addition_boss_3.png",
+                "name": "Lockjaw"
               }
             }
           ]
@@ -168,7 +210,8 @@
                 "path": "questions/level_4_questions.json"
               },
               "monster": {
-                "sprite": "/mathmonsters/images/monster/addition_boss_4.png"
+                "sprite": "/mathmonsters/images/monster/addition_boss_4.png",
+                "name": "Spikewave"
               }
             }
           ]
@@ -211,7 +254,8 @@
                 "path": "questions/level_5_questions.json"
               },
               "monster": {
-                "sprite": "/mathmonsters/images/monster/addition_boss_5.png"
+                "sprite": "/mathmonsters/images/monster/addition_boss_5.png",
+                "name": "Crabsnap"
               }
             }
           ]
@@ -254,7 +298,8 @@
                 "path": "questions/level_6_questions.json"
               },
               "monster": {
-                "sprite": "/mathmonsters/images/monster/addition_boss_6.png"
+                "sprite": "/mathmonsters/images/monster/addition_boss_6.png",
+                "name": "Clamquake"
               }
             }
           ]
