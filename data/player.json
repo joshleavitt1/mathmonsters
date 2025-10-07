@@ -4,7 +4,8 @@
     "hero": {
       "id": "shellfin",
       "name": "Shellfin",
-      "sprite": "/mathmonsters/images/hero/shellfin_evolution_1.png"
+      "sprite": "images/hero/shellfin_evolution_1.png",
+      "attackSprite": "images/hero/shellfin_attack_1.png"
     },
     "currentMathType": "addition",
     "currentLevel": 1,
@@ -15,7 +16,7 @@
     "progress": {
       "addition": {
         "currentLevel": 1,
-        "totalLevels": 20
+        "currentBattle": 1
       }
     },
     "medals": [],
