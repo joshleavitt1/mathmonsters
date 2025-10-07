@@ -1685,6 +1685,73 @@ const deriveMathTypeLevels = (levelsData, ...playerSources) => {
   };
 };
 
+const findMathProgressEntry = (progress, mathTypeKey) => {
+  if (!isPlainObject(progress)) {
+    return { key: typeof mathTypeKey === 'string' ? mathTypeKey : null, entry: null };
+  }
+
+  const normalizedKey =
+    typeof mathTypeKey === 'string' && mathTypeKey.trim()
+      ? mathTypeKey.trim().toLowerCase()
+      : '';
+
+  if (normalizedKey) {
+    const directMatchKey = Object.keys(progress).find((key) => {
+      if (typeof key !== 'string') {
+        return false;
+      }
+      return key.trim().toLowerCase() === normalizedKey;
+    });
+
+    if (directMatchKey && isPlainObject(progress[directMatchKey])) {
+      return { key: directMatchKey, entry: progress[directMatchKey] };
+    }
+  }
+
+  const fallbackKey = Object.keys(progress).find((key) => isPlainObject(progress[key]));
+  if (fallbackKey) {
+    return { key: fallbackKey, entry: progress[fallbackKey] };
+  }
+
+  return {
+    key: normalizedKey || null,
+    entry: null,
+  };
+};
+
+const resolveBattleCountForLevel = (level, levelsList) => {
+  const extractCount = (candidate) => {
+    if (!candidate || typeof candidate !== 'object') {
+      return 0;
+    }
+    const entries = Array.isArray(candidate.battles)
+      ? candidate.battles.filter(Boolean)
+      : [];
+    return entries.length > 0 ? entries.length : 0;
+  };
+
+  let count = extractCount(level);
+  if (count > 0) {
+    return count;
+  }
+
+  const levelNumber = normalizeBattleLevel(level?.battleLevel ?? level?.level);
+  if (!Number.isFinite(levelNumber) || !Array.isArray(levelsList)) {
+    return 1;
+  }
+
+  const matchedLevel = levelsList.find((entry) => {
+    if (!entry || typeof entry !== 'object') {
+      return false;
+    }
+    const entryLevel = normalizeBattleLevel(entry?.battleLevel ?? entry?.level);
+    return Number.isFinite(entryLevel) && entryLevel === levelNumber;
+  });
+
+  count = extractCount(matchedLevel);
+  return count > 0 ? count : 1;
+};
+
 const determineBattlePreview = (levelsData, playerData) => {
   const player = mergePlayerWithProgress(playerData);
   const { levels, mathTypeLabel, mathTypeKey } = deriveMathTypeLevels(
@@ -1813,6 +1880,33 @@ const determineBattlePreview = (levelsData, playerData) => {
   const progressText = experienceProgress.text;
   const playerGems = readPlayerGemCount(player);
 
+  const { key: mathProgressKey, entry: mathProgressEntry } = findMathProgressEntry(
+    player?.progress,
+    mathTypeKey
+  );
+
+  const totalBattlesForLevel = resolveBattleCountForLevel(activeLevel, levels);
+  const sanitizedBattleTotal = Number.isFinite(totalBattlesForLevel)
+    ? Math.max(1, Math.round(totalBattlesForLevel))
+    : 1;
+  const storedBattleTotal = Number(mathProgressEntry?.currentLevel);
+  const resolvedBattleTotal = Number.isFinite(storedBattleTotal) && storedBattleTotal > 0
+    ? Math.max(sanitizedBattleTotal, Math.round(storedBattleTotal))
+    : sanitizedBattleTotal;
+  const storedBattleCurrent = Number(mathProgressEntry?.currentBattle);
+  let resolvedBattleCurrent = Number.isFinite(storedBattleCurrent)
+    ? Math.round(storedBattleCurrent)
+    : 1;
+  if (!Number.isFinite(resolvedBattleCurrent) || resolvedBattleCurrent <= 0) {
+    resolvedBattleCurrent = 1;
+  }
+  if (resolvedBattleCurrent > resolvedBattleTotal) {
+    resolvedBattleCurrent = resolvedBattleTotal;
+  }
+  const battleProgressRatio = resolvedBattleTotal > 0
+    ? Math.max(0, Math.min(1, resolvedBattleCurrent / resolvedBattleTotal))
+    : 0;
+
   return {
     levels,
     player,
@@ -1826,6 +1920,11 @@ const determineBattlePreview = (levelsData, playerData) => {
       heroLevelLabel,
       monster: { ...monsterData, sprite: monsterSprite },
       monsterAlt,
+      mathTypeKey: typeof mathTypeKey === 'string' ? mathTypeKey : mathProgressKey,
+      progressMathKey: mathProgressKey,
+      progressBattleCurrent: resolvedBattleCurrent,
+      progressBattleTotal: resolvedBattleTotal,
+      progressBattleRatio: battleProgressRatio,
       progressExperience: experienceProgress.ratio,
       progressExperienceEarned: experienceProgress.earned,
       progressExperienceTotal: experienceProgress.total,
@@ -1954,39 +2053,60 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
   });
 
   if (progressElement) {
-    const progressValue = Number.isFinite(previewData?.progressExperience)
-      ? Math.min(Math.max(previewData.progressExperience, 0), 1)
-      : 0;
-    const progressTextRaw =
-      typeof previewData?.progressExperienceText === 'string' &&
-      previewData.progressExperienceText.trim()
-        ? previewData.progressExperienceText.trim()
-        : '0 of 0';
-    const normalizedProgressText =
-      typeof progressTextRaw === 'string' ? progressTextRaw.trim() : '';
-    const earnedCount = Number(previewData?.progressExperienceEarned);
-    const totalCount = Number(previewData?.progressExperienceTotal);
-    progressElement.style.setProperty('--progress-value', progressValue);
-    progressElement.setAttribute('aria-valuemin', '0');
-    let resolvedProgressLabel = '';
+    const battleTotalRaw = Number(previewData?.progressBattleTotal);
+    const battleCurrentRaw = Number(previewData?.progressBattleCurrent);
+    const hasBattleProgress =
+      Number.isFinite(battleTotalRaw) && battleTotalRaw > 0;
 
-    if (Number.isFinite(earnedCount) && Number.isFinite(totalCount) && totalCount > 0) {
-      const roundedTotal = Math.max(0, Math.round(totalCount));
-      const clampedEarned = Math.max(0, Math.min(Math.round(earnedCount), roundedTotal));
-      progressElement.setAttribute('aria-valuemax', `${roundedTotal}`);
-      progressElement.setAttribute('aria-valuenow', `${clampedEarned}`);
-      resolvedProgressLabel = `${clampedEarned} / ${roundedTotal} Battles Won`;
+    if (hasBattleProgress) {
+      const totalBattles = Math.max(1, Math.round(battleTotalRaw));
+      const currentBattle = Number.isFinite(battleCurrentRaw)
+        ? Math.max(1, Math.min(Math.round(battleCurrentRaw), totalBattles))
+        : Math.min(1, totalBattles);
+      const progressValue = totalBattles > 0
+        ? Math.max(0, Math.min(1, currentBattle / totalBattles))
+        : 0;
+      progressElement.style.setProperty('--progress-value', progressValue);
+      progressElement.setAttribute('aria-valuemin', '0');
+      progressElement.setAttribute('aria-valuemax', `${totalBattles}`);
+      progressElement.setAttribute('aria-valuenow', `${currentBattle}`);
+      const ariaText = `Battle ${currentBattle} of ${totalBattles}`;
+      progressElement.setAttribute('aria-valuetext', ariaText);
     } else {
-      progressElement.setAttribute('aria-valuemax', '100');
-      progressElement.setAttribute('aria-valuenow', `${Math.round(progressValue * 100)}`);
-      if (normalizedProgressText.includes(' of ')) {
-        resolvedProgressLabel = `${normalizedProgressText.replace(' of ', ' / ')} Battles Won`;
-      } else if (normalizedProgressText) {
-        resolvedProgressLabel = normalizedProgressText;
+      const progressValue = Number.isFinite(previewData?.progressExperience)
+        ? Math.min(Math.max(previewData.progressExperience, 0), 1)
+        : 0;
+      const progressTextRaw =
+        typeof previewData?.progressExperienceText === 'string' &&
+        previewData.progressExperienceText.trim()
+          ? previewData.progressExperienceText.trim()
+          : '0 of 0';
+      const normalizedProgressText =
+        typeof progressTextRaw === 'string' ? progressTextRaw.trim() : '';
+      const earnedCount = Number(previewData?.progressExperienceEarned);
+      const totalCount = Number(previewData?.progressExperienceTotal);
+      progressElement.style.setProperty('--progress-value', progressValue);
+      progressElement.setAttribute('aria-valuemin', '0');
+      let resolvedProgressLabel = '';
+
+      if (Number.isFinite(earnedCount) && Number.isFinite(totalCount) && totalCount > 0) {
+        const roundedTotal = Math.max(0, Math.round(totalCount));
+        const clampedEarned = Math.max(0, Math.min(Math.round(earnedCount), roundedTotal));
+        progressElement.setAttribute('aria-valuemax', `${roundedTotal}`);
+        progressElement.setAttribute('aria-valuenow', `${clampedEarned}`);
+        resolvedProgressLabel = `${clampedEarned} / ${roundedTotal} Battles Won`;
+      } else {
+        progressElement.setAttribute('aria-valuemax', '100');
+        progressElement.setAttribute('aria-valuenow', `${Math.round(progressValue * 100)}`);
+        if (normalizedProgressText.includes(' of ')) {
+          resolvedProgressLabel = `${normalizedProgressText.replace(' of ', ' / ')} Battles Won`;
+        } else if (normalizedProgressText) {
+          resolvedProgressLabel = normalizedProgressText;
+        }
       }
+      const ariaText = resolvedProgressLabel || normalizedProgressText || 'Battles Won';
+      progressElement.setAttribute('aria-valuetext', ariaText);
     }
-    const ariaText = resolvedProgressLabel || normalizedProgressText || 'Battles Won';
-    progressElement.setAttribute('aria-valuetext', ariaText);
   }
 
   const resolvedBattleLevel = (() => {
