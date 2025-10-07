@@ -12,10 +12,8 @@ body {
   box-sizing: border-box;
 }
 
-.dev-damage-button {
+.dev-button {
   position: fixed;
-  top: 8px;
-  right: 8px;
   width: 56px;
   height: 56px;
   border: none;
@@ -26,10 +24,25 @@ body {
   z-index: 1000;
 }
 
-.dev-damage-button:focus-visible {
+.dev-button:focus-visible {
   opacity: 1;
   border-radius: 8px;
   outline: 2px dashed rgba(255, 255, 255, 0.6);
+}
+
+.dev-button--top-left {
+  top: 8px;
+  left: 8px;
+}
+
+.dev-button--top-right {
+  top: 8px;
+  right: 8px;
+}
+
+.dev-button--bottom-left {
+  bottom: 8px;
+  left: 8px;
 }
 
 :root {

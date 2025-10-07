@@ -28,6 +28,7 @@ const INTRO_QUESTION_LEVELS = new Set([1]);
 const MEDAL_DISPLAY_DURATION_MS = 3000;
 const LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY = 'level-1:first-correct';
 const DEV_DAMAGE_AMOUNT = 100;
+const DEV_SKIP_TARGET_LEVEL = 4;
 
 if (!progressUtils) {
   throw new Error('Progress utilities are not available.');
@@ -100,7 +101,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroImg = document.getElementById('battle-shellfin');
   const monsterAttackEffect = document.getElementById('monster-attack-effect');
   const heroAttackEffect = document.getElementById('hero-attack-effect');
-  const devDamageButton = document.getElementById('dev-damage-button');
+  const devHeroDamageButton = document.getElementById('dev-hero-damage-button');
+  const devMonsterDamageButton = document.getElementById(
+    'dev-monster-damage-button'
+  );
+  const devSkipBattleButton = document.getElementById('dev-skip-battle-button');
   const monsterHpBar = document.querySelector('#monster-stats .battle-health');
   const monsterHpFill = monsterHpBar?.querySelector('.progress__fill') ?? null;
   const heroHpBar = document.querySelector('#shellfin-stats .battle-health');
@@ -2444,6 +2449,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return;
     }
+    if (!hero || typeof hero.health !== 'number') {
+      return;
+    }
+    const newDamage = Math.min(hero.health, hero.damage + numericAmount);
+    if (newDamage === hero.damage) {
+      return;
+    }
+    hero.damage = newDamage;
+    updateHealthBars();
+    if (hero.damage >= hero.health) {
+      endBattle(false, { waitForHpDrain: heroHpFill });
+    }
+  }
+
+  function applyDevDamageToMonster(amount) {
+    if (battleEnded) {
+      return;
+    }
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return;
+    }
     if (!monster || typeof monster.health !== 'number') {
       return;
     }
@@ -2456,6 +2483,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (monster.damage >= monster.health) {
       endBattle(true, { waitForHpDrain: monsterHpFill });
     }
+  }
+
+  function skipToBattleLevel(targetLevel) {
+    const numericLevel = Number(targetLevel);
+    if (!Number.isFinite(numericLevel)) {
+      return;
+    }
+
+    const sanitizedLevel = Math.max(1, Math.floor(numericLevel));
+    const resolvedCurrentLevel = getResolvedBattleLevel();
+    if (resolvedCurrentLevel === sanitizedLevel) {
+      return;
+    }
+
+    persistProgress({ battleLevel: sanitizedLevel });
+    currentBattleLevel = sanitizedLevel;
+    battleLevelAdvanced = false;
+
+    window.setTimeout(() => {
+      window.location.reload();
+    }, 0);
   }
 
   function updateHealthBar(barEl, fillEl, percent) {
@@ -3287,9 +3335,21 @@ document.addEventListener('DOMContentLoaded', () => {
     scheduleFirstQuestion();
   }
 
-  if (devDamageButton) {
-    devDamageButton.addEventListener('click', () => {
+  if (devHeroDamageButton) {
+    devHeroDamageButton.addEventListener('click', () => {
       applyDevDamage(DEV_DAMAGE_AMOUNT);
+    });
+  }
+
+  if (devMonsterDamageButton) {
+    devMonsterDamageButton.addEventListener('click', () => {
+      applyDevDamageToMonster(DEV_DAMAGE_AMOUNT);
+    });
+  }
+
+  if (devSkipBattleButton) {
+    devSkipBattleButton.addEventListener('click', () => {
+      skipToBattleLevel(DEV_SKIP_TARGET_LEVEL);
     });
   }
 
