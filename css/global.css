@@ -529,7 +529,7 @@ button:focus-visible {
 
 .card .stat-label {
   font-size: 18px;
-  color: #888888;
+  color: #272b34;
 }
 
 .card .stat-value {
@@ -541,12 +541,9 @@ button:focus-visible {
   color: #006aff;
 }
 
-.card .stat-value.goal-result--met {
-  color: #00b600;
-}
-
+.card .stat-value.goal-result--met,
 .card .stat-value.goal-result--missed {
-  color: #e20000;
+  color: #006aff;
 }
 
 .card .stat-value .goal-result-icon {

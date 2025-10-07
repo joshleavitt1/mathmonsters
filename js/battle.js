@@ -2008,16 +2008,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     textSpan.textContent = text;
-    let icon = valueEl.querySelector('.goal-result-icon');
-    if (!icon) {
-      icon = document.createElement('img');
-      icon.classList.add('goal-result-icon');
-      valueEl.insertBefore(icon, textSpan);
+    const icon = valueEl.querySelector('.goal-result-icon');
+    if (icon) {
+      icon.remove();
     }
-    icon.src = met
-      ? '/mathmonsters/images/complete/correct.svg'
-      : '/mathmonsters/images/complete/incorrect.svg';
-    icon.alt = met ? 'Goal met' : 'Goal not met';
     valueEl.classList.remove('goal-result--met', 'goal-result--missed');
     valueEl.classList.add(met ? 'goal-result--met' : 'goal-result--missed');
   }
