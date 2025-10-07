@@ -951,6 +951,89 @@ const extractPlayerData = (rawPlayerData) => {
   return rawPlayerData;
 };
 
+const mergeHeroData = (baseHero, overrideHero) => {
+  const base = isPlainObject(baseHero) ? baseHero : null;
+  const override = isPlainObject(overrideHero) ? overrideHero : null;
+
+  if (!base && !override) {
+    return null;
+  }
+
+  return {
+    ...(base || {}),
+    ...(override || {}),
+  };
+};
+
+const mergeBattleLevelMap = (baseMap, overrideMap) => {
+  const base = isPlainObject(baseMap) ? baseMap : null;
+  const override = isPlainObject(overrideMap) ? overrideMap : null;
+
+  if (!base && !override) {
+    return null;
+  }
+
+  const merged = {};
+  const keys = new Set([
+    ...Object.keys(base || {}),
+    ...Object.keys(override || {}),
+  ]);
+
+  keys.forEach((key) => {
+    const baseEntry = isPlainObject(base?.[key]) ? base[key] : null;
+    const overrideEntry = isPlainObject(override?.[key])
+      ? override[key]
+      : null;
+
+    if (!baseEntry && !overrideEntry) {
+      return;
+    }
+
+    const mergedEntry = {
+      ...(baseEntry || {}),
+      ...(overrideEntry || {}),
+    };
+
+    const mergedHero = mergeHeroData(baseEntry?.hero, overrideEntry?.hero);
+    if (mergedHero) {
+      mergedEntry.hero = mergedHero;
+    }
+
+    merged[key] = mergedEntry;
+  });
+
+  return merged;
+};
+
+const mergePlayerData = (basePlayer, overridePlayer) => {
+  const base = isPlainObject(basePlayer) ? basePlayer : null;
+  const override = isPlainObject(overridePlayer) ? overridePlayer : null;
+
+  if (!base && !override) {
+    return {};
+  }
+
+  const merged = {
+    ...(base || {}),
+    ...(override || {}),
+  };
+
+  const mergedHero = mergeHeroData(base?.hero, override?.hero);
+  if (mergedHero) {
+    merged.hero = mergedHero;
+  }
+
+  const mergedBattleLevel = mergeBattleLevelMap(
+    base?.battleLevel,
+    override?.battleLevel
+  );
+  if (mergedBattleLevel) {
+    merged.battleLevel = mergedBattleLevel;
+  }
+
+  return merged;
+};
+
 const mergePlayerWithProgress = (rawPlayerData) => {
   const sourceData = extractPlayerData(rawPlayerData);
 
@@ -2136,8 +2219,24 @@ const preloadLandingAssets = async () => {
       syncRemoteBattleLevel(remotePlayerData);
     }
 
-    const chosenPlayerData =
-      remotePlayerData || fallbackPlayerData || storedPlayerProfile;
+    const fallbackPlayer = extractPlayerData(fallbackPlayerData);
+    const remotePlayer = extractPlayerData(remotePlayerData);
+    const storedPlayer = extractPlayerData(storedPlayerProfile);
+
+    let combinedPlayer = {};
+    if (Object.keys(fallbackPlayer || {}).length > 0) {
+      combinedPlayer = mergePlayerData(combinedPlayer, fallbackPlayer);
+    }
+    if (Object.keys(remotePlayer || {}).length > 0) {
+      combinedPlayer = mergePlayerData(combinedPlayer, remotePlayer);
+    }
+    if (Object.keys(storedPlayer || {}).length > 0) {
+      combinedPlayer = mergePlayerData(combinedPlayer, storedPlayer);
+    }
+
+    const chosenPlayerData = Object.keys(combinedPlayer).length
+      ? combinedPlayer
+      : remotePlayerData || fallbackPlayerData || storedPlayerProfile;
 
     const { levels, player, preview } = determineBattlePreview(
       levelsData,
@@ -2150,6 +2249,7 @@ const preloadLandingAssets = async () => {
         : { levels };
     results.playerData = player;
     results.previewData = preview;
+    results.fallbackPlayerData = fallbackPlayer;
 
     persistPlayerProfile(player);
 
@@ -2240,6 +2340,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
   let isLevelOneLanding = detectLevelOneLandingState();
+  let fallbackPlayerData = preloadedData?.fallbackPlayerData ?? null;
 
   setupSettingsLogout();
 
@@ -2295,8 +2396,33 @@ const initLandingInteractions = async (preloadedData = {}) => {
         playerData = rawPlayerData;
       }
 
+      if (!fallbackPlayerData) {
+        try {
+          const fallbackRes = await fetch('data/player.json');
+          if (fallbackRes.ok) {
+            fallbackPlayerData = await fallbackRes.json();
+            if (preloadedData && typeof preloadedData === 'object') {
+              preloadedData.fallbackPlayerData = extractPlayerData(
+                fallbackPlayerData
+              );
+            }
+          }
+        } catch (error) {
+          console.warn('Unable to load fallback player data.', error);
+        }
+      }
+
       if (!previewData) {
-        const previewResult = determineBattlePreview(levelsData, playerData);
+        const mergedPlayerSource = mergePlayerData(
+          extractPlayerData(fallbackPlayerData),
+          extractPlayerData(playerData)
+        );
+        const previewResult = determineBattlePreview(
+          levelsData,
+          Object.keys(mergedPlayerSource).length
+            ? mergedPlayerSource
+            : playerData
+        );
         levelsData =
           levelsData && typeof levelsData === 'object'
             ? { ...levelsData, levels: previewResult.levels }

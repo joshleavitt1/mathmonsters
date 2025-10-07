@@ -136,6 +136,89 @@ const readStoredPlayerProfile = () => {
   }
 };
 
+const mergeHeroData = (baseHero, overrideHero) => {
+  const base = isPlainObject(baseHero) ? baseHero : null;
+  const override = isPlainObject(overrideHero) ? overrideHero : null;
+
+  if (!base && !override) {
+    return null;
+  }
+
+  return {
+    ...(base || {}),
+    ...(override || {}),
+  };
+};
+
+const mergeBattleLevelMap = (baseMap, overrideMap) => {
+  const base = isPlainObject(baseMap) ? baseMap : null;
+  const override = isPlainObject(overrideMap) ? overrideMap : null;
+
+  if (!base && !override) {
+    return null;
+  }
+
+  const merged = {};
+  const keys = new Set([
+    ...Object.keys(base || {}),
+    ...Object.keys(override || {}),
+  ]);
+
+  keys.forEach((key) => {
+    const baseEntry = isPlainObject(base?.[key]) ? base[key] : null;
+    const overrideEntry = isPlainObject(override?.[key])
+      ? override[key]
+      : null;
+
+    if (!baseEntry && !overrideEntry) {
+      return;
+    }
+
+    const mergedEntry = {
+      ...(baseEntry || {}),
+      ...(overrideEntry || {}),
+    };
+
+    const mergedHero = mergeHeroData(baseEntry?.hero, overrideEntry?.hero);
+    if (mergedHero) {
+      mergedEntry.hero = mergedHero;
+    }
+
+    merged[key] = mergedEntry;
+  });
+
+  return merged;
+};
+
+const mergePlayerData = (basePlayer, overridePlayer) => {
+  const base = isPlainObject(basePlayer) ? basePlayer : null;
+  const override = isPlainObject(overridePlayer) ? overridePlayer : null;
+
+  if (!base && !override) {
+    return {};
+  }
+
+  const merged = {
+    ...(base || {}),
+    ...(override || {}),
+  };
+
+  const mergedHero = mergeHeroData(base?.hero, override?.hero);
+  if (mergedHero) {
+    merged.hero = mergedHero;
+  }
+
+  const mergedBattleLevel = mergeBattleLevelMap(
+    base?.battleLevel,
+    override?.battleLevel
+  );
+  if (mergedBattleLevel) {
+    merged.battleLevel = mergedBattleLevel;
+  }
+
+  return merged;
+};
+
 const mergePlayerWithStoredProfile = (player, storedProfile) => {
   if (!storedProfile || typeof storedProfile !== 'object') {
     return player;
@@ -149,25 +232,30 @@ const mergePlayerWithStoredProfile = (player, storedProfile) => {
     : null;
 
   if (storedHero) {
-    nextPlayer.hero = { ...storedHero };
+    const mergedHero = mergeHeroData(nextPlayer.hero, storedHero);
+    if (mergedHero) {
+      nextPlayer.hero = mergedHero;
+    }
   }
 
   if (!nextPlayer.id && typeof storedProfile.id === 'string') {
     nextPlayer.id = storedProfile.id;
   }
 
-  if (
-    isPlainObject(storedProfile.battleVariables) &&
-    !isPlainObject(nextPlayer.battleVariables)
-  ) {
-    nextPlayer.battleVariables = { ...storedProfile.battleVariables };
+  if (isPlainObject(storedProfile.battleVariables)) {
+    nextPlayer.battleVariables = isPlainObject(nextPlayer.battleVariables)
+      ? { ...storedProfile.battleVariables, ...nextPlayer.battleVariables }
+      : { ...storedProfile.battleVariables };
   }
 
-  if (
-    isPlainObject(storedProfile.battleLevel) &&
-    !isPlainObject(nextPlayer.battleLevel)
-  ) {
-    nextPlayer.battleLevel = { ...storedProfile.battleLevel };
+  if (isPlainObject(storedProfile.battleLevel)) {
+    const mergedBattleLevel = mergeBattleLevelMap(
+      storedProfile.battleLevel,
+      nextPlayer.battleLevel
+    );
+    if (mergedBattleLevel) {
+      nextPlayer.battleLevel = mergedBattleLevel;
+    }
   }
 
   return nextPlayer;
@@ -1112,8 +1200,12 @@ const syncRemoteBattleLevel = (playerData) => {
       if (remotePlayerData) {
         syncRemoteBattleLevel(remotePlayerData);
         const extractedRemotePlayer = extractPlayerData(remotePlayerData);
+        const mergedRemotePlayer = mergePlayerData(
+          basePlayer,
+          extractedRemotePlayer
+        );
         basePlayer = mergePlayerWithStoredProfile(
-          extractedRemotePlayer,
+          mergedRemotePlayer,
           storedPlayerProfile
         );
       }
