@@ -372,6 +372,298 @@ const collectLevelsFromMathType = (mathTypeConfig) => {
   return collected;
 };
 
+const createLevelBattleNormalizer = (mathTypeConfig) => {
+  const monsterConfig =
+    isPlainObject(mathTypeConfig) && isPlainObject(mathTypeConfig.monsterSprites)
+      ? mathTypeConfig.monsterSprites
+      : {};
+  const uniquePerLevel = Boolean(monsterConfig.uniquePerLevel);
+  const bossMap = isPlainObject(monsterConfig.bosses)
+    ? monsterConfig.bosses
+    : {};
+
+  const poolEntries = Object.entries(monsterConfig)
+    .filter(([, value]) => Array.isArray(value))
+    .map(([key, value]) => [
+      key,
+      value.filter((entry) => isPlainObject(entry)),
+    ])
+    .filter(([, value]) => value.length > 0);
+
+  const poolMap = new Map(poolEntries);
+  const poolOrder = poolEntries.map(([key]) => key);
+  const defaultPoolKey = poolMap.has('standardPool')
+    ? 'standardPool'
+    : poolOrder[0] ?? null;
+
+  const poolIndices = new Map();
+  const levelUsage = new Map();
+
+  const resolveBossForLevel = (levelKey) => {
+    if (levelKey === undefined || levelKey === null) {
+      return null;
+    }
+    if (isPlainObject(bossMap[levelKey])) {
+      return bossMap[levelKey];
+    }
+    const stringKey = String(levelKey);
+    return isPlainObject(bossMap[stringKey]) ? bossMap[stringKey] : null;
+  };
+
+  const takeFromPool = (requestedPool, levelKey) => {
+    if (!poolMap.size) {
+      return null;
+    }
+
+    const poolKey = poolMap.has(requestedPool)
+      ? requestedPool
+      : defaultPoolKey;
+    if (!poolKey || !poolMap.has(poolKey)) {
+      return null;
+    }
+
+    const pool = poolMap.get(poolKey);
+    if (!pool || pool.length === 0) {
+      return null;
+    }
+
+    const usedKey = `${levelKey ?? ''}:${poolKey}`;
+    const usedSet = uniquePerLevel
+      ? levelUsage.get(usedKey) ?? new Set()
+      : null;
+
+    let startIndex = poolIndices.get(poolKey) ?? 0;
+    for (let attempt = 0; attempt < pool.length; attempt += 1) {
+      const index = (startIndex + attempt) % pool.length;
+      if (usedSet && usedSet.has(index)) {
+        continue;
+      }
+      poolIndices.set(poolKey, index + 1);
+      if (usedSet) {
+        usedSet.add(index);
+        levelUsage.set(usedKey, usedSet);
+      }
+      return pool[index];
+    }
+
+    return pool[startIndex % pool.length];
+  };
+
+  const applyDefaultStats = (character) => {
+    if (!isPlainObject(character)) {
+      return character;
+    }
+
+    const defaults = isPlainObject(mathTypeConfig?.defaultStats)
+      ? mathTypeConfig.defaultStats
+      : null;
+    if (!defaults) {
+      return character;
+    }
+
+    ['attack', 'health', 'damage'].forEach((statKey) => {
+      if (character[statKey] === undefined && defaults[statKey] !== undefined) {
+        character[statKey] = defaults[statKey];
+      }
+    });
+
+    return character;
+  };
+
+  const assignFromEntry = (target, entry) => {
+    if (!isPlainObject(target) || !isPlainObject(entry)) {
+      return;
+    }
+    if (
+      typeof entry.sprite === 'string' &&
+      entry.sprite.trim() &&
+      (typeof target.sprite !== 'string' || !target.sprite.trim())
+    ) {
+      target.sprite = entry.sprite.trim();
+    }
+    if (!target.name && typeof entry.name === 'string') {
+      target.name = entry.name.trim();
+    }
+    if (!target.id && typeof entry.id === 'string') {
+      target.id = entry.id;
+    }
+  };
+
+  const normalizeMonster = (monsterConfig, context = {}) => {
+    if (!isPlainObject(monsterConfig)) {
+      monsterConfig = {};
+    }
+
+    const normalized = { ...monsterConfig };
+    const levelKey = context.levelKey ?? null;
+    const battleType = context.battleType ?? null;
+
+    const needsSprite =
+      typeof normalized.sprite !== 'string' || !normalized.sprite.trim();
+
+    if (needsSprite) {
+      const poolCandidates = [];
+      if (typeof normalized.spritePool === 'string') {
+        poolCandidates.push(normalized.spritePool.trim());
+      }
+      if (typeof normalized.pool === 'string') {
+        poolCandidates.push(normalized.pool.trim());
+      }
+
+      let resolvedEntry = null;
+      for (const candidate of poolCandidates) {
+        resolvedEntry = takeFromPool(candidate, levelKey);
+        if (resolvedEntry) {
+          assignFromEntry(normalized, resolvedEntry);
+          break;
+        }
+      }
+
+      if (!resolvedEntry && battleType === 'boss') {
+        const bossEntry = resolveBossForLevel(levelKey);
+        if (bossEntry) {
+          assignFromEntry(normalized, bossEntry);
+          resolvedEntry = bossEntry;
+        }
+      }
+
+      if (!resolvedEntry) {
+        const fallbackEntry = takeFromPool(poolCandidates[0] ?? defaultPoolKey, levelKey);
+        if (fallbackEntry) {
+          assignFromEntry(normalized, fallbackEntry);
+        }
+      }
+
+      if (!resolvedEntry) {
+        const bossEntry = resolveBossForLevel(levelKey);
+        if (bossEntry) {
+          assignFromEntry(normalized, bossEntry);
+        }
+      }
+    }
+
+    if (typeof normalized.sprite !== 'string' || !normalized.sprite.trim()) {
+      return null;
+    }
+
+    return applyDefaultStats(normalized);
+  };
+
+  const normalizeMonstersList = (monsters, context = {}) => {
+    if (!Array.isArray(monsters)) {
+      return [];
+    }
+    return monsters
+      .map((monster) => normalizeMonster(monster, context))
+      .filter(Boolean);
+  };
+
+  const normalizeBattle = (battleConfig, context = {}) => {
+    if (!isPlainObject(battleConfig)) {
+      return null;
+    }
+
+    const normalizedBattle = { ...battleConfig };
+
+    if (isPlainObject(normalizedBattle.hero)) {
+      normalizedBattle.hero = applyDefaultStats({ ...normalizedBattle.hero });
+    }
+
+    const monsterContext = {
+      ...context,
+      battleType: normalizedBattle.type,
+    };
+
+    const monsters = normalizeMonstersList(normalizedBattle.monsters, monsterContext);
+    const primaryMonster =
+      normalizeMonster(normalizedBattle.monster, monsterContext) ||
+      monsters[0] ||
+      null;
+
+    if (primaryMonster) {
+      normalizedBattle.monster = primaryMonster;
+    } else {
+      delete normalizedBattle.monster;
+    }
+
+    if (monsters.length) {
+      normalizedBattle.monsters = monsters;
+    } else {
+      delete normalizedBattle.monsters;
+    }
+
+    return normalizedBattle;
+  };
+
+  return (level, index) => {
+    if (!isPlainObject(level)) {
+      return level;
+    }
+
+    const normalizedLevel = { ...level };
+    const levelKey =
+      normalizeBattleLevel(level?.battleLevel) ??
+      normalizeBattleLevel(level?.level) ??
+      normalizeBattleLevel(index + 1);
+
+    const context = { levelKey };
+
+    const directBattle = normalizeBattle(level.battle, context);
+    const battleEntries = Array.isArray(level.battles)
+      ? level.battles
+          .map((entry) => normalizeBattle(entry, context))
+          .filter(Boolean)
+      : [];
+
+    let chosenBattle = directBattle;
+
+    const aggregatedMonsters = battleEntries
+      .flatMap((entry) => {
+        const monsters = [];
+        if (entry?.monster) {
+          monsters.push(entry.monster);
+        }
+        if (Array.isArray(entry?.monsters)) {
+          entry.monsters.forEach((monster) => {
+            if (monster) {
+              monsters.push(monster);
+            }
+          });
+        }
+        return monsters;
+      })
+      .filter(Boolean);
+
+    if (!chosenBattle && battleEntries.length) {
+      chosenBattle = battleEntries[0];
+    }
+
+    if (chosenBattle) {
+      if (!chosenBattle.monster && aggregatedMonsters.length) {
+        chosenBattle = {
+          ...chosenBattle,
+          monster: aggregatedMonsters[0],
+        };
+      }
+
+      if (aggregatedMonsters.length && !chosenBattle.monsters) {
+        chosenBattle = {
+          ...chosenBattle,
+          monsters: aggregatedMonsters,
+        };
+      }
+    }
+
+    if (chosenBattle) {
+      normalizedLevel.battle = chosenBattle;
+    } else {
+      delete normalizedLevel.battle;
+    }
+
+    return normalizedLevel;
+  };
+};
+
 const deriveMathTypeLevels = (levelsData, ...playerSources) => {
   const fallbackLevels = normalizeLevelList(
     Array.isArray(levelsData?.levels) ? levelsData.levels : [],
@@ -469,8 +761,13 @@ const deriveMathTypeLevels = (levelsData, ...playerSources) => {
       ? mathTypeLabelCandidate.trim()
       : null;
 
+  const normalizeBattleForLevel = createLevelBattleNormalizer(selectedData);
+  const decoratedLevels = sortedLevels.map((level, index) =>
+    normalizeBattleForLevel(level, index)
+  );
+
   return {
-    levels: sortedLevels,
+    levels: decoratedLevels,
     mathTypeKey: typeof selectedKey === 'string' ? selectedKey : null,
     mathTypeLabel,
   };
