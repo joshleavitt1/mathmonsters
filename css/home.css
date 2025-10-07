@@ -32,7 +32,7 @@ body.home-page {
 .home__top {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .home__gem-box {
