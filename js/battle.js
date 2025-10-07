@@ -21,8 +21,8 @@ const GEM_REWARD_WIN_AMOUNT = 5;
 const GEM_REWARD_LOSS_AMOUNT = 1;
 const GEM_REWARD_INITIAL_PAUSE_MS = 500;
 const GEM_REWARD_CARD_DELAY_MS = 400;
-const GEM_REWARD_PULSE_DURATION_MS = 650;
-const GEM_REWARD_PULSE_COUNT = 3;
+const GEM_REWARD_PULSE_DURATION_MS = 2100;
+const GEM_REWARD_PULSE_COUNT = 1;
 const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
 const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
 const REGISTER_PAGE_URL = './register.html';
@@ -1913,13 +1913,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (!win) {
+    const hasPendingReward = Boolean(pendingGemReward);
+
+    if (!win && !hasPendingReward) {
       nextMissionBtn.textContent = 'Try Again';
       nextMissionBtn.dataset.action = 'retry';
       return;
     }
 
-    const useClaimLabel = !pendingGemReward || pendingGemReward.useClaimLabel === true;
+    const useClaimLabel =
+      !hasPendingReward || pendingGemReward.useClaimLabel === true;
     nextMissionBtn.textContent = useClaimLabel ? 'Claim Reward' : 'Continue';
     nextMissionBtn.dataset.action = 'next';
   };
@@ -3679,7 +3682,12 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingGemReward = null;
       }
     } else {
-      pendingGemReward = null;
+      pendingGemReward = {
+        amount: gemRewardAmount,
+        totalAfter: updatedGemTotal,
+        useClaimLabel: true,
+        isFirstGemReward: false,
+      };
     }
 
     if (win && !hasPendingLevelUpReward) {
