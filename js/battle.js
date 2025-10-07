@@ -27,6 +27,7 @@ const INTRO_QUESTION_LEVELS = new Set([1]);
 
 const MEDAL_DISPLAY_DURATION_MS = 3000;
 const LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY = 'level-1:first-correct';
+const DEV_DAMAGE_AMOUNT = 100;
 
 if (!progressUtils) {
   throw new Error('Progress utilities are not available.');
@@ -99,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroImg = document.getElementById('battle-shellfin');
   const monsterAttackEffect = document.getElementById('monster-attack-effect');
   const heroAttackEffect = document.getElementById('hero-attack-effect');
+  const devDamageButton = document.getElementById('dev-damage-button');
   const monsterHpBar = document.querySelector('#monster-stats .battle-health');
   const monsterHpFill = monsterHpBar?.querySelector('.progress__fill') ?? null;
   const heroHpBar = document.querySelector('#shellfin-stats .battle-health');
@@ -2410,6 +2412,28 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHealthBar(monsterHpBar, monsterHpFill, monsterPercent);
   }
 
+  function applyDevDamage(amount) {
+    if (battleEnded) {
+      return;
+    }
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return;
+    }
+    if (!monster || typeof monster.health !== 'number') {
+      return;
+    }
+    const newDamage = Math.min(monster.health, monster.damage + numericAmount);
+    if (newDamage === monster.damage) {
+      return;
+    }
+    monster.damage = newDamage;
+    updateHealthBars();
+    if (monster.damage >= monster.health) {
+      endBattle(true, { waitForHpDrain: monsterHpFill });
+    }
+  }
+
   function updateHealthBar(barEl, fillEl, percent) {
     const clampedPercent = Math.max(0, Math.min(100, Number(percent) || 0));
     if (barEl) {
@@ -3221,6 +3245,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     scheduleFirstQuestion();
+  }
+
+  if (devDamageButton) {
+    devDamageButton.addEventListener('click', () => {
+      applyDevDamage(DEV_DAMAGE_AMOUNT);
+    });
   }
 
   if (window.preloadedData) {
