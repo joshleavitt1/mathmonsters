@@ -110,6 +110,22 @@ if (!progressUtils) {
 
 const { isPlainObject, normalizeExperienceMap, mergeExperienceMaps } = progressUtils;
 
+const extractPlayerData = (rawPlayerData) => {
+  if (!rawPlayerData || typeof rawPlayerData !== 'object') {
+    return {};
+  }
+
+  if (
+    typeof rawPlayerData.player === 'object' &&
+    rawPlayerData.player !== null &&
+    !Array.isArray(rawPlayerData.player)
+  ) {
+    return rawPlayerData.player;
+  }
+
+  return rawPlayerData;
+};
+
 const playerProfileUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
   (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
@@ -526,8 +542,10 @@ const syncRemoteBattleLevel = (playerData) => {
       levelsRes.json(),
     ]);
 
-    let basePlayer =
+    const localPlayerData =
       playerJson && typeof playerJson === 'object' ? playerJson : {};
+
+    let basePlayer = extractPlayerData(localPlayerData);
 
     try {
       const remotePlayerData = await fetchPlayerProfile();

@@ -20,6 +20,19 @@ const clonePlainObject = (value) => {
   }
 };
 
+const extractPlayerData = (rawPlayerData) => {
+  if (!isPlainObject(rawPlayerData)) {
+    return null;
+  }
+
+  const nestedPlayer = rawPlayerData.player;
+  if (isPlainObject(nestedPlayer)) {
+    return nestedPlayer;
+  }
+
+  return rawPlayerData;
+};
+
 const applyStartingBattleLevel = (playerData) => {
   const clonedData = clonePlainObject(playerData) ?? {};
 
@@ -109,7 +122,8 @@ const loadDefaultPlayerData = async () => {
     }
 
     const data = await response.json();
-    return clonePlainObject(data);
+    const extracted = extractPlayerData(data);
+    return clonePlainObject(extracted ?? {});
   } catch (error) {
     console.warn('Unable to load default player data for the new account.', error);
     return null;
