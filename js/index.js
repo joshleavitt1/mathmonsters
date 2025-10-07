@@ -1014,6 +1014,30 @@ const mergePlayerWithProgress = (rawPlayerData) => {
   return player;
 };
 
+const readPlayerGemCount = (player) => {
+  if (!player || typeof player !== 'object') {
+    return 0;
+  }
+
+  const candidateValues = [
+    player.gems,
+    player?.currency?.gems,
+    player?.currencies?.gems,
+    player?.wallet?.gems,
+    player?.inventory?.gems,
+    player?.progress?.gems,
+  ];
+
+  for (const value of candidateValues) {
+    const numericValue = Number(value);
+    if (Number.isFinite(numericValue)) {
+      return Math.max(0, Math.round(numericValue));
+    }
+  }
+
+  return 0;
+};
+
 const normalizeBattleLevel = (value) => {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : null;
@@ -1406,6 +1430,7 @@ const determineBattlePreview = (levelsData, playerData) => {
     levelUpRequirement
   );
   const progressText = experienceProgress.text;
+  const playerGems = readPlayerGemCount(player);
 
   return {
     levels,
@@ -1424,6 +1449,7 @@ const determineBattlePreview = (levelsData, playerData) => {
       progressExperienceEarned: experienceProgress.earned,
       progressExperienceTotal: experienceProgress.total,
       progressExperienceText: progressText,
+      playerGems,
     },
   };
 };
@@ -1436,6 +1462,7 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
   const progressElement = document.querySelector('[data-battle-progress]');
   const heroNameElements = document.querySelectorAll('[data-hero-name]');
   const heroLevelElements = document.querySelectorAll('[data-hero-level]');
+  const gemCountElements = document.querySelectorAll('[data-hero-gems]');
   const heroInfoElement = document.querySelector('.landing__hero-info');
   const actionsElement = document.querySelector('.landing__actions');
   const landingRoot = document.body;
@@ -1526,30 +1553,58 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
     element.textContent = resolvedLevelLabel;
   });
 
+  const resolvedGemCount = (() => {
+    const fromPreview = Number(previewData?.playerGems);
+    if (Number.isFinite(fromPreview)) {
+      return Math.max(0, Math.round(fromPreview));
+    }
+    const fromHero = Number(previewData?.hero?.gems);
+    if (Number.isFinite(fromHero)) {
+      return Math.max(0, Math.round(fromHero));
+    }
+    return 0;
+  })();
+
+  gemCountElements.forEach((element) => {
+    if (!element) {
+      return;
+    }
+    element.textContent = `${resolvedGemCount}`;
+  });
+
   if (progressElement) {
     const progressValue = Number.isFinite(previewData?.progressExperience)
       ? Math.min(Math.max(previewData.progressExperience, 0), 1)
       : 0;
-    const progressText =
+    const progressTextRaw =
       typeof previewData?.progressExperienceText === 'string' &&
       previewData.progressExperienceText.trim()
         ? previewData.progressExperienceText.trim()
         : '0 of 0';
+    const normalizedProgressText =
+      typeof progressTextRaw === 'string' ? progressTextRaw.trim() : '';
     const earnedCount = Number(previewData?.progressExperienceEarned);
     const totalCount = Number(previewData?.progressExperienceTotal);
     progressElement.style.setProperty('--progress-value', progressValue);
     progressElement.setAttribute('aria-valuemin', '0');
+    let resolvedProgressLabel = '';
+
     if (Number.isFinite(earnedCount) && Number.isFinite(totalCount) && totalCount > 0) {
-      const clampedEarned = Math.max(0, Math.min(earnedCount, totalCount));
-      progressElement.setAttribute('aria-valuemax', `${Math.round(totalCount)}`);
-      progressElement.setAttribute('aria-valuenow', `${Math.round(clampedEarned)}`);
+      const roundedTotal = Math.max(0, Math.round(totalCount));
+      const clampedEarned = Math.max(0, Math.min(Math.round(earnedCount), roundedTotal));
+      progressElement.setAttribute('aria-valuemax', `${roundedTotal}`);
+      progressElement.setAttribute('aria-valuenow', `${clampedEarned}`);
+      resolvedProgressLabel = `${clampedEarned} / ${roundedTotal} Battles Won`;
     } else {
       progressElement.setAttribute('aria-valuemax', '100');
       progressElement.setAttribute('aria-valuenow', `${Math.round(progressValue * 100)}`);
+      if (normalizedProgressText.includes(' of ')) {
+        resolvedProgressLabel = `${normalizedProgressText.replace(' of ', ' / ')} Battles Won`;
+      } else if (normalizedProgressText) {
+        resolvedProgressLabel = normalizedProgressText;
+      }
     }
-    const ariaText = progressText.includes(' of ')
-      ? `${progressText} experience`
-      : progressText;
+    const ariaText = resolvedProgressLabel || normalizedProgressText || 'Battles Won';
     progressElement.setAttribute('aria-valuetext', ariaText);
   }
 

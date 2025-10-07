@@ -622,6 +622,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const normalizeSpritePath = (path) => {
+    if (typeof path !== 'string') {
+      return '';
+    }
+
+    const sanitized = sanitizeHeroSpritePath(path.trim());
+    if (!sanitized) {
+      return '';
+    }
+
+    return sanitized.replace(/[?#].*$/, '').toLowerCase();
+  };
+
   const getCurrentHeroSprite = () => {
     if (heroImg && typeof heroImg.src === 'string' && heroImg.src) {
       return sanitizeHeroSpritePath(heroImg.src);
@@ -661,6 +674,23 @@ document.addEventListener('DOMContentLoaded', () => {
       resolveAbsoluteSpritePath(HERO_LEVEL_2_SRC) || HERO_LEVEL_2_SRC;
 
     return sanitizeHeroSpritePath(fallback);
+  };
+
+  const isHeroAtInitialEvolutionStage = () => {
+    const currentSprite = normalizeSpritePath(getCurrentHeroSprite());
+    if (!currentSprite) {
+      return false;
+    }
+
+    const baseSprite = normalizeSpritePath(
+      resolveAbsoluteSpritePath(HERO_LEVEL_1_SRC) || HERO_LEVEL_1_SRC
+    );
+
+    if (baseSprite && currentSprite === baseSprite) {
+      return true;
+    }
+
+    return /_evolution_1(?:[^0-9]|$)/.test(currentSprite);
   };
 
   const clearEvolutionTimers = () => {
@@ -3119,6 +3149,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     battleGoalsMet = goalsAchieved;
+
+    if (win && !hasPendingLevelUpReward) {
+      const resolvedBattleLevel = resolveBattleLevelForExperience();
+      const isInitialLevel =
+        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel <= 1;
+      const noExperienceRequirement = levelExperienceRequirement <= 0;
+      if (
+        isInitialLevel &&
+        noExperienceRequirement &&
+        !rewardAnimationPlayed &&
+        isHeroAtInitialEvolutionStage()
+      ) {
+        hasPendingLevelUpReward = true;
+        rewardAnimationPlayed = false;
+      }
+    }
 
     updateNextMissionButton(win);
 

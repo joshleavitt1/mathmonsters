@@ -19,23 +19,65 @@
   <body class="home-page">
     <main class="home app-safe-area">
       <section class="home__content" aria-live="polite">
-        <div class="home__identity">
-          <div class="stat-box home__stat-box">
-            <p class="name" data-hero-name>Shellfin</p>
-            <p class="home__stat-box-level" data-hero-level>Level 2</p>
+        <div class="home__top">
+          <div class="home__gem-box" aria-live="polite">
+            <img
+              class="home__gem-icon"
+              src="../images/complete/gem.png"
+              alt=""
+              aria-hidden="true"
+            />
+            <p class="home__gem-text">
+              <span class="home__gem-value" data-hero-gems>0</span>
+              <span class="home__gem-label">Gems</span>
+            </p>
           </div>
         </div>
+
+        <div class="home__identity">
+          <p class="home__hero-name" data-hero-name>Shellfin</p>
+          <p class="home__hero-level" data-hero-level>Level 2</p>
+          <div
+            class="progress home__progress"
+            role="progressbar"
+            aria-label="Level progress"
+            aria-valuemin="0"
+            aria-valuemax="4"
+            aria-valuenow="0"
+            data-battle-progress
+          >
+            <div class="progress__fill home__progress-fill" aria-hidden="true"></div>
+          </div>
+        </div>
+
         <img
           class="home__hero-sprite"
           src="../images/hero/shellfin_evolution_2.png"
           alt="Shellfin ready for the next adventure"
+          data-hero-sprite
         />
-        <img
-          class="home__sword"
-          src="../images/home/sword.png"
-          alt="Forged sword unlocked for the next quest"
-          data-battle-trigger
-        />
+
+        <div class="home__actions">
+          <a
+            class="home__action"
+            href="./battle.html"
+            data-battle-trigger
+            aria-label="Start next battle"
+          >
+            <img
+              class="home__action-image"
+              src="../images/home/sword.png"
+              alt="Forged sword unlocked for the next quest"
+            />
+          </a>
+          <a class="home__action" href="#" aria-label="Visit the shop">
+            <img
+              class="home__action-image"
+              src="../images/home/shop.png"
+              alt="Shop"
+            />
+          </a>
+        </div>
       </section>
     </main>
     <script>
