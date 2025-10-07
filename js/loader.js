@@ -1,5 +1,6 @@
 (() => {
 const STORAGE_KEY_PROGRESS = 'mathmonstersProgress';
+const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
 
 const deriveBaseFromLocation = (fallbackBase) => {
@@ -108,7 +109,69 @@ if (!progressUtils) {
   throw new Error('Progress utilities are not available.');
 }
 
-const { isPlainObject, normalizeExperienceMap, mergeExperienceMaps } = progressUtils;
+const { isPlainObject, normalizeExperienceMap, mergeExperienceMaps } =
+  progressUtils;
+
+const readStoredPlayerProfile = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const storage = window.sessionStorage;
+    if (!storage) {
+      return null;
+    }
+
+    const raw = storage.getItem(PLAYER_PROFILE_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (error) {
+    console.warn('Stored player profile unavailable in loader.', error);
+    return null;
+  }
+};
+
+const mergePlayerWithStoredProfile = (player, storedProfile) => {
+  if (!storedProfile || typeof storedProfile !== 'object') {
+    return player;
+  }
+
+  const nextPlayer =
+    player && typeof player === 'object' ? { ...player } : {};
+
+  const storedHero = isPlainObject(storedProfile.hero)
+    ? storedProfile.hero
+    : null;
+
+  if (storedHero) {
+    nextPlayer.hero = { ...storedHero };
+  }
+
+  if (!nextPlayer.id && typeof storedProfile.id === 'string') {
+    nextPlayer.id = storedProfile.id;
+  }
+
+  if (
+    isPlainObject(storedProfile.battleVariables) &&
+    !isPlainObject(nextPlayer.battleVariables)
+  ) {
+    nextPlayer.battleVariables = { ...storedProfile.battleVariables };
+  }
+
+  if (
+    isPlainObject(storedProfile.battleLevel) &&
+    !isPlainObject(nextPlayer.battleLevel)
+  ) {
+    nextPlayer.battleLevel = { ...storedProfile.battleLevel };
+  }
+
+  return nextPlayer;
+};
 
 const extractPlayerData = (rawPlayerData) => {
   if (!rawPlayerData || typeof rawPlayerData !== 'object') {
@@ -842,13 +905,20 @@ const syncRemoteBattleLevel = (playerData) => {
     const localPlayerData =
       playerJson && typeof playerJson === 'object' ? playerJson : {};
 
+    const storedPlayerProfile = readStoredPlayerProfile();
+
     let basePlayer = extractPlayerData(localPlayerData);
+    basePlayer = mergePlayerWithStoredProfile(basePlayer, storedPlayerProfile);
 
     try {
       const remotePlayerData = await fetchPlayerProfile();
       if (remotePlayerData) {
         syncRemoteBattleLevel(remotePlayerData);
-        basePlayer = remotePlayerData;
+        const extractedRemotePlayer = extractPlayerData(remotePlayerData);
+        basePlayer = mergePlayerWithStoredProfile(
+          extractedRemotePlayer,
+          storedPlayerProfile
+        );
       }
     } catch (error) {
       console.warn('Unable to load remote player profile for battle.', error);

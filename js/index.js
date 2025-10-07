@@ -2,6 +2,7 @@ const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
+const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
@@ -2016,6 +2017,53 @@ const readStoredProgress = () => {
   }
 };
 
+const readStoredPlayerProfile = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const storage = window.sessionStorage;
+    if (!storage) {
+      return null;
+    }
+
+    const raw = storage.getItem(PLAYER_PROFILE_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (error) {
+    console.warn('Stored player profile unavailable.', error);
+    return null;
+  }
+};
+
+const persistPlayerProfile = (player) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    const storage = window.sessionStorage;
+    if (!storage) {
+      return;
+    }
+
+    if (!player || typeof player !== 'object') {
+      storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+      return;
+    }
+
+    const serialized = JSON.stringify(player);
+    storage.setItem(PLAYER_PROFILE_STORAGE_KEY, serialized);
+  } catch (error) {
+    console.warn('Unable to persist player profile.', error);
+  }
+};
+
 const setVisitedFlag = (storage, label) => {
   if (!storage) {
     return;
@@ -2076,6 +2124,7 @@ const preloadLandingAssets = async () => {
     ]);
 
     let remotePlayerData = null;
+    const storedPlayerProfile = readStoredPlayerProfile();
     try {
       remotePlayerData = await fetchPlayerProfile();
     } catch (error) {
@@ -2087,7 +2136,8 @@ const preloadLandingAssets = async () => {
       syncRemoteBattleLevel(remotePlayerData);
     }
 
-    const chosenPlayerData = remotePlayerData || fallbackPlayerData;
+    const chosenPlayerData =
+      remotePlayerData || fallbackPlayerData || storedPlayerProfile;
 
     const { levels, player, preview } = determineBattlePreview(
       levelsData,
@@ -2100,6 +2150,8 @@ const preloadLandingAssets = async () => {
         : { levels };
     results.playerData = player;
     results.previewData = preview;
+
+    persistPlayerProfile(player);
 
     if (levels.length) {
       levels.forEach((level) => {
@@ -2197,6 +2249,9 @@ const initLandingInteractions = async (preloadedData = {}) => {
     try {
       let levelsData = preloadedData?.levelsData ?? null;
       let playerData = preloadedData?.playerData ?? null;
+      if (!playerData) {
+        playerData = readStoredPlayerProfile();
+      }
       let previewData = preloadedData?.previewData ?? null;
       let resolvedLevels = Array.isArray(preloadedData?.levelsData?.levels)
         ? preloadedData.levelsData.levels
@@ -2264,6 +2319,8 @@ const initLandingInteractions = async (preloadedData = {}) => {
         isLevelOneLanding = detectLevelOneLandingState();
         battleButton = getActiveBattleButton();
       }
+
+      persistPlayerProfile(playerData);
     } catch (error) {
       console.error('Failed to load battle preview', error);
     }
