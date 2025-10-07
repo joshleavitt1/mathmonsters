@@ -911,9 +911,14 @@ body.is-reward-active .reward-overlay {
   }
 }
 
-.battle-complete-card {
+.battle-complete-card { 
   gap: 24px;
   align-items: stretch;
+}
+
+.battle-complete-card .battle-stat .stat-label,
+.battle-complete-card .battle-stat .stat-value {
+  margin: 0;
 }
 
 .battle-complete-card__title {
