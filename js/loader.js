@@ -290,6 +290,203 @@ const normalizeBattleLevel = (value) => {
   return null;
 };
 
+const normalizeHeroIdentifier = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed.toLowerCase() : null;
+};
+
+const resolveHeroAssetLevel = (value) => {
+  const normalized = normalizeBattleLevel(value);
+  if (normalized === null) {
+    return null;
+  }
+
+  const floored = Math.floor(normalized);
+  return floored >= 1 ? floored : 1;
+};
+
+const updateHeroAssetForLevel = (path, heroId, level) => {
+  if (typeof path !== 'string') {
+    return path;
+  }
+
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return path;
+  }
+
+  if (!heroId || !Number.isFinite(level)) {
+    return sanitizeHeroSpritePath(trimmed);
+  }
+
+  const safeLevel = Math.max(1, Math.floor(level));
+  const pattern = new RegExp(
+    `(${heroId}_(?:evolution|attack)_)(\\d+)((?:\\.[a-z0-9]+)?)(?=[?#]|$)`,
+    'gi'
+  );
+
+  const replaced = trimmed.replace(pattern, (match, prefix, _, extension = '') => {
+    return `${prefix}${safeLevel}${extension || ''}`;
+  });
+
+  return sanitizeHeroSpritePath(replaced);
+};
+
+const applyAssetsForHeroLevel = (hero, level, fallbackHeroId = null) => {
+  if (!isPlainObject(hero)) {
+    return;
+  }
+
+  const resolvedLevel = resolveHeroAssetLevel(level);
+  if (resolvedLevel === null) {
+    return;
+  }
+
+  const heroId =
+    normalizeHeroIdentifier(hero.id) ?? normalizeHeroIdentifier(fallbackHeroId);
+
+  if (!heroId) {
+    return;
+  }
+
+  if (typeof hero.sprite === 'string') {
+    hero.sprite = updateHeroAssetForLevel(hero.sprite, heroId, resolvedLevel);
+  }
+
+  if (typeof hero.attackSprite === 'string') {
+    hero.attackSprite = updateHeroAssetForLevel(
+      hero.attackSprite,
+      heroId,
+      resolvedLevel
+    );
+  }
+
+  if (isPlainObject(hero.attackSprites)) {
+    Object.keys(hero.attackSprites).forEach((key) => {
+      const spritePath = hero.attackSprites[key];
+      if (typeof spritePath === 'string') {
+        hero.attackSprites[key] = updateHeroAssetForLevel(
+          spritePath,
+          heroId,
+          resolvedLevel
+        );
+      }
+    });
+  }
+};
+
+const determinePlayerHeroLevel = (player) => {
+  if (!isPlainObject(player)) {
+    return null;
+  }
+
+  const progress = isPlainObject(player.progress) ? player.progress : null;
+
+  const progressBattleLevel = resolveHeroAssetLevel(progress?.battleLevel);
+  if (progressBattleLevel !== null) {
+    return progressBattleLevel;
+  }
+
+  const currentMathType =
+    typeof player.currentMathType === 'string'
+      ? player.currentMathType.trim()
+      : '';
+
+  if (currentMathType && progress) {
+    const mathProgress = progress[currentMathType];
+    if (isPlainObject(mathProgress)) {
+      const mathLevel = resolveHeroAssetLevel(mathProgress.currentLevel);
+      if (mathLevel !== null) {
+        return mathLevel;
+      }
+
+      const mathBattle = resolveHeroAssetLevel(mathProgress.currentBattle);
+      if (mathBattle !== null) {
+        return mathBattle;
+      }
+    }
+  }
+
+  const currentLevel = resolveHeroAssetLevel(player.currentLevel);
+  if (currentLevel !== null) {
+    return currentLevel;
+  }
+
+  if (progress) {
+    let highest = null;
+    Object.values(progress).forEach((entry) => {
+      if (!isPlainObject(entry)) {
+        return;
+      }
+
+      const entryLevel = resolveHeroAssetLevel(entry.currentLevel);
+      if (entryLevel !== null) {
+        highest = highest === null ? entryLevel : Math.max(highest, entryLevel);
+      }
+
+      const entryBattle = resolveHeroAssetLevel(entry.currentBattle);
+      if (entryBattle !== null) {
+        highest =
+          highest === null ? entryBattle : Math.max(highest, entryBattle);
+      }
+    });
+
+    if (highest !== null) {
+      return highest;
+    }
+  }
+
+  return null;
+};
+
+const applyHeroLevelAssets = (player) => {
+  if (!isPlainObject(player)) {
+    return;
+  }
+
+  const baseHero = isPlainObject(player.hero) ? player.hero : null;
+  const baseHeroId = normalizeHeroIdentifier(baseHero?.id);
+  const heroLevel = determinePlayerHeroLevel(player);
+
+  if (baseHero && heroLevel !== null) {
+    applyAssetsForHeroLevel(baseHero, heroLevel, baseHeroId);
+  }
+
+  const battleLevelMap = isPlainObject(player.battleLevel)
+    ? player.battleLevel
+    : null;
+
+  if (!battleLevelMap) {
+    return;
+  }
+
+  Object.entries(battleLevelMap).forEach(([levelKey, levelData]) => {
+    if (!isPlainObject(levelData)) {
+      return;
+    }
+
+    const levelHero = isPlainObject(levelData.hero) ? levelData.hero : null;
+    if (!levelHero) {
+      return;
+    }
+
+    const levelNumber =
+      resolveHeroAssetLevel(levelData.battleLevel) ??
+      resolveHeroAssetLevel(levelKey) ??
+      heroLevel;
+
+    if (levelNumber === null) {
+      return;
+    }
+
+    applyAssetsForHeroLevel(levelHero, levelNumber, baseHeroId);
+  });
+};
+
 const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   if (!source || typeof source !== 'object') {
     return accumulator;
@@ -922,6 +1119,12 @@ const syncRemoteBattleLevel = (playerData) => {
       }
     } catch (error) {
       console.warn('Unable to load remote player profile for battle.', error);
+    }
+
+    applyHeroLevelAssets(basePlayer);
+    const localPlayer = extractPlayerData(localPlayerData);
+    if (localPlayer) {
+      applyHeroLevelAssets(localPlayer);
     }
 
     const { levels: derivedLevels } = deriveMathTypeLevels(

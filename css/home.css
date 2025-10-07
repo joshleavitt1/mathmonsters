@@ -119,9 +119,9 @@ body.home-page {
 
 .home__hero-sprite {
   width: 100%;
-  max-width: 320px;
+  max-width: 300px;
   height: auto;
-  max-height: 320px;
+  max-height: 300px;
   object-fit: contain;
   margin: 0 auto;
   animation: hero-swim 4.5s ease-in-out 0.6s infinite;

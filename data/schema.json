@@ -24,11 +24,12 @@
         },
         "hero": {
           "type": "object",
-          "required": ["id", "name", "sprite"],
+          "required": ["id", "name", "sprite", "attackSprite"],
           "properties": {
             "id": { "type": "string" },
             "name": { "type": "string" },
-            "sprite": { "type": "string" }
+            "sprite": { "type": "string" },
+            "attackSprite": { "type": "string" }
           }
         },
         "currentMathType": {
@@ -63,13 +64,13 @@
           "patternProperties": {
             ".+": {
               "type": "object",
-              "required": ["currentLevel", "totalLevels"],
+              "required": ["currentLevel", "currentBattle"],
               "properties": {
                 "currentLevel": {
                   "type": "integer",
                   "minimum": 1
                 },
-                "totalLevels": {
+                "currentBattle": {
                   "type": "integer",
                   "minimum": 1
                 }
