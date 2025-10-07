@@ -17,6 +17,14 @@ const HERO_EVOLUTION_CARD_REVEAL_DELAY_MS = 2000;
 const REWARD_CARD_CLOSE_DURATION_MS = 1000;
 const REWARD_SPRITE_SWAP_DURATION_MS = 400;
 const REWARD_SPRITE_HOLD_DURATION_MS = 1000;
+const GEM_REWARD_WIN_AMOUNT = 5;
+const GEM_REWARD_LOSS_AMOUNT = 1;
+const GEM_REWARD_INITIAL_PAUSE_MS = 500;
+const GEM_REWARD_CARD_DELAY_MS = 400;
+const GEM_REWARD_PULSE_DURATION_MS = 650;
+const GEM_REWARD_PULSE_COUNT = 3;
+const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
+const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
 const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 
@@ -461,6 +469,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let levelUpAvailable = false;
   let hasPendingLevelUpReward = false;
   let rewardAnimationPlayed = false;
+  let pendingGemReward = null;
+  let gemRewardIntroShown = false;
+  let shouldAdvanceBattleLevel = false;
+  let nextMissionProcessing = false;
   let levelProgressUpdateTimeout = null;
   let levelProgressAnimationTimeout = null;
   let rewardCardButtonHandler = null;
@@ -596,6 +608,254 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardSprite.removeAttribute('role');
     setRewardStage(null);
     clearRewardGlowStyles();
+  };
+
+  const resolveProgressRoot = () => {
+    if (
+      window.preloadedData &&
+      window.preloadedData.player &&
+      isPlainObject(window.preloadedData.player.progress)
+    ) {
+      return window.preloadedData.player.progress;
+    }
+    if (isPlainObject(window.preloadedData?.progress)) {
+      return window.preloadedData.progress;
+    }
+    return null;
+  };
+
+  const resolveMathTypeKey = () => {
+    const candidates = [
+      window.preloadedData?.level?.mathType,
+      window.preloadedData?.level?.mathTypeKey,
+      window.preloadedData?.battle?.mathType,
+      window.preloadedData?.battle?.mathTypeKey,
+      window.preloadedData?.player?.currentMathType,
+      window.preloadedData?.player?.mathType,
+      window.preloadedData?.progress?.mathType,
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string') {
+        const trimmed = candidate.trim();
+        if (trimmed) {
+          return trimmed;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const findMathProgressKey = (candidateKey) => {
+    const progressRoot = resolveProgressRoot();
+    const normalizedCandidate =
+      typeof candidateKey === 'string' && candidateKey.trim()
+        ? candidateKey.trim().toLowerCase()
+        : '';
+
+    if (progressRoot) {
+      const keys = Object.keys(progressRoot);
+
+      if (normalizedCandidate) {
+        const directMatch = keys.find((key) => {
+          if (typeof key !== 'string') {
+            return false;
+          }
+          return key.trim().toLowerCase() === normalizedCandidate;
+        });
+
+        if (directMatch) {
+          return directMatch;
+        }
+      }
+
+      const fallback = keys.find((key) => isPlainObject(progressRoot[key]));
+      if (fallback) {
+        return fallback;
+      }
+    }
+
+    if (typeof candidateKey === 'string' && candidateKey.trim()) {
+      return candidateKey.trim();
+    }
+
+    return normalizedCandidate || null;
+  };
+
+  const resolveBattleLevels = () =>
+    Array.isArray(window.preloadedData?.levels)
+      ? window.preloadedData.levels.filter(
+          (level) => level && typeof level === 'object'
+        )
+      : [];
+
+  const findLevelByBattleNumber = (battleLevelNumber) => {
+    if (!Number.isFinite(battleLevelNumber)) {
+      return null;
+    }
+
+    const directLevel = window.preloadedData?.level;
+    const directLevelNumber = Number(directLevel?.battleLevel ?? directLevel?.level);
+    if (
+      directLevel &&
+      typeof directLevel === 'object' &&
+      Number.isFinite(directLevelNumber) &&
+      directLevelNumber === battleLevelNumber
+    ) {
+      return directLevel;
+    }
+
+    const levelsList = resolveBattleLevels();
+    return (
+      levelsList.find((level) => {
+        const candidateNumber = Number(level?.battleLevel ?? level?.level);
+        return Number.isFinite(candidateNumber) && candidateNumber === battleLevelNumber;
+      }) || null
+    );
+  };
+
+  const getBattleCountForLevelNumber = (battleLevelNumber) => {
+    const levelData = findLevelByBattleNumber(battleLevelNumber);
+    if (!levelData || typeof levelData !== 'object') {
+      return 1;
+    }
+
+    const entries = Array.isArray(levelData.battles)
+      ? levelData.battles.filter(Boolean)
+      : [];
+    return entries.length > 0 ? entries.length : 1;
+  };
+
+  const readMathProgressState = () => {
+    const mathTypeCandidate = resolveMathTypeKey();
+    const mathKey = findMathProgressKey(mathTypeCandidate);
+    const progressRoot = resolveProgressRoot();
+    const entry =
+      progressRoot && mathKey && isPlainObject(progressRoot[mathKey])
+        ? progressRoot[mathKey]
+        : null;
+
+    const battleLevelNumber = getResolvedBattleLevel();
+    const battleCount = getBattleCountForLevelNumber(battleLevelNumber);
+    const storedBattleTotal = Number(entry?.currentLevel);
+    const storedBattleCurrent = Number(entry?.currentBattle);
+    const resolvedBattleTotal = Number.isFinite(storedBattleTotal) && storedBattleTotal > 0
+      ? Math.max(Math.round(storedBattleTotal), 1)
+      : battleCount > 0
+      ? battleCount
+      : 1;
+    let resolvedBattleCurrent = Number.isFinite(storedBattleCurrent) && storedBattleCurrent > 0
+      ? Math.round(storedBattleCurrent)
+      : 1;
+
+    if (resolvedBattleCurrent > resolvedBattleTotal) {
+      resolvedBattleCurrent = resolvedBattleTotal;
+    }
+
+    return {
+      mathKey,
+      mathTypeCandidate,
+      entry,
+      battleLevelNumber,
+      battleCount: battleCount > 0 ? battleCount : 1,
+      currentBattle: resolvedBattleCurrent,
+      currentLevelTotal: resolvedBattleTotal,
+    };
+  };
+
+  const computeNextMathProgressOnWin = () => {
+    const state = readMathProgressState();
+    const effectiveKey = state.mathKey || state.mathTypeCandidate;
+
+    if (!effectiveKey) {
+      return null;
+    }
+
+    const totalRequired = Math.max(state.currentLevelTotal, state.battleCount);
+    let nextBattle = state.currentBattle + 1;
+    let nextLevelTotal = Math.max(state.currentLevelTotal, totalRequired);
+    let advanceLevel = false;
+    let nextBattleLevelNumber = state.battleLevelNumber;
+
+    if (nextBattle > totalRequired) {
+      advanceLevel = true;
+      nextBattle = 1;
+      nextBattleLevelNumber = Number.isFinite(state.battleLevelNumber)
+        ? state.battleLevelNumber + 1
+        : state.battleLevelNumber;
+      const nextLevelCount = getBattleCountForLevelNumber(nextBattleLevelNumber);
+      nextLevelTotal = nextLevelCount > 0 ? nextLevelCount : nextLevelTotal;
+    }
+
+    return {
+      mathKey: effectiveKey,
+      nextBattle,
+      nextLevelTotal,
+      advanceLevel,
+      nextBattleLevelNumber,
+      totalRequired,
+    };
+  };
+
+  const readCurrentGemTotal = () => {
+    const playerGemValue = Number(window.preloadedData?.player?.gems);
+    if (Number.isFinite(playerGemValue)) {
+      return Math.max(0, Math.round(playerGemValue));
+    }
+
+    const progressRoot = resolveProgressRoot();
+    if (progressRoot && typeof progressRoot.gems !== 'undefined') {
+      const progressGemValue = Number(progressRoot.gems);
+      if (Number.isFinite(progressGemValue)) {
+        return Math.max(0, Math.round(progressGemValue));
+      }
+    }
+
+    return 0;
+  };
+
+  const persistGemTotal = (total) => {
+    const safeTotal = Math.max(0, Math.round(Number(total) || 0));
+    persistProgress({ gems: safeTotal });
+
+    if (window.preloadedData) {
+      if (window.preloadedData.progress && typeof window.preloadedData.progress === 'object') {
+        window.preloadedData.progress.gems = safeTotal;
+      }
+      if (
+        window.preloadedData.player &&
+        typeof window.preloadedData.player === 'object'
+      ) {
+        window.preloadedData.player.gems = safeTotal;
+        if (
+          window.preloadedData.player.progress &&
+          typeof window.preloadedData.player.progress === 'object'
+        ) {
+          window.preloadedData.player.progress.gems = safeTotal;
+        }
+      }
+    }
+
+    return safeTotal;
+  };
+
+  const awardGemReward = (amount) => {
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return readCurrentGemTotal();
+    }
+
+    const currentTotal = readCurrentGemTotal();
+    return currentTotal + Math.max(0, Math.round(numericAmount));
+  };
+
+  const markGemRewardIntroSeen = () => {
+    if (gemRewardIntroShown) {
+      return;
+    }
+    gemRewardIntroShown = true;
+    persistProgress({ gemRewardIntroShown: true });
   };
 
   const resolveAbsoluteSpritePath = (path) => {
@@ -1471,6 +1731,183 @@ document.addEventListener('DOMContentLoaded', () => {
 
   disableRewardSpriteInteraction();
 
+  const playGemRewardAnimation = (rewardConfig = {}) =>
+    new Promise((resolve) => {
+      const fallbackNavigateHome = () => {
+        if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
+          advanceBattleLevel();
+        }
+        resetRewardOverlay();
+        resolve();
+        window.location.href = '../index.html';
+      };
+
+      if (!rewardOverlay || !rewardSprite || !rewardCard || !rewardCardButton) {
+        fallbackNavigateHome();
+        return;
+      }
+
+      clearRewardCardDisplayTimeout();
+      clearRewardAnimation();
+      hideRewardCard();
+
+      rewardOverlay.classList.add('reward-overlay--visible');
+      rewardOverlay.setAttribute('aria-hidden', 'false');
+      document.body?.classList.add('is-reward-active');
+      disableRewardSpriteInteraction();
+
+      const rewardAmountRaw = Number(rewardConfig?.amount);
+      const rewardAmount = Number.isFinite(rewardAmountRaw)
+        ? Math.max(0, Math.round(rewardAmountRaw))
+        : GEM_REWARD_WIN_AMOUNT;
+      const isFirstGemReward = rewardConfig?.isFirstGemReward === true;
+
+      pendingGemReward = null;
+      updateNextMissionButton(true);
+
+      let gemRevealed = false;
+      let cardDisplayed = false;
+      let fallbackTimeout = null;
+
+      const cleanup = () => {
+        rewardSprite.removeEventListener('animationend', handleChestPopEnd);
+        rewardSprite.removeEventListener('animationend', handlePulseEnd);
+        rewardSprite.removeEventListener('animationend', handleGemPopEnd);
+        rewardSprite.removeEventListener('animationiteration', handlePulseIteration);
+        if (fallbackTimeout !== null) {
+          window.clearTimeout(fallbackTimeout);
+          fallbackTimeout = null;
+        }
+      };
+
+      const finish = () => {
+        cleanup();
+        resolve();
+      };
+
+      const navigateHome = () => {
+        if (isFirstGemReward) {
+          markGemRewardIntroSeen();
+        }
+        if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
+          advanceBattleLevel();
+        }
+        resetRewardOverlay();
+        finish();
+        window.location.href = '../index.html';
+      };
+
+      const displayRewardCopy = () => {
+        if (cardDisplayed) {
+          return;
+        }
+        cardDisplayed = true;
+        const cardText = isFirstGemReward
+          ? 'Wow! You earned 5 gems. Let’s see what cool stuff you can buy in the store!'
+          : `Wow! You earned ${rewardAmount} gems.`;
+        const displayed = displayRewardCard({
+          text: cardText,
+          buttonText: 'Continue',
+          onClick: navigateHome,
+        });
+        if (!displayed) {
+          navigateHome();
+        }
+      };
+
+      const showRewardCard = () => {
+        window.setTimeout(displayRewardCopy, GEM_REWARD_CARD_DELAY_MS);
+      };
+
+      const handleGemPopEnd = (event) => {
+        if (!event || event.animationName !== 'reward-overlay-egg-pop') {
+          return;
+        }
+        rewardSprite.removeEventListener('animationend', handleGemPopEnd);
+        showRewardCard();
+      };
+
+      const revealGem = () => {
+        if (gemRevealed) {
+          return;
+        }
+        gemRevealed = true;
+        if (fallbackTimeout !== null) {
+          window.clearTimeout(fallbackTimeout);
+          fallbackTimeout = null;
+        }
+        rewardSprite.classList.remove('reward-overlay__image--chest-pulse');
+        rewardSprite.style.removeProperty('--reward-chest-pulse-duration');
+        rewardSprite.style.removeProperty('--reward-chest-pulse-count');
+        rewardSprite.src = GEM_REWARD_GEM_SRC;
+        rewardSprite.alt = 'Gem reward';
+        setRewardStage('gem');
+        void rewardSprite.offsetWidth;
+        rewardSprite.classList.add('reward-overlay__image--potion-pop');
+        rewardSprite.addEventListener('animationend', handleGemPopEnd, { once: true });
+      };
+
+      const handlePulseEnd = (event) => {
+        if (!event || event.animationName !== 'reward-overlay-chest-pulse') {
+          return;
+        }
+        rewardSprite.removeEventListener('animationend', handlePulseEnd);
+        revealGem();
+      };
+
+      const handlePulseIteration = () => {};
+
+      const startPulses = () => {
+        rewardSprite.classList.remove('reward-overlay__image--chest-pop');
+        void rewardSprite.offsetWidth;
+        rewardSprite.style.setProperty(
+          '--reward-chest-pulse-duration',
+          `${GEM_REWARD_PULSE_DURATION_MS}ms`
+        );
+        rewardSprite.style.setProperty(
+          '--reward-chest-pulse-count',
+          `${GEM_REWARD_PULSE_COUNT}`
+        );
+        rewardSprite.classList.add('reward-overlay__image--chest-pulse');
+        rewardSprite.addEventListener('animationend', handlePulseEnd);
+        rewardSprite.addEventListener('animationiteration', handlePulseIteration);
+      };
+
+      const handleChestPopEnd = (event) => {
+        if (!event || event.animationName !== 'reward-overlay-egg-pop') {
+          return;
+        }
+        rewardSprite.removeEventListener('animationend', handleChestPopEnd);
+        window.setTimeout(startPulses, GEM_REWARD_INITIAL_PAUSE_MS);
+      };
+
+      const triggerFallback = () => {
+        revealGem();
+        window.setTimeout(displayRewardCopy, GEM_REWARD_CARD_DELAY_MS);
+      };
+
+      rewardSprite.src = GEM_REWARD_CHEST_SRC;
+      rewardSprite.alt = 'Treasure chest reward';
+      setRewardStage('chest');
+      rewardSprite.style.removeProperty('--reward-chest-pulse-duration');
+      rewardSprite.style.removeProperty('--reward-chest-pulse-count');
+      rewardSprite.classList.remove('reward-overlay__image--visible');
+      rewardSprite.classList.remove('reward-overlay__image--chest-pop');
+      rewardSprite.classList.remove('reward-overlay__image--chest-pulse');
+      rewardSprite.classList.remove('reward-overlay__image--potion-pop');
+      void rewardSprite.offsetWidth;
+      rewardSprite.classList.add('reward-overlay__image--visible');
+      rewardSprite.classList.add('reward-overlay__image--chest-pop');
+      rewardSprite.addEventListener('animationend', handleChestPopEnd, { once: true });
+
+      const totalFallbackDuration =
+        GEM_REWARD_INITIAL_PAUSE_MS + GEM_REWARD_PULSE_DURATION_MS * GEM_REWARD_PULSE_COUNT + 1200;
+      fallbackTimeout = window.setTimeout(() => {
+        cleanup();
+        triggerFallback();
+      }, totalFallbackDuration);
+    });
+
   const updateNextMissionButton = (win = true) => {
     if (!nextMissionBtn) {
       return;
@@ -1482,7 +1919,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    nextMissionBtn.textContent = 'Claim Reward';
+    const useClaimLabel = !pendingGemReward || pendingGemReward.useClaimLabel === true;
+    nextMissionBtn.textContent = useClaimLabel ? 'Claim Reward' : 'Continue';
     nextMissionBtn.dataset.action = 'next';
   };
 
@@ -1620,6 +2058,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (value === undefined) {
         delete result[key];
+        return;
+      }
+
+      if (isPlainObject(value)) {
+        const baseValue = isPlainObject(result[key]) ? result[key] : {};
+        result[key] = applyProgressUpdate(baseValue, value);
         return;
       }
 
@@ -2163,6 +2607,7 @@ document.addEventListener('DOMContentLoaded', () => {
     persistProgress({ battleLevel: nextLevel });
     currentBattleLevel = nextLevel;
     battleLevelAdvanced = true;
+    shouldAdvanceBattleLevel = false;
   }
 
   function loadData() {
@@ -2171,6 +2616,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const heroData = data.hero ?? {};
     const monsterData = data.monster ?? {};
     const progressData = data.progress ?? data.player?.progress ?? {};
+    gemRewardIntroShown = Boolean(progressData?.gemRewardIntroShown);
     const experienceMap = normalizeExperienceMap(progressData?.experience);
     if (isPlainObject(data.progress)) {
       if (Object.keys(experienceMap).length > 0) {
@@ -3198,8 +3644,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     battleGoalsMet = goalsAchieved;
 
+    const resolvedBattleLevel = resolveBattleLevelForExperience();
+    const gemRewardAmount = win ? GEM_REWARD_WIN_AMOUNT : GEM_REWARD_LOSS_AMOUNT;
+    const updatedGemTotal = awardGemReward(gemRewardAmount);
+    persistGemTotal(updatedGemTotal);
+
+    if (win) {
+      const mathProgressUpdate = computeNextMathProgressOnWin();
+      shouldAdvanceBattleLevel = Boolean(mathProgressUpdate?.advanceLevel);
+
+      if (mathProgressUpdate && mathProgressUpdate.mathKey) {
+        persistProgress({
+          [mathProgressUpdate.mathKey]: {
+            currentBattle: mathProgressUpdate.nextBattle,
+            currentLevel: mathProgressUpdate.nextLevelTotal,
+          },
+        });
+      }
+    } else {
+      shouldAdvanceBattleLevel = false;
+    }
+
+    if (win) {
+      const isLevelTwoPlus =
+        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel >= 2;
+      if (isLevelTwoPlus) {
+        pendingGemReward = {
+          amount: gemRewardAmount,
+          totalAfter: updatedGemTotal,
+          useClaimLabel: !gemRewardIntroShown,
+          isFirstGemReward: !gemRewardIntroShown,
+        };
+      } else {
+        pendingGemReward = null;
+      }
+    } else {
+      pendingGemReward = null;
+    }
+
     if (win && !hasPendingLevelUpReward) {
-      const resolvedBattleLevel = resolveBattleLevelForExperience();
       const isInitialLevel =
         Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel <= 1;
       const noExperienceRequirement = levelExperienceRequirement <= 0;
@@ -3258,6 +3741,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (nextMissionBtn) {
     nextMissionBtn.addEventListener('click', () => {
+      if (nextMissionProcessing) {
+        return;
+      }
+
       if (hasPendingLevelUpReward && !rewardAnimationPlayed) {
         rewardAnimationPlayed = true;
         hasPendingLevelUpReward = false;
@@ -3266,16 +3753,36 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (pendingGemReward) {
+        nextMissionProcessing = true;
+        nextMissionBtn.setAttribute('aria-busy', 'true');
+        playGemRewardAnimation(pendingGemReward)
+          .catch((error) => {
+            console.warn('Gem reward animation failed, falling back to navigation.', error);
+            resetRewardOverlay();
+            if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
+              advanceBattleLevel();
+            }
+            window.location.href = '../index.html';
+          })
+          .finally(() => {
+            nextMissionBtn.removeAttribute('aria-busy');
+            nextMissionProcessing = false;
+          });
+        return;
+      }
+
       const action = nextMissionBtn.dataset.action;
       if (action === 'retry') {
         window.location.reload();
-      } else {
-        if (battleGoalsMet && !battleLevelAdvanced) {
-          advanceBattleLevel();
-        }
-        resetRewardOverlay();
-        window.location.href = '../index.html';
+        return;
       }
+
+      if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
+        advanceBattleLevel();
+      }
+      resetRewardOverlay();
+      window.location.href = '../index.html';
     });
   }
 

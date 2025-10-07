@@ -642,6 +642,15 @@ body.is-reward-active .reward-overlay {
   animation: reward-overlay-egg-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.reward-overlay__image--chest-pulse {
+  animation: reward-overlay-chest-pulse
+    var(--reward-chest-pulse-duration, 650ms)
+    cubic-bezier(0.32, 0.75, 0.16, 1)
+    0s
+    var(--reward-chest-pulse-count, 3);
+  animation-fill-mode: forwards;
+}
+
 .reward-overlay__image--hatching {
   animation: reward-overlay-egg-hatch 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
@@ -740,6 +749,28 @@ body.is-reward-active .reward-overlay {
   100% {
     transform: scaleX(var(--reward-direction)) scale(0.7);
     opacity: 0;
+  }
+}
+
+@keyframes reward-overlay-chest-pulse {
+  0% {
+    transform: scaleX(var(--reward-direction)) scale(1);
+  }
+
+  25% {
+    transform: scaleX(var(--reward-direction)) scale(1.12);
+  }
+
+  50% {
+    transform: scaleX(var(--reward-direction)) scale(0.96);
+  }
+
+  75% {
+    transform: scaleX(var(--reward-direction)) scale(1.2);
+  }
+
+  100% {
+    transform: scaleX(var(--reward-direction)) scale(1);
   }
 }
 
