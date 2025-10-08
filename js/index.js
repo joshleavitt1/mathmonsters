@@ -13,6 +13,8 @@ const DEV_RESET_TARGET_MATH_KEY = 'addition';
 const DEV_RESET_TARGET_LEVEL = 2;
 const DEV_RESET_TARGET_BATTLE = 1;
 const DEV_RESET_BUTTON_SELECTOR = '[data-dev-reset-level]';
+const DEV_PLAYER_DATA_BUTTON_SELECTOR = '[data-dev-player-data]';
+const PLAYER_DATA_SOURCE_URL = 'data/player.json';
 
 const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
 const MONSTER_ENTRANCE_DURATION_MS_BASE = 900;
@@ -2551,6 +2553,91 @@ const setupDevResetTool = () => {
   devButton.addEventListener('click', handleReset);
 };
 
+const setupDevPlayerDataTool = () => {
+  const devButton = document.querySelector(DEV_PLAYER_DATA_BUTTON_SELECTOR);
+  if (!devButton) {
+    return;
+  }
+
+  if (devButton.dataset.devPlayerDataBound === 'true') {
+    return;
+  }
+
+  const writeToWindow = (targetWindow, text) => {
+    if (!targetWindow || targetWindow.closed) {
+      return;
+    }
+
+    try {
+      const doc = targetWindow.document;
+      doc.open('text/plain');
+      doc.write(typeof text === 'string' ? text : String(text ?? ''));
+      doc.close();
+    } catch (error) {
+      try {
+        const doc = targetWindow.document;
+        doc.body.textContent = typeof text === 'string' ? text : String(text ?? '');
+      } catch (secondaryError) {
+        // Ignore document write errors.
+      }
+    }
+  };
+
+  const openFallbackWindow = () => {
+    try {
+      window.open(PLAYER_DATA_SOURCE_URL, '_blank');
+    } catch (error) {
+      // Ignore popup failures.
+    }
+  };
+
+  const handleClick = async (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    let viewer = null;
+    try {
+      viewer = window.open('', '_blank', 'noopener=1,noreferrer=1');
+    } catch (error) {
+      viewer = null;
+    }
+
+    if (!viewer) {
+      openFallbackWindow();
+      return;
+    }
+
+    try {
+      viewer.opener = null;
+    } catch (error) {
+      // Ignore failures to clear opener.
+    }
+
+    writeToWindow(viewer, 'Loading player data...');
+
+    try {
+      const response = await fetch(PLAYER_DATA_SOURCE_URL, { cache: 'no-store' });
+      if (!response || !response.ok) {
+        throw new Error(
+          `Request failed with status ${response ? response.status : 'unknown'}.`
+        );
+      }
+
+      const text = await response.text();
+      writeToWindow(viewer, text);
+    } catch (error) {
+      const message =
+        'Unable to load player data.' +
+        (error && error.message ? `\n\n${error.message}` : '');
+      writeToWindow(viewer, message);
+    }
+  };
+
+  devButton.dataset.devPlayerDataBound = 'true';
+  devButton.addEventListener('click', handleClick);
+};
+
 const readStoredPlayerProfile = () => {
   if (typeof window === 'undefined') {
     return null;
@@ -2916,6 +3003,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
   setupSettingsLogout();
   setupDevResetTool();
+  setupDevPlayerDataTool();
 
   updateIntroTimingForLanding({ isLevelOneLanding });
 
