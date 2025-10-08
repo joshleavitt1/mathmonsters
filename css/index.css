@@ -488,9 +488,11 @@ body:not(.is-level-one-landing) .level-one-intro {
   width: min(420px, 100%);
   opacity: 0;
   pointer-events: none;
-  align-items: stretch;
-  text-align: left;
-  gap: clamp(16px, 4vw, 24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: clamp(20px, 5vw, 28px);
   color: var(--text-color-dark, rgba(31, 45, 72, 0.96));
   transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translate3d(
@@ -502,6 +504,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   justify-self: center;
   align-self: end;
   margin-inline: auto;
+  margin-top: auto;
   margin-bottom: 0;
   margin-bottom: var(--viewport-bottom-offset, 0px);
   margin-bottom: calc(
@@ -531,7 +534,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 }
 
 .level-one-intro__card-avatar {
-  align-self: flex-start;
+  align-self: center;
   width: 80px;
   height: 80px;
   object-fit: contain;
@@ -542,7 +545,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   color: inherit;
   font-size: var(--text-size-medium);
   line-height: 1.4;
-  text-align: left;
+  text-align: center;
 }
 
 .level-one-intro__card-button {
