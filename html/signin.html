@@ -17,58 +17,62 @@
     <link rel="stylesheet" href="../css/signin.css" />
   </head>
   <body>
-    <main class="preloader app-safe-area" role="main">
-      <img
-        class="preloader__logo"
-        src="../images/brand/logo.png"
-        alt="MathMonsters logo"
-        width="200"
-        height="200"
-      />
-      <h1 class="preloader__headline text-large text-white">Sign In</h1>
-      <form
-        class="preloader__form"
-        action="#"
-        method="post"
-        novalidate
-        autocomplete="on"
-      >
-        <label class="visually-hidden" for="signin-email">Email</label>
-        <input
-          class="preloader__field"
-          type="email"
-          id="signin-email"
-          name="email"
-          placeholder="Email"
-          autocomplete="email"
-          inputmode="email"
-          autocapitalize="none"
-          spellcheck="false"
-          required
+    <main class="story-screen preloader app-safe-area" role="main">
+      <div class="story-screen__sprite">
+        <img
+          class="preloader__logo"
+          src="../images/brand/logo.png"
+          alt="MathMonsters logo"
+          width="200"
+          height="200"
         />
-        <label class="visually-hidden" for="signin-password">Password</label>
-        <input
-          class="preloader__field"
-          type="password"
-          id="signin-password"
-          name="password"
-          placeholder="Password"
-          autocomplete="current-password"
-          inputmode="text"
-          required
-        />
-        <button class="btn-primary preloader__button" type="submit">
-          <span class="preloader__button-label">Submit</span>
-          <span class="preloader__spinner" aria-hidden="true"></span>
-        </button>
-      </form>
-      <p
-        class="preloader__error"
-        data-signin-error
-        role="alert"
-        aria-live="polite"
-        hidden
-      ></p>
+      </div>
+      <section class="story-screen__card">
+        <h1 class="preloader__headline text-large text-white">Sign In</h1>
+        <form
+          class="preloader__form"
+          action="#"
+          method="post"
+          novalidate
+          autocomplete="on"
+        >
+          <label class="visually-hidden" for="signin-email">Email</label>
+          <input
+            class="preloader__field"
+            type="email"
+            id="signin-email"
+            name="email"
+            placeholder="Email"
+            autocomplete="email"
+            inputmode="email"
+            autocapitalize="none"
+            spellcheck="false"
+            required
+          />
+          <label class="visually-hidden" for="signin-password">Password</label>
+          <input
+            class="preloader__field"
+            type="password"
+            id="signin-password"
+            name="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            inputmode="text"
+            required
+          />
+          <button class="btn-primary preloader__button" type="submit">
+            <span class="preloader__button-label">Submit</span>
+            <span class="preloader__spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+        <p
+          class="preloader__error"
+          data-signin-error
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></p>
+      </section>
     </main>
     <script>
       window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';

@@ -20,23 +20,35 @@
     <link rel="stylesheet" href="../css/signin.css" />
   </head>
   <body>
-    <main class="preloader app-safe-area" role="main">
-      <img
-        class="preloader__logo"
-        src="../images/brand/logo.png"
-        alt="MathMonsters logo"
-        width="200"
-        height="200"
-      />
-      <h1 class="preloader__headline text-large text-white">
-        Turn math into an epic adventure!
-      </h1>
-      <div class="preloader__actions">
-        <button class="preloader__button btn-primary" type="button" data-new-game>
-          Play Now
-        </button>
-        <a class="preloader__secondary-button" href="signin.html">Sign In</a>
+    <main class="story-screen preloader app-safe-area" role="main">
+      <div class="story-screen__sprite">
+        <img
+          class="preloader__logo"
+          src="../images/brand/logo.png"
+          alt="MathMonsters logo"
+          width="200"
+          height="200"
+        />
       </div>
+      <section class="story-screen__card">
+        <h1 class="preloader__headline text-large text-white">
+          Turn math into an epic adventure!
+        </h1>
+        <p class="preloader__tagline text-small text-white-50">
+          Hatch your first monster and guide them to glory—one problem at a time.
+        </p>
+        <div class="story-screen__actions preloader__actions">
+          <button class="preloader__button btn-primary" type="button" data-new-game>
+            Play Now
+          </button>
+          <a
+            class="story-screen__secondary-action preloader__secondary-button"
+            href="signin.html"
+          >
+            Sign In
+          </a>
+        </div>
+      </section>
     </main>
     <script>
       window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';

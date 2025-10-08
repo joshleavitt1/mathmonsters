@@ -24,15 +24,17 @@
     <link rel="stylesheet" href="../css/signin.css" />
   </head>
   <body>
-    <main class="preloader app-safe-area" role="main">
-      <div class="preloader__intro">
+    <main class="story-screen preloader app-safe-area" role="main">
+      <div class="story-screen__sprite">
         <img
-          class="preloader__badge"
+          class="preloader__badge story-screen__badge"
           src="../images/complete/parent.png"
           width="200"
           height="200"
           alt="Parent profile illustration"
         />
+      </div>
+      <section class="story-screen__card">
         <div class="preloader__titles">
           <h1 class="preloader__headline text-large text-white">
             Unlock More Math Adventures
@@ -42,14 +44,13 @@
             math skills.
           </p>
         </div>
-      </div>
-      <form
-        class="preloader__form"
-        action="#"
-        method="post"
-        novalidate
-        autocomplete="on"
-      >
+        <form
+          class="preloader__form"
+          action="#"
+          method="post"
+          novalidate
+          autocomplete="on"
+        >
         <label class="visually-hidden" for="register-email">Email</label>
         <input
           class="preloader__field"
@@ -114,14 +115,15 @@
           <span class="preloader__button-label">Register</span>
           <span class="preloader__spinner" aria-hidden="true"></span>
         </button>
-      </form>
-      <p
-        class="preloader__error"
-        data-register-error
-        role="alert"
-        aria-live="polite"
-        hidden
-      ></p>
+        </form>
+        <p
+          class="preloader__error"
+          data-register-error
+          role="alert"
+          aria-live="polite"
+          hidden
+        ></p>
+      </section>
     </main>
     <script>
       window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';

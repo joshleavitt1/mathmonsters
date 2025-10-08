@@ -6,7 +6,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   color: #272B34;
-  background: url('../images/background/background.png') no-repeat center/cover;
+  background: radial-gradient(circle at top, #041c49 0%, #001133 55%, #00071c 100%);
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
@@ -160,18 +160,12 @@ body:not(.is-preloading) main.landing {
 }
 
 .landing__hero-info {
-  position: absolute;
-  top: clamp(48px, 18vh, 180px);
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
-  width: min(360px, 88vw);
-  padding: 0 12px;
+  gap: var(--space-xs);
+  width: 100%;
   text-align: center;
-  z-index: 3;
 }
 
 .landing__hero-name,
@@ -201,21 +195,6 @@ body:not(.is-preloading) main.landing {
 
 .landing__hero-progress .progress__fill::after {
   inset: 3px 5px 0 5px;
-}
-
-.landing__actions {
-  position: absolute;
-  left: 50%;
-  bottom: calc(24px + var(--viewport-bottom-offset, 0px));
-  bottom: calc(
-    24px + var(--viewport-bottom-offset, 0px) + constant(safe-area-inset-bottom)
-  );
-  bottom: calc(
-    24px + var(--viewport-bottom-offset, 0px) + env(safe-area-inset-bottom, 0px)
-  );
-  transform: translateX(-50%);
-  width: min(360px, calc(100vw - 32px));
-  z-index: 3;
 }
 
 .landing__battle-button {
@@ -322,6 +301,101 @@ body:not(.is-preloading) main.landing {
 .monster.is-exiting {
   animation: monster-intro-exit var(--monster-intro-exit-duration, 0.6s)
     cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.landing__card {
+  width: 100%;
+}
+
+.landing__card .landing__actions {
+  position: static;
+  width: 100%;
+  transform: none;
+}
+
+[data-level-one-landing].story-screen {
+  --story-screen-max-card: 420px;
+  background: radial-gradient(circle at top, rgba(0, 81, 165, 0.6) 0%, #001739 55%,
+      #000918 100%);
+}
+
+[data-level-one-landing] .story-screen__sprite {
+  width: min(320px, 70vw);
+  max-height: min(360px, 52vh);
+}
+
+[data-level-one-landing] .hero {
+  position: relative;
+  left: auto;
+  top: auto;
+  max-width: min(320px, 72vw);
+  max-height: min(320px, 52vh);
+  transform: translate3d(0, 0, 0) scale(1);
+  animation: story-hero-float 6s ease-in-out infinite;
+}
+
+[data-level-one-landing] .monster {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  top: auto;
+  max-width: min(320px, 74vw);
+  max-height: min(320px, 50vh);
+  transform: translate3d(-50%, 16%, 0) scale(0.92);
+  opacity: 0;
+}
+
+[data-level-one-landing] .monster.is-visible {
+  transform: translate3d(-50%, 6%, 0) scale(1);
+  opacity: 1;
+  animation: story-monster-float 6.5s ease-in-out infinite;
+}
+
+[data-level-one-landing] .landing__hero-progress {
+  margin-top: var(--space-sm);
+}
+
+[data-level-one-landing] .landing__hero-name {
+  font-weight: 500;
+}
+
+[data-level-one-landing] .landing__hero-level {
+  opacity: 0.72;
+}
+
+.story-screen__card .progress__fill::after {
+  inset: 3px 6px 0 6px;
+  height: 6px;
+}
+
+.story-screen__card button {
+  --btn-height: 64px;
+}
+
+.story-screen__card button:hover {
+  box-shadow: 0 18px 38px rgba(3, 80, 168, 0.35);
+}
+
+@keyframes story-hero-float {
+  0%,
+  100% {
+    transform: translate3d(0, -10px, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(0, 12px, 0) scale(1.02);
+  }
+}
+
+@keyframes story-monster-float {
+  0%,
+  100% {
+    transform: translate3d(-50%, 6%, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-50%, 14%, 0) scale(1.04);
+  }
 }
 
 body.is-level-one-landing .landing__hero-info,
@@ -486,12 +560,16 @@ body:not(.is-level-one-landing) .level-one-intro {
   --card-translate-y: 24px;
   --surface-padding: clamp(24px, 5vw, 32px);
   width: min(420px, 100%);
+  background: var(--surface-glass);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow);
+  backdrop-filter: blur(18px);
   opacity: 0;
   pointer-events: none;
   align-items: stretch;
   text-align: left;
   gap: clamp(16px, 4vw, 24px);
-  color: var(--text-color-dark, rgba(31, 45, 72, 0.96));
+  color: var(--text-color-light);
   transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translate3d(
     var(--card-translate-x, 0),
