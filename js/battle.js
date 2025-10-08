@@ -2405,13 +2405,19 @@ document.addEventListener('DOMContentLoaded', () => {
     scheduleProgressAnimation();
 
 
+    const hasExperienceRequirement = levelExperienceRequirement > 0;
     const requirementMet =
-      levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
-    levelUpAvailable = requirementMet;
+      hasExperienceRequirement && sanitizedEarned >= levelExperienceRequirement;
 
-    if (!requirementMet) {
-      hasPendingLevelUpReward = false;
-      rewardAnimationPlayed = false;
+    if (hasExperienceRequirement) {
+      levelUpAvailable = requirementMet;
+
+      if (!requirementMet) {
+        hasPendingLevelUpReward = false;
+        rewardAnimationPlayed = false;
+      }
+    } else {
+      levelUpAvailable = true;
     }
   };
 
