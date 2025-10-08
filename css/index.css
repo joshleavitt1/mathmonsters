@@ -460,11 +460,10 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 
 .level-one-intro__card {
-  --surface-padding: clamp(20px, 5vw, 32px);
-  --card-max-width: min(480px, calc(100% - clamp(48px, 12vw, 160px)));
-  --card-gap: clamp(16px, 4vw, 24px);
-  color: var(--text-color-dark, rgba(31, 45, 72, 0.96));
-  justify-self: center;
+  --surface-padding: 24px;
+  --card-max-width: 480px;
+  --card-gap: 16px;
+  justify-self: left;
 }
 
 .level-one-intro__card.is-visible {
