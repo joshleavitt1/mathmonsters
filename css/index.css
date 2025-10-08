@@ -358,24 +358,12 @@ body:not(.is-level-one-landing) .level-one-intro {
   position: fixed;
   inset: 0;
   display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: 1fr auto;
   justify-items: center;
   align-items: center;
-  gap: clamp(24px, 6vw, 40px);
-  padding: clamp(16px, 5vw, 32px);
-  padding-bottom: calc(
-    clamp(24px, 6vw, 48px) + var(--viewport-bottom-offset, 0px)
-  );
-  padding-bottom: calc(
-    clamp(24px, 6vw, 48px) + var(--viewport-bottom-offset, 0px) +
-      constant(safe-area-inset-bottom)
-  );
-  padding-bottom: calc(
-    clamp(24px, 6vw, 48px) + var(--viewport-bottom-offset, 0px) +
-      env(safe-area-inset-bottom, 0px)
-  );
-  min-height: 100dvh;
+  gap: 32px;
+  padding: 32px 16px 48px;
+  min-height: 100vh;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -404,51 +392,18 @@ body:not(.is-level-one-landing) .level-one-intro {
   pointer-events: auto;
 }
 .level-one-intro__egg-button {
-  position: relative;
-  width: 230px;
-  height: 230px;
+  width: 240px;
+  height: 240px;
   padding: 0;
+  margin: 0;
   border: none;
-  border-radius: 50%;
-  background: none;
-  background-image: none;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-inline: auto;
-  justify-self: center;
-  align-self: center;
-  cursor: default;
+  cursor: pointer;
   transition: opacity 0.3s ease;
   z-index: 4;
-  overflow: visible;
-  grid-row: 1;
-}
-
-.level-one-intro__egg-button::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: 50%;
-  background: rgba(2, 221, 255, 0.50);
-  filter: blur(64px);
-  opacity: 0;
-  transition: opacity 0.45s ease;
-  transition-delay: 0s;
-}
-
-.level-one-intro__egg-button.is-visible::before {
-  opacity: 1;
-  transition-delay: 0s;
-}
-
-.level-one-intro__egg-button:hover,
-.level-one-intro__egg-button:focus-visible {
-  background: none;
-  background-image: none;
-  transform: none;
 }
 
 .level-one-intro__egg-button[disabled] {
@@ -464,7 +419,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 .level-one-intro__egg-image {
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: contain;
   transform: scale(1);
   opacity: 0;
@@ -484,15 +439,15 @@ body:not(.is-level-one-landing) .level-one-intro {
 .level-one-intro__card {
   --card-translate-x: 0;
   --card-translate-y: 24px;
-  --surface-padding: clamp(24px, 5vw, 32px);
+  --surface-padding: 32px;
   width: min(420px, 100%);
   opacity: 0;
   pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 24px;
   text-align: center;
-  gap: clamp(20px, 5vw, 28px);
   color: var(--text-color-dark, rgba(31, 45, 72, 0.96));
   transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translate3d(
@@ -503,17 +458,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   z-index: 6;
   justify-self: center;
   align-self: end;
-  margin-inline: auto;
-  margin-top: auto;
-  margin-bottom: 0;
-  margin-bottom: var(--viewport-bottom-offset, 0px);
-  margin-bottom: calc(
-    var(--viewport-bottom-offset, 0px) + constant(safe-area-inset-bottom)
-  );
-  margin-bottom: calc(
-    var(--viewport-bottom-offset, 0px) + env(safe-area-inset-bottom, 0px)
-  );
-  grid-row: 2;
+  margin: 0 auto;
 }
 
 .level-one-intro__card::before {
