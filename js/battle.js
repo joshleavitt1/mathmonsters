@@ -53,6 +53,206 @@ const {
   computeExperienceProgress,
 } = progressUtils;
 
+const playerProfileUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
+  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
+
+const clonePlainObject = (value) => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (error) {
+    console.warn('Unable to clone player profile for sync.', error);
+    return null;
+  }
+};
+
+let pendingSupabaseProfileSync = null;
+let supabaseProfileSyncInFlight = false;
+let cachedSupabaseUserId = null;
+let supabaseUserIdPromise = null;
+
+const resolveSupabaseUserId = async () => {
+  if (cachedSupabaseUserId) {
+    return cachedSupabaseUserId;
+  }
+
+  if (supabaseUserIdPromise) {
+    try {
+      const cached = await supabaseUserIdPromise;
+      return cached ?? null;
+    } catch (error) {
+      console.warn('Supabase user resolution failed.', error);
+      supabaseUserIdPromise = null;
+      return null;
+    }
+  }
+
+  const resolver = (async () => {
+    if (playerProfileUtils && typeof playerProfileUtils.resolveCurrentUserId === 'function') {
+      try {
+        const resolved = await playerProfileUtils.resolveCurrentUserId();
+        if (resolved) {
+          cachedSupabaseUserId = resolved;
+          return resolved;
+        }
+      } catch (error) {
+        console.warn('Player profile utility user lookup failed.', error);
+      }
+    }
+
+    const supabase = window.supabaseClient;
+    if (!supabase?.auth) {
+      return null;
+    }
+
+    try {
+      if (typeof supabase.auth.getUser === 'function') {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) {
+          console.warn('Supabase user lookup for sync failed.', error);
+        }
+        const userId = data?.user?.id ?? null;
+        if (userId) {
+          cachedSupabaseUserId = userId;
+        }
+        return userId;
+      }
+
+      if (typeof supabase.auth.getSession === 'function') {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('Supabase session lookup for sync failed.', error);
+        }
+        const userId = data?.session?.user?.id ?? null;
+        if (userId) {
+          cachedSupabaseUserId = userId;
+        }
+        return userId;
+      }
+    } catch (error) {
+      console.warn('Unable to resolve Supabase user for sync.', error);
+    }
+
+    return null;
+  })();
+
+  supabaseUserIdPromise = resolver;
+
+  try {
+    const resolved = await resolver;
+    if (!resolved) {
+      supabaseUserIdPromise = null;
+    }
+    return resolved ?? null;
+  } catch (error) {
+    supabaseUserIdPromise = null;
+    console.warn('Supabase user promise rejected.', error);
+    return null;
+  }
+};
+
+const prepareProfileForSupabase = (profile, userId) => {
+  if (!profile || typeof profile !== 'object') {
+    return null;
+  }
+
+  if (
+    playerProfileUtils &&
+    typeof playerProfileUtils.ensurePlayerIdentifiers === 'function'
+  ) {
+    const ensured = playerProfileUtils.ensurePlayerIdentifiers(profile, userId);
+    if (ensured) {
+      return ensured;
+    }
+  }
+
+  const clone = clonePlainObject(profile);
+  if (!clone) {
+    return null;
+  }
+
+  if (typeof userId === 'string' && userId) {
+    if (!clone.id || clone.id === 'player-001') {
+      clone.id = userId;
+    }
+
+    if (clone.player && typeof clone.player === 'object') {
+      if (!clone.player.id || clone.player.id === 'player-001') {
+        clone.player.id = userId;
+      }
+    }
+  }
+
+  return clone;
+};
+
+const syncProfileToSupabase = async (profile) => {
+  const supabase = window.supabaseClient;
+  if (!supabase?.from) {
+    return;
+  }
+
+  const userId = await resolveSupabaseUserId();
+  if (!userId) {
+    return;
+  }
+
+  const payload = prepareProfileForSupabase(profile, userId);
+  if (!payload) {
+    return;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('player_profiles')
+      .upsert({ id: userId, player_data: payload }, { onConflict: 'id' });
+
+    if (error) {
+      console.warn('Supabase profile sync failed.', error);
+    }
+  } catch (error) {
+    console.warn('Unable to sync player profile with Supabase.', error);
+  }
+};
+
+const enqueueSupabaseProfileSync = (profile) => {
+  if (!profile || typeof profile !== 'object') {
+    return;
+  }
+
+  const clonedProfile = clonePlainObject(profile);
+  if (!clonedProfile) {
+    return;
+  }
+
+  pendingSupabaseProfileSync = clonedProfile;
+  if (supabaseProfileSyncInFlight) {
+    return;
+  }
+
+  supabaseProfileSyncInFlight = true;
+
+  const flushQueue = async () => {
+    try {
+      while (pendingSupabaseProfileSync) {
+        const nextProfile = pendingSupabaseProfileSync;
+        pendingSupabaseProfileSync = null;
+        await syncProfileToSupabase(nextProfile);
+      }
+    } catch (error) {
+      console.warn('Unexpected error during Supabase profile sync.', error);
+    } finally {
+      supabaseProfileSyncInFlight = false;
+    }
+  };
+
+  flushQueue();
+};
+
 const readVisitedFlag = (storage, label) => {
   if (!storage) {
     return null;
@@ -2205,13 +2405,19 @@ document.addEventListener('DOMContentLoaded', () => {
     scheduleProgressAnimation();
 
 
+    const hasExperienceRequirement = levelExperienceRequirement > 0;
     const requirementMet =
-      levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
-    levelUpAvailable = requirementMet;
+      hasExperienceRequirement && sanitizedEarned >= levelExperienceRequirement;
 
-    if (!requirementMet) {
-      hasPendingLevelUpReward = false;
-      rewardAnimationPlayed = false;
+    if (hasExperienceRequirement) {
+      levelUpAvailable = requirementMet;
+
+      if (!requirementMet) {
+        hasPendingLevelUpReward = false;
+        rewardAnimationPlayed = false;
+      }
+    } else {
+      levelUpAvailable = true;
     }
   };
 
@@ -2332,6 +2538,8 @@ document.addEventListener('DOMContentLoaded', () => {
         PLAYER_PROFILE_STORAGE_KEY,
         JSON.stringify(updatedProfile)
       );
+
+      enqueueSupabaseProfileSync(updatedProfile);
     } catch (error) {
       console.warn('Unable to persist player profile update.', error);
     }

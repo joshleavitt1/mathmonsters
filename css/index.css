@@ -340,6 +340,11 @@ body:not(.is-level-one-landing) .level-one-intro {
   inset: 0;
   display: grid;
   place-items: center;
+  grid-auto-flow: row;
+  grid-auto-rows: min-content;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(24px, 6vw, 40px);
   padding: clamp(16px, 5vw, 32px);
   opacity: 0;
   visibility: hidden;
@@ -380,6 +385,8 @@ body:not(.is-level-one-landing) .level-one-intro {
   align-items: center;
   justify-content: center;
   margin-inline: auto;
+  justify-self: center;
+  align-self: center;
   cursor: default;
   transition: opacity 0.3s ease;
   z-index: 4;
@@ -444,10 +451,13 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 .level-one-intro__card {
   --card-translate-y: 24px;
+  width: min(420px, 90vw);
   opacity: 0;
   pointer-events: none;
-  align-items: center;
-  text-align: center;
+  align-items: stretch;
+  text-align: left;
+  gap: clamp(16px, 4vw, 24px);
+  color: var(--text-color-dark, rgba(31, 45, 72, 0.96));
   transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translate3d(
     var(--card-translate-x, -50%),
@@ -459,12 +469,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 }
 
 .level-one-intro__card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: rgba(9, 12, 20, 0.6);
-  z-index: -1;
+  display: none;
 }
 
 .level-one-intro__card.is-visible {
@@ -481,7 +486,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 }
 
 .level-one-intro__card-avatar {
-  align-self: center;
+  align-self: flex-start;
   width: 80px;
   height: 80px;
   object-fit: contain;
@@ -489,10 +494,14 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 .level-one-intro__card-text {
   margin: 0;
-  color: rgba(31, 45, 72, 0.96);
+  color: inherit;
   font-size: var(--text-size-medium);
   line-height: 1.4;
-  text-align: center;
+  text-align: left;
+}
+
+.level-one-intro__card-button {
+  width: 100%;
 }
 
 @keyframes level-one-egg-pop {
