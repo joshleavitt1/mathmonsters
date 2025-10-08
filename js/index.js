@@ -2586,6 +2586,245 @@ const cloneForDevTools = (value) => {
   }
 };
 
+const normalizeNumericValue = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
+const assignIfMeaningful = (target, key, value) => {
+  if (typeof value === 'undefined' || value === null) {
+    return;
+  }
+
+  if (typeof value === 'number') {
+    if (Number.isFinite(value)) {
+      target[key] = value;
+    }
+    return;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed) {
+      target[key] = trimmed;
+    }
+    return;
+  }
+
+  if (typeof value === 'boolean') {
+    target[key] = value;
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length > 0) {
+      target[key] = value;
+    }
+    return;
+  }
+
+  if (isPlainObject(value)) {
+    if (Object.keys(value).length > 0) {
+      target[key] = value;
+    }
+  }
+};
+
+const createCompactHero = (hero) => {
+  if (!isPlainObject(hero)) {
+    return null;
+  }
+
+  const compact = {};
+  assignIfMeaningful(compact, 'id', hero.id);
+  assignIfMeaningful(compact, 'name', hero.name);
+  assignIfMeaningful(compact, 'sprite', hero.sprite);
+  assignIfMeaningful(compact, 'attackSprite', hero.attackSprite);
+
+  const attack = normalizeNumericValue(hero.attack);
+  if (attack !== null) {
+    compact.attack = attack;
+  }
+
+  const health = normalizeNumericValue(hero.health);
+  if (health !== null) {
+    compact.health = health;
+  }
+
+  const damage = normalizeNumericValue(hero.damage);
+  if (damage !== null) {
+    compact.damage = damage;
+  }
+
+  return Object.keys(compact).length > 0 ? compact : null;
+};
+
+const createCompactProgressEntry = (entry) => {
+  if (!isPlainObject(entry)) {
+    return null;
+  }
+
+  const compact = {};
+  const currentLevel = normalizeNumericValue(entry.currentLevel);
+  if (currentLevel !== null) {
+    compact.currentLevel = currentLevel;
+  }
+
+  const currentBattle = normalizeNumericValue(entry.currentBattle);
+  if (currentBattle !== null) {
+    compact.currentBattle = currentBattle;
+  }
+
+  return Object.keys(compact).length > 0 ? compact : null;
+};
+
+const createCompactProgress = (progress) => {
+  if (!isPlainObject(progress)) {
+    return null;
+  }
+
+  const compact = {};
+
+  const gems = normalizeNumericValue(progress.gems);
+  if (gems !== null) {
+    compact.gems = gems;
+  }
+
+  Object.entries(progress).forEach(([key, value]) => {
+    if (key === 'gems' || key === 'battleLevel') {
+      return;
+    }
+
+    const entry = createCompactProgressEntry(value);
+    if (entry) {
+      compact[key] = entry;
+    }
+  });
+
+  const battleLevel = normalizeNumericValue(progress.battleLevel);
+  if (battleLevel !== null) {
+    compact.battleLevel = battleLevel;
+  }
+
+  return Object.keys(compact).length > 0 ? compact : null;
+};
+
+const createCompactBattleVariables = (variables) => {
+  if (!isPlainObject(variables)) {
+    return null;
+  }
+
+  const compact = {};
+  const timeRemaining = normalizeNumericValue(variables.timeRemainingSeconds);
+  if (timeRemaining !== null) {
+    compact.timeRemainingSeconds = timeRemaining;
+  }
+
+  return Object.keys(compact).length > 0 ? compact : null;
+};
+
+const createCompactMedals = (medals) => {
+  if (!Array.isArray(medals)) {
+    return null;
+  }
+
+  const filtered = medals.filter((entry) => {
+    if (entry === null || typeof entry === 'undefined') {
+      return false;
+    }
+
+    if (typeof entry === 'string') {
+      return entry.trim().length > 0;
+    }
+
+    if (typeof entry === 'number') {
+      return Number.isFinite(entry);
+    }
+
+    if (typeof entry === 'boolean') {
+      return true;
+    }
+
+    if (Array.isArray(entry)) {
+      return entry.length > 0;
+    }
+
+    if (isPlainObject(entry)) {
+      return Object.keys(entry).length > 0;
+    }
+
+    return false;
+  });
+
+  return filtered.length > 0 ? filtered : null;
+};
+
+const createCompactPlayerProfile = (rawPlayerData) => {
+  const player = extractPlayerData(rawPlayerData);
+  if (!isPlainObject(player)) {
+    return null;
+  }
+
+  const compact = {};
+
+  assignIfMeaningful(compact, 'id', player.id);
+  assignIfMeaningful(compact, 'currentMathType', player.currentMathType);
+
+  const numericKeys = [
+    'currentLevel',
+    'currentBattle',
+    'gems',
+    'dailyStreak',
+    'totalAnswered',
+    'totalAccuracy',
+    'totalTime',
+  ];
+
+  numericKeys.forEach((key) => {
+    const value = normalizeNumericValue(player[key]);
+    if (value !== null) {
+      compact[key] = value;
+    }
+  });
+
+  const hero = createCompactHero(player.hero);
+  if (hero) {
+    compact.hero = hero;
+  }
+
+  const progress = createCompactProgress(player.progress);
+  if (progress) {
+    compact.progress = progress;
+  }
+
+  const battleVariables = createCompactBattleVariables(player.battleVariables);
+  if (battleVariables) {
+    compact.battleVariables = battleVariables;
+  }
+
+  const medals = createCompactMedals(player.medals);
+  if (medals) {
+    compact.medals = medals;
+  }
+
+  return Object.keys(compact).length > 0 ? compact : null;
+};
+
 const collectLivePlayerProfileSnapshot = async () => {
   const timestamp = new Date().toISOString();
   const sourceMap = {};
@@ -2601,7 +2840,12 @@ const collectLivePlayerProfileSnapshot = async () => {
       return;
     }
 
-    sourceMap[label] = cloneForDevTools(normalized);
+    const compact = createCompactPlayerProfile(normalized);
+    if (compact) {
+      sourceMap[label] = cloneForDevTools(compact);
+    } else if (!(label in sourceMap)) {
+      sourceMap[label] = null;
+    }
     return normalized;
   };
 
@@ -2636,10 +2880,11 @@ const collectLivePlayerProfileSnapshot = async () => {
   }
 
   const hasSources = Object.keys(sourceMap).length > 0;
+  const compactMerged = createCompactPlayerProfile(mergedPlayer);
 
   return {
     generatedAt: timestamp,
-    player: hasSources ? cloneForDevTools(mergedPlayer) : null,
+    player: hasSources && compactMerged ? cloneForDevTools(compactMerged) : null,
     sources: sourceMap,
     warnings: issues,
   };
