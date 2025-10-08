@@ -512,6 +512,16 @@ body.is-post-evolution-active #complete-message {
   background: rgba(0, 0, 0, 0.3);
 }
 
+.reward-overlay--with-card .reward-overlay__image {
+  position: relative;
+  z-index: 0;
+}
+
+.reward-overlay--with-card .reward-overlay__card {
+  position: relative;
+  z-index: 1;
+}
+
 body.is-reward-active > *:not(.reward-overlay) {
   visibility: hidden;
   display: none !important;
