@@ -17,6 +17,18 @@ const DEV_PLAYER_DATA_BUTTON_SELECTOR = '[data-dev-player-data]';
 const DEV_SIGN_OUT_BUTTON_SELECTOR = '[data-dev-sign-out]';
 const PLAYER_DATA_SOURCE_URL = 'data/player.json';
 
+const resolvePlayerDataSourceUrl = () => {
+  if (typeof window === 'undefined') {
+    return PLAYER_DATA_SOURCE_URL;
+  }
+
+  try {
+    return new URL(PLAYER_DATA_SOURCE_URL, window.location.href).href;
+  } catch (error) {
+    return PLAYER_DATA_SOURCE_URL;
+  }
+};
+
 const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
 const MONSTER_ENTRANCE_DURATION_MS_BASE = 900;
 const HERO_EXIT_DURATION_MS_BASE = 550;
@@ -2662,10 +2674,10 @@ const setupDevPlayerDataTool = () => {
     }
 
     try {
-      const viewerUrl = new URL(PLAYER_DATA_SOURCE_URL, window.location.href);
+      const viewerUrl = resolvePlayerDataSourceUrl();
       const { history } = targetWindow;
       if (history && typeof history.replaceState === 'function') {
-        history.replaceState(null, '', viewerUrl.href);
+        history.replaceState(null, '', viewerUrl);
       }
     } catch (error) {
       // Ignore URL manipulation failures.
@@ -2730,7 +2742,8 @@ const setupDevPlayerDataTool = () => {
 
   const openFallbackWindow = () => {
     try {
-      window.open(PLAYER_DATA_SOURCE_URL, '_blank');
+      const fallbackUrl = resolvePlayerDataSourceUrl();
+      window.open(fallbackUrl, '_blank');
     } catch (error) {
       // Ignore popup failures.
     }
@@ -2743,7 +2756,7 @@ const setupDevPlayerDataTool = () => {
 
     let viewer = null;
     try {
-      viewer = window.open('', '_blank', 'noopener=1,noreferrer=1');
+      viewer = window.open('', '_blank', 'noopener=yes,noreferrer=yes');
     } catch (error) {
       viewer = null;
     }
