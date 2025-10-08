@@ -46,7 +46,7 @@ body.home-page {
   background-color: rgba(0, 0, 0, 0.16);
   backdrop-filter: blur(4px);
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.3px;
 }
 
@@ -66,7 +66,7 @@ body.home-page {
 
 .home__gem-value {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .home__gem-label {
@@ -87,7 +87,7 @@ body.home-page {
 
 .home__hero-name {
   margin: 0;
-  font-weight: 700;
+  font-weight: 400;
   font-size: 40px;
   line-height: 1.05;
   letter-spacing: 0.6px;
@@ -97,7 +97,7 @@ body.home-page {
 .home__hero-level {
   margin: 0;
   font-size: 20px;
-  font-weight: 500;
+  font-weight: 400;
   color: rgba(255, 255, 255, 0.5);
 }
 
