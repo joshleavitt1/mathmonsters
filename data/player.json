@@ -18,7 +18,7 @@
   "totalAccuracy": 0,
   "totalTime": 0,
   "progress": {
-    "battleLevel": 1,
+    "currentLevel": 1,
     "gems": 0,
     "experience": {},
     "addition": {

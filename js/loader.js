@@ -180,8 +180,46 @@ const writePreloadedSpriteSet = (spriteSet) => {
 };
 
 const persistNextBattleSnapshot = (snapshot) => {
-  if (typeof window !== 'undefined' && snapshot && typeof snapshot === 'object') {
-    window.mathMonstersBattleSnapshot = snapshot;
+  const normalizedSnapshot =
+    snapshot && typeof snapshot === 'object'
+      ? {
+          currentLevel: Number.isFinite(snapshot.currentLevel)
+            ? snapshot.currentLevel
+            : Number.isFinite(snapshot.battleLevel)
+            ? snapshot.battleLevel
+            : null,
+          hero:
+            snapshot.hero && typeof snapshot.hero === 'object'
+              ? {
+                  name:
+                    typeof snapshot.hero.name === 'string'
+                      ? snapshot.hero.name
+                      : null,
+                  sprite:
+                    typeof snapshot.hero.sprite === 'string'
+                      ? snapshot.hero.sprite
+                      : null,
+                }
+              : null,
+          monster:
+            snapshot.monster && typeof snapshot.monster === 'object'
+              ? {
+                  name:
+                    typeof snapshot.monster.name === 'string'
+                      ? snapshot.monster.name
+                      : null,
+                  sprite:
+                    typeof snapshot.monster.sprite === 'string'
+                      ? snapshot.monster.sprite
+                      : null,
+                }
+              : null,
+          timestamp: Date.now(),
+        }
+      : null;
+
+  if (typeof window !== 'undefined') {
+    window.mathMonstersBattleSnapshot = normalizedSnapshot;
   }
 
   if (typeof sessionStorage === 'undefined') {
@@ -189,47 +227,14 @@ const persistNextBattleSnapshot = (snapshot) => {
   }
 
   try {
-    if (!snapshot || typeof snapshot !== 'object') {
+    if (!normalizedSnapshot) {
       sessionStorage.removeItem(NEXT_BATTLE_SNAPSHOT_STORAGE_KEY);
       return;
     }
 
-    const normalized = {
-      battleLevel: Number.isFinite(snapshot.battleLevel)
-        ? snapshot.battleLevel
-        : null,
-      hero:
-        snapshot.hero && typeof snapshot.hero === 'object'
-          ? {
-              name:
-                typeof snapshot.hero.name === 'string'
-                  ? snapshot.hero.name
-                  : null,
-              sprite:
-                typeof snapshot.hero.sprite === 'string'
-                  ? snapshot.hero.sprite
-                  : null,
-            }
-          : null,
-      monster:
-        snapshot.monster && typeof snapshot.monster === 'object'
-          ? {
-              name:
-                typeof snapshot.monster.name === 'string'
-                  ? snapshot.monster.name
-                  : null,
-              sprite:
-                typeof snapshot.monster.sprite === 'string'
-                  ? snapshot.monster.sprite
-                  : null,
-            }
-          : null,
-      timestamp: Date.now(),
-    };
-
     sessionStorage.setItem(
       NEXT_BATTLE_SNAPSHOT_STORAGE_KEY,
-      JSON.stringify(normalized)
+      JSON.stringify(normalizedSnapshot)
     );
   } catch (error) {
     console.warn('Unable to persist next battle snapshot.', error);
@@ -536,6 +541,33 @@ const normalizeBattleLevel = (value) => {
   return null;
 };
 
+const readProgressLevel = (progress) => {
+  if (!isPlainObject(progress)) {
+    return null;
+  }
+
+  const currentLevel = normalizeBattleLevel(progress.currentLevel);
+  if (currentLevel !== null) {
+    return currentLevel;
+  }
+
+  return normalizeBattleLevel(progress.battleLevel);
+};
+
+const assignProgressLevel = (progress, level) => {
+  if (!isPlainObject(progress)) {
+    return;
+  }
+
+  if (level === null) {
+    delete progress.currentLevel;
+  } else {
+    progress.currentLevel = level;
+  }
+
+  delete progress.battleLevel;
+};
+
 const normalizeHeroIdentifier = (value) => {
   if (typeof value !== 'string') {
     return null;
@@ -632,9 +664,9 @@ const determinePlayerHeroLevel = (player) => {
 
   const progress = isPlainObject(player.progress) ? player.progress : null;
 
-  const progressBattleLevel = resolveHeroAssetLevel(progress?.battleLevel);
-  if (progressBattleLevel !== null) {
-    return progressBattleLevel;
+  const overallProgressLevel = resolveHeroAssetLevel(readProgressLevel(progress));
+  if (overallProgressLevel !== null) {
+    return overallProgressLevel;
   }
 
   const currentMathType =
@@ -1566,13 +1598,12 @@ const updatePreloadedPlayerProfile = (player) => {
     const progress = { ...baseProgress };
     const battleVariables = { ...baseBattleVariables };
     let experienceMap = normalizeExperienceMap(progress?.experience);
+    let overallProgressLevel = readProgressLevel(progress);
 
     if (storedProgress && typeof storedProgress === 'object') {
-      const storedBattleLevel = normalizeBattleLevel(
-        storedProgress.battleLevel
-      );
+      const storedBattleLevel = readProgressLevel(storedProgress);
       if (storedBattleLevel !== null) {
-        progress.battleLevel = storedBattleLevel;
+        overallProgressLevel = storedBattleLevel;
       }
       if (typeof storedProgress.timeRemainingSeconds === 'number') {
         battleVariables.timeRemainingSeconds =
@@ -1588,32 +1619,40 @@ const updatePreloadedPlayerProfile = (player) => {
       delete progress.experience;
     }
 
-    const normalizedProgressBattleLevel = normalizeBattleLevel(
-      progress.battleLevel
-    );
-
+    const normalizedProgressLevel = normalizeBattleLevel(overallProgressLevel);
+    const defaultLevel = normalizeBattleLevel(levels[0]?.battleLevel);
     const activeBattleLevel =
-      normalizedProgressBattleLevel ?? levels[0]?.battleLevel ?? null;
+      normalizedProgressLevel !== null
+        ? normalizedProgressLevel
+        : defaultLevel !== null
+        ? defaultLevel
+        : null;
 
-    if (normalizedProgressBattleLevel !== null) {
-      progress.battleLevel = normalizedProgressBattleLevel;
+    if (normalizedProgressLevel !== null) {
+      assignProgressLevel(progress, normalizedProgressLevel);
+      overallProgressLevel = normalizedProgressLevel;
     } else if (Number.isFinite(activeBattleLevel)) {
-      progress.battleLevel = activeBattleLevel;
+      assignProgressLevel(progress, activeBattleLevel);
+      overallProgressLevel = activeBattleLevel;
     } else {
-      delete progress.battleLevel;
+      assignProgressLevel(progress, null);
+      overallProgressLevel = null;
     }
 
-    const currentLevel =
-      levels.find((level) => level?.battleLevel === activeBattleLevel) ??
-      levels[0] ??
+    const currentLevelEntry =
+      levels.find(
+        (level) => normalizeBattleLevel(level?.battleLevel) === activeBattleLevel
+      ) ||
+      levels[0] ||
       null;
 
     if (
-      currentLevel &&
-      typeof currentLevel.battleLevel === 'number' &&
-      progress.battleLevel !== currentLevel.battleLevel
+      currentLevelEntry &&
+      typeof currentLevelEntry.battleLevel === 'number' &&
+      overallProgressLevel !== currentLevelEntry.battleLevel
     ) {
-      progress.battleLevel = currentLevel.battleLevel;
+      assignProgressLevel(progress, currentLevelEntry.battleLevel);
+      overallProgressLevel = currentLevelEntry.battleLevel;
     }
 
     const levelBattleRaw = currentLevel?.battle ?? {};

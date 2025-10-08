@@ -70,7 +70,7 @@ const applyStartingBattleLevel = (playerData) => {
   if (!isPlainObject(clonedData)) {
     return {
       progress: {
-        battleLevel: STARTING_BATTLE_LEVEL,
+        currentLevel: STARTING_BATTLE_LEVEL,
       },
       battleVariables: {
         timeRemainingSeconds: null,
@@ -96,8 +96,9 @@ const applyStartingBattleLevel = (playerData) => {
 
   clonedData.progress = {
     ...progressSection,
-    battleLevel: STARTING_BATTLE_LEVEL,
+    currentLevel: STARTING_BATTLE_LEVEL,
   };
+  delete clonedData.progress.battleLevel;
 
   if (!isPlainObject(clonedData.battleVariables)) {
     clonedData.battleVariables = {
