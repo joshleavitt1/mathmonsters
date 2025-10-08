@@ -15,20 +15,6 @@ const DEV_RESET_TARGET_BATTLE = 1;
 const DEV_RESET_BUTTON_SELECTOR = '[data-dev-reset-level]';
 const DEV_PLAYER_DATA_BUTTON_SELECTOR = '[data-dev-player-data]';
 const DEV_SIGN_OUT_BUTTON_SELECTOR = '[data-dev-sign-out]';
-const PLAYER_DATA_SOURCE_URL = 'data/player.json';
-
-const resolvePlayerDataSourceUrl = () => {
-  if (typeof window === 'undefined') {
-    return PLAYER_DATA_SOURCE_URL;
-  }
-
-  try {
-    return new URL(PLAYER_DATA_SOURCE_URL, window.location.href).href;
-  } catch (error) {
-    return PLAYER_DATA_SOURCE_URL;
-  }
-};
-
 const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
 const MONSTER_ENTRANCE_DURATION_MS_BASE = 900;
 const HERO_EXIT_DURATION_MS_BASE = 550;
@@ -2660,51 +2646,6 @@ const setupDevPlayerDataTool = () => {
     return;
   }
 
-  const updateWindowTitle = (targetWindow) => {
-    try {
-      targetWindow.document.title = 'player.json';
-    } catch (error) {
-      // Ignore title assignment failures.
-    }
-  };
-
-  const updateViewerLocation = (targetWindow) => {
-    if (!targetWindow || targetWindow.closed) {
-      return;
-    }
-
-    try {
-      const viewerUrl = resolvePlayerDataSourceUrl();
-      const { history } = targetWindow;
-      if (history && typeof history.replaceState === 'function') {
-        history.replaceState(null, '', viewerUrl);
-      }
-    } catch (error) {
-      // Ignore URL manipulation failures.
-    }
-  };
-
-  const renderLoadingMessage = (targetWindow) => {
-    if (!targetWindow || targetWindow.closed) {
-      return;
-    }
-
-    try {
-      updateWindowTitle(targetWindow);
-      updateViewerLocation(targetWindow);
-      const doc = targetWindow.document;
-      doc.open();
-      doc.write('<!doctype html><title>player.json</title><pre style="margin:0;padding:16px;font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \'Liberation Mono\', \'Courier New\', monospace;">Loading player data…</pre>');
-      doc.close();
-    } catch (error) {
-      try {
-        targetWindow.document.body.textContent = 'Loading player data…';
-      } catch (secondaryError) {
-        // Ignore rendering errors.
-      }
-    }
-  };
-
   const createInlineViewerController = () => {
     if (typeof document === 'undefined') {
       return null;
@@ -2885,102 +2826,32 @@ const setupDevPlayerDataTool = () => {
     return inlineViewer;
   };
 
-  const writePlainTextToWindow = (targetWindow, text) => {
-    if (!targetWindow || targetWindow.closed) {
-      return;
-    }
-
-    const stringified = typeof text === 'string' ? text : String(text ?? '');
-
-    try {
-      updateWindowTitle(targetWindow);
-      updateViewerLocation(targetWindow);
-      const doc = targetWindow.document;
-      doc.open();
-      doc.write(
-        `<!doctype html><title>player.json</title><pre style="margin:0;padding:16px;font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;white-space:pre-wrap;word-break:break-word;">${stringified.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
-      );
-      doc.close();
-      return;
-    } catch (error) {
-      // Continue to fallback handling.
-    }
-
-    try {
-      const dataUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(stringified)}`;
-      targetWindow.location.replace(dataUrl);
-    } catch (error) {
-      try {
-        updateWindowTitle(targetWindow);
-        updateViewerLocation(targetWindow);
-        targetWindow.document.body.textContent = stringified;
-      } catch (secondaryError) {
-        // Ignore rendering errors.
-      }
-    }
-  };
-
-  const openFallbackWindow = () => {
-    try {
-      const fallbackUrl = resolvePlayerDataSourceUrl();
-      window.open(fallbackUrl, '_blank');
-    } catch (error) {
-      // Ignore popup failures.
-    }
-  };
-
   const handleClick = async (event) => {
     if (event && typeof event.preventDefault === 'function') {
       event.preventDefault();
     }
 
-    let viewer = null;
-    let inlineFallback = null;
-    try {
-      viewer = window.open('', '_blank', 'noopener=yes,noreferrer=yes');
-    } catch (error) {
-      viewer = null;
+    const inlineViewerController = ensureInlineViewer();
+    if (!inlineViewerController) {
+      try {
+        window.alert?.('Unable to show developer player data viewer.');
+      } catch (error) {
+        // Ignore alert failures.
+      }
+      return;
     }
 
-    if (!viewer) {
-      inlineFallback = ensureInlineViewer();
-      if (!inlineFallback) {
-        try {
-          window.alert?.('Unable to show developer player data viewer.');
-        } catch (error) {
-          // Ignore alert failures.
-        }
-        return;
-      }
-      inlineFallback.show('Loading player data…');
-    } else {
-      renderLoadingMessage(viewer);
-    }
-    if (viewer) {
-      try {
-        viewer.opener = null;
-      } catch (error) {
-        // Ignore failures to clear opener.
-      }
-    }
+    inlineViewerController.show('Loading player data…');
 
     try {
       const snapshot = await collectLivePlayerProfileSnapshot();
       const formatted = formatDevPlayerSnapshot(snapshot);
-      if (viewer) {
-        writePlainTextToWindow(viewer, formatted);
-      } else if (inlineFallback) {
-        inlineFallback.update(formatted);
-      }
+      inlineViewerController.update(formatted);
     } catch (error) {
       const message =
         'Unable to load live player data.' +
         (error && error.message ? `\n\n${error.message}` : '');
-      if (viewer) {
-        writePlainTextToWindow(viewer, message);
-      } else if (inlineFallback) {
-        inlineFallback.update(message);
-      }
+      inlineViewerController.update(message);
     }
   };
 
