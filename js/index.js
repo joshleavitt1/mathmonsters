@@ -2599,6 +2599,19 @@ const setupDevPlayerDataTool = () => {
     const stringified = typeof text === 'string' ? text : String(text ?? '');
 
     try {
+      updateWindowTitle(targetWindow);
+      const doc = targetWindow.document;
+      doc.open();
+      doc.write(
+        `<!doctype html><title>player.json</title><pre style="margin:0;padding:16px;font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;white-space:pre-wrap;word-break:break-word;">${stringified.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+      );
+      doc.close();
+      return;
+    } catch (error) {
+      // Continue to fallback handling.
+    }
+
+    try {
       const dataUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(stringified)}`;
       targetWindow.location.replace(dataUrl);
     } catch (error) {
