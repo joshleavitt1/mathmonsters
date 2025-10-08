@@ -1093,15 +1093,42 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       return;
     }
 
-    mergedProgress.gems = gemCount;
+    const existingGemSources = [
+      mergedProgress.gems,
+      player.gems,
+      player?.progress?.gems,
+      player?.currency?.gems,
+      player?.currencies?.gems,
+      player?.wallet?.gems,
+      player?.inventory?.gems,
+    ];
+
+    let existingGemCount = null;
+    for (const value of existingGemSources) {
+      const sanitizedValue = sanitizeGemCount(value);
+      if (sanitizedValue === null) {
+        continue;
+      }
+      existingGemCount =
+        existingGemCount === null
+          ? sanitizedValue
+          : Math.max(existingGemCount, sanitizedValue);
+    }
+
+    const resolvedGemCount =
+      existingGemCount === null
+        ? gemCount
+        : Math.max(existingGemCount, gemCount);
+
+    mergedProgress.gems = resolvedGemCount;
 
     const assignIfObject = (container, key) => {
       if (container && typeof container === 'object') {
-        container[key] = gemCount;
+        container[key] = resolvedGemCount;
       }
     };
 
-    player.gems = gemCount;
+    player.gems = resolvedGemCount;
     assignIfObject(player.progress, 'gems');
     assignIfObject(player.currency, 'gems');
     assignIfObject(player.currencies, 'gems');
