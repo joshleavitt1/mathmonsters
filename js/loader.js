@@ -758,6 +758,58 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   return accumulator;
 };
 
+const findMathProgressEntry = (progressRoot, candidates = []) => {
+  if (!isPlainObject(progressRoot)) {
+    return { key: null, entry: null };
+  }
+
+  const isProgressEntry = (value) =>
+    isPlainObject(value) &&
+    (value.currentBattle !== undefined || value.currentLevel !== undefined);
+
+  const keys = Object.keys(progressRoot);
+  const normalizedCandidates = candidates
+    .map((candidate) =>
+      typeof candidate === 'string' && candidate.trim()
+        ? candidate.trim().toLowerCase()
+        : ''
+    )
+    .filter(Boolean);
+
+  const pickEntry = (key) => {
+    if (typeof key !== 'string') {
+      return null;
+    }
+    const entry = progressRoot[key];
+    return isProgressEntry(entry) ? { key, entry } : null;
+  };
+
+  for (const candidate of normalizedCandidates) {
+    const matchKey = keys.find((key) => {
+      if (typeof key !== 'string') {
+        return false;
+      }
+      return key.trim().toLowerCase() === candidate;
+    });
+
+    if (matchKey) {
+      const match = pickEntry(matchKey);
+      if (match) {
+        return match;
+      }
+    }
+  }
+
+  for (const key of keys) {
+    const match = pickEntry(key);
+    if (match) {
+      return match;
+    }
+  }
+
+  return { key: normalizedCandidates[0] || null, entry: null };
+};
+
 const normalizeLevelList = (levels, mathTypeKey) => {
   if (!Array.isArray(levels)) {
     return [];
@@ -1355,7 +1407,7 @@ const syncRemoteBattleLevel = (playerData) => {
       applyHeroLevelAssets(localPlayer);
     }
 
-    const { levels: derivedLevels } = deriveMathTypeLevels(
+    const { levels: derivedLevels, mathTypeKey } = deriveMathTypeLevels(
       levelsData,
       basePlayer,
       playerJson
@@ -1760,24 +1812,108 @@ const syncRemoteBattleLevel = (playerData) => {
       (monster) => ({ ...monster })
     );
 
-      if (normalizedMonsters.length === 0) {
-        const fallbackCandidates = [];
-
-        if (Array.isArray(levelBattle?.monsters)) {
-          fallbackCandidates.push(...levelBattle.monsters);
-        } else if (levelBattle && typeof levelBattle.monster === 'object') {
-          fallbackCandidates.push(levelBattle.monster);
+    const resolveLevelBattleCount = () => {
+      const countEntries = (candidate) => {
+        if (!candidate || typeof candidate !== 'object') {
+          return 0;
         }
 
-        fallbackCandidates.forEach((candidate) => {
-          const fallbackMonster = prepareCharacter(candidate);
-          if (fallbackMonster) {
-            normalizedMonsters.push({ ...fallbackMonster });
-          }
-        });
+        const entries = Array.isArray(candidate.battles)
+          ? candidate.battles.filter(Boolean)
+          : [];
+        return entries.length > 0 ? entries.length : 0;
+      };
+
+      const counts = [
+        countEntries(currentLevel),
+        countEntries(levelBattleRaw),
+      ];
+
+      for (const value of counts) {
+        if (value > 0) {
+          return value;
+        }
       }
 
-    const primaryMonster = normalizedMonsters[0] || {};
+      if (Array.isArray(levelBattle?.monsters)) {
+        const monsterCount = levelBattle.monsters.filter(Boolean).length;
+        if (monsterCount > 0) {
+          return monsterCount;
+        }
+      }
+
+      const normalizedCount = normalizedMonsters.filter(Boolean).length;
+      return normalizedCount > 0 ? normalizedCount : 1;
+    };
+
+    const resolveActiveMonsterIndex = () => {
+      if (!normalizedMonsters.length) {
+        return 0;
+      }
+
+      const mathTypeCandidates = [
+        levelBattle?.mathType,
+        levelBattleRaw?.mathType,
+        currentLevel?.mathType,
+        mathTypeKey,
+        basePlayer?.currentMathType,
+        basePlayer?.mathType,
+        progress?.mathType,
+      ];
+
+      const { entry: mathProgressEntry } = findMathProgressEntry(
+        progress,
+        mathTypeCandidates
+      );
+
+      const storedBattleCurrent = Number(mathProgressEntry?.currentBattle);
+      let resolvedIndex =
+        Number.isFinite(storedBattleCurrent) && storedBattleCurrent > 0
+          ? Math.round(storedBattleCurrent) - 1
+          : 0;
+
+      if (!Number.isFinite(resolvedIndex) || resolvedIndex < 0) {
+        resolvedIndex = 0;
+      }
+
+      const maxMonsterIndex = normalizedMonsters.length - 1;
+      const totalBattlesForLevel = resolveLevelBattleCount();
+      const maxBattleIndex = Number.isFinite(totalBattlesForLevel) &&
+        totalBattlesForLevel > 0
+          ? Math.min(Math.max(totalBattlesForLevel - 1, 0), maxMonsterIndex)
+          : maxMonsterIndex;
+
+      if (resolvedIndex > maxBattleIndex) {
+        resolvedIndex = maxBattleIndex;
+      }
+
+      if (!Number.isFinite(resolvedIndex) || resolvedIndex < 0) {
+        return 0;
+      }
+
+      return resolvedIndex;
+    };
+
+    if (normalizedMonsters.length === 0) {
+      const fallbackCandidates = [];
+
+      if (Array.isArray(levelBattle?.monsters)) {
+        fallbackCandidates.push(...levelBattle.monsters);
+      } else if (levelBattle && typeof levelBattle.monster === 'object') {
+        fallbackCandidates.push(levelBattle.monster);
+      }
+
+      fallbackCandidates.forEach((candidate) => {
+        const fallbackMonster = prepareCharacter(candidate);
+        if (fallbackMonster) {
+          normalizedMonsters.push({ ...fallbackMonster });
+        }
+      });
+    }
+
+    const primaryMonsterIndex = resolveActiveMonsterIndex();
+    const primaryMonster =
+      normalizedMonsters[primaryMonsterIndex] || normalizedMonsters[0] || {};
 
     const battle = {
       ...levelBattle,
