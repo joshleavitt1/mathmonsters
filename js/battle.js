@@ -525,6 +525,82 @@ document.addEventListener('DOMContentLoaded', () => {
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
   const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
 
+  const rewardSpritePreloadCache = new Map();
+
+  const resolveRewardSpriteSource = (src) => {
+    if (typeof src !== 'string') {
+      return null;
+    }
+
+    const trimmed = src.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    try {
+      return new URL(trimmed, document.baseURI).href;
+    } catch (error) {
+      return trimmed;
+    }
+  };
+
+  const preloadRewardSpriteSource = (src) => {
+    const resolved = resolveRewardSpriteSource(src);
+    if (!resolved) {
+      return Promise.resolve(null);
+    }
+
+    if (rewardSpritePreloadCache.has(resolved)) {
+      return rewardSpritePreloadCache.get(resolved);
+    }
+
+    const preloadPromise = new Promise((resolve) => {
+      const image = new Image();
+      let settled = false;
+
+      const finalize = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        resolve(resolved);
+      };
+
+      image.addEventListener('error', finalize, { once: true });
+      image.addEventListener(
+        'load',
+        () => {
+          if (typeof image.decode === 'function') {
+            image
+              .decode()
+              .then(finalize)
+              .catch(finalize);
+            return;
+          }
+
+          finalize();
+        },
+        { once: true }
+      );
+
+      image.decoding = 'async';
+      image.src = resolved;
+    });
+
+    rewardSpritePreloadCache.set(resolved, preloadPromise);
+    return preloadPromise;
+  };
+
+  const rewardSpriteSources = {
+    potion: resolveRewardSpriteSource(REWARD_POTION_SRC) || REWARD_POTION_SRC,
+    chest: resolveRewardSpriteSource(GEM_REWARD_CHEST_SRC) || GEM_REWARD_CHEST_SRC,
+    gem: resolveRewardSpriteSource(GEM_REWARD_GEM_SRC) || GEM_REWARD_GEM_SRC,
+  };
+
+  Object.values(rewardSpriteSources).forEach((source) => {
+    preloadRewardSpriteSource(source).catch(() => {});
+  });
+
   const sanitizeHeroSpritePath = (path) => {
     if (typeof path !== 'string') {
       return path;
@@ -1690,7 +1766,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardOverlay.classList.remove('reward-overlay--visible');
     rewardOverlay.setAttribute('aria-hidden', 'true');
     document.body?.classList.remove('is-reward-active');
-    rewardSprite.src = REWARD_POTION_SRC;
+    rewardSprite.src = rewardSpriteSources.potion;
     rewardSprite.alt = 'Potion level-up reward';
     setRewardStage(null);
     disableRewardSpriteInteraction();
@@ -1750,7 +1826,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardOverlay.setAttribute('aria-hidden', 'false');
     document.body?.classList.add('is-reward-active');
     disableRewardSpriteInteraction();
-    rewardSprite.src = REWARD_POTION_SRC;
+    rewardSprite.src = rewardSpriteSources.potion;
     rewardSprite.alt = 'Potion level-up reward';
 
     setRewardStage('potion');
@@ -1876,7 +1952,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rewardSprite.classList.remove('reward-overlay__image--chest-pulse');
         rewardSprite.style.removeProperty('--reward-chest-pulse-duration');
         rewardSprite.style.removeProperty('--reward-chest-pulse-count');
-        rewardSprite.src = GEM_REWARD_GEM_SRC;
+        rewardSprite.src = rewardSpriteSources.gem;
         rewardSprite.alt = 'Gem reward';
         setRewardStage('gem');
         void rewardSprite.offsetWidth;
@@ -1923,19 +1999,36 @@ document.addEventListener('DOMContentLoaded', () => {
         window.setTimeout(displayRewardCopy, GEM_REWARD_CARD_DELAY_MS);
       };
 
-      rewardSprite.src = GEM_REWARD_CHEST_SRC;
-      rewardSprite.alt = 'Treasure chest reward';
-      setRewardStage('chest');
       rewardSprite.style.removeProperty('--reward-chest-pulse-duration');
       rewardSprite.style.removeProperty('--reward-chest-pulse-count');
       rewardSprite.classList.remove('reward-overlay__image--visible');
       rewardSprite.classList.remove('reward-overlay__image--chest-pop');
       rewardSprite.classList.remove('reward-overlay__image--chest-pulse');
       rewardSprite.classList.remove('reward-overlay__image--potion-pop');
-      void rewardSprite.offsetWidth;
-      rewardSprite.classList.add('reward-overlay__image--visible');
-      rewardSprite.classList.add('reward-overlay__image--chest-pop');
-      rewardSprite.addEventListener('animationend', handleChestPopEnd, { once: true });
+
+      const beginAnimation = () => {
+        rewardSprite.src = rewardSpriteSources.chest;
+        rewardSprite.alt = 'Treasure chest reward';
+        setRewardStage('chest');
+        void rewardSprite.offsetWidth;
+        rewardSprite.classList.add('reward-overlay__image--visible');
+        rewardSprite.classList.add('reward-overlay__image--chest-pop');
+        rewardSprite.addEventListener('animationend', handleChestPopEnd, { once: true });
+      };
+
+      let animationStarted = false;
+      const startAnimationOnce = () => {
+        if (animationStarted || gemRevealed) {
+          return;
+        }
+        animationStarted = true;
+        beginAnimation();
+      };
+
+      preloadRewardSpriteSource(rewardSpriteSources.gem).catch(() => {});
+      preloadRewardSpriteSource(rewardSpriteSources.chest)
+        .catch(() => {})
+        .finally(startAnimationOnce);
 
       const totalFallbackDuration =
         GEM_REWARD_INITIAL_PAUSE_MS + GEM_REWARD_PULSE_DURATION_MS * GEM_REWARD_PULSE_COUNT + 1200;
