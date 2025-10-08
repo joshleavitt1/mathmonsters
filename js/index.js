@@ -2554,6 +2554,90 @@ const setupDevResetTool = () => {
   devButton.addEventListener('click', handleReset);
 };
 
+const cloneForDevTools = (value) => {
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  if (typeof structuredClone === 'function') {
+    try {
+      return structuredClone(value);
+    } catch (error) {
+      // Fallback to JSON serialization below.
+    }
+  }
+
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (error) {
+    return value;
+  }
+};
+
+const collectLivePlayerProfileSnapshot = async () => {
+  const timestamp = new Date().toISOString();
+  const sourceMap = {};
+  const issues = [];
+
+  const applySource = (label, candidate) => {
+    if (!candidate || typeof candidate !== 'object') {
+      return;
+    }
+
+    const normalized = extractPlayerData(candidate);
+    if (!normalized || typeof normalized !== 'object') {
+      return;
+    }
+
+    sourceMap[label] = cloneForDevTools(normalized);
+    return normalized;
+  };
+
+  let mergedPlayer = {};
+
+  const mergeFromSource = (label, candidate) => {
+    const normalized = applySource(label, candidate);
+    if (!normalized || typeof normalized !== 'object') {
+      return;
+    }
+    mergedPlayer = mergePlayerData(mergedPlayer, normalized);
+  };
+
+  if (typeof window !== 'undefined') {
+    const preloaded = window.preloadedData;
+    mergeFromSource('preloaded.player', preloaded?.player);
+    mergeFromSource('preloaded.playerData', preloaded?.playerData);
+    mergeFromSource('preloaded.fallbackPlayerData', preloaded?.fallbackPlayerData);
+  }
+
+  const storedProfile = readStoredPlayerProfile();
+  mergeFromSource('session.playerProfile', storedProfile);
+
+  try {
+    const remoteProfile = await fetchPlayerProfile();
+    mergeFromSource('remote.playerProfile', remoteProfile);
+  } catch (error) {
+    console.warn('Unable to fetch live player profile for developer tool.', error);
+    issues.push(
+      `Supabase fetch failed${error?.message ? `: ${error.message}` : '.'}`
+    );
+  }
+
+  const hasSources = Object.keys(sourceMap).length > 0;
+
+  return {
+    generatedAt: timestamp,
+    player: hasSources ? cloneForDevTools(mergedPlayer) : null,
+    sources: sourceMap,
+    warnings: issues,
+  };
+};
+
+const formatDevPlayerSnapshot = (snapshot) => {
+  const safeSnapshot = snapshot && typeof snapshot === 'object' ? snapshot : {};
+  return JSON.stringify(safeSnapshot, null, 2);
+};
+
 const setupDevPlayerDataTool = () => {
   const devButton = document.querySelector(DEV_PLAYER_DATA_BUTTON_SELECTOR);
   if (!devButton) {
@@ -2659,18 +2743,12 @@ const setupDevPlayerDataTool = () => {
     renderLoadingMessage(viewer);
 
     try {
-      const response = await fetch(PLAYER_DATA_SOURCE_URL, { cache: 'no-store' });
-      if (!response || !response.ok) {
-        throw new Error(
-          `Request failed with status ${response ? response.status : 'unknown'}.`
-        );
-      }
-
-      const text = await response.text();
-      writePlainTextToWindow(viewer, text);
+      const snapshot = await collectLivePlayerProfileSnapshot();
+      const formatted = formatDevPlayerSnapshot(snapshot);
+      writePlainTextToWindow(viewer, formatted);
     } catch (error) {
       const message =
-        'Unable to load player data.' +
+        'Unable to load live player data.' +
         (error && error.message ? `\n\n${error.message}` : '');
       writePlainTextToWindow(viewer, message);
     }
