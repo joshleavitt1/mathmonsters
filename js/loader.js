@@ -3,6 +3,7 @@ const STORAGE_KEY_PROGRESS = 'mathmonstersProgress';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
 const PRELOADED_SPRITES_STORAGE_KEY = 'mathmonstersPreloadedSprites';
+const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 
 const deriveBaseFromLocation = (fallbackBase) => {
   if (typeof window === 'undefined') {
@@ -175,6 +176,63 @@ const writePreloadedSpriteSet = (spriteSet) => {
     sessionStorage.setItem(PRELOADED_SPRITES_STORAGE_KEY, serialized);
   } catch (error) {
     console.warn('Unable to persist preloaded sprite list.', error);
+  }
+};
+
+const persistNextBattleSnapshot = (snapshot) => {
+  if (typeof window !== 'undefined' && snapshot && typeof snapshot === 'object') {
+    window.mathMonstersBattleSnapshot = snapshot;
+  }
+
+  if (typeof sessionStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    if (!snapshot || typeof snapshot !== 'object') {
+      sessionStorage.removeItem(NEXT_BATTLE_SNAPSHOT_STORAGE_KEY);
+      return;
+    }
+
+    const normalized = {
+      battleLevel: Number.isFinite(snapshot.battleLevel)
+        ? snapshot.battleLevel
+        : null,
+      hero:
+        snapshot.hero && typeof snapshot.hero === 'object'
+          ? {
+              name:
+                typeof snapshot.hero.name === 'string'
+                  ? snapshot.hero.name
+                  : null,
+              sprite:
+                typeof snapshot.hero.sprite === 'string'
+                  ? snapshot.hero.sprite
+                  : null,
+            }
+          : null,
+      monster:
+        snapshot.monster && typeof snapshot.monster === 'object'
+          ? {
+              name:
+                typeof snapshot.monster.name === 'string'
+                  ? snapshot.monster.name
+                  : null,
+              sprite:
+                typeof snapshot.monster.sprite === 'string'
+                  ? snapshot.monster.sprite
+                  : null,
+            }
+          : null,
+      timestamp: Date.now(),
+    };
+
+    sessionStorage.setItem(
+      NEXT_BATTLE_SNAPSHOT_STORAGE_KEY,
+      JSON.stringify(normalized)
+    );
+  } catch (error) {
+    console.warn('Unable to persist next battle snapshot.', error);
   }
 };
 
@@ -1789,6 +1847,24 @@ const syncRemoteBattleLevel = (playerData) => {
       writePreloadedSpriteSet(preloadedSpriteSet);
     }
 
+    const nextBattleSnapshot = {
+      battleLevel: Number.isFinite(activeBattleLevel) ? activeBattleLevel : null,
+      hero: hero
+        ? {
+            name: typeof hero.name === 'string' ? hero.name : null,
+            sprite: typeof hero.sprite === 'string' ? hero.sprite : null,
+          }
+        : null,
+      monster: battle.monster
+        ? {
+            name: typeof battle.monster.name === 'string' ? battle.monster.name : null,
+            sprite: typeof battle.monster.sprite === 'string' ? battle.monster.sprite : null,
+          }
+        : null,
+    };
+
+    persistNextBattleSnapshot(nextBattleSnapshot);
+
     window.preloadedData = {
       player: {
         ...basePlayer,
@@ -1809,6 +1885,7 @@ const syncRemoteBattleLevel = (playerData) => {
     document.dispatchEvent(new Event('data-loaded'));
   } catch (e) {
     console.error('Failed to load data', e);
+    persistNextBattleSnapshot(null);
     window.preloadedData = {};
     document.dispatchEvent(new Event('data-loaded'));
   }
