@@ -19,76 +19,7 @@ const CENTER_IMAGE_HOLD_DURATION_MS_BASE = 1000;
 const HERO_INTRO_TRANSITION_DURATION_MS_BASE = 450;
 const LANDING_BATTLE_SHIFT_DURATION_MS_BASE = 600;
 
-const INTRO_TIMING_PREFERENCE_KEY = 'mathmonstersIntroTimingPreference';
-
-const getIntroTimingPreference = () => {
-  const readDatasetPreference = () => {
-    if (typeof document === 'undefined') {
-      return '';
-    }
-
-    const docElPreference = document.documentElement?.dataset?.introTimingPreference;
-    if (docElPreference) {
-      return docElPreference;
-    }
-
-    const bodyPreference = document.body?.dataset?.introTimingPreference;
-    if (bodyPreference) {
-      return bodyPreference;
-    }
-
-    return '';
-  };
-
-  const datasetPreference = readDatasetPreference();
-  if (datasetPreference) {
-    return datasetPreference;
-  }
-
-  if (typeof window !== 'undefined') {
-    try {
-      const storedPreference = window.localStorage?.getItem(
-        INTRO_TIMING_PREFERENCE_KEY
-      );
-      if (storedPreference) {
-        return storedPreference;
-      }
-    } catch (error) {
-      // Ignore storage access failures (e.g., disabled cookies).
-    }
-  }
-
-  return '';
-};
-
 const computePreferredIntroTimingMultiplier = () => {
-  const preference = getIntroTimingPreference().trim().toLowerCase();
-
-  if (!preference) {
-    return 0.55;
-  }
-
-  if (preference === 'cinematic' || preference === 'full') {
-    return 1;
-  }
-
-  if (preference === 'instant' || preference === 'skip') {
-    return 0;
-  }
-
-  if (preference === 'fast') {
-    return 0.4;
-  }
-
-  if (preference === 'reduced') {
-    return 0.55;
-  }
-
-  const numericPreference = Number.parseFloat(preference);
-  if (Number.isFinite(numericPreference)) {
-    return Math.min(Math.max(numericPreference, 0), 1);
-  }
-
   if (typeof window !== 'undefined') {
     try {
       if (window.matchMedia('(prefers-reduced-motion: reduce)')?.matches) {
