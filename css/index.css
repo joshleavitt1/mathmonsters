@@ -12,6 +12,25 @@ body {
   overflow-y: auto;
 }
 
+.dev-reset-level {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.dev-reset-level:focus {
+  outline: none;
+}
+
 body.is-level-one-landing {
   margin: 0;
 }
