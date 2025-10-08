@@ -1057,6 +1057,35 @@ const mergePlayerWithProgress = (rawPlayerData) => {
 
   const storedProgress = readStoredProgress();
 
+  const sanitizeGemCount = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return null;
+    }
+    return Math.max(0, Math.round(numericValue));
+  };
+
+  const applyGemCountToPlayer = (gemCount) => {
+    if (gemCount === null) {
+      return;
+    }
+
+    mergedProgress.gems = gemCount;
+
+    const assignIfObject = (container, key) => {
+      if (container && typeof container === 'object') {
+        container[key] = gemCount;
+      }
+    };
+
+    player.gems = gemCount;
+    assignIfObject(player.progress, 'gems');
+    assignIfObject(player.currency, 'gems');
+    assignIfObject(player.currencies, 'gems');
+    assignIfObject(player.wallet, 'gems');
+    assignIfObject(player.inventory, 'gems');
+  };
+
   const baseProgress =
     sourceData && typeof sourceData.progress === 'object'
       ? sourceData.progress
@@ -1094,6 +1123,22 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     if (typeof storedProgress.timeRemainingSeconds === 'number') {
       player.battleVariables.timeRemainingSeconds =
         storedProgress.timeRemainingSeconds;
+    }
+
+    const storedGemCount = sanitizeGemCount(storedProgress.gems);
+    if (storedGemCount !== null) {
+      applyGemCountToPlayer(storedGemCount);
+    }
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(mergedProgress, 'gems')) {
+    const fallbackGemCount =
+      sanitizeGemCount(player?.progress?.gems) ??
+      sanitizeGemCount(sourceData?.gems) ??
+      sanitizeGemCount(baseProgress?.gems);
+
+    if (fallbackGemCount !== null) {
+      applyGemCountToPlayer(fallbackGemCount);
     }
   }
 
