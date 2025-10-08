@@ -351,11 +351,11 @@ body:not(.is-level-one-landing) .level-one-intro {
 .level-one-intro__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(12, 16, 26, 0.55);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.35s ease;
-  z-index: 1;
+  z-index: 4;
 }
 
 .level-one-intro__overlay.is-visible {
@@ -379,6 +379,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-inline: auto;
   cursor: default;
   transition: opacity 0.3s ease;
   z-index: 4;
@@ -445,8 +446,8 @@ body:not(.is-level-one-landing) .level-one-intro {
   --card-translate-y: 24px;
   opacity: 0;
   pointer-events: none;
-  align-items: flex-start;
-  text-align: left;
+  align-items: center;
+  text-align: center;
   transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translate3d(
     var(--card-translate-x, -50%),
@@ -454,7 +455,16 @@ body:not(.is-level-one-landing) .level-one-intro {
     var(--card-translate-z, 0)
   );
   position: relative;
-  z-index: 5;
+  z-index: 6;
+}
+
+.level-one-intro__card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(9, 12, 20, 0.6);
+  z-index: -1;
 }
 
 .level-one-intro__card.is-visible {
@@ -471,7 +481,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 }
 
 .level-one-intro__card-avatar {
-  align-self: flex-start;
+  align-self: center;
   width: 80px;
   height: 80px;
   object-fit: contain;
@@ -482,7 +492,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   color: rgba(31, 45, 72, 0.96);
   font-size: var(--text-size-medium);
   line-height: 1.4;
-  text-align: left;
+  text-align: center;
 }
 
 @keyframes level-one-egg-pop {
