@@ -615,6 +615,7 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
   const continueButton = introRoot?.querySelector('[data-level-one-card-continue]');
   const battleCard = introRoot?.querySelector('[data-level-one-card="battle"]');
   const battleButton = introRoot?.querySelector('[data-level-one-card-battle]');
+  const introOverlay = introRoot?.querySelector('[data-level-one-overlay]');
   const wait = (durationMs) =>
     new Promise((resolve) =>
       window.setTimeout(resolve, Math.max(0, Number(durationMs) || 0))
@@ -652,6 +653,10 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     if (!card) {
       return;
     }
+    if (introOverlay) {
+      introOverlay.classList.add('is-visible');
+      introOverlay.setAttribute('aria-hidden', 'false');
+    }
     card.classList.remove('is-exiting');
     card.setAttribute('aria-hidden', 'false');
     void card.offsetWidth;
@@ -667,6 +672,18 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     await wait(LEVEL_ONE_INTRO_CARD_EXIT_DURATION_MS);
     card.classList.remove('is-exiting');
     card.setAttribute('aria-hidden', 'true');
+    if (introOverlay) {
+      const hasVisibleCard = introRoot?.querySelector(
+        '.level-one-intro__card.is-visible'
+      );
+      const hasExitingCard = introRoot?.querySelector(
+        '.level-one-intro__card.is-exiting'
+      );
+      if (!hasVisibleCard && !hasExitingCard) {
+        introOverlay.classList.remove('is-visible');
+        introOverlay.setAttribute('aria-hidden', 'true');
+      }
+    }
   };
 
   const showEgg = () => {
