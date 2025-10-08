@@ -9,6 +9,7 @@ const HOME_PROGRESS_FILL_DURATION_MS = 400;
 const HOME_LEVEL_UP_RESET_DELAY_MS = 900;
 const HOME_LEVEL_UP_BANNER_VISIBLE_MS = 2400;
 const HOME_LEVEL_UP_BANNER_FADE_MS = 250;
+const DEV_SIGN_OUT_BUTTON_SELECTOR = '[data-dev-sign-out]';
 
 let pendingLevelUpCelebration = null;
 let levelUpProgressResetTimeoutId = null;
@@ -681,8 +682,27 @@ const setupHomeLogout = () => {
   attachInteractiveHandler(logoutTrigger, handleLogout);
 };
 
+const setupDevSignOut = () => {
+  const devButton = document.querySelector(DEV_SIGN_OUT_BUTTON_SELECTOR);
+  if (!devButton || devButton.dataset.devSignOutBound === 'true') {
+    return;
+  }
+
+  const handleClick = async (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    await logoutAndRedirect();
+  };
+
+  devButton.dataset.devSignOutBound = 'true';
+  devButton.addEventListener('click', handleClick);
+};
+
 const initializeHomePage = () => {
   setupHomeLogout();
+  setupDevSignOut();
   applySnapshotToHome(readBattleSnapshot());
   updateHomeFromPreloadedData();
 };
