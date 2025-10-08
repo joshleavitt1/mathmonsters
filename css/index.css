@@ -484,7 +484,8 @@ body:not(.is-level-one-landing) .level-one-intro {
 .level-one-intro__card {
   --card-translate-x: 0;
   --card-translate-y: 24px;
-  width: min(420px, calc(100vw - 32px));
+  --surface-padding: clamp(24px, 5vw, 32px);
+  width: min(420px, 100%);
   opacity: 0;
   pointer-events: none;
   align-items: stretch;
