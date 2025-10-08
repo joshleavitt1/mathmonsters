@@ -98,6 +98,22 @@ body.home-page {
   color: rgba(255, 255, 255, 0.5);
 }
 
+.home__level-up-banner {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffe072;
+  opacity: 0;
+  transform: translateY(8px) scale(0.94);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.home__level-up-banner--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
 .home__progress {
   --progress-gradient-start: #2bf542;
   --progress-gradient-end: #0ea631;

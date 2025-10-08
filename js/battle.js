@@ -1,6 +1,9 @@
 const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
+const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+const LEVEL_UP_CELEBRATION_STORAGE_KEY = 'mathmonstersLevelUpCelebration';
+const LEVEL_UP_CELEBRATION_MIN_LEVEL = 3;
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 
 const MONSTER_DEFEAT_ANIMATION_DELAY = 1000;
@@ -2271,6 +2274,167 @@ document.addEventListener('DOMContentLoaded', () => {
     return result;
   };
 
+  const sanitizeProgressProfileUpdate = (update) => {
+    if (!isPlainObject(update)) {
+      return null;
+    }
+
+    const sanitized = {};
+    Object.entries(update).forEach(([key, value]) => {
+      if (key === 'timeRemainingSeconds') {
+        return;
+      }
+
+      if (isPlainObject(value)) {
+        const nested = sanitizeProgressProfileUpdate(value);
+        if (nested && Object.keys(nested).length > 0) {
+          sanitized[key] = nested;
+        }
+        return;
+      }
+
+      sanitized[key] = value;
+    });
+
+    return Object.keys(sanitized).length > 0 ? sanitized : null;
+  };
+
+  const updateStoredPlayerProfile = (updater) => {
+    if (typeof updater !== 'function') {
+      return;
+    }
+
+    try {
+      const storage = window.sessionStorage;
+      if (!storage) {
+        return;
+      }
+
+      const raw = storage.getItem(PLAYER_PROFILE_STORAGE_KEY);
+      let profile = null;
+      if (raw) {
+        try {
+          profile = JSON.parse(raw);
+        } catch (error) {
+          profile = null;
+        }
+      }
+
+      const baseProfile = isPlainObject(profile) ? profile : {};
+      const updatedProfile = updater({ ...baseProfile });
+
+      if (!updatedProfile || typeof updatedProfile !== 'object') {
+        storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+        return;
+      }
+
+      storage.setItem(
+        PLAYER_PROFILE_STORAGE_KEY,
+        JSON.stringify(updatedProfile)
+      );
+    } catch (error) {
+      console.warn('Unable to persist player profile update.', error);
+    }
+  };
+
+  const persistPlayerProfileProgress = (update) => {
+    const sanitizedUpdate = sanitizeProgressProfileUpdate(update);
+    if (!sanitizedUpdate) {
+      return;
+    }
+
+    updateStoredPlayerProfile((baseProfile) => {
+      const progressBase = isPlainObject(baseProfile.progress)
+        ? baseProfile.progress
+        : {};
+      const nextProgress = applyProgressUpdate(progressBase, sanitizedUpdate);
+      return {
+        ...baseProfile,
+        progress: nextProgress,
+      };
+    });
+  };
+
+  const persistPlayerLevel = (level) => {
+    const numericLevel = Number(level);
+    if (!Number.isFinite(numericLevel)) {
+      return;
+    }
+
+    const resolvedLevel = Math.max(1, Math.round(numericLevel));
+
+    if (window.preloadedData && isPlainObject(window.preloadedData.player)) {
+      window.preloadedData.player.currentLevel = resolvedLevel;
+      const playerProgress = isPlainObject(window.preloadedData.player.progress)
+        ? window.preloadedData.player.progress
+        : {};
+      window.preloadedData.player.progress = applyProgressUpdate(
+        playerProgress,
+        { battleLevel: resolvedLevel }
+      );
+    }
+
+    updateStoredPlayerProfile((baseProfile) => {
+      const progressBase = isPlainObject(baseProfile.progress)
+        ? baseProfile.progress
+        : {};
+      const nextProgress = applyProgressUpdate(progressBase, {
+        battleLevel: resolvedLevel,
+      });
+
+      return {
+        ...baseProfile,
+        currentLevel: resolvedLevel,
+        progress: nextProgress,
+      };
+    });
+  };
+
+  const queueLevelUpCelebration = (nextLevel, previousLevel) => {
+    const numericLevel = Number(nextLevel);
+    if (!Number.isFinite(numericLevel)) {
+      return;
+    }
+
+    const resolvedLevel = Math.max(1, Math.round(numericLevel));
+    if (resolvedLevel < LEVEL_UP_CELEBRATION_MIN_LEVEL) {
+      try {
+        window.sessionStorage?.removeItem(LEVEL_UP_CELEBRATION_STORAGE_KEY);
+      } catch (error) {
+        console.warn('Unable to clear level-up celebration flag.', error);
+      }
+      if (typeof window !== 'undefined') {
+        window.mathMonstersLevelUpCelebration = null;
+      }
+      return;
+    }
+
+    const previousNumeric = Number(previousLevel);
+    const resolvedPrevious = Number.isFinite(previousNumeric)
+      ? Math.max(1, Math.round(previousNumeric))
+      : Math.max(1, resolvedLevel - 1);
+
+    const payload = {
+      level: resolvedLevel,
+      previousLevel: resolvedPrevious,
+      timestamp: Date.now(),
+    };
+
+    if (typeof window !== 'undefined') {
+      window.mathMonstersLevelUpCelebration = payload;
+    }
+
+    try {
+      const storage = window.sessionStorage;
+      if (!storage) {
+        return;
+      }
+      storage.setItem(LEVEL_UP_CELEBRATION_STORAGE_KEY, JSON.stringify(payload));
+    } catch (error) {
+      console.warn('Unable to persist level-up celebration.', error);
+    }
+  };
+
   const resolveBattleLevelForExperience = () => {
     if (Number.isFinite(currentBattleLevel)) {
       return currentBattleLevel;
@@ -2767,6 +2931,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    persistPlayerProfileProgress(update);
+
     try {
       const storage = window.localStorage;
       if (!storage) {
@@ -2803,6 +2969,8 @@ document.addEventListener('DOMContentLoaded', () => {
         : 0;
     const nextLevel = baseLevel + 1;
     persistProgress({ battleLevel: nextLevel });
+    persistPlayerLevel(nextLevel);
+    queueLevelUpCelebration(nextLevel, baseLevel);
     currentBattleLevel = nextLevel;
     battleLevelAdvanced = true;
     shouldAdvanceBattleLevel = false;
