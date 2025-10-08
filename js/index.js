@@ -2079,11 +2079,19 @@ const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
     }
 
     element.hidden = false;
+    element.removeAttribute('hidden');
     element.removeAttribute('aria-hidden');
     element.classList.remove('pulsating-glow');
     HOME_ACTION_GLOW_CLASSES.forEach((className) => {
       element.classList.remove(className);
     });
+
+    const actionImage = element.querySelector('.home__action-image');
+    if (actionImage instanceof HTMLElement) {
+      actionImage.hidden = false;
+      actionImage.removeAttribute('hidden');
+      actionImage.removeAttribute('aria-hidden');
+    }
   };
 
   actionElements.forEach((element) => resetActionState(element));
@@ -2105,6 +2113,13 @@ const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
     if (shopAction) {
       shopAction.hidden = true;
       shopAction.setAttribute('aria-hidden', 'true');
+
+      const shopImage = shopAction.querySelector('.home__action-image');
+      if (shopImage instanceof HTMLElement) {
+        shopImage.hidden = true;
+        shopImage.setAttribute('hidden', '');
+        shopImage.setAttribute('aria-hidden', 'true');
+      }
     }
 
     if (battleAction) {
@@ -2123,6 +2138,13 @@ const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
     if (shopAction) {
       shopAction.hidden = false;
       shopAction.removeAttribute('aria-hidden');
+
+      const shopImage = shopAction.querySelector('.home__action-image');
+      if (shopImage instanceof HTMLElement) {
+        shopImage.hidden = false;
+        shopImage.removeAttribute('hidden');
+        shopImage.removeAttribute('aria-hidden');
+      }
       shopAction.classList.add(
         'pulsating-glow',
         'home__action--glow',
