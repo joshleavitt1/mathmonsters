@@ -812,6 +812,32 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    try {
+      const storage = window.localStorage;
+      if (storage) {
+        const raw = storage.getItem(PROGRESS_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            const storedGemValue = Number(parsed.gems);
+            if (Number.isFinite(storedGemValue)) {
+              return Math.max(0, Math.round(storedGemValue));
+            }
+
+            const nestedProgress = parsed.progress;
+            if (nestedProgress && typeof nestedProgress === 'object') {
+              const nestedGemValue = Number(nestedProgress.gems);
+              if (Number.isFinite(nestedGemValue)) {
+                return Math.max(0, Math.round(nestedGemValue));
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Stored progress unavailable.', error);
+    }
+
     return 0;
   };
 
