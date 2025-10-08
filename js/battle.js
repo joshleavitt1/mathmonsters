@@ -884,6 +884,31 @@ document.addEventListener('DOMContentLoaded', () => {
     persistProgress({ gemRewardIntroShown: true });
   };
 
+  const normalizePositiveInteger = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return null;
+    }
+
+    const rounded = Math.round(numericValue);
+    return rounded > 0 ? rounded : null;
+  };
+
+  const formatGemRewardMessage = ({
+    amount,
+    isWin,
+    includeShopPrompt,
+  } = {}) => {
+    const normalizedAmount = Math.max(0, Math.round(Number(amount) || 0));
+    const prefix = isWin ? 'Great job! You earned' : 'Great effort! You earned';
+    const gemLabel = `${normalizedAmount} gem${normalizedAmount === 1 ? '' : 's'}`;
+    const baseMessage = `${prefix} ${gemLabel}`;
+
+    return includeShopPrompt
+      ? `${baseMessage}. Let’s see what cool stuff you can buy in the shop!`
+      : `${baseMessage}.`;
+  };
+
   const resolveAbsoluteSpritePath = (path) => {
     if (typeof path !== 'string') {
       return null;
@@ -1795,6 +1820,15 @@ document.addEventListener('DOMContentLoaded', () => {
         ? Math.max(0, Math.round(rewardAmountRaw))
         : GEM_REWARD_WIN_AMOUNT;
       const isFirstGemReward = rewardConfig?.isFirstGemReward === true;
+      const rewardBattleLevel = normalizePositiveInteger(
+        rewardConfig?.battleLevel
+      );
+      const rewardBattleIndex = normalizePositiveInteger(
+        rewardConfig?.currentBattle
+      );
+      const rewardIsWin = rewardConfig?.win !== false;
+      const includeShopPrompt =
+        rewardBattleLevel === 2 && rewardBattleIndex === 1;
 
       pendingGemReward = null;
       updateNextMissionButton(true);
@@ -1836,9 +1870,11 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         cardDisplayed = true;
-        const cardText = isFirstGemReward
-          ? 'Wow! You earned 5 gems. Let’s see what cool stuff you can buy in the store!'
-          : `Wow! You earned ${rewardAmount} gems.`;
+        const cardText = formatGemRewardMessage({
+          amount: rewardAmount,
+          isWin: rewardIsWin,
+          includeShopPrompt,
+        });
         const displayed = displayRewardCard({
           text: cardText,
           buttonText: 'Continue',
@@ -3682,6 +3718,13 @@ document.addEventListener('DOMContentLoaded', () => {
     battleGoalsMet = goalsAchieved;
 
     const resolvedBattleLevel = resolveBattleLevelForExperience();
+    const progressState = readMathProgressState();
+    const rewardBattleLevel =
+      normalizePositiveInteger(progressState?.battleLevelNumber) ??
+      normalizePositiveInteger(resolvedBattleLevel);
+    const rewardBattleIndex = normalizePositiveInteger(
+      progressState?.currentBattle
+    );
     const gemRewardAmount = win ? GEM_REWARD_WIN_AMOUNT : GEM_REWARD_LOSS_AMOUNT;
     const updatedGemTotal = awardGemReward(gemRewardAmount);
     persistGemTotal(updatedGemTotal);
@@ -3711,6 +3754,9 @@ document.addEventListener('DOMContentLoaded', () => {
           totalAfter: updatedGemTotal,
           useClaimLabel: !gemRewardIntroShown,
           isFirstGemReward: !gemRewardIntroShown,
+          battleLevel: rewardBattleLevel,
+          currentBattle: rewardBattleIndex,
+          win: true,
         };
       } else {
         pendingGemReward = null;
@@ -3721,6 +3767,9 @@ document.addEventListener('DOMContentLoaded', () => {
         totalAfter: updatedGemTotal,
         useClaimLabel: true,
         isFirstGemReward: false,
+        battleLevel: rewardBattleLevel,
+        currentBattle: rewardBattleIndex,
+        win: false,
       };
     }
 

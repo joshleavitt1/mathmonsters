@@ -2030,6 +2030,104 @@ const determineBattlePreview = (levelsData, playerData) => {
   };
 };
 
+const normalizeBattleIndex = (value) => {
+  const normalized = normalizeBattleLevel(value);
+  if (typeof normalized !== 'number' || !Number.isFinite(normalized)) {
+    return null;
+  }
+
+  const rounded = Math.round(normalized);
+  return rounded > 0 ? rounded : null;
+};
+
+const HOME_ACTION_GLOW_CLASSES = [
+  'home__action--glow',
+  'home__action--glow-sword',
+  'home__action--glow-shop',
+];
+
+const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
+  const actionsContainer = document.querySelector('.home__actions');
+  if (!actionsContainer) {
+    return;
+  }
+
+  const actionElements = Array.from(
+    actionsContainer.querySelectorAll('.home__action')
+  ).filter((element) => element instanceof HTMLElement);
+
+  if (!actionElements.length) {
+    return;
+  }
+
+  const battleAction =
+    actionElements.find((element) => element.matches('[data-battle-trigger]')) ||
+    null;
+  const shopAction =
+    actionElements.find((element) => !element.matches('[data-battle-trigger]')) ||
+    null;
+
+  const resetActionState = (element) => {
+    if (!element) {
+      return;
+    }
+
+    element.hidden = false;
+    element.removeAttribute('aria-hidden');
+    element.classList.remove('pulsating-glow');
+    HOME_ACTION_GLOW_CLASSES.forEach((className) => {
+      element.classList.remove(className);
+    });
+  };
+
+  actionElements.forEach((element) => resetActionState(element));
+  actionsContainer.classList.remove('home__actions--single');
+
+  const landingRoot = document.body;
+  const isStandardLanding = Boolean(
+    landingRoot?.classList?.contains('is-standard-landing')
+  );
+
+  if (!isStandardLanding) {
+    return;
+  }
+
+  const resolvedLevel = normalizeBattleIndex(battleLevel);
+  const resolvedBattle = normalizeBattleIndex(currentBattle);
+
+  if (resolvedLevel === 2 && resolvedBattle === 1) {
+    if (shopAction) {
+      shopAction.hidden = true;
+      shopAction.setAttribute('aria-hidden', 'true');
+    }
+
+    if (battleAction) {
+      battleAction.classList.add(
+        'pulsating-glow',
+        'home__action--glow',
+        'home__action--glow-sword'
+      );
+    }
+
+    actionsContainer.classList.add('home__actions--single');
+    return;
+  }
+
+  if (resolvedLevel === 2 && resolvedBattle === 2) {
+    if (shopAction) {
+      shopAction.hidden = false;
+      shopAction.removeAttribute('aria-hidden');
+      shopAction.classList.add(
+        'pulsating-glow',
+        'home__action--glow',
+        'home__action--glow-shop'
+      );
+    }
+
+    return;
+  }
+};
+
 const applyBattlePreview = (previewData = {}, levels = []) => {
   const heroImageElements = document.querySelectorAll('[data-hero-sprite]');
   const monsterImage = document.querySelector('[data-monster]');
@@ -2255,6 +2353,11 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
       actionsElement.removeAttribute('aria-hidden');
     }
   }
+
+  updateHomeTutorialHighlights({
+    battleLevel: resolvedBattleLevel,
+    currentBattle: previewData?.progressBattleCurrent,
+  });
 
   updateHeroFloat();
   updateIntroTimingForLanding({ isLevelOneLanding });
