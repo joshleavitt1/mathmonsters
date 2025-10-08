@@ -1857,6 +1857,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'reward-overlay__image--chest-pop',
       'reward-overlay__image--hatching',
       'reward-overlay__image--potion-pop',
+      'reward-overlay__image--potion-pulse',
       'reward-overlay__image--swap-in',
       'reward-overlay__image--swap-out',
       'reward-overlay__image--visible'
@@ -2059,8 +2060,20 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardSprite.alt = 'Potion level-up reward';
 
     setRewardStage('potion');
+    rewardSprite.classList.remove('reward-overlay__image--potion-pulse');
     void rewardSprite.offsetWidth;
     rewardSprite.classList.add('reward-overlay__image--visible');
+    rewardSprite.classList.add('reward-overlay__image--potion-pop');
+    const handlePotionPopEnd = (event) => {
+      if (!event || event.animationName !== 'reward-overlay-egg-pop') {
+        return;
+      }
+      rewardSprite.classList.remove('reward-overlay__image--potion-pop');
+      rewardSprite.classList.add('reward-overlay__image--potion-pulse');
+    };
+    rewardSprite.addEventListener('animationend', handlePotionPopEnd, {
+      once: true,
+    });
 
     rewardCardDisplayTimeout = window.setTimeout(() => {
       rewardCardDisplayTimeout = null;
