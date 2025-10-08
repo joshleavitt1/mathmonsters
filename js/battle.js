@@ -4289,7 +4289,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win && !hasPendingLevelUpReward) {
       const isInitialLevel =
-        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel <= 1;
+        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel === 1;
       const noExperienceRequirement = levelExperienceRequirement <= 0;
       if (
         isInitialLevel &&
