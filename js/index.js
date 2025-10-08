@@ -14,6 +14,7 @@ const DEV_RESET_TARGET_LEVEL = 2;
 const DEV_RESET_TARGET_BATTLE = 1;
 const DEV_RESET_BUTTON_SELECTOR = '[data-dev-reset-level]';
 const DEV_PLAYER_DATA_BUTTON_SELECTOR = '[data-dev-player-data]';
+const DEV_SIGN_OUT_BUTTON_SELECTOR = '[data-dev-sign-out]';
 const PLAYER_DATA_SOURCE_URL = 'data/player.json';
 
 const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
@@ -2679,6 +2680,28 @@ const setupDevPlayerDataTool = () => {
   devButton.addEventListener('click', handleClick);
 };
 
+const setupDevSignOutTool = () => {
+  const devButton = document.querySelector(DEV_SIGN_OUT_BUTTON_SELECTOR);
+  if (!devButton) {
+    return;
+  }
+
+  if (devButton.dataset.devSignOutBound === 'true') {
+    return;
+  }
+
+  const handleSignOut = async (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    await logoutAndRedirect();
+  };
+
+  devButton.dataset.devSignOutBound = 'true';
+  devButton.addEventListener('click', handleSignOut);
+};
+
 const readStoredPlayerProfile = () => {
   if (typeof window === 'undefined') {
     return null;
@@ -3045,6 +3068,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   setupSettingsLogout();
   setupDevResetTool();
   setupDevPlayerDataTool();
+  setupDevSignOutTool();
 
   updateIntroTimingForLanding({ isLevelOneLanding });
 
