@@ -517,6 +517,10 @@ body.is-reward-active > *:not(.reward-overlay) {
   display: none !important;
 }
 
+body.is-reward-transitioning > *:not(.reward-overlay) {
+  visibility: hidden;
+}
+
 body.is-reward-active .reward-overlay {
   visibility: visible;
   pointer-events: auto;
