@@ -563,7 +563,6 @@ button:focus-visible {
 
 .card--home {
   position: absolute;
-  left: 50%;
   bottom: calc(24px + var(--viewport-bottom-offset, 0px));
   bottom: calc(
     24px + var(--viewport-bottom-offset, 0px) +
