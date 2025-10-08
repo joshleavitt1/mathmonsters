@@ -1142,6 +1142,7 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       ? sourceData.progress
       : {};
   const mergedProgress = { ...baseProgress };
+  let mergedProgressLevel = readProgressLevel(mergedProgress);
   const baseBattleVariables =
     sourceData && typeof sourceData.battleVariables === 'object'
       ? sourceData.battleVariables
@@ -1167,8 +1168,9 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       : { ...baseBattleVariables };
 
   if (storedProgress && typeof storedProgress === 'object') {
-    if (typeof storedProgress.battleLevel === 'number') {
-      mergedProgress.battleLevel = storedProgress.battleLevel;
+    const storedBattleLevel = readProgressLevel(storedProgress);
+    if (storedBattleLevel !== null) {
+      mergedProgressLevel = storedBattleLevel;
     }
 
     if (typeof storedProgress.timeRemainingSeconds === 'number') {
@@ -1193,6 +1195,15 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     }
   }
 
+  if (mergedProgressLevel === null) {
+    const existingPlayerLevel = readProgressLevel(player.progress);
+    if (existingPlayerLevel !== null) {
+      mergedProgressLevel = existingPlayerLevel;
+    }
+  }
+
+  assignProgressLevel(mergedProgress, mergedProgressLevel);
+
   if (!player.progress || typeof player.progress !== 'object') {
     player.progress = mergedProgress;
   } else {
@@ -1203,6 +1214,15 @@ const mergePlayerWithProgress = (rawPlayerData) => {
         ...normalizedExisting,
         ...mergedProgress.experience,
       };
+    }
+    assignProgressLevel(player.progress, mergedProgressLevel);
+  }
+
+  if (mergedProgressLevel !== null) {
+    const sanitizedLevel = Math.max(1, Math.round(Number(mergedProgressLevel) || 1));
+    const existingLevel = Number(player.currentLevel);
+    if (!Number.isFinite(existingLevel) || sanitizedLevel > existingLevel) {
+      player.currentLevel = sanitizedLevel;
     }
   }
 
@@ -1248,6 +1268,33 @@ const normalizeBattleLevel = (value) => {
   }
 
   return null;
+};
+
+const readProgressLevel = (progress) => {
+  if (!isPlainObject(progress)) {
+    return null;
+  }
+
+  const currentLevel = normalizeBattleLevel(progress.currentLevel);
+  if (currentLevel !== null) {
+    return currentLevel;
+  }
+
+  return normalizeBattleLevel(progress.battleLevel);
+};
+
+const assignProgressLevel = (progress, level) => {
+  if (!isPlainObject(progress)) {
+    return;
+  }
+
+  if (level === null) {
+    delete progress.currentLevel;
+  } else {
+    progress.currentLevel = level;
+  }
+
+  delete progress.battleLevel;
 };
 
 const collectMathTypeCandidates = (source, accumulator = new Set()) => {
@@ -1894,7 +1941,7 @@ const determineBattlePreview = (levelsData, playerData) => {
     return { levels, player, preview: null };
   }
 
-  const progressLevel = normalizeBattleLevel(player?.progress?.battleLevel);
+  const progressLevel = readProgressLevel(player?.progress);
   const activeLevel = (() => {
     if (progressLevel !== null) {
       const match = levels.find(
@@ -2019,7 +2066,9 @@ const determineBattlePreview = (levelsData, playerData) => {
   const sanitizedBattleTotal = Number.isFinite(totalBattlesForLevel)
     ? Math.max(1, Math.round(totalBattlesForLevel))
     : 1;
-  const storedBattleTotal = Number(mathProgressEntry?.currentLevel);
+  const storedBattleTotal = Number(
+    mathProgressEntry?.currentLevel ?? mathProgressEntry?.battleLevel
+  );
   const resolvedBattleTotal = Number.isFinite(storedBattleTotal) && storedBattleTotal > 0
     ? Math.max(sanitizedBattleTotal, Math.round(storedBattleTotal))
     : sanitizedBattleTotal;
@@ -2060,6 +2109,7 @@ const determineBattlePreview = (levelsData, playerData) => {
       progressExperienceTotal: experienceProgress.total,
       progressExperienceText: progressText,
       playerGems,
+      currentLevel: activeLevel?.battleLevel ?? null,
     },
   };
 };
@@ -2365,7 +2415,9 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
   });
 
   const resolvedBattleLevel = (() => {
-    const fromPreview = normalizeBattleLevel(previewData?.battleLevel);
+    const fromPreview = normalizeBattleLevel(
+      previewData?.currentLevel ?? previewData?.battleLevel
+    );
     if (fromPreview !== null) {
       return fromPreview;
     }
@@ -2509,9 +2561,9 @@ const setupDevResetTool = () => {
 
     const updatedProgress = {
       ...normalizedProgress,
-      battleLevel: DEV_RESET_TARGET_LEVEL,
       [mathKey]: updatedMathProgress,
     };
+    assignProgressLevel(updatedProgress, DEV_RESET_TARGET_LEVEL);
 
     try {
       const storage = window.localStorage;
@@ -2692,7 +2744,7 @@ const createCompactProgress = (progress) => {
   }
 
   Object.entries(progress).forEach(([key, value]) => {
-    if (key === 'gems' || key === 'battleLevel') {
+    if (key === 'gems' || key === 'battleLevel' || key === 'currentLevel') {
       return;
     }
 
@@ -2702,9 +2754,11 @@ const createCompactProgress = (progress) => {
     }
   });
 
-  const battleLevel = normalizeNumericValue(progress.battleLevel);
-  if (battleLevel !== null) {
-    compact.battleLevel = battleLevel;
+  const overallLevel =
+    normalizeNumericValue(progress.currentLevel) ??
+    normalizeNumericValue(progress.battleLevel);
+  if (overallLevel !== null) {
+    compact.currentLevel = overallLevel;
   }
 
   return Object.keys(compact).length > 0 ? compact : null;

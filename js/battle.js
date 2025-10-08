@@ -650,7 +650,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const preloadedLevel = Number(window.preloadedData?.level?.battleLevel);
-    return Number.isFinite(preloadedLevel) ? preloadedLevel : null;
+    if (Number.isFinite(preloadedLevel)) {
+      return preloadedLevel;
+    }
+
+    const progressLevel = Number(
+      typeof window.preloadedData?.progress?.currentLevel === 'number'
+        ? window.preloadedData.progress.currentLevel
+        : window.preloadedData?.progress?.battleLevel
+    );
+    return Number.isFinite(progressLevel) ? progressLevel : null;
   };
   let correctAnswers = 0;
   let totalAnswers = 0;
@@ -1123,7 +1132,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const persistGemTotal = (total) => {
     const safeTotal = Math.max(0, Math.round(Number(total) || 0));
-    persistProgress({ gems: safeTotal });
+    const previousTotal = readCurrentGemTotal();
+    const delta = safeTotal - previousTotal;
+
+    if (delta !== 0) {
+      persistProgress({ gems: delta });
+    }
 
     if (window.preloadedData) {
       if (window.preloadedData.progress && typeof window.preloadedData.progress === 'object') {
@@ -2461,6 +2475,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const applyProgressUpdate = (baseProgress, update) => {
     const result = isPlainObject(baseProgress) ? { ...baseProgress } : {};
+
+    if (
+      Object.prototype.hasOwnProperty.call(result, 'battleLevel') &&
+      !Object.prototype.hasOwnProperty.call(result, 'currentLevel')
+    ) {
+      result.currentLevel = result.battleLevel;
+    }
+    delete result.battleLevel;
+
     if (!isPlainObject(update)) {
       return result;
     }
@@ -2473,6 +2496,37 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           delete result.experience;
         }
+        return;
+      }
+
+      if (key === 'battleLevel') {
+        if (value === undefined) {
+          delete result.currentLevel;
+        } else {
+          result.currentLevel = value;
+        }
+        return;
+      }
+
+      if (key === 'currentLevel') {
+        if (value === undefined) {
+          delete result.currentLevel;
+        } else {
+          result.currentLevel = value;
+        }
+        return;
+      }
+
+      if (key === 'gems') {
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue)) {
+          return;
+        }
+
+        const baseValue = Number(result.gems);
+        const resolvedBase = Number.isFinite(baseValue) ? baseValue : 0;
+        const nextTotal = resolvedBase + Math.round(numericValue);
+        result.gems = Math.max(0, nextTotal);
         return;
       }
 
@@ -2489,6 +2543,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       result[key] = value;
     });
+
+    if (
+      Object.prototype.hasOwnProperty.call(result, 'battleLevel') &&
+      !Object.prototype.hasOwnProperty.call(result, 'currentLevel')
+    ) {
+      result.currentLevel = result.battleLevel;
+    }
+    delete result.battleLevel;
 
     return result;
   };
@@ -2591,7 +2653,7 @@ document.addEventListener('DOMContentLoaded', () => {
         : {};
       window.preloadedData.player.progress = applyProgressUpdate(
         playerProgress,
-        { battleLevel: resolvedLevel }
+        { currentLevel: resolvedLevel }
       );
     }
 
@@ -2600,7 +2662,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ? baseProfile.progress
         : {};
       const nextProgress = applyProgressUpdate(progressBase, {
-        battleLevel: resolvedLevel,
+        currentLevel: resolvedLevel,
       });
 
       return {
@@ -2661,7 +2723,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return currentBattleLevel;
     }
     const fallbackLevel = Number(window.preloadedData?.level?.battleLevel);
-    return Number.isFinite(fallbackLevel) ? fallbackLevel : null;
+    if (Number.isFinite(fallbackLevel)) {
+      return fallbackLevel;
+    }
+
+    const progressLevel = Number(
+      typeof window.preloadedData?.progress?.currentLevel === 'number'
+        ? window.preloadedData.progress.currentLevel
+        : window.preloadedData?.progress?.battleLevel
+    );
+    return Number.isFinite(progressLevel) ? progressLevel : null;
   };
 
   const resolveExperiencePointsForMonster = () => {
@@ -3185,11 +3256,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const baseLevel =
       typeof currentBattleLevel === 'number'
         ? currentBattleLevel
+        : typeof window.preloadedData?.progress?.currentLevel === 'number'
+        ? window.preloadedData.progress.currentLevel
         : typeof window.preloadedData?.progress?.battleLevel === 'number'
         ? window.preloadedData.progress.battleLevel
         : 0;
     const nextLevel = baseLevel + 1;
-    persistProgress({ battleLevel: nextLevel });
+    persistProgress({ currentLevel: nextLevel });
     persistPlayerLevel(nextLevel);
     queueLevelUpCelebration(nextLevel, baseLevel);
     currentBattleLevel = nextLevel;
@@ -3202,7 +3275,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const battleData = data.battle ?? {};
     const heroData = data.hero ?? {};
     const monsterData = data.monster ?? {};
-    const progressData = data.progress ?? data.player?.progress ?? {};
+    const progressDataSource = data.progress ?? data.player?.progress ?? {};
+    const progressData =
+      progressDataSource && typeof progressDataSource === 'object'
+        ? { ...progressDataSource }
+        : {};
     gemRewardIntroShown = Boolean(progressData?.gemRewardIntroShown);
     const experienceMap = normalizeExperienceMap(progressData?.experience);
     if (isPlainObject(data.progress)) {
@@ -3341,12 +3418,38 @@ document.addEventListener('DOMContentLoaded', () => {
       return result;
     };
 
-    currentBattleLevel =
-      typeof progressData.battleLevel === 'number'
-        ? progressData.battleLevel
-        : typeof data.level?.battleLevel === 'number'
-        ? data.level.battleLevel
-        : null;
+    const progressLevelCandidate = Number(
+      typeof progressData.currentLevel === 'number'
+        ? progressData.currentLevel
+        : progressData.battleLevel
+    );
+    currentBattleLevel = Number.isFinite(progressLevelCandidate)
+      ? progressLevelCandidate
+      : typeof data.level?.battleLevel === 'number'
+      ? data.level.battleLevel
+      : null;
+
+    const normalizedCurrentLevel = Number.isFinite(currentBattleLevel)
+      ? Math.max(1, Math.round(currentBattleLevel))
+      : null;
+
+    if (isPlainObject(data.progress)) {
+      if (normalizedCurrentLevel !== null) {
+        data.progress.currentLevel = normalizedCurrentLevel;
+      } else {
+        delete data.progress.currentLevel;
+      }
+      delete data.progress.battleLevel;
+    }
+
+    if (isPlainObject(data.player?.progress)) {
+      if (normalizedCurrentLevel !== null) {
+        data.player.progress.currentLevel = normalizedCurrentLevel;
+      } else {
+        delete data.player.progress.currentLevel;
+      }
+      delete data.player.progress.battleLevel;
+    }
 
     levelExperienceEarned = readExperienceForLevel(
       experienceMap,
@@ -3530,7 +3633,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    persistProgress({ battleLevel: sanitizedLevel });
+    persistProgress({ currentLevel: sanitizedLevel });
     currentBattleLevel = sanitizedLevel;
     battleLevelAdvanced = false;
 

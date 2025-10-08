@@ -156,8 +156,14 @@
               return null;
             }
 
+            const levelValue = Number.isFinite(parsed.currentLevel)
+              ? parsed.currentLevel
+              : Number.isFinite(parsed.battleLevel)
+              ? parsed.battleLevel
+              : null;
+
             const snapshot = {
-              battleLevel: Number.isFinite(parsed.battleLevel) ? parsed.battleLevel : null,
+              currentLevel: levelValue,
               hero: sanitizeEntry(parsed.hero),
               monster: sanitizeEntry(parsed.monster),
               timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),

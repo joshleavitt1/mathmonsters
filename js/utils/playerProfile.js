@@ -32,7 +32,8 @@
       return;
     }
 
-    const remoteLevel = playerData?.progress?.battleLevel;
+    const remoteLevel =
+      playerData?.progress?.currentLevel ?? playerData?.progress?.battleLevel;
     const numericLevel = toNumericBattleLevel(remoteLevel);
     if (numericLevel === null) {
       return;
@@ -56,7 +57,8 @@
 
       const nextValue =
         parsed && typeof parsed === 'object' ? { ...parsed } : {};
-      nextValue.battleLevel = numericLevel;
+      nextValue.currentLevel = numericLevel;
+      delete nextValue.battleLevel;
 
       storage.setItem(storageKey, JSON.stringify(nextValue));
     } catch (error) {
