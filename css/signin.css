@@ -1,28 +1,34 @@
 .preloader {
-  --preloader-padding: clamp(16px, 5vw, 48px);
-  --app-safe-area-padding: var(--preloader-padding);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 40px;
-  min-height: 100vh;
-  min-height: 100dvh;
-  width: 100%;
-  background-color: #001b41;
+  --story-screen-gap: clamp(28px, 8vh, 56px);
+  --story-screen-padding: clamp(24px, 8vw, 56px);
+  --story-screen-max-card: 440px;
+  background: transparent;
+  color: inherit;
   text-align: center;
-  box-sizing: border-box;
 }
 
 .preloader:not(.app-safe-area) {
-  padding: var(--preloader-padding);
+  padding: 0;
 }
 
 .preloader__logo {
-  width: 200px;
-  height: 200px;
+  width: min(220px, 60vw);
+  height: auto;
+  aspect-ratio: 1 / 1;
   object-fit: contain;
+}
+
+.preloader .story-screen__card {
+  align-items: center;
+  gap: clamp(24px, 5vh, 32px);
+}
+
+.preloader .story-screen__card > * {
+  width: min(420px, 100%);
+}
+
+.preloader .story-screen__card > .preloader__error {
+  width: 100%;
 }
 
 .preloader__intro {
@@ -181,13 +187,14 @@
   height: 64px;
   margin: 0;
   box-sizing: border-box;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 16px;
   color: #ffffff;
   text-decoration: none;
   font-size: 20px;
   font-weight: 400;
-  background-color: transparent;
+  background-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -230,10 +237,8 @@
 
 @media (max-width: 480px) {
   .preloader {
-    justify-content: center;
-    align-items: center;
-    gap: 40px;
-    --preloader-padding: 24px;
+    --story-screen-gap: clamp(24px, 8vh, 40px);
+    --story-screen-padding: clamp(20px, 8vw, 36px);
   }
   .preloader__form {
     max-width: none;
@@ -242,8 +247,8 @@
     align-items: center;
   }
   .preloader__logo {
-    width: 200px;
-    height: 200px;
+    width: 180px;
+    height: 180px;
   }
 }
 .visually-hidden {

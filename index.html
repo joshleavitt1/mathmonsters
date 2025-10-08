@@ -88,50 +88,57 @@
       ></span>
     </div>
 
-    <div data-level-one-landing>
-      <section class="landing__hero-info" aria-live="polite">
-        <p class="landing__hero-name text-large text-white" data-hero-name>
-          Shellfin
-        </p>
-        <p class="landing__hero-level text-small text-white" data-hero-level>
-          Level 1
-        </p>
-        <div
-          class="progress landing__hero-progress"
-          role="progressbar"
-          aria-label="Level progress"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow="0"
-          aria-valuetext="0 of 0 experience"
-          data-battle-progress
-        >
-          <div class="progress__fill" aria-hidden="true"></div>
-        </div>
-      </section>
-
-      <img
-        class="hero"
-        src="./images/hero/shellfin_evolution_1.png"
-        alt="Shellfin ready for battle"
-        data-hero-sprite
-      />
-
-      <div class="landing__actions">
-        <button class="landing__battle-button" type="button" data-battle-button>
-          Battle
-        </button>
+    <div class="story-screen app-safe-area" data-level-one-landing>
+      <div class="story-screen__sprite">
+        <img
+          class="hero"
+          src="./images/hero/shellfin_evolution_1.png"
+          alt="Shellfin ready for battle"
+          data-hero-sprite
+        />
+        <img
+          class="monster"
+          data-monster
+          src="./images/monster/addition_battle_1.png"
+          alt="Monster ready for battle"
+          width="300"
+          height="300"
+          aria-hidden="true"
+        />
       </div>
 
-      <img
-        class="monster"
-        data-monster
-        src="./images/monster/addition_battle_1.png"
-        alt="Monster ready for battle"
-        width="300"
-        height="300"
-        aria-hidden="true"
-      />
+      <div class="story-screen__card landing__card">
+        <section class="landing__hero-info" aria-live="polite">
+          <p class="landing__hero-name text-large text-white" data-hero-name>
+            Shellfin
+          </p>
+          <p class="landing__hero-level text-small text-white" data-hero-level>
+            Level 1
+          </p>
+          <div
+            class="progress landing__hero-progress"
+            role="progressbar"
+            aria-label="Level progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            aria-valuetext="0 of 0 experience"
+            data-battle-progress
+          >
+            <div class="progress__fill" aria-hidden="true"></div>
+          </div>
+        </section>
+
+        <div class="landing__actions story-screen__actions">
+          <button
+            class="landing__battle-button"
+            type="button"
+            data-battle-button
+          >
+            Battle
+          </button>
+        </div>
+      </div>
     </div>
 
     <div
@@ -224,7 +231,7 @@
     </button>
 
     <section
-      class="card level-one-intro__card"
+      class="story-screen__card level-one-intro__card"
       data-level-one-card="welcome"
       aria-hidden="true"
     >
@@ -235,7 +242,7 @@
         width="80"
         height="80"
       />
-      <p class="level-one-intro__card-text text-medium text-dark">
+      <p class="level-one-intro__card-text text-medium text-white">
         Hi! I’m Dr. Wave. I study math monsters. I think this egg is about to hatch!
       </p>
       <button
@@ -248,7 +255,7 @@
     </section>
 
     <section
-      class="card level-one-intro__card"
+      class="story-screen__card level-one-intro__card"
       data-level-one-card="battle"
       aria-hidden="true"
     >
@@ -259,7 +266,7 @@
         width="80"
         height="80"
       />
-      <p class="level-one-intro__card-text text-medium text-dark">
+      <p class="level-one-intro__card-text text-medium text-white">
         Wow! This creature fights monsters with math. Go ahead — give it a shot!
       </p>
       <button
