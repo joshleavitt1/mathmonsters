@@ -341,11 +341,11 @@ button:focus-visible {
   --card-translate-y: 32px;
   --card-translate-z: 0;
   --card-opacity: 0;
-  --card-bottom-offset: clamp(24px, 5vw, 72px);
-  --card-max-width: min(480px, calc(100% - clamp(48px, 12vw, 160px)));
-  --card-gap: clamp(16px, 4vw, 28px);
-  --card-radius: clamp(20px, 5vw, 36px);
-  --card-padding: var(--surface-padding, clamp(20px, 4vw, 32px));
+  --card-bottom-offset: 24;
+  --card-max-width: 480px;
+  --card-gap: 16px;
+  --card-radius: 12px;
+  --card-padding: 24px;
 
   position: fixed;
   left: 50%;
@@ -368,8 +368,8 @@ button:focus-visible {
   gap: var(--card-gap);
   text-align: center;
   box-sizing: border-box;
-  border-radius: var(--card-radius);
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  background: white;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
   color: var(--text-color-dark, #272b34);
   transform: translate3d(
@@ -377,11 +377,10 @@ button:focus-visible {
     var(--card-translate-y),
     var(--card-translate-z)
   );
-  opacity: var(--card-opacity);
+  opacity: none;
   pointer-events: none;
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.3s ease;
-  backdrop-filter: blur(12px);
   z-index: 6;
 }
 
