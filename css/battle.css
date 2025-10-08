@@ -495,7 +495,7 @@ body.is-post-evolution-active #complete-message {
   align-items: center;
   justify-content: center;
   gap: 32px;
-  background: rgba(0, 0, 0, 0.3);
+  background: transparent;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -506,6 +506,10 @@ body.is-post-evolution-active #complete-message {
 .reward-overlay--visible {
   opacity: 1;
   visibility: visible;
+}
+
+.reward-overlay--with-card {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 body.is-reward-active > *:not(.reward-overlay) {

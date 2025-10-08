@@ -1444,6 +1444,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (rewardOverlay) {
+      rewardOverlay.classList.remove('reward-overlay--with-card');
+    }
+
     rewardCard.classList.remove('card--pop');
     rewardCard.classList.remove('card--closing');
     rewardCard.setAttribute('aria-hidden', 'true');
@@ -1488,6 +1492,10 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardCard.classList.remove('card--closing');
     void rewardCard.offsetWidth;
     rewardCard.classList.add('card--pop');
+
+    if (rewardOverlay) {
+      rewardOverlay.classList.add('reward-overlay--with-card');
+    }
 
     if (focusButton && typeof rewardCardButton.focus === 'function') {
       rewardCardButton.focus();
