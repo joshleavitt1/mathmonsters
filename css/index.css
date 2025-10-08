@@ -356,7 +356,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 .level-one-intro__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(12, 16, 26, 0.55);
+  background: rgba(0, 0, 0, 0, 0.3);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.35s ease;
