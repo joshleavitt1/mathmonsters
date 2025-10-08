@@ -2920,6 +2920,15 @@ const setupDevPlayerDataTool = () => {
     }
   };
 
+  const openFallbackWindow = () => {
+    try {
+      const fallbackUrl = resolvePlayerDataSourceUrl();
+      window.open(fallbackUrl, '_blank');
+    } catch (error) {
+      // Ignore popup failures.
+    }
+  };
+
   const handleClick = async (event) => {
     if (event && typeof event.preventDefault === 'function') {
       event.preventDefault();
