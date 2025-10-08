@@ -2571,10 +2571,7 @@ const setupDevPlayerDataTool = () => {
     }
   };
 
-  const PLAYER_VIEWER_PRE_STYLE =
-    'margin:0;padding:16px;font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \'Liberation Mono\', \'Courier New\', monospace;white-space:pre-wrap;word-break:break-word;';
-
-  const renderMarkupWithMessage = (targetWindow, message) => {
+  const renderLoadingMessage = (targetWindow) => {
     if (!targetWindow || targetWindow.closed) {
       return;
     }
@@ -2583,26 +2580,15 @@ const setupDevPlayerDataTool = () => {
       updateWindowTitle(targetWindow);
       const doc = targetWindow.document;
       doc.open();
-      doc.write(
-        `<!doctype html><title>player.json</title><pre id="player-json-viewer" style="${PLAYER_VIEWER_PRE_STYLE}"></pre>`
-      );
+      doc.write('<!doctype html><title>player.json</title><pre style="margin:0;padding:16px;font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \'Liberation Mono\', \'Courier New\', monospace;">Loading player data…</pre>');
       doc.close();
-
-      const pre = doc.getElementById('player-json-viewer');
-      if (pre) {
-        pre.textContent = message;
-      }
     } catch (error) {
       try {
-        targetWindow.document.body.textContent = message;
+        targetWindow.document.body.textContent = 'Loading player data…';
       } catch (secondaryError) {
         // Ignore rendering errors.
       }
     }
-  };
-
-  const renderLoadingMessage = (targetWindow) => {
-    renderMarkupWithMessage(targetWindow, 'Loading player data…');
   };
 
   const writePlainTextToWindow = (targetWindow, text) => {
@@ -2611,7 +2597,18 @@ const setupDevPlayerDataTool = () => {
     }
 
     const stringified = typeof text === 'string' ? text : String(text ?? '');
-    renderMarkupWithMessage(targetWindow, stringified);
+
+    try {
+      const dataUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(stringified)}`;
+      targetWindow.location.replace(dataUrl);
+    } catch (error) {
+      try {
+        updateWindowTitle(targetWindow);
+        targetWindow.document.body.textContent = stringified;
+      } catch (secondaryError) {
+        // Ignore rendering errors.
+      }
+    }
   };
 
   const openFallbackWindow = () => {
