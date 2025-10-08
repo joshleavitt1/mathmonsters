@@ -513,12 +513,10 @@ body.is-post-evolution-active #complete-message {
 }
 
 .reward-overlay--with-card .reward-overlay__image {
-  position: relative;
   z-index: 0;
 }
 
 .reward-overlay--with-card .reward-overlay__card {
-  position: relative;
   z-index: 1;
 }
 
@@ -1071,7 +1069,6 @@ body.is-reward-active .reward-overlay {
 }
 
 .battle-complete-card__sprite-frame {
-  position: relative;
   width: 200px;
   height: 200px;
   display: flex;
