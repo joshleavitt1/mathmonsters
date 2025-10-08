@@ -2656,6 +2656,22 @@ const setupDevPlayerDataTool = () => {
     }
   };
 
+  const updateViewerLocation = (targetWindow) => {
+    if (!targetWindow || targetWindow.closed) {
+      return;
+    }
+
+    try {
+      const viewerUrl = new URL(PLAYER_DATA_SOURCE_URL, window.location.href);
+      const { history } = targetWindow;
+      if (history && typeof history.replaceState === 'function') {
+        history.replaceState(null, '', viewerUrl.href);
+      }
+    } catch (error) {
+      // Ignore URL manipulation failures.
+    }
+  };
+
   const renderLoadingMessage = (targetWindow) => {
     if (!targetWindow || targetWindow.closed) {
       return;
@@ -2663,6 +2679,7 @@ const setupDevPlayerDataTool = () => {
 
     try {
       updateWindowTitle(targetWindow);
+      updateViewerLocation(targetWindow);
       const doc = targetWindow.document;
       doc.open();
       doc.write('<!doctype html><title>player.json</title><pre style="margin:0;padding:16px;font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \'Liberation Mono\', \'Courier New\', monospace;">Loading player data…</pre>');
@@ -2685,6 +2702,7 @@ const setupDevPlayerDataTool = () => {
 
     try {
       updateWindowTitle(targetWindow);
+      updateViewerLocation(targetWindow);
       const doc = targetWindow.document;
       doc.open();
       doc.write(
@@ -2702,6 +2720,7 @@ const setupDevPlayerDataTool = () => {
     } catch (error) {
       try {
         updateWindowTitle(targetWindow);
+        updateViewerLocation(targetWindow);
         targetWindow.document.body.textContent = stringified;
       } catch (secondaryError) {
         // Ignore rendering errors.
