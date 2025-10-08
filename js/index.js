@@ -17,6 +17,18 @@ const DEV_PLAYER_DATA_BUTTON_SELECTOR = '[data-dev-player-data]';
 const DEV_SIGN_OUT_BUTTON_SELECTOR = '[data-dev-sign-out]';
 const PLAYER_DATA_SOURCE_URL = 'data/player.json';
 
+const resolvePlayerDataSourceUrl = () => {
+  if (typeof window === 'undefined') {
+    return PLAYER_DATA_SOURCE_URL;
+  }
+
+  try {
+    return new URL(PLAYER_DATA_SOURCE_URL, window.location.href).href;
+  } catch (error) {
+    return PLAYER_DATA_SOURCE_URL;
+  }
+};
+
 const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
 const MONSTER_ENTRANCE_DURATION_MS_BASE = 900;
 const HERO_EXIT_DURATION_MS_BASE = 550;
@@ -2662,10 +2674,10 @@ const setupDevPlayerDataTool = () => {
     }
 
     try {
-      const viewerUrl = new URL(PLAYER_DATA_SOURCE_URL, window.location.href);
+      const viewerUrl = resolvePlayerDataSourceUrl();
       const { history } = targetWindow;
       if (history && typeof history.replaceState === 'function') {
-        history.replaceState(null, '', viewerUrl.href);
+        history.replaceState(null, '', viewerUrl);
       }
     } catch (error) {
       // Ignore URL manipulation failures.
@@ -2691,6 +2703,186 @@ const setupDevPlayerDataTool = () => {
         // Ignore rendering errors.
       }
     }
+  };
+
+  const createInlineViewerController = () => {
+    if (typeof document === 'undefined') {
+      return null;
+    }
+
+    const body = document.body || document.documentElement;
+    if (!body) {
+      return null;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'dev-player-data-viewer';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.background = 'rgba(15, 23, 42, 0.85)';
+    overlay.style.zIndex = '2147483647';
+    overlay.style.display = 'none';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.padding = '24px';
+    overlay.style.boxSizing = 'border-box';
+
+    const panel = document.createElement('div');
+    panel.style.width = '100%';
+    panel.style.maxWidth = '760px';
+    panel.style.maxHeight = '90vh';
+    panel.style.background = '#0f172a';
+    panel.style.color = '#e2e8f0';
+    panel.style.borderRadius = '12px';
+    panel.style.boxShadow = '0 20px 45px rgba(15, 23, 42, 0.45)';
+    panel.style.display = 'flex';
+    panel.style.flexDirection = 'column';
+    panel.style.overflow = 'hidden';
+
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+    header.style.justifyContent = 'space-between';
+    header.style.padding = '16px';
+    header.style.background = 'rgba(15, 23, 42, 0.9)';
+    header.style.borderBottom = '1px solid rgba(148, 163, 184, 0.2)';
+
+    const title = document.createElement('span');
+    title.textContent = 'Developer Player Data';
+    title.style.fontWeight = '600';
+    title.style.fontSize = '16px';
+
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.textContent = 'Close';
+    closeButton.style.marginLeft = '16px';
+    closeButton.style.padding = '6px 12px';
+    closeButton.style.fontSize = '14px';
+    closeButton.style.fontWeight = '600';
+    closeButton.style.borderRadius = '999px';
+    closeButton.style.border = '1px solid rgba(148, 163, 184, 0.6)';
+    closeButton.style.background = 'rgba(30, 41, 59, 0.85)';
+    closeButton.style.color = '#e2e8f0';
+    closeButton.style.cursor = 'pointer';
+
+    const content = document.createElement('pre');
+    content.style.margin = '0';
+    content.style.padding = '16px';
+    content.style.flex = '1 1 auto';
+    content.style.font =
+      "13px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+    content.style.background = '#020617';
+    content.style.overflow = 'auto';
+    content.style.whiteSpace = 'pre-wrap';
+    content.style.wordBreak = 'break-word';
+
+    header.appendChild(title);
+    header.appendChild(closeButton);
+    panel.appendChild(header);
+    panel.appendChild(content);
+    overlay.appendChild(panel);
+
+    let lastActiveElement = null;
+    let isVisible = false;
+
+    const updateContent = (text) => {
+      const stringified = typeof text === 'string' ? text : String(text ?? '');
+      content.textContent = stringified;
+    };
+
+    const show = (text) => {
+      if (!overlay.isConnected) {
+        body.appendChild(overlay);
+      }
+
+      if (!isVisible) {
+        lastActiveElement = document.activeElement;
+        overlay.style.display = 'flex';
+        isVisible = true;
+        try {
+          if (body !== document.body) {
+            document.body?.appendChild(overlay);
+          }
+        } catch (error) {
+          // Ignore body append failures.
+        }
+        try {
+          document.body && (document.body.style.overflow = 'hidden');
+        } catch (error) {
+          // Ignore overflow manipulation failures.
+        }
+        setTimeout(() => {
+          try {
+            closeButton.focus();
+          } catch (error) {
+            // Ignore focus failures.
+          }
+        }, 0);
+      }
+
+      updateContent(text);
+    };
+
+    const hide = () => {
+      if (!isVisible) {
+        return;
+      }
+
+      overlay.style.display = 'none';
+      isVisible = false;
+      updateContent('');
+
+      try {
+        if (document.body) {
+          document.body.style.overflow = '';
+        }
+      } catch (error) {
+        // Ignore overflow manipulation failures.
+      }
+
+      if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
+        try {
+          lastActiveElement.focus();
+        } catch (error) {
+          // Ignore focus restoration failures.
+        }
+      }
+      lastActiveElement = null;
+    };
+
+    closeButton.addEventListener('click', hide);
+    overlay.addEventListener('click', (event) => {
+      if (event && event.target === overlay) {
+        hide();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (!isVisible) {
+        return;
+      }
+      if (event && event.key === 'Escape') {
+        hide();
+      }
+    });
+
+    return {
+      show,
+      update: updateContent,
+      hide,
+    };
+  };
+
+  let inlineViewer = null;
+
+  const ensureInlineViewer = () => {
+    if (inlineViewer) {
+      return inlineViewer;
+    }
+
+    inlineViewer = createInlineViewerController();
+    return inlineViewer;
   };
 
   const writePlainTextToWindow = (targetWindow, text) => {
@@ -2728,48 +2920,58 @@ const setupDevPlayerDataTool = () => {
     }
   };
 
-  const openFallbackWindow = () => {
-    try {
-      window.open(PLAYER_DATA_SOURCE_URL, '_blank');
-    } catch (error) {
-      // Ignore popup failures.
-    }
-  };
-
   const handleClick = async (event) => {
     if (event && typeof event.preventDefault === 'function') {
       event.preventDefault();
     }
 
     let viewer = null;
+    let inlineFallback = null;
     try {
-      viewer = window.open('', '_blank', 'noopener=1,noreferrer=1');
+      viewer = window.open('', '_blank', 'noopener=yes,noreferrer=yes');
     } catch (error) {
       viewer = null;
     }
 
     if (!viewer) {
-      openFallbackWindow();
-      return;
+      inlineFallback = ensureInlineViewer();
+      if (!inlineFallback) {
+        try {
+          window.alert?.('Unable to show developer player data viewer.');
+        } catch (error) {
+          // Ignore alert failures.
+        }
+        return;
+      }
+      inlineFallback.show('Loading player data…');
+    } else {
+      renderLoadingMessage(viewer);
     }
-
-    try {
-      viewer.opener = null;
-    } catch (error) {
-      // Ignore failures to clear opener.
+    if (viewer) {
+      try {
+        viewer.opener = null;
+      } catch (error) {
+        // Ignore failures to clear opener.
+      }
     }
-
-    renderLoadingMessage(viewer);
 
     try {
       const snapshot = await collectLivePlayerProfileSnapshot();
       const formatted = formatDevPlayerSnapshot(snapshot);
-      writePlainTextToWindow(viewer, formatted);
+      if (viewer) {
+        writePlainTextToWindow(viewer, formatted);
+      } else if (inlineFallback) {
+        inlineFallback.update(formatted);
+      }
     } catch (error) {
       const message =
         'Unable to load live player data.' +
         (error && error.message ? `\n\n${error.message}` : '');
-      writePlainTextToWindow(viewer, message);
+      if (viewer) {
+        writePlainTextToWindow(viewer, message);
+      } else if (inlineFallback) {
+        inlineFallback.update(message);
+      }
     }
   };
 
