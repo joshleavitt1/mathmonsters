@@ -310,6 +310,20 @@ body:not(.is-level-one-landing) .level-one-intro {
   z-index: 4;
 }
 
+.level-one-intro__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  z-index: 1;
+}
+
+.level-one-intro__overlay.is-visible {
+  opacity: 1;
+}
+
 .level-one-intro.is-active {
   opacity: 1;
   visibility: visible;
@@ -401,6 +415,8 @@ body:not(.is-level-one-landing) .level-one-intro {
     var(--card-translate-y, 24px),
     var(--card-translate-z, 0)
   );
+  position: relative;
+  z-index: 5;
 }
 
 .level-one-intro__card.is-visible {
