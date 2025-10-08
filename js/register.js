@@ -2,7 +2,7 @@ const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 const STARTING_BATTLE_LEVEL = 2;
-const HOME_PAGE_PATH = '../html/home.html';
+const HOME_PAGE_PATH = '../index.html';
 
 const isPlainObject = (value) =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
