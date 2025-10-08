@@ -1823,6 +1823,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isFirstGemReward) {
           markGemRewardIntroSeen();
         }
+        if (document.body) {
+          document.body.classList.add('is-reward-transitioning');
+        }
         if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
           advanceBattleLevel();
         }
