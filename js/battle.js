@@ -152,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const rewardCard = rewardOverlay?.querySelector('[data-reward-card]');
   const rewardCardText = rewardCard?.querySelector('.reward-overlay__card-text');
   const rewardCardButton = rewardCard?.querySelector('[data-reward-card-button]');
+  const rewardDevSkipButton = rewardOverlay?.querySelector('[data-reward-dev-skip]');
   const evolutionOverlay = document.querySelector('[data-evolution-overlay]');
   const evolutionCurrentSprite = evolutionOverlay?.querySelector(
     '[data-evolution-current]'
@@ -2093,6 +2094,34 @@ document.addEventListener('DOMContentLoaded', () => {
     nextMissionBtn.dataset.action = 'next';
   };
 
+  const skipRewardFlowInstantly = () => {
+    if (pendingGemReward?.isFirstGemReward) {
+      markGemRewardIntroSeen();
+    }
+
+    pendingGemReward = null;
+    hasPendingLevelUpReward = false;
+    rewardAnimationPlayed = true;
+
+    if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
+      advanceBattleLevel();
+    }
+
+    if (nextMissionBtn) {
+      nextMissionBtn.removeAttribute('aria-busy');
+    }
+    nextMissionProcessing = false;
+
+    if (document.body) {
+      document.body.classList.remove('is-reward-transitioning');
+    }
+
+    resetRewardOverlay();
+    updateNextMissionButton(true);
+
+    window.location.href = '../index.html';
+  };
+
   const updateLevelProgressDisplay = () => {
     const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
     if (sanitizedEarned !== levelExperienceEarned) {
@@ -4027,6 +4056,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     scheduleFirstQuestion();
+  }
+
+  if (rewardDevSkipButton) {
+    rewardDevSkipButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      skipRewardFlowInstantly();
+    });
   }
 
   if (devHeroDamageButton) {

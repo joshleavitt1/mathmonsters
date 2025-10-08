@@ -624,6 +624,26 @@ body.is-reward-active .reward-overlay {
   width: 100%;
 }
 
+
+.reward-overlay__dev-skip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 1;
+}
+
+.reward-overlay__dev-skip:focus-visible {
+  outline: 2px solid #fff;
+  opacity: 0.2;
+}
+
 .reward-overlay__image {
   --reward-direction: 1;
   --reward-scale: 1;
