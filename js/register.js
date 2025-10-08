@@ -20,6 +20,37 @@ const clonePlainObject = (value) => {
   }
 };
 
+const assignPlayerIdentifier = (playerData, identifier) => {
+  if (!isPlainObject(playerData)) {
+    return playerData;
+  }
+
+  const normalizedId =
+    typeof identifier === 'string' && identifier.trim() ? identifier.trim() : '';
+
+  if (!normalizedId) {
+    return playerData;
+  }
+
+  const updateId = (target) => {
+    if (!isPlainObject(target)) {
+      return;
+    }
+
+    const currentId = typeof target.id === 'string' ? target.id.trim() : '';
+    if (!currentId || currentId === 'player-001') {
+      target.id = normalizedId;
+    }
+  };
+
+  updateId(playerData);
+  if (isPlainObject(playerData.player)) {
+    updateId(playerData.player);
+  }
+
+  return playerData;
+};
+
 const extractPlayerData = (rawPlayerData) => {
   if (!isPlainObject(rawPlayerData)) {
     return null;
@@ -138,6 +169,11 @@ const storePlayerDataForAccount = async (supabase, userId, playerData) => {
   const payload = clonePlainObject(playerData);
   if (!payload) {
     return false;
+  }
+
+  assignPlayerIdentifier(payload, userId);
+  if (isPlainObject(payload.player)) {
+    assignPlayerIdentifier(payload.player, userId);
   }
 
   try {

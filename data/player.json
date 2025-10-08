@@ -1,6 +1,6 @@
 {
   "player": {
-    "id": "player-001",
+    "id": null,
     "hero": {
       "id": "shellfin",
       "name": "Shellfin",

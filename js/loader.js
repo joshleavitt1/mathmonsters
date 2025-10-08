@@ -272,6 +272,28 @@ const readStoredPlayerProfile = () => {
   }
 };
 
+const persistPlayerProfile = (profile) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    const storage = window.sessionStorage;
+    if (!storage) {
+      return;
+    }
+
+    if (!profile || typeof profile !== 'object') {
+      storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+      return;
+    }
+
+    storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+  } catch (error) {
+    console.warn('Unable to persist player profile in loader.', error);
+  }
+};
+
 const mergeHeroData = (baseHero, overrideHero) => {
   const base = isPlainObject(baseHero) ? baseHero : null;
   const override = isPlainObject(overrideHero) ? overrideHero : null;
@@ -1359,7 +1381,125 @@ const syncRemoteBattleLevel = (playerData) => {
   }
 };
 
+const dispatchPlayerProfileUpdate = (player) => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  try {
+    document.dispatchEvent(
+      new CustomEvent('player-profile-updated', {
+        detail: player && typeof player === 'object' ? { player } : {},
+      })
+    );
+  } catch (error) {
+    console.warn('Unable to dispatch player profile update event.', error);
+  }
+};
+
+const updatePreloadedPlayerProfile = (player) => {
+  if (!player || typeof player !== 'object') {
+    return;
+  }
+
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const target =
+    window.preloadedData && typeof window.preloadedData === 'object'
+      ? window.preloadedData
+      : (window.preloadedData = {});
+
+  const progress =
+    player && typeof player.progress === 'object' && player.progress !== null
+      ? { ...player.progress }
+      : {};
+  const battleVariables =
+    player &&
+    typeof player.battleVariables === 'object' &&
+    player.battleVariables !== null
+      ? { ...player.battleVariables }
+      : {};
+
+  target.progress = progress;
+  target.battleVariables = battleVariables;
+  target.player = {
+    ...player,
+    progress,
+    battleVariables,
+  };
+
+  dispatchPlayerProfileUpdate(target.player);
+};
+
 (async function () {
+  let realtimeSyncInitialized = false;
+  let basePlayer = {};
+
+  const startRealtimeSync = () => {
+    if (realtimeSyncInitialized) {
+      return;
+    }
+
+    const subscribeFn = playerProfileUtils?.subscribeToPlayerProfile;
+    if (typeof subscribeFn !== 'function') {
+      return;
+    }
+
+    realtimeSyncInitialized = true;
+
+    const registerSubscription = (subscription) => {
+      if (
+        subscription &&
+        typeof subscription === 'object' &&
+        typeof subscription.unsubscribe === 'function' &&
+        typeof window !== 'undefined'
+      ) {
+        window.mathMonstersPlayerProfileSubscription = subscription;
+      }
+    };
+
+    const subscriptionResult = subscribeFn((remoteProfile) => {
+      if (!remoteProfile || typeof remoteProfile !== 'object') {
+        return;
+      }
+
+      try {
+        syncRemoteBattleLevel(remoteProfile);
+      } catch (error) {
+        console.warn('Failed to sync battle level from realtime update.', error);
+      }
+
+      const extractedRemotePlayer = extractPlayerData(remoteProfile);
+      if (!extractedRemotePlayer || typeof extractedRemotePlayer !== 'object') {
+        return;
+      }
+
+      basePlayer = mergePlayerData(basePlayer, extractedRemotePlayer);
+      applyHeroLevelAssets(basePlayer);
+      persistPlayerProfile(basePlayer);
+      updatePreloadedPlayerProfile(basePlayer);
+    });
+
+    if (subscriptionResult && typeof subscriptionResult.then === 'function') {
+      subscriptionResult
+        .then((subscription) => {
+          registerSubscription(subscription);
+        })
+        .catch((error) => {
+          console.warn('Unable to initialize real-time player profile sync.', error);
+        });
+      return;
+    }
+
+    try {
+      registerSubscription(subscriptionResult);
+    } catch (error) {
+      console.warn('Unable to track player profile subscription.', error);
+    }
+  };
+
   try {
     const [playerRes, levelsRes] = await Promise.all([
       fetch(resolveDataPath('player.json')),
@@ -1380,7 +1520,7 @@ const syncRemoteBattleLevel = (playerData) => {
 
     const storedPlayerProfile = readStoredPlayerProfile();
 
-    let basePlayer = extractPlayerData(localPlayerData);
+    basePlayer = extractPlayerData(localPlayerData);
     basePlayer = mergePlayerWithStoredProfile(basePlayer, storedPlayerProfile);
 
     try {
@@ -1402,6 +1542,7 @@ const syncRemoteBattleLevel = (playerData) => {
     }
 
     applyHeroLevelAssets(basePlayer);
+    persistPlayerProfile(basePlayer);
     const localPlayer = extractPlayerData(localPlayerData);
     if (localPlayer) {
       applyHeroLevelAssets(localPlayer);
@@ -2018,7 +2159,9 @@ const syncRemoteBattleLevel = (playerData) => {
       questions,
     };
 
+    dispatchPlayerProfileUpdate(window.preloadedData.player);
     document.dispatchEvent(new Event('data-loaded'));
+    startRealtimeSync();
   } catch (e) {
     console.error('Failed to load data', e);
     persistNextBattleSnapshot(null);
