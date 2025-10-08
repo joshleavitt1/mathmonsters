@@ -339,13 +339,13 @@ body:not(.is-level-one-landing) .level-one-intro {
   position: fixed;
   inset: 0;
   display: grid;
-  place-items: center;
-  grid-auto-flow: row;
-  grid-auto-rows: min-content;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
   justify-items: center;
-  align-content: center;
+  align-items: center;
   gap: clamp(24px, 6vw, 40px);
   padding: clamp(16px, 5vw, 32px);
+  min-height: 100dvh;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -391,6 +391,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   transition: opacity 0.3s ease;
   z-index: 4;
   overflow: visible;
+  grid-row: 1;
 }
 
 .level-one-intro__egg-button::before {
@@ -450,6 +451,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 
 .level-one-intro__card {
+  --card-translate-x: 0;
   --card-translate-y: 24px;
   width: min(420px, 90vw);
   opacity: 0;
@@ -460,12 +462,16 @@ body:not(.is-level-one-landing) .level-one-intro {
   color: var(--text-color-dark, rgba(31, 45, 72, 0.96));
   transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translate3d(
-    var(--card-translate-x, -50%),
+    var(--card-translate-x, 0),
     var(--card-translate-y, 24px),
     var(--card-translate-z, 0)
   );
   position: relative;
   z-index: 6;
+  justify-self: center;
+  align-self: end;
+  margin-inline: auto;
+  grid-row: 2;
 }
 
 .level-one-intro__card::before {
