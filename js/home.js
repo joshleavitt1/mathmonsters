@@ -197,6 +197,71 @@ const applySnapshotToHome = (snapshot) => {
   }
 };
 
+const clampProgressRatio = (value) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return 0;
+  }
+  if (numericValue <= 0) {
+    return 0;
+  }
+  if (numericValue >= 1) {
+    return 1;
+  }
+  return numericValue;
+};
+
+const scheduleAnimationFrame = (callback) => {
+  if (typeof callback !== 'function') {
+    return;
+  }
+
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(callback);
+    return;
+  }
+
+  setTimeout(callback, 16);
+};
+
+const animateProgressValue = (progressElement, ratio) => {
+  if (!progressElement) {
+    return;
+  }
+
+  const normalizedRatio = clampProgressRatio(ratio);
+  if (normalizedRatio <= 0) {
+    progressElement.style.setProperty('--progress-value', '0');
+    return;
+  }
+
+  const progressFill = progressElement.querySelector('.progress__fill');
+  const applyValue = () => {
+    progressElement.style.setProperty('--progress-value', `${normalizedRatio}`);
+  };
+
+  if (progressElement.dataset.progressAnimated === 'true') {
+    applyValue();
+    return;
+  }
+
+  progressElement.dataset.progressAnimated = 'true';
+  progressElement.style.setProperty('--progress-value', '0');
+
+  if (progressFill) {
+    progressFill.style.transition = 'none';
+  }
+
+  // Force a reflow so the browser applies the zeroed progress before animating.
+  void progressElement.offsetWidth;
+
+  if (progressFill) {
+    progressFill.style.transition = '';
+  }
+
+  scheduleAnimationFrame(applyValue);
+};
+
 const updateHomeFromPreloadedData = () => {
   const data = window.preloadedData;
   if (!data || typeof data !== 'object') {
@@ -261,10 +326,7 @@ const updateHomeFromPreloadedData = () => {
       'aria-valuetext',
       `${progressInfo.earnedDisplay} of ${progressInfo.totalDisplay}`
     );
-    progressElement.style.setProperty(
-      '--progress-value',
-      progressInfo.totalDisplay > 0 ? `${progressInfo.ratio}` : '0'
-    );
+    animateProgressValue(progressElement, progressInfo.totalDisplay > 0 ? progressInfo.ratio : 0);
   }
 
   storeBattleSnapshot({
