@@ -2563,22 +2563,50 @@ const setupDevPlayerDataTool = () => {
     return;
   }
 
-  const writeToWindow = (targetWindow, text) => {
+  const updateWindowTitle = (targetWindow) => {
+    try {
+      targetWindow.document.title = 'player.json';
+    } catch (error) {
+      // Ignore title assignment failures.
+    }
+  };
+
+  const renderLoadingMessage = (targetWindow) => {
     if (!targetWindow || targetWindow.closed) {
       return;
     }
 
     try {
+      updateWindowTitle(targetWindow);
       const doc = targetWindow.document;
-      doc.open('text/plain');
-      doc.write(typeof text === 'string' ? text : String(text ?? ''));
+      doc.open();
+      doc.write('<!doctype html><title>player.json</title><pre style="margin:0;padding:16px;font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \'Liberation Mono\', \'Courier New\', monospace;">Loading player data…</pre>');
       doc.close();
     } catch (error) {
       try {
-        const doc = targetWindow.document;
-        doc.body.textContent = typeof text === 'string' ? text : String(text ?? '');
+        targetWindow.document.body.textContent = 'Loading player data…';
       } catch (secondaryError) {
-        // Ignore document write errors.
+        // Ignore rendering errors.
+      }
+    }
+  };
+
+  const writePlainTextToWindow = (targetWindow, text) => {
+    if (!targetWindow || targetWindow.closed) {
+      return;
+    }
+
+    const stringified = typeof text === 'string' ? text : String(text ?? '');
+
+    try {
+      const dataUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(stringified)}`;
+      targetWindow.location.replace(dataUrl);
+    } catch (error) {
+      try {
+        updateWindowTitle(targetWindow);
+        targetWindow.document.body.textContent = stringified;
+      } catch (secondaryError) {
+        // Ignore rendering errors.
       }
     }
   };
@@ -2614,7 +2642,7 @@ const setupDevPlayerDataTool = () => {
       // Ignore failures to clear opener.
     }
 
-    writeToWindow(viewer, 'Loading player data...');
+    renderLoadingMessage(viewer);
 
     try {
       const response = await fetch(PLAYER_DATA_SOURCE_URL, { cache: 'no-store' });
@@ -2625,12 +2653,12 @@ const setupDevPlayerDataTool = () => {
       }
 
       const text = await response.text();
-      writeToWindow(viewer, text);
+      writePlainTextToWindow(viewer, text);
     } catch (error) {
       const message =
         'Unable to load player data.' +
         (error && error.message ? `\n\n${error.message}` : '');
-      writeToWindow(viewer, message);
+      writePlainTextToWindow(viewer, message);
     }
   };
 
