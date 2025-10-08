@@ -3,10 +3,16 @@ const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const MIN_PRELOAD_DURATION_MS = 2000;
+
+const DEV_RESET_TARGET_MATH_KEY = 'addition';
+const DEV_RESET_TARGET_LEVEL = 2;
+const DEV_RESET_TARGET_BATTLE = 1;
+const DEV_RESET_BUTTON_SELECTOR = '[data-dev-reset-level]';
 
 const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
 const MONSTER_ENTRANCE_DURATION_MS_BASE = 900;
@@ -2321,6 +2327,78 @@ const readStoredProgress = () => {
   }
 };
 
+const setupDevResetTool = () => {
+  const devButton = document.querySelector(DEV_RESET_BUTTON_SELECTOR);
+  if (!devButton) {
+    return;
+  }
+
+  const handleReset = (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    const storedProgress = readStoredProgress();
+    const normalizedProgress = isPlainObject(storedProgress)
+      ? { ...storedProgress }
+      : {};
+
+    const mathKey = DEV_RESET_TARGET_MATH_KEY;
+    const existingMathProgress = isPlainObject(normalizedProgress[mathKey])
+      ? { ...normalizedProgress[mathKey] }
+      : {};
+
+    const updatedMathProgress = {
+      ...existingMathProgress,
+      currentBattle: DEV_RESET_TARGET_BATTLE,
+      currentLevel: DEV_RESET_TARGET_LEVEL,
+    };
+
+    const updatedProgress = {
+      ...normalizedProgress,
+      battleLevel: DEV_RESET_TARGET_LEVEL,
+      [mathKey]: updatedMathProgress,
+    };
+
+    try {
+      const storage = window.localStorage;
+      if (storage) {
+        storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(updatedProgress));
+      }
+    } catch (error) {
+      console.warn('Unable to store developer reset progress.', error);
+      return;
+    }
+
+    try {
+      window.sessionStorage?.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+    } catch (error) {
+      console.warn('Unable to clear stored player profile for reset.', error);
+    }
+
+    try {
+      window.sessionStorage?.removeItem(NEXT_BATTLE_SNAPSHOT_STORAGE_KEY);
+    } catch (error) {
+      console.warn('Unable to clear stored battle snapshot for reset.', error);
+    }
+
+    if (typeof devButton.blur === 'function') {
+      devButton.blur();
+    }
+
+    if (typeof window !== 'undefined' && typeof window.location?.reload === 'function') {
+      window.location.reload();
+    }
+  };
+
+  if (devButton.dataset.devResetBound === 'true') {
+    return;
+  }
+
+  devButton.dataset.devResetBound = 'true';
+  devButton.addEventListener('click', handleReset);
+};
+
 const readStoredPlayerProfile = () => {
   if (typeof window === 'undefined') {
     return null;
@@ -2685,6 +2763,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   let fallbackPlayerData = preloadedData?.fallbackPlayerData ?? null;
 
   setupSettingsLogout();
+  setupDevResetTool();
 
   updateIntroTimingForLanding({ isLevelOneLanding });
 
