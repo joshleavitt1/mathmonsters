@@ -55,11 +55,15 @@
     />
   </section>
   <div id="battle">
-    <img id="battle-monster" src="../images/monster/addition_mini_1.png" alt="Monster" />
+    <img
+      id="battle-monster"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+      alt="Monster ready for battle"
+    />
     <img
       id="battle-shellfin"
-      src="../images/hero/shellfin_evolution_1.png"
-      alt="Shellfin"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+      alt="Hero ready for battle"
     />
     <img
       id="monster-attack-effect"
@@ -106,6 +110,127 @@
       </div>
     </div>
   </div>
+    <script>
+      (() => {
+        const STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
+        const globalScope = typeof window !== 'undefined' ? window : {};
+
+        const sanitizeEntry = (entry) => {
+          if (!entry || typeof entry !== 'object') {
+            return null;
+          }
+
+          const name = typeof entry.name === 'string' ? entry.name.trim() : '';
+          const sprite = typeof entry.sprite === 'string' ? entry.sprite.trim() : '';
+
+          if (!name && !sprite) {
+            return null;
+          }
+
+          return {
+            name: name || null,
+            sprite: sprite || null,
+          };
+        };
+
+        const readSnapshot = () => {
+          if (
+            globalScope.mathMonstersBattleSnapshot &&
+            typeof globalScope.mathMonstersBattleSnapshot === 'object'
+          ) {
+            return globalScope.mathMonstersBattleSnapshot;
+          }
+
+          if (typeof sessionStorage === 'undefined') {
+            return null;
+          }
+
+          try {
+            const raw = sessionStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+              return null;
+            }
+
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') {
+              return null;
+            }
+
+            const snapshot = {
+              battleLevel: Number.isFinite(parsed.battleLevel) ? parsed.battleLevel : null,
+              hero: sanitizeEntry(parsed.hero),
+              monster: sanitizeEntry(parsed.monster),
+              timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),
+            };
+
+            globalScope.mathMonstersBattleSnapshot = snapshot;
+            return snapshot;
+          } catch (error) {
+            console.warn('Unable to read stored battle snapshot before battle.', error);
+            return null;
+          }
+        };
+
+        const snapshot = readSnapshot();
+
+        const applyImage = (selector, entry, fallbackSrc, fallbackAlt) => {
+          const img = typeof selector === 'string' ? document.querySelector(selector) : null;
+          if (!img) {
+            return;
+          }
+
+          const sprite =
+            entry && typeof entry === 'object' && typeof entry.sprite === 'string'
+              ? entry.sprite.trim()
+              : '';
+          const name =
+            entry && typeof entry === 'object' && typeof entry.name === 'string'
+              ? entry.name.trim()
+              : '';
+
+          const resolvedSrc = sprite || fallbackSrc;
+          if (resolvedSrc) {
+            img.src = resolvedSrc;
+          }
+
+          const resolvedAlt = name ? `${name} ready for battle` : fallbackAlt;
+          if (resolvedAlt) {
+            img.alt = resolvedAlt;
+          }
+        };
+
+        const monsterFallback = '../images/monster/addition_mini_1.png';
+        const heroFallback = '../images/hero/shellfin_evolution_1.png';
+
+        applyImage(
+          '#battle-monster',
+          snapshot ? snapshot.monster : null,
+          monsterFallback,
+          'Monster ready for battle'
+        );
+        applyImage(
+          '#battle-shellfin',
+          snapshot ? snapshot.hero : null,
+          heroFallback,
+          'Hero ready for battle'
+        );
+
+        const applyCompleteSprite = () => {
+          applyImage(
+            '#complete-message .monster-image',
+            snapshot ? snapshot.monster : null,
+            monsterFallback,
+            'Monster ready for battle'
+          );
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', applyCompleteSprite);
+        } else {
+          applyCompleteSprite();
+        }
+      })();
+    </script>
     <div id="question">
       <div class="question__content">
         <section class="card card--question">
