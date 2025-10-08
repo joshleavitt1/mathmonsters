@@ -697,3 +697,8 @@ document.addEventListener('data-loaded', () => {
   applySnapshotToHome(readBattleSnapshot());
   updateHomeFromPreloadedData();
 });
+
+document.addEventListener('player-profile-updated', () => {
+  applySnapshotToHome(readBattleSnapshot());
+  updateHomeFromPreloadedData();
+});

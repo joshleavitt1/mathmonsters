@@ -64,13 +64,16 @@
     }
   };
 
-  const fetchPlayerProfile = async () => {
-    const supabase = globalScope?.supabaseClient;
+  const resolveSupabaseClient = () =>
+    globalScope?.supabaseClient && typeof globalScope.supabaseClient === 'object'
+      ? globalScope.supabaseClient
+      : null;
+
+  const resolveCurrentUserId = async () => {
+    const supabase = resolveSupabaseClient();
     if (!supabase?.auth) {
       return null;
     }
-
-    let userId = null;
 
     try {
       if (typeof supabase.auth.getUser === 'function') {
@@ -78,20 +81,68 @@
         if (error) {
           console.warn('Supabase user lookup failed.', error);
         }
-        userId = data?.user?.id ?? null;
-      } else if (typeof supabase.auth.getSession === 'function') {
+        return data?.user?.id ?? null;
+      }
+
+      if (typeof supabase.auth.getSession === 'function') {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
           console.warn('Supabase session lookup failed.', error);
         }
-        userId = data?.session?.user?.id ?? null;
+        return data?.session?.user?.id ?? null;
       }
     } catch (error) {
       console.warn('Failed to obtain Supabase user.', error);
       return null;
     }
 
-    if (!userId || typeof supabase.from !== 'function') {
+    return null;
+  };
+
+  const ensurePlayerIdentifiers = (playerData, userId) => {
+    if (!playerData || typeof playerData !== 'object') {
+      return null;
+    }
+
+    const clone = { ...playerData };
+    if (
+      clone.player &&
+      typeof clone.player === 'object' &&
+      clone.player !== null &&
+      !Array.isArray(clone.player)
+    ) {
+      clone.player = { ...clone.player };
+    }
+
+    const applyIdentifier = (target) => {
+      if (!target || typeof target !== 'object') {
+        return;
+      }
+
+      if (typeof userId === 'string' && userId) {
+        const currentId = typeof target.id === 'string' ? target.id.trim() : '';
+        if (!currentId || currentId === 'player-001') {
+          target.id = userId;
+        }
+      }
+    };
+
+    applyIdentifier(clone);
+    if (clone.player && typeof clone.player === 'object') {
+      applyIdentifier(clone.player);
+    }
+
+    return clone;
+  };
+
+  const fetchPlayerProfile = async () => {
+    const supabase = resolveSupabaseClient();
+    if (!supabase?.from) {
+      return null;
+    }
+
+    const userId = await resolveCurrentUserId();
+    if (!userId) {
       return null;
     }
 
@@ -108,9 +159,93 @@
       }
 
       const playerData = data?.player_data;
-      return playerData && typeof playerData === 'object' ? playerData : null;
+      const normalized =
+        playerData && typeof playerData === 'object'
+          ? ensurePlayerIdentifiers(playerData, userId)
+          : null;
+      return normalized;
     } catch (error) {
       console.warn('Failed to fetch player profile from Supabase.', error);
+      return null;
+    }
+  };
+
+  const subscribeToPlayerProfile = async (onChange) => {
+    if (typeof onChange !== 'function') {
+      return null;
+    }
+
+    const supabase = resolveSupabaseClient();
+    if (!supabase?.channel) {
+      return null;
+    }
+
+    const userId = await resolveCurrentUserId();
+    if (!userId) {
+      return null;
+    }
+
+    let isActive = true;
+
+    const handlePayload = (payload) => {
+      if (!isActive) {
+        return;
+      }
+
+      try {
+        const candidate = payload?.new ?? payload?.old ?? null;
+        const rawProfile = candidate && typeof candidate === 'object'
+          ? candidate.player_data ?? candidate
+          : null;
+
+        if (!rawProfile || typeof rawProfile !== 'object') {
+          return;
+        }
+
+        const normalized = ensurePlayerIdentifiers(rawProfile, userId);
+        if (normalized) {
+          onChange(normalized);
+        }
+      } catch (error) {
+        console.warn('Player profile subscription callback failed.', error);
+      }
+    };
+
+    try {
+      const channel = supabase
+        .channel(`player-profile:${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'player_profiles',
+            filter: `id=eq.${userId}`,
+          },
+          handlePayload
+        );
+
+      const subscribeResult = channel.subscribe();
+      if (subscribeResult && typeof subscribeResult.then === 'function') {
+        await subscribeResult;
+      }
+
+      return {
+        userId,
+        unsubscribe: () => {
+          if (!isActive) {
+            return;
+          }
+          isActive = false;
+          try {
+            supabase.removeChannel(channel);
+          } catch (error) {
+            console.warn('Failed to remove player profile subscription.', error);
+          }
+        },
+      };
+    } catch (error) {
+      console.warn('Unable to subscribe to player profile updates.', error);
       return null;
     }
   };
@@ -121,4 +256,7 @@
 
   namespace.fetchPlayerProfile = fetchPlayerProfile;
   namespace.syncBattleLevelToStorage = syncBattleLevelToStorage;
+  namespace.resolveCurrentUserId = resolveCurrentUserId;
+  namespace.ensurePlayerIdentifiers = ensurePlayerIdentifiers;
+  namespace.subscribeToPlayerProfile = subscribeToPlayerProfile;
 })();
