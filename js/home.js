@@ -800,6 +800,11 @@ const animateProgressValue = (progressElement, ratio, options = {}) => {
 
   if (normalizedRatio <= 0) {
     progressElement.style.setProperty('--progress-value', '0');
+
+    if (progressFill) {
+      progressFill.style.removeProperty('transform');
+    }
+
     scheduleAnimationFrame(runCompletion);
     return;
   }
@@ -807,6 +812,7 @@ const animateProgressValue = (progressElement, ratio, options = {}) => {
   progressElement.style.setProperty('--progress-value', '0');
 
   if (progressFill) {
+    progressFill.style.transform = 'scaleX(1)';
     progressFill.style.transition = 'none';
   }
 
