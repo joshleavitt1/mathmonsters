@@ -96,6 +96,113 @@ body.is-preloading main.landing {
   pointer-events: none;
 }
 
+.dev-overlay__trigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1200;
+}
+
+.dev-overlay__trigger:focus-visible {
+  outline: 2px dashed rgba(0, 225, 255, 0.8);
+  outline-offset: 2px;
+  opacity: 0.25;
+}
+
+.dev-overlay[hidden] {
+  display: none;
+}
+
+.dev-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 32px);
+}
+
+.dev-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 15, 36, 0.6);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+.dev-overlay__dialog {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: calc(100vh - 32px);
+  background: rgba(4, 27, 63, 0.96);
+  color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dev-overlay__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.dev-overlay__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.dev-overlay__close {
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.dev-overlay__close:hover,
+.dev-overlay__close:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dev-overlay__body {
+  margin: 0;
+  padding: 16px 20px 20px;
+  font-family: 'Fira Code', 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+  flex: 1;
+  background: rgba(0, 0, 0, 0.25);
+}
+
 body:not(.is-preloading) main.landing {
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
