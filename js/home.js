@@ -546,6 +546,9 @@ const storeBattleSnapshot = (snapshot) => {
         battleLevel: Number.isFinite(snapshot.battleLevel)
           ? snapshot.battleLevel
           : null,
+        currentBattle: Number.isFinite(snapshot.currentBattle)
+          ? Math.max(1, Math.round(snapshot.currentBattle))
+          : null,
         hero: sanitizeSnapshotEntry(snapshot.hero),
         monster: sanitizeSnapshotEntry(snapshot.monster),
         timestamp: Date.now(),
@@ -600,6 +603,9 @@ const readBattleSnapshot = () => {
 
     const snapshot = {
       battleLevel: Number.isFinite(parsed.battleLevel) ? parsed.battleLevel : null,
+      currentBattle: Number.isFinite(parsed.currentBattle)
+        ? Math.max(1, Math.round(parsed.currentBattle))
+        : null,
       hero: sanitizeSnapshotEntry(parsed.hero),
       monster: sanitizeSnapshotEntry(parsed.monster),
       timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),
@@ -784,18 +790,77 @@ const updateHomeFromPreloadedData = () => {
   }
 
   const gemValueEl = document.querySelector('[data-hero-gems]');
-  const gemCandidates = [
-    data.progress?.gems,
-    data.player?.gems,
-    data.player?.progress?.gems,
-  ];
-  const gemCount = gemCandidates
-    .map((value) => Number(value))
-    .find((value) => Number.isFinite(value));
-  if (gemValueEl && Number.isFinite(gemCount)) {
-    gemValueEl.textContent = gemCount;
+  const sanitizeGemValue = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return null;
+    }
+    return Math.max(0, Math.round(numericValue));
+  };
+
+  const progressGemTotal = sanitizeGemValue(data.progress?.gems);
+  const playerGemTotal = sanitizeGemValue(data.player?.gems);
+  const nestedProgressGemTotal = sanitizeGemValue(data.player?.progress?.gems);
+
+  const totalCandidates = [
+    progressGemTotal,
+    playerGemTotal,
+    nestedProgressGemTotal,
+  ].filter((value) => value !== null);
+
+  let resolvedGemCount =
+    totalCandidates.length > 0 ? Math.max(...totalCandidates) : null;
+
+  if (
+    playerGemTotal !== null &&
+    progressGemTotal !== null &&
+    progressGemTotal < playerGemTotal
+  ) {
+    const combinedTotal = playerGemTotal + progressGemTotal;
+    resolvedGemCount =
+      resolvedGemCount !== null
+        ? Math.max(resolvedGemCount, combinedTotal)
+        : combinedTotal;
   }
 
+  if (
+    playerGemTotal !== null &&
+    nestedProgressGemTotal !== null &&
+    nestedProgressGemTotal < playerGemTotal
+  ) {
+    const combinedTotal = playerGemTotal + nestedProgressGemTotal;
+    resolvedGemCount =
+      resolvedGemCount !== null
+        ? Math.max(resolvedGemCount, combinedTotal)
+        : combinedTotal;
+  }
+
+  if (resolvedGemCount === null) {
+    const awardCandidates = [
+      sanitizeGemValue(data.progress?.gemsAwarded),
+      sanitizeGemValue(data.player?.gemsAwarded),
+      sanitizeGemValue(data.player?.progress?.gemsAwarded),
+    ].filter((value) => value !== null);
+
+    if (awardCandidates.length > 0) {
+      resolvedGemCount = Math.max(...awardCandidates);
+    }
+  }
+
+  if (gemValueEl && resolvedGemCount !== null) {
+    gemValueEl.textContent = resolvedGemCount;
+  }
+
+  const levelCandidates = [
+    data.progress?.currentLevel,
+    data.progress?.battleLevel,
+    data.level?.battleLevel,
+    data.player?.progress?.currentLevel,
+    data.player?.progress?.battleLevel,
+  ];
+  const battleLevel = levelCandidates
+    .map((value) => Number(value))
+    .find((value) => Number.isFinite(value) && value > 0);
   const heroLevelEl = document.querySelector('[data-hero-level]');
   const progressElement = document.querySelector('[data-battle-progress]');
 
@@ -845,12 +910,11 @@ const updateHomeFromPreloadedData = () => {
     progressElement.setAttribute('aria-valuemin', '0');
   }
 
-  writeStoredHomeBattleProgress(progressState);
+  const currentBattle = Number(data.progress?.currentBattle);
 
   storeBattleSnapshot({
-    battleLevel: Number.isFinite(progressState?.battleLevel)
-      ? progressState.battleLevel
-      : null,
+    battleLevel: Number.isFinite(battleLevel) ? battleLevel : null,
+    currentBattle: Number.isFinite(currentBattle) ? currentBattle : null,
     hero,
     monster,
   });

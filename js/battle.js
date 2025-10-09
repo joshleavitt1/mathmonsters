@@ -27,6 +27,7 @@ const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
 const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
 const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
+const BATTLES_PER_LEVEL = 4;
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -874,6 +875,38 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   };
 
+  const computeNextGlobalProgressOnWin = (requiredBattles = BATTLES_PER_LEVEL) => {
+    const rawProgress =
+      window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
+
+    const storedLevel = Number(
+      rawProgress?.currentLevel ?? rawProgress?.battleLevel ?? rawProgress?.level
+    );
+    const storedBattle = Number(rawProgress?.currentBattle);
+
+    const currentLevel = Number.isFinite(storedLevel) && storedLevel > 0
+      ? Math.max(1, Math.floor(storedLevel))
+      : 1;
+    const currentBattle = Number.isFinite(storedBattle) && storedBattle > 0
+      ? Math.max(1, Math.floor(storedBattle))
+      : 1;
+
+    const totalBattles = Math.max(1, Math.floor(requiredBattles));
+    let nextBattle = currentBattle + 1;
+    let nextLevel = currentLevel;
+
+    if (nextBattle > totalBattles) {
+      nextLevel += 1;
+      nextBattle = 1;
+    }
+
+    return {
+      currentLevel: nextLevel,
+      currentBattle: nextBattle,
+      battleLevel: nextLevel,
+    };
+  };
+
   const readCurrentGemTotal = () => {
     const playerGemValue = Number(window.preloadedData?.player?.gems);
     if (Number.isFinite(playerGemValue)) {
@@ -919,22 +952,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const persistGemTotal = (total) => {
     const safeTotal = Math.max(0, Math.round(Number(total) || 0));
-    persistProgress({ gems: safeTotal });
+    const previousTotal = readCurrentGemTotal();
+    const normalizedPrevious = Math.max(0, Math.round(Number(previousTotal) || 0));
+    const rawIncrement = safeTotal - normalizedPrevious;
+    const sanitizedIncrement = rawIncrement > 0 ? rawIncrement : 0;
+
+    persistProgress({
+      gems: safeTotal,
+      gemsAwarded: sanitizedIncrement,
+    });
+
+    const sanitizeGemValue = (value) => {
+      const numericValue = Number(value);
+      return Number.isFinite(numericValue)
+        ? Math.max(0, Math.round(numericValue))
+        : 0;
+    };
 
     if (window.preloadedData) {
-      if (window.preloadedData.progress && typeof window.preloadedData.progress === 'object') {
+      if (
+        window.preloadedData.progress &&
+        typeof window.preloadedData.progress === 'object'
+      ) {
+        const existingAwarded = sanitizeGemValue(
+          window.preloadedData.progress.gemsAwarded
+        );
+        const updatedAwarded = existingAwarded + sanitizedIncrement;
         window.preloadedData.progress.gems = safeTotal;
+        if (updatedAwarded > 0) {
+          window.preloadedData.progress.gemsAwarded = updatedAwarded;
+        } else {
+          delete window.preloadedData.progress.gemsAwarded;
+        }
       }
       if (
         window.preloadedData.player &&
         typeof window.preloadedData.player === 'object'
       ) {
-        window.preloadedData.player.gems = safeTotal;
+        const playerData = window.preloadedData.player;
+        const existingPlayerAwarded = sanitizeGemValue(playerData.gemsAwarded);
+        const updatedPlayerAwarded =
+          existingPlayerAwarded + sanitizedIncrement;
+        playerData.gems = safeTotal;
+        if (updatedPlayerAwarded > 0) {
+          playerData.gemsAwarded = updatedPlayerAwarded;
+        } else {
+          delete playerData.gemsAwarded;
+        }
         if (
-          window.preloadedData.player.progress &&
-          typeof window.preloadedData.player.progress === 'object'
+          playerData.progress &&
+          typeof playerData.progress === 'object'
         ) {
-          window.preloadedData.player.progress.gems = safeTotal;
+          const existingProgressAwarded = sanitizeGemValue(
+            playerData.progress.gemsAwarded
+          );
+          const updatedProgressAwarded =
+            existingProgressAwarded + sanitizedIncrement;
+          playerData.progress.gems = safeTotal;
+          if (updatedProgressAwarded > 0) {
+            playerData.progress.gemsAwarded = updatedProgressAwarded;
+          } else {
+            delete playerData.progress.gemsAwarded;
+          }
         }
       }
     }
@@ -2225,6 +2304,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (key === 'gemsAwarded') {
+        const currentAwarded = Number(result.gemsAwarded);
+        const normalizedCurrent = Number.isFinite(currentAwarded)
+          ? Math.max(0, Math.round(currentAwarded))
+          : 0;
+        const addition = Number(value);
+        const normalizedAddition = Number.isFinite(addition)
+          ? Math.max(0, Math.round(addition))
+          : 0;
+
+        const updatedAwarded = normalizedCurrent + normalizedAddition;
+        if (updatedAwarded > 0) {
+          result.gemsAwarded = updatedAwarded;
+        } else {
+          delete result.gemsAwarded;
+        }
+        return;
+      }
+
       if (value === undefined) {
         delete result[key];
         return;
@@ -2699,6 +2797,15 @@ document.addEventListener('DOMContentLoaded', () => {
       );
       window.preloadedData.progress = mergedProgress;
 
+      const mergedLevel = Number(
+        mergedProgress?.currentLevel ??
+          mergedProgress?.battleLevel ??
+          mergedProgress?.level
+      );
+      if (Number.isFinite(mergedLevel)) {
+        currentBattleLevel = Math.max(1, Math.floor(mergedLevel));
+      }
+
       if (
         window.preloadedData.player &&
         typeof window.preloadedData.player === 'object'
@@ -2766,15 +2873,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (battleLevelAdvanced) {
       return;
     }
-    const baseLevel =
-      typeof currentBattleLevel === 'number'
-        ? currentBattleLevel
-        : typeof window.preloadedData?.progress?.battleLevel === 'number'
-        ? window.preloadedData.progress.battleLevel
-        : 0;
-    const nextLevel = baseLevel + 1;
-    persistProgress({ battleLevel: nextLevel });
-    currentBattleLevel = nextLevel;
+
+    const progress =
+      window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
+    const resolvedLevel = Number(
+      progress?.currentLevel ?? progress?.battleLevel ?? progress?.level
+    );
+
+    if (Number.isFinite(resolvedLevel)) {
+      currentBattleLevel = Math.max(1, Math.floor(resolvedLevel));
+    }
+
     battleLevelAdvanced = true;
     shouldAdvanceBattleLevel = false;
   }
@@ -3112,7 +3221,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    persistProgress({ battleLevel: sanitizedLevel });
+    persistProgress({
+      battleLevel: sanitizedLevel,
+      currentLevel: sanitizedLevel,
+      currentBattle: 1,
+    });
     currentBattleLevel = sanitizedLevel;
     battleLevelAdvanced = false;
 
@@ -3830,12 +3943,21 @@ document.addEventListener('DOMContentLoaded', () => {
       shouldAdvanceBattleLevel = Boolean(mathProgressUpdate?.advanceLevel);
 
       if (mathProgressUpdate && mathProgressUpdate.mathKey) {
-        persistProgress({
+        const globalProgressUpdate = computeNextGlobalProgressOnWin(
+          mathProgressUpdate.totalRequired
+        );
+        const updatePayload = {
           [mathProgressUpdate.mathKey]: {
             currentBattle: mathProgressUpdate.nextBattle,
             currentLevel: mathProgressUpdate.nextLevelTotal,
           },
-        });
+        };
+
+        if (globalProgressUpdate && typeof globalProgressUpdate === 'object') {
+          Object.assign(updatePayload, globalProgressUpdate);
+        }
+
+        persistProgress(updatePayload);
       }
     } else {
       shouldAdvanceBattleLevel = false;

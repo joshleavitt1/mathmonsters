@@ -8,6 +8,8 @@ This scenario verifies that stored progress using a string battle level still lo
 2. Open the developer console and seed battle progress with a string value:
    ```js
    localStorage.setItem('mathmonstersProgress', JSON.stringify({
+     currentLevel: '2',
+     currentBattle: '1',
      battleLevel: '2'
    }));
    ```

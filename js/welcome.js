@@ -7,7 +7,9 @@ const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const REGISTER_PAGE_URL = 'register.html';
 
 const createDefaultProgress = () => ({
-  battleLevel: 1,
+  currentLevel: 2,
+  currentBattle: 1,
+  battleLevel: 2,
 });
 
 const clearLandingVisitState = (localStorageRef) => {
