@@ -2541,6 +2541,212 @@ const persistPlayerProfile = (player) => {
   }
 };
 
+const collectDevOverlayPlayerData = () => {
+  const preloaded =
+    typeof window !== 'undefined' && window.preloadedData &&
+    typeof window.preloadedData === 'object'
+      ? window.preloadedData
+      : {};
+
+  const player =
+    preloaded && typeof preloaded.player === 'object' && preloaded.player !== null
+      ? preloaded.player
+      : null;
+
+  const progress =
+    preloaded && typeof preloaded.progress === 'object' && preloaded.progress !== null
+      ? preloaded.progress
+      : player && typeof player.progress === 'object' && player.progress !== null
+      ? player.progress
+      : null;
+
+  const battleVariables =
+    player && typeof player.battleVariables === 'object' && player.battleVariables !== null
+      ? player.battleVariables
+      : preloaded &&
+        typeof preloaded.battleVariables === 'object' &&
+        preloaded.battleVariables !== null
+      ? preloaded.battleVariables
+      : null;
+
+  let storedProfile = null;
+  try {
+    storedProfile = readStoredPlayerProfile();
+  } catch (error) {
+    storedProfile = null;
+  }
+
+  const battleSnapshot =
+    typeof window !== 'undefined' &&
+    window.mathMonstersBattleSnapshot &&
+    typeof window.mathMonstersBattleSnapshot === 'object'
+      ? window.mathMonstersBattleSnapshot
+      : null;
+
+  return {
+    timestamp: new Date().toISOString(),
+    preloadedData: preloaded,
+    player,
+    progress,
+    battleVariables,
+    playerData:
+      preloaded && typeof preloaded.playerData === 'object'
+        ? preloaded.playerData
+        : preloaded?.playerData ?? null,
+    previewData:
+      preloaded && typeof preloaded.previewData === 'object'
+        ? preloaded.previewData
+        : preloaded?.previewData ?? null,
+    storedProfile,
+    battleSnapshot,
+  };
+};
+
+const setupDevOverlay = () => {
+  const trigger = document.querySelector('[data-dev-overlay-trigger]');
+  const overlay = document.querySelector('[data-dev-overlay]');
+  if (!trigger || !overlay || overlay.dataset.devOverlayInitialized === 'true') {
+    return;
+  }
+
+  overlay.dataset.devOverlayInitialized = 'true';
+  const closeButton = overlay.querySelector('[data-dev-overlay-close]');
+  const backdrop = overlay.querySelector('[data-dev-overlay-backdrop]');
+  const content = overlay.querySelector('[data-dev-overlay-body]');
+  const panel = overlay.querySelector('[data-dev-overlay-panel]');
+
+  const formatForDisplay = (value) => {
+    const seen = new WeakSet();
+    return JSON.stringify(
+      value,
+      (key, current) => {
+        if (typeof current === 'bigint') {
+          return current.toString();
+        }
+
+        if (current instanceof Map) {
+          return Object.fromEntries(current.entries());
+        }
+
+        if (current instanceof Set) {
+          return Array.from(current.values());
+        }
+
+        if (typeof current === 'object' && current !== null) {
+          if (seen.has(current)) {
+            return '[Circular]';
+          }
+          seen.add(current);
+        }
+
+        return current;
+      },
+      2
+    );
+  };
+
+  const updateContent = () => {
+    if (!content) {
+      return;
+    }
+
+    try {
+      const payload = collectDevOverlayPlayerData();
+      content.textContent = formatForDisplay(payload);
+    } catch (error) {
+      console.warn('Unable to format player data for developer overlay.', error);
+      content.textContent = 'Unable to load player data.';
+    }
+  };
+
+  let isVisible = false;
+
+  const hideOverlay = () => {
+    if (!isVisible) {
+      return;
+    }
+
+    isVisible = false;
+    overlay.hidden = true;
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.removeAttribute('data-visible');
+    trigger.setAttribute('aria-expanded', 'false');
+
+    if (typeof trigger.focus === 'function') {
+      try {
+        trigger.focus({ preventScroll: true });
+      } catch (error) {
+        trigger.focus();
+      }
+    }
+  };
+
+  const showOverlay = () => {
+    updateContent();
+    overlay.hidden = false;
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.setAttribute('data-visible', 'true');
+    trigger.setAttribute('aria-expanded', 'true');
+    isVisible = true;
+
+    if (panel && typeof panel.focus === 'function') {
+      try {
+        panel.focus({ preventScroll: true });
+      } catch (error) {
+        panel.focus();
+      }
+    }
+  };
+
+  const toggleOverlay = () => {
+    if (isVisible) {
+      hideOverlay();
+    } else {
+      showOverlay();
+    }
+  };
+
+  trigger.addEventListener('click', (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+    toggleOverlay();
+  });
+
+  const closeTargets = [closeButton, backdrop];
+  closeTargets.forEach((element) => {
+    if (!element) {
+      return;
+    }
+    element.addEventListener('click', (event) => {
+      if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+      }
+      hideOverlay();
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && isVisible) {
+      hideOverlay();
+    }
+  });
+
+  document.addEventListener('data-loaded', () => {
+    if (isVisible) {
+      updateContent();
+    }
+  });
+};
+
+const initializeDevOverlay = () => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupDevOverlay, { once: true });
+  } else {
+    setupDevOverlay();
+  }
+};
+
 const setVisitedFlag = (storage, label) => {
   if (!storage) {
     return;
@@ -3155,3 +3361,5 @@ const bootstrapLanding = async () => {
     await initLandingInteractions({});
   }
 };
+
+initializeDevOverlay();
