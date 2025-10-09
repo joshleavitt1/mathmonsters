@@ -141,7 +141,7 @@ const normalizeCurrentLevel = (value) => {
   return null;
 };
 
-const normalizeLevelList = (levels) => {
+const normalizeLevelList = (levels, mathTypeKey) => {
   if (!Array.isArray(levels)) {
     return [];
   }
@@ -154,7 +154,11 @@ const normalizeLevelList = (levels) => {
 
       const normalizedLevel = { ...level };
 
-            const resolvedCurrentLevel =
+      if (mathTypeKey && typeof mathTypeKey === 'string' && !normalizedLevel.mathType) {
+        normalizedLevel.mathType = mathTypeKey;
+      }
+
+      const resolvedCurrentLevel =
         normalizeCurrentLevel(level?.currentLevel) ??
         normalizeCurrentLevel(level?.level) ??
         normalizeCurrentLevel(level?.id) ??
@@ -171,9 +175,73 @@ const normalizeLevelList = (levels) => {
     .filter(Boolean);
 };
 
-const createLevelBattleNormalizer = (contentConfig) => {
-  const monsterConfig = isPlainObject(contentConfig?.monsterSprites)
-    ? contentConfig.monsterSprites
+const collectLevelsFromMathType = (mathTypeConfig) => {
+  if (!isPlainObject(mathTypeConfig)) {
+    return [];
+  }
+
+  const collected = [];
+  const seen = new Set();
+  let fallbackIndex = 0;
+
+  const addLevel = (level) => {
+    if (!isPlainObject(level)) {
+      return;
+    }
+
+    const normalizedCurrentLevel =
+      normalizeCurrentLevel(level?.currentLevel) ??
+      normalizeCurrentLevel(level?.level) ??
+      normalizeCurrentLevel(level?.id);
+
+    const dedupeKey =
+      normalizedCurrentLevel !== null
+        ? `current:${normalizedCurrentLevel}`
+        : typeof level?.id === 'string'
+        ? `id:${level.id.trim().toLowerCase()}`
+        : `fallback:${fallbackIndex++}`;
+
+    if (seen.has(dedupeKey)) {
+      return;
+    }
+
+    seen.add(dedupeKey);
+    collected.push(level);
+  };
+
+  const visit = (node) => {
+    if (!node) {
+      return;
+    }
+
+    if (Array.isArray(node)) {
+      node.forEach((item) => visit(item));
+      return;
+    }
+
+    if (!isPlainObject(node)) {
+      return;
+    }
+
+    if (Array.isArray(node.levels)) {
+      node.levels.forEach((level) => addLevel(level));
+    }
+
+    Object.keys(node).forEach((key) => {
+      if (key === 'levels') {
+        return;
+      }
+      visit(node[key]);
+    });
+  };
+
+  visit(mathTypeConfig);
+  return collected;
+};
+
+const createLevelBattleNormalizer = (mathTypeConfig) => {
+  const monsterConfig = isPlainObject(mathTypeConfig?.monsterSprites)
+    ? mathTypeConfig.monsterSprites
     : {};
   const uniquePerLevel = Boolean(monsterConfig.uniquePerLevel);
   const bossMap = isPlainObject(monsterConfig.bosses) ? monsterConfig.bosses : {};
@@ -423,11 +491,33 @@ const createLevelBattleNormalizer = (contentConfig) => {
   };
 };
 
-const deriveLevels = (levelsData) => {
-  const normalizedLevels = normalizeLevelList(
+const deriveMathTypeLevels = (levelsData) => {
+  const fallbackLevels = normalizeLevelList(
     Array.isArray(levelsData?.levels) ? levelsData.levels : [],
     null
   );
+
+  const mathTypes =
+    levelsData && typeof levelsData.mathTypes === 'object'
+      ? levelsData.mathTypes
+      : null;
+
+  if (!mathTypes) {
+    return { levels: fallbackLevels };
+  }
+
+  const entries = Object.entries(mathTypes).filter(([, value]) => isPlainObject(value));
+
+  if (!entries.length) {
+    return { levels: fallbackLevels };
+  }
+
+  const [selectedKey, selectedData] = entries[0];
+
+  const collectedLevels = collectLevelsFromMathType(selectedData);
+  const normalizedLevels = collectedLevels.length
+    ? normalizeLevelList(collectedLevels, selectedKey)
+    : normalizeLevelList(fallbackLevels, selectedKey);
 
   const sortedLevels = normalizedLevels
     .map((level, index) => ({ level, index }))
@@ -455,7 +545,7 @@ const deriveLevels = (levelsData) => {
     })
     .map(({ level }) => level);
 
-  const normalizeBattleForLevel = createLevelBattleNormalizer(levelsData);
+  const normalizeBattleForLevel = createLevelBattleNormalizer(selectedData);
   const decoratedLevels = sortedLevels.map((level, index) =>
     normalizeBattleForLevel(level, index)
   );
@@ -466,7 +556,7 @@ const deriveLevels = (levelsData) => {
 function validateLevels(issues) {
   const levelsPath = path.join(dataDir, 'levels.json');
   const levelsData = loadJson(levelsPath);
-  const derivedLevels = deriveLevels(levelsData);
+  const derivedLevels = deriveMathTypeLevels(levelsData);
   const levels = Array.isArray(derivedLevels?.levels) ? derivedLevels.levels : [];
 
   levels.forEach((level, index) => {
