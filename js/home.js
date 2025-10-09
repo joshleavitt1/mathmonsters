@@ -104,6 +104,9 @@ const storeBattleSnapshot = (snapshot) => {
         battleLevel: Number.isFinite(snapshot.battleLevel)
           ? snapshot.battleLevel
           : null,
+        currentBattle: Number.isFinite(snapshot.currentBattle)
+          ? Math.max(1, Math.round(snapshot.currentBattle))
+          : null,
         hero: sanitizeSnapshotEntry(snapshot.hero),
         monster: sanitizeSnapshotEntry(snapshot.monster),
         timestamp: Date.now(),
@@ -158,6 +161,9 @@ const readBattleSnapshot = () => {
 
     const snapshot = {
       battleLevel: Number.isFinite(parsed.battleLevel) ? parsed.battleLevel : null,
+      currentBattle: Number.isFinite(parsed.currentBattle)
+        ? Math.max(1, Math.round(parsed.currentBattle))
+        : null,
       hero: sanitizeSnapshotEntry(parsed.hero),
       monster: sanitizeSnapshotEntry(parsed.monster),
       timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),
@@ -300,8 +306,10 @@ const updateHomeFromPreloadedData = () => {
   }
 
   const levelCandidates = [
+    data.progress?.currentLevel,
     data.progress?.battleLevel,
     data.level?.battleLevel,
+    data.player?.progress?.currentLevel,
     data.player?.progress?.battleLevel,
   ];
   const battleLevel = levelCandidates
@@ -329,8 +337,11 @@ const updateHomeFromPreloadedData = () => {
     animateProgressValue(progressElement, progressInfo.totalDisplay > 0 ? progressInfo.ratio : 0);
   }
 
+  const currentBattle = Number(data.progress?.currentBattle);
+
   storeBattleSnapshot({
     battleLevel: Number.isFinite(battleLevel) ? battleLevel : null,
+    currentBattle: Number.isFinite(currentBattle) ? currentBattle : null,
     hero,
     monster,
   });

@@ -27,6 +27,7 @@ const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
 const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
 const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
+const BATTLES_PER_LEVEL = 4;
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -871,6 +872,38 @@ document.addEventListener('DOMContentLoaded', () => {
       advanceLevel,
       nextBattleLevelNumber,
       totalRequired,
+    };
+  };
+
+  const computeNextGlobalProgressOnWin = (requiredBattles = BATTLES_PER_LEVEL) => {
+    const rawProgress =
+      window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
+
+    const storedLevel = Number(
+      rawProgress?.currentLevel ?? rawProgress?.battleLevel ?? rawProgress?.level
+    );
+    const storedBattle = Number(rawProgress?.currentBattle);
+
+    const currentLevel = Number.isFinite(storedLevel) && storedLevel > 0
+      ? Math.max(1, Math.floor(storedLevel))
+      : 1;
+    const currentBattle = Number.isFinite(storedBattle) && storedBattle > 0
+      ? Math.max(1, Math.floor(storedBattle))
+      : 1;
+
+    const totalBattles = Math.max(1, Math.floor(requiredBattles));
+    let nextBattle = currentBattle + 1;
+    let nextLevel = currentLevel;
+
+    if (nextBattle > totalBattles) {
+      nextLevel += 1;
+      nextBattle = 1;
+    }
+
+    return {
+      currentLevel: nextLevel,
+      currentBattle: nextBattle,
+      battleLevel: nextLevel,
     };
   };
 
@@ -2699,6 +2732,15 @@ document.addEventListener('DOMContentLoaded', () => {
       );
       window.preloadedData.progress = mergedProgress;
 
+      const mergedLevel = Number(
+        mergedProgress?.currentLevel ??
+          mergedProgress?.battleLevel ??
+          mergedProgress?.level
+      );
+      if (Number.isFinite(mergedLevel)) {
+        currentBattleLevel = Math.max(1, Math.floor(mergedLevel));
+      }
+
       if (
         window.preloadedData.player &&
         typeof window.preloadedData.player === 'object'
@@ -2766,15 +2808,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (battleLevelAdvanced) {
       return;
     }
-    const baseLevel =
-      typeof currentBattleLevel === 'number'
-        ? currentBattleLevel
-        : typeof window.preloadedData?.progress?.battleLevel === 'number'
-        ? window.preloadedData.progress.battleLevel
-        : 0;
-    const nextLevel = baseLevel + 1;
-    persistProgress({ battleLevel: nextLevel });
-    currentBattleLevel = nextLevel;
+
+    const progress =
+      window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
+    const resolvedLevel = Number(
+      progress?.currentLevel ?? progress?.battleLevel ?? progress?.level
+    );
+
+    if (Number.isFinite(resolvedLevel)) {
+      currentBattleLevel = Math.max(1, Math.floor(resolvedLevel));
+    }
+
     battleLevelAdvanced = true;
     shouldAdvanceBattleLevel = false;
   }
@@ -3112,7 +3156,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    persistProgress({ battleLevel: sanitizedLevel });
+    persistProgress({
+      battleLevel: sanitizedLevel,
+      currentLevel: sanitizedLevel,
+      currentBattle: 1,
+    });
     currentBattleLevel = sanitizedLevel;
     battleLevelAdvanced = false;
 
@@ -3830,12 +3878,21 @@ document.addEventListener('DOMContentLoaded', () => {
       shouldAdvanceBattleLevel = Boolean(mathProgressUpdate?.advanceLevel);
 
       if (mathProgressUpdate && mathProgressUpdate.mathKey) {
-        persistProgress({
+        const globalProgressUpdate = computeNextGlobalProgressOnWin(
+          mathProgressUpdate.totalRequired
+        );
+        const updatePayload = {
           [mathProgressUpdate.mathKey]: {
             currentBattle: mathProgressUpdate.nextBattle,
             currentLevel: mathProgressUpdate.nextLevelTotal,
           },
-        });
+        };
+
+        if (globalProgressUpdate && typeof globalProgressUpdate === 'object') {
+          Object.assign(updatePayload, globalProgressUpdate);
+        }
+
+        persistProgress(updatePayload);
       }
     } else {
       shouldAdvanceBattleLevel = false;
