@@ -22,7 +22,7 @@ const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const REGISTER_PAGE_URL = 'register.html';
 
 const createDefaultProgress = () => ({
-  currentLevel: 2,
+  currentLevel: 1,
   currentBattle: 1,
 });
 
