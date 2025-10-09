@@ -355,6 +355,46 @@ const mergePlayerData = (basePlayer, overridePlayer) => {
   return merged;
 };
 
+const mergeProgressState = (baseProgress, storedProgress) => {
+  const base = isPlainObject(baseProgress) ? baseProgress : null;
+  const stored = isPlainObject(storedProgress) ? storedProgress : null;
+
+  if (!base && !stored) {
+    return {};
+  }
+
+  const result = { ...(base || {}) };
+
+  if (!stored) {
+    return result;
+  }
+
+  Object.entries(stored).forEach(([key, value]) => {
+    if (value === undefined) {
+      return;
+    }
+
+    if (key === 'experience') {
+      const mergedExperience = mergeExperienceMaps(result.experience, value);
+      if (Object.keys(mergedExperience).length > 0) {
+        result.experience = mergedExperience;
+      } else {
+        delete result.experience;
+      }
+      return;
+    }
+
+    if (isPlainObject(value)) {
+      result[key] = mergeProgressState(result[key], value);
+      return;
+    }
+
+    result[key] = value;
+  });
+
+  return result;
+};
+
 const mergePlayerWithStoredProfile = (player, storedProfile) => {
   if (!storedProfile || typeof storedProfile !== 'object') {
     return player;
@@ -1422,8 +1462,16 @@ const syncRemoteBattleLevel = (playerData) => {
       basePlayer && typeof basePlayer.battleVariables === 'object'
         ? basePlayer.battleVariables
         : {};
-    const progress = { ...baseProgress };
+    const progress = mergeProgressState(baseProgress, storedProgress);
     const battleVariables = { ...baseBattleVariables };
+    const sanitizeGemValue = (value) => {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue)) {
+        return null;
+      }
+      return Math.max(0, Math.round(numericValue));
+    };
+
     let experienceMap = normalizeExperienceMap(progress?.experience);
 
     if (storedProgress && typeof storedProgress === 'object') {
@@ -1452,7 +1500,39 @@ const syncRemoteBattleLevel = (playerData) => {
         battleVariables.timeRemainingSeconds =
           storedProgress.timeRemainingSeconds;
       }
-      experienceMap = mergeExperienceMaps(experienceMap, storedProgress.experience);
+    }
+
+    const gemCandidates = [
+      sanitizeGemValue(progress?.gems),
+      sanitizeGemValue(storedProgress?.gems),
+      sanitizeGemValue(storedProgress?.progress?.gems),
+      sanitizeGemValue(basePlayer?.gems),
+    ].filter((value) => value !== null);
+
+    if (gemCandidates.length > 0) {
+      const resolvedGemTotal = Math.max(...gemCandidates);
+      progress.gems = resolvedGemTotal;
+      if (isPlainObject(basePlayer)) {
+        basePlayer.gems = resolvedGemTotal;
+      }
+    } else if (Object.prototype.hasOwnProperty.call(progress, 'gems')) {
+      delete progress.gems;
+    }
+
+    const gemsAwardedCandidates = [
+      sanitizeGemValue(progress?.gemsAwarded),
+      sanitizeGemValue(storedProgress?.gemsAwarded),
+    ].filter((value) => value !== null);
+
+    if (gemsAwardedCandidates.length > 0) {
+      const resolvedAwarded = Math.max(...gemsAwardedCandidates);
+      if (resolvedAwarded > 0) {
+        progress.gemsAwarded = resolvedAwarded;
+      } else if (Object.prototype.hasOwnProperty.call(progress, 'gemsAwarded')) {
+        delete progress.gemsAwarded;
+      }
+    } else if (Object.prototype.hasOwnProperty.call(progress, 'gemsAwarded')) {
+      delete progress.gemsAwarded;
     }
 
     experienceMap = normalizeExperienceMap(experienceMap);
