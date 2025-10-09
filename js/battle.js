@@ -2578,12 +2578,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const spriteEntranceTimeouts = new WeakMap();
+  const spriteEntranceListeners = new WeakMap();
+
   const markBattleReady = (img) => {
     if (!img) {
       return;
     }
+
+    const existingTimeout = spriteEntranceTimeouts.get(img);
+    if (typeof existingTimeout === 'number') {
+      window.clearTimeout(existingTimeout);
+      spriteEntranceTimeouts.delete(img);
+    }
+
+    const previousListener = spriteEntranceListeners.get(img);
+    if (previousListener) {
+      img.removeEventListener('animationend', previousListener);
+      spriteEntranceListeners.delete(img);
+    }
+
     img.classList.remove('slide-in');
     img.classList.add('battle-ready');
+  };
+
+  const playSpriteEntrance = (img) => {
+    if (!img) {
+      return;
+    }
+
+    const handleAnimationEnd = () => {
+      img.removeEventListener('animationend', handleAnimationEnd);
+      spriteEntranceListeners.delete(img);
+      markBattleReady(img);
+    };
+
+    const previousListener = spriteEntranceListeners.get(img);
+    if (previousListener) {
+      img.removeEventListener('animationend', previousListener);
+    }
+
+    img.classList.remove('battle-ready');
+    img.classList.remove('slide-in');
+    void img.offsetWidth;
+    img.addEventListener('animationend', handleAnimationEnd);
+    spriteEntranceListeners.set(img, handleAnimationEnd);
+    img.classList.add('slide-in');
+
+    const timeoutId = window.setTimeout(handleAnimationEnd, 1400);
+    spriteEntranceTimeouts.set(img, timeoutId);
   };
 
   const updateHeroAttackDisplay = () => {
@@ -2729,21 +2772,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   };
 
-  if (heroImg) {
-    heroImg.classList.add('slide-in');
-    heroImg.addEventListener('animationend', () => markBattleReady(heroImg), {
-      once: true,
-    });
-    window.setTimeout(() => markBattleReady(heroImg), 1400);
-  }
-
-  if (monsterImg) {
-    monsterImg.classList.add('slide-in');
-    monsterImg.addEventListener('animationend', () => markBattleReady(monsterImg), {
-      once: true,
-    });
-    window.setTimeout(() => markBattleReady(monsterImg), 1400);
-  }
+  markBattleReady(heroImg);
+  markBattleReady(monsterImg);
 
   window.requestAnimationFrame(() => {
     heroStats?.classList.add('show');
@@ -3276,9 +3306,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (heroImg) {
       heroSpriteReadyPromise = updateHeroSpriteCustomProperties();
-    }
-    if (heroImg && hero.name) {
-      heroImg.alt = `${hero.name} ready for battle`;
+      if (hero.name) {
+        heroImg.alt = `${hero.name} ready for battle`;
+      } else {
+        heroImg.alt = 'Hero ready for battle';
+      }
+      playSpriteEntrance(heroImg);
     }
 
     monster.attack = Number(monsterData.attack) || monster.attack;
@@ -3310,8 +3343,12 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       delete monster.sprite;
     }
-    if (monsterImg && monster.name) {
-      monsterImg.alt = `${monster.name} ready for battle`;
+    if (monsterImg) {
+      if (monster.name) {
+        monsterImg.alt = `${monster.name} ready for battle`;
+      } else {
+        monsterImg.alt = 'Monster ready for battle';
+      }
     }
     if (completeMonsterImg) {
       applySpriteSource(
@@ -3320,6 +3357,8 @@ document.addEventListener('DOMContentLoaded', () => {
         monsterSprite || monsterResolvedSprite
       );
     }
+
+    playSpriteEntrance(monsterImg);
 
     updateHeroAttackDisplay();
     updateHeroHealthDisplay();
@@ -4121,10 +4160,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const resolvedCurrentLevel = resolveCurrentLevelForExperience();
     const progressState = readMathProgressState();
-    const rewardCurrentLevel =
+    let rewardCurrentLevel =
       normalizePositiveInteger(progressState?.currentLevelNumber) ??
       normalizePositiveInteger(resolvedCurrentLevel);
-    const rewardBattleIndex = normalizePositiveInteger(
+    let rewardBattleIndex = normalizePositiveInteger(
       progressState?.currentBattle
     );
     const gemRewardAmount = win ? GEM_REWARD_WIN_AMOUNT : GEM_REWARD_LOSS_AMOUNT;
@@ -4184,13 +4223,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (Object.keys(updatePayload).length > 0) {
         persistProgress(updatePayload);
       }
+
+      const resolvedNextBattle = normalizePositiveInteger(
+        mathProgressUpdate?.nextBattle
+      );
+      if (resolvedNextBattle !== null) {
+        rewardBattleIndex = resolvedNextBattle;
+      }
+
+      const resolvedNextLevel = normalizePositiveInteger(
+        mathProgressUpdate?.nextCurrentLevelNumber
+      );
+      if (resolvedNextLevel !== null) {
+        rewardCurrentLevel = resolvedNextLevel;
+      }
     } else {
       shouldAdvanceCurrentLevel = false;
     }
 
     if (win) {
       const isLevelTwoPlus =
-        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel >= 2;
+        Number.isFinite(rewardCurrentLevel) && rewardCurrentLevel >= 2;
       if (isLevelTwoPlus) {
         pendingGemReward = {
           amount: gemRewardAmount,

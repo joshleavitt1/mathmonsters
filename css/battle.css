@@ -1064,6 +1064,27 @@ body.is-reward-active .reward-overlay {
   pointer-events: none;
 }
 
+.battle-complete-card__meter {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.battle-complete-card__meter .meter__heading {
+  margin: 0;
+  text-align: center;
+}
+
+.battle-complete-card__meter .meter__progress {
+  width: 100%;
+  background-color: #ffffff;
+}
+
+.battle-complete-card__meter .progress__fill {
+  width: 0%;
+}
+
 .monster-defeat-overlay--visible {
   opacity: 1;
   transform: scale(1);
