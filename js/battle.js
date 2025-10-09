@@ -4008,12 +4008,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const resolvedCurrentLevel = resolveCurrentLevelForExperience();
     const progressState = readMathProgressState();
+    // Default reward metadata to level/battle one during the intro when
+    // progress has not been established yet so the evolution and reward
+    // overlays still have consistent context.
     const rewardCurrentLevel =
       normalizePositiveInteger(progressState?.currentLevelNumber) ??
-      normalizePositiveInteger(resolvedCurrentLevel);
-    const rewardBattleIndex = normalizePositiveInteger(
-      progressState?.currentBattle
-    );
+      normalizePositiveInteger(resolvedCurrentLevel) ??
+      1;
+    const rewardBattleIndex =
+      normalizePositiveInteger(progressState?.currentBattle) ??
+      1;
     const gemRewardAmount = win ? GEM_REWARD_WIN_AMOUNT : GEM_REWARD_LOSS_AMOUNT;
     const updatedGemTotal = awardGemReward(gemRewardAmount);
     persistGemTotal(updatedGemTotal);
