@@ -200,15 +200,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   const submitButtonLabel = submitButton?.querySelector(
     '.preloader__button-label'
   );
-  const errorMessage = document.querySelector('[data-register-error]');
+  const errorContainer = document.querySelector('[data-register-errors]');
+  const errorList = document.querySelector('[data-register-error-list]');
   const supabase = window.supabaseClient;
 
-  const showError = (message) => {
-    if (!errorMessage) {
+  const renderErrors = (messages) => {
+    if (!errorContainer || !errorList) {
       return;
     }
-    errorMessage.textContent = message;
-    setElementVisibility(errorMessage, Boolean(message));
+
+    const normalizedMessages = Array.isArray(messages)
+      ? messages.filter((message) => typeof message === 'string' && message.trim())
+      : typeof messages === 'string' && messages.trim()
+      ? [messages.trim()]
+      : [];
+
+    errorList.innerHTML = '';
+
+    for (const message of normalizedMessages) {
+      const listItem = document.createElement('li');
+      listItem.textContent = message;
+      errorList.appendChild(listItem);
+    }
+
+    setElementVisibility(errorContainer, normalizedMessages.length > 0);
   };
 
   const setLoading = (isLoading) => {
@@ -227,7 +242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   if (!form || !emailField || !passwordField || !gradeField || !referralField) {
-    showError('The registration form could not be initialized.');
+    renderErrors('The registration form could not be initialized.');
     return;
   }
 
@@ -243,7 +258,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   if (!supabase) {
-    showError('Registration service is unavailable. Please try again later.');
+    renderErrors('Registration service is unavailable. Please try again later.');
     return;
   }
 
@@ -263,25 +278,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    showError('');
+    renderErrors([]);
 
     const email = readTrimmedValue(emailField.value);
     const password = passwordField.value;
     const gradeLevel = readTrimmedValue(gradeField.value);
     const referralSource = readTrimmedValue(referralField.value);
 
-    if (!email || !password || !gradeLevel || !referralSource) {
-      showError('Please complete all fields to register.');
-      return;
+    const validationErrors = [];
+
+    if (!email) {
+      validationErrors.push('Enter your email address.');
+    } else if (!emailField.checkValidity()) {
+      validationErrors.push('Enter a valid email address.');
     }
 
-    if (!emailField.checkValidity()) {
-      showError('Enter a valid email address.');
-      return;
+    if (!password) {
+      validationErrors.push('Create a password.');
+    } else if (password.length < 6) {
+      validationErrors.push('Password must be at least 6 characters long.');
     }
 
-    if (password.length < 6) {
-      showError('Password must be at least 6 characters long.');
+    if (!gradeLevel) {
+      validationErrors.push("Select your child's grade level.");
+    }
+
+    if (!referralSource) {
+      validationErrors.push('Select where you found us.');
+    }
+
+    if (validationErrors.length > 0) {
+      renderErrors(validationErrors);
       return;
     }
 
@@ -304,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       if (error) {
-        showError(error.message || 'Unable to register. Please try again.');
+        renderErrors(error.message || 'Unable to register. Please try again.');
         setLoading(false);
         return;
       }
@@ -356,7 +383,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (signInError || !signInData?.session) {
-        showError(
+        renderErrors(
           signInError?.message ||
             'Registration was successful, but we could not start your session automatically. Please sign in to continue.'
         );
@@ -367,7 +394,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await completeRegistration(signInData.user ?? null);
     } catch (error) {
       console.error('Unexpected error during registration', error);
-      showError('An unexpected error occurred. Please try again.');
+      renderErrors('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   });

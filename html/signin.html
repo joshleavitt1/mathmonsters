@@ -26,6 +26,15 @@
         height="200"
       />
       <h1 class="preloader__headline text-large text-white">Sign In</h1>
+      <div
+        class="preloader__errors"
+        data-signin-errors
+        role="alert"
+        aria-live="polite"
+        hidden
+      >
+        <ul class="preloader__error-list" data-signin-error-list></ul>
+      </div>
       <form
         class="preloader__form"
         action="#"
@@ -58,17 +67,10 @@
           required
         />
         <button class="btn-primary preloader__button" type="submit">
-          <span class="preloader__button-label">Submit</span>
+          <span class="preloader__button-label">Sign In</span>
           <span class="preloader__spinner" aria-hidden="true"></span>
         </button>
       </form>
-      <p
-        class="preloader__error"
-        data-signin-error
-        role="alert"
-        aria-live="polite"
-        hidden
-      ></p>
     </main>
     <script>
       window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
