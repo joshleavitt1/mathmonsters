@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!email) {
       validationErrors.push('Enter your email address.');
     } else if (!emailField.checkValidity()) {
-      validationErrors.push('Enter a valid email address.');
+      validationErrors.push('Enter valid email address.');
     }
 
     if (!password) {

@@ -42,12 +42,8 @@
 .preloader__errors {
   width: min(420px, 100%);
   margin: 0;
-  padding: clamp(16px, 4vw, 24px);
-  border-radius: 12px;
-  background-color: rgba(255, 87, 87, 0.2);
-  color: #ffffff;
-  text-align: left;
-  box-sizing: border-box;
+  color: #FF6A00;
+  text-align: center;
 }
 
 .preloader__error-list {
