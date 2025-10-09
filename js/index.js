@@ -1114,6 +1114,14 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       ? sourceData.progress
       : {};
   const mergedProgress = { ...baseProgress };
+
+  const baseGemCandidates = [
+    sanitizeGemCount(player?.gems),
+    sanitizeGemCount(player?.progress?.gems),
+    sanitizeGemCount(sourceData?.gems),
+    sanitizeGemCount(baseProgress?.gems),
+  ];
+  const baseGemCount = baseGemCandidates.find((value) => value !== null) ?? null;
   const baseBattleVariables =
     sourceData && typeof sourceData.battleVariables === 'object'
       ? sourceData.battleVariables
@@ -1148,14 +1156,43 @@ const mergePlayerWithProgress = (rawPlayerData) => {
         storedProgress.timeRemainingSeconds;
     }
 
-    const storedGemCount = sanitizeGemCount(storedProgress.gems);
-    if (storedGemCount !== null) {
-      applyGemCountToPlayer(storedGemCount);
+    const storedGemTotal = sanitizeGemCount(storedProgress.gems);
+    const storedGemAwarded = sanitizeGemCount(storedProgress.gemsAwarded);
+
+    let resolvedGemCount = baseGemCount;
+
+    if (storedGemTotal !== null) {
+      if (baseGemCount !== null && storedGemTotal < baseGemCount) {
+        const combinedTotal = baseGemCount + storedGemTotal;
+        resolvedGemCount =
+          resolvedGemCount !== null
+            ? Math.max(resolvedGemCount, combinedTotal)
+            : combinedTotal;
+      } else {
+        resolvedGemCount =
+          resolvedGemCount !== null
+            ? Math.max(resolvedGemCount, storedGemTotal)
+            : storedGemTotal;
+      }
+    }
+
+    if (storedGemAwarded !== null && storedGemTotal === null) {
+      const baseForAward = baseGemCount !== null ? baseGemCount : 0;
+      const awardedTotal = baseForAward + storedGemAwarded;
+      resolvedGemCount =
+        resolvedGemCount !== null
+          ? Math.max(resolvedGemCount, awardedTotal)
+          : awardedTotal;
+    }
+
+    if (resolvedGemCount !== null) {
+      applyGemCountToPlayer(resolvedGemCount);
     }
   }
 
   if (!Object.prototype.hasOwnProperty.call(mergedProgress, 'gems')) {
     const fallbackGemCount =
+      baseGemCount ??
       sanitizeGemCount(player?.progress?.gems) ??
       sanitizeGemCount(sourceData?.gems) ??
       sanitizeGemCount(baseProgress?.gems);
@@ -1186,6 +1223,14 @@ const readPlayerGemCount = (player) => {
     return 0;
   }
 
+  const sanitizeGemCount = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return null;
+    }
+    return Math.max(0, Math.round(numericValue));
+  };
+
   const candidateValues = [
     player.gems,
     player?.currency?.gems,
@@ -1195,14 +1240,27 @@ const readPlayerGemCount = (player) => {
     player?.progress?.gems,
   ];
 
-  for (const value of candidateValues) {
-    const numericValue = Number(value);
-    if (Number.isFinite(numericValue)) {
-      return Math.max(0, Math.round(numericValue));
+  const sanitizedCandidates = candidateValues
+    .map((value) => sanitizeGemCount(value))
+    .filter((value) => value !== null);
+
+  let resolvedGemCount =
+    sanitizedCandidates.length > 0
+      ? Math.max(...sanitizedCandidates)
+      : null;
+
+  if (resolvedGemCount === null) {
+    const awardCandidates = [
+      sanitizeGemCount(player?.gemsAwarded),
+      sanitizeGemCount(player?.progress?.gemsAwarded),
+    ].filter((value) => value !== null);
+
+    if (awardCandidates.length > 0) {
+      resolvedGemCount = Math.max(...awardCandidates);
     }
   }
 
-  return 0;
+  return resolvedGemCount ?? 0;
 };
 
 const normalizeBattleLevel = (value) => {
