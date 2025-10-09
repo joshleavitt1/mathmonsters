@@ -107,6 +107,7 @@ body.home-page {
 .home__progress-fill {
   transform-origin: left center;
   transform: scaleX(0);
+  animation-delay: 1s;
   animation: home-progress-fill-slide 0.6s ease forwards;
 }
 
