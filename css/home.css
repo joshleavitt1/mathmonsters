@@ -150,27 +150,6 @@ body.home-page {
   z-index: 1;
 }
 
-.home__actions--single {
-  justify-content: center;
-}
-
-.home__action--glow {
-  --pulsating-glow-spread: 28px;
-  --pulsating-glow-opacity: 0.7;
-  --pulsating-glow-opacity-peak: 0.95;
-  --pulsating-glow-scale-start: 0.88;
-  --pulsating-glow-scale-peak: 1.06;
-  --pulsating-glow-duration: 2600ms;
-}
-
-.home__action--glow-sword {
-  --pulsating-glow-color: rgba(255, 255, 255, 0.75);
-}
-
-.home__action--glow-shop {
-  --pulsating-glow-color: rgba(255, 214, 120, 0.85);
-}
-
 @keyframes hero-swim {
   0%,
   100% {
