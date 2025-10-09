@@ -1,7 +1,8 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
-const STARTING_BATTLE_LEVEL = 2;
+const STARTING_LEVEL = 2;
+const STARTING_BATTLE = 1;
 const HOME_PAGE_PATH = '../index.html';
 
 const isPlainObject = (value) =>
@@ -39,7 +40,9 @@ const applyStartingBattleLevel = (playerData) => {
   if (!isPlainObject(clonedData)) {
     return {
       progress: {
-        battleLevel: STARTING_BATTLE_LEVEL,
+        currentLevel: STARTING_LEVEL,
+        currentBattle: STARTING_BATTLE,
+        battleLevel: STARTING_LEVEL,
       },
       battleVariables: {
         timeRemainingSeconds: null,
@@ -50,7 +53,7 @@ const applyStartingBattleLevel = (playerData) => {
             sprite: '/mathmonsters/images/hero/shellfin_evolution_1.png',
           },
         },
-        [STARTING_BATTLE_LEVEL]: {
+        [STARTING_LEVEL]: {
           hero: {
             sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
           },
@@ -65,7 +68,9 @@ const applyStartingBattleLevel = (playerData) => {
 
   clonedData.progress = {
     ...progressSection,
-    battleLevel: STARTING_BATTLE_LEVEL,
+    currentLevel: STARTING_LEVEL,
+    currentBattle: STARTING_BATTLE,
+    battleLevel: STARTING_LEVEL,
   };
 
   if (!isPlainObject(clonedData.battleVariables)) {
@@ -86,8 +91,8 @@ const applyStartingBattleLevel = (playerData) => {
     };
   }
 
-  if (!isPlainObject(clonedData.battleLevel[STARTING_BATTLE_LEVEL])) {
-    clonedData.battleLevel[STARTING_BATTLE_LEVEL] = {
+  if (!isPlainObject(clonedData.battleLevel[STARTING_LEVEL])) {
+    clonedData.battleLevel[STARTING_LEVEL] = {
       hero: {
         sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
       },
@@ -200,15 +205,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   const submitButtonLabel = submitButton?.querySelector(
     '.preloader__button-label'
   );
-  const errorMessage = document.querySelector('[data-register-error]');
+  const errorContainer = document.querySelector('[data-register-errors]');
+  const errorList = document.querySelector('[data-register-error-list]');
   const supabase = window.supabaseClient;
 
-  const showError = (message) => {
-    if (!errorMessage) {
+  const renderErrors = (messages) => {
+    if (!errorContainer || !errorList) {
       return;
     }
-    errorMessage.textContent = message;
-    setElementVisibility(errorMessage, Boolean(message));
+
+    const normalizedMessages = Array.isArray(messages)
+      ? messages.filter((message) => typeof message === 'string' && message.trim())
+      : typeof messages === 'string' && messages.trim()
+      ? [messages.trim()]
+      : [];
+
+    errorList.innerHTML = '';
+
+    for (const message of normalizedMessages) {
+      const listItem = document.createElement('li');
+      listItem.textContent = message;
+      errorList.appendChild(listItem);
+    }
+
+    setElementVisibility(errorContainer, normalizedMessages.length > 0);
   };
 
   const setLoading = (isLoading) => {
@@ -227,7 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   if (!form || !emailField || !passwordField || !gradeField || !referralField) {
-    showError('The registration form could not be initialized.');
+    renderErrors('The registration form could not be initialized.');
     return;
   }
 
@@ -243,7 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   if (!supabase) {
-    showError('Registration service is unavailable. Please try again later.');
+    renderErrors('Registration service is unavailable. Please try again later.');
     return;
   }
 
@@ -263,25 +283,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    showError('');
+    renderErrors([]);
 
     const email = readTrimmedValue(emailField.value);
     const password = passwordField.value;
     const gradeLevel = readTrimmedValue(gradeField.value);
     const referralSource = readTrimmedValue(referralField.value);
 
-    if (!email || !password || !gradeLevel || !referralSource) {
-      showError('Please complete all fields to register.');
-      return;
+    const validationErrors = [];
+
+    if (!email) {
+      validationErrors.push('Enter your email address.');
+    } else if (!emailField.checkValidity()) {
+      validationErrors.push('Enter a valid email address.');
     }
 
-    if (!emailField.checkValidity()) {
-      showError('Enter a valid email address.');
-      return;
+    if (!password) {
+      validationErrors.push('Create a password.');
+    } else if (password.length < 6) {
+      validationErrors.push('Password must be at least 6 characters long.');
     }
 
-    if (password.length < 6) {
-      showError('Password must be at least 6 characters long.');
+    if (!gradeLevel) {
+      validationErrors.push("Select your child's grade level.");
+    }
+
+    if (!referralSource) {
+      validationErrors.push('Select where you found us.');
+    }
+
+    if (validationErrors.length > 0) {
+      renderErrors(validationErrors);
       return;
     }
 
@@ -297,14 +329,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           data: {
             gradeLevel,
             referralSource,
-            accountLevel: STARTING_BATTLE_LEVEL,
+            accountLevel: STARTING_LEVEL,
             playerData: startingPlayerData,
           },
         },
       });
 
       if (error) {
-        showError(error.message || 'Unable to register. Please try again.');
+        renderErrors(error.message || 'Unable to register. Please try again.');
         setLoading(false);
         return;
       }
@@ -323,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         try {
           await supabase.auth.updateUser({
-            data: { accountLevel: STARTING_BATTLE_LEVEL },
+            data: { accountLevel: STARTING_LEVEL },
           });
         } catch (error) {
           console.warn(
@@ -356,7 +388,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (signInError || !signInData?.session) {
-        showError(
+        renderErrors(
           signInError?.message ||
             'Registration was successful, but we could not start your session automatically. Please sign in to continue.'
         );
@@ -367,7 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await completeRegistration(signInData.user ?? null);
     } catch (error) {
       console.error('Unexpected error during registration', error);
-      showError('An unexpected error occurred. Please try again.');
+      renderErrors('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   });

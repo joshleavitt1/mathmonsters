@@ -32,9 +32,14 @@
       return;
     }
 
-    const remoteLevel = playerData?.progress?.battleLevel;
-    const numericLevel = toNumericBattleLevel(remoteLevel);
-    if (numericLevel === null) {
+    const progress = playerData?.progress ?? {};
+    const numericLevel =
+      toNumericBattleLevel(progress?.currentLevel) ??
+      toNumericBattleLevel(progress?.battleLevel);
+    const numericBattle =
+      toNumericBattleLevel(progress?.currentBattle) ??
+      toNumericBattleLevel(progress?.battleCurrent);
+    if (numericLevel === null && numericBattle === null) {
       return;
     }
 
@@ -56,7 +61,18 @@
 
       const nextValue =
         parsed && typeof parsed === 'object' ? { ...parsed } : {};
-      nextValue.battleLevel = numericLevel;
+      if (numericLevel !== null) {
+        nextValue.currentLevel = numericLevel;
+        nextValue.battleLevel = numericLevel;
+      } else {
+        delete nextValue.currentLevel;
+      }
+
+      if (numericBattle !== null) {
+        nextValue.currentBattle = Math.max(1, Math.round(numericBattle));
+      } else {
+        delete nextValue.currentBattle;
+      }
 
       storage.setItem(storageKey, JSON.stringify(nextValue));
     } catch (error) {

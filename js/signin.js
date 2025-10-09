@@ -22,6 +22,9 @@ const setFieldState = (field, isDisabled) => {
   field.disabled = Boolean(isDisabled);
 };
 
+const readTrimmedValue = (value) =>
+  typeof value === 'string' ? value.trim() : '';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const form = document.querySelector('.preloader__form');
   const emailField = document.getElementById('signin-email');
@@ -30,15 +33,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   const submitButtonLabel = submitButton?.querySelector(
     '.preloader__button-label'
   );
-  const errorMessage = document.querySelector('[data-signin-error]');
+  const errorContainer = document.querySelector('[data-signin-errors]');
+  const errorList = document.querySelector('[data-signin-error-list]');
   const supabase = window.supabaseClient;
 
-  const showError = (message) => {
-    if (!errorMessage) {
+  const renderErrors = (messages) => {
+    if (!errorContainer || !errorList) {
       return;
     }
-    errorMessage.textContent = message;
-    setElementVisibility(errorMessage, Boolean(message));
+
+    const normalizedMessages = Array.isArray(messages)
+      ? messages.filter((message) => typeof message === 'string' && message.trim())
+      : typeof messages === 'string' && messages.trim()
+      ? [messages.trim()]
+      : [];
+
+    errorList.innerHTML = '';
+
+    for (const message of normalizedMessages) {
+      const listItem = document.createElement('li');
+      listItem.textContent = message;
+      errorList.appendChild(listItem);
+    }
+
+    setElementVisibility(errorContainer, normalizedMessages.length > 0);
   };
 
   const setLoading = (isLoading) => {
@@ -55,12 +73,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   if (!form || !emailField || !passwordField) {
-    showError('The sign in form could not be initialized.');
+    renderErrors('The sign in form could not be initialized.');
     return;
   }
 
   if (!supabase) {
-    showError('Authentication service is unavailable. Please try again later.');
+    renderErrors('Authentication service is unavailable. Please try again later.');
     return;
   }
 
@@ -80,13 +98,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    showError('');
+    renderErrors([]);
 
-    const email = emailField.value.trim();
+    const email = readTrimmedValue(emailField.value);
     const password = passwordField.value;
 
-    if (!email || !password) {
-      showError('Please provide both an email and password.');
+    const validationErrors = [];
+
+    if (!email) {
+      validationErrors.push('Enter your email address.');
+    } else if (!emailField.checkValidity()) {
+      validationErrors.push('Enter valid email address.');
+    }
+
+    if (!password) {
+      validationErrors.push('Enter your password.');
+    }
+
+    if (validationErrors.length > 0) {
+      renderErrors(validationErrors);
       return;
     }
 
@@ -99,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       if (error) {
-        showError(error.message || 'Unable to sign in. Please try again.');
+        renderErrors(error.message || 'Unable to sign in. Please try again.');
         setLoading(false);
         return;
       }
@@ -108,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.location.replace('../index.html');
     } catch (error) {
       console.error('Unexpected error during sign in', error);
-      showError('An unexpected error occurred. Please try again.');
+      renderErrors('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   });

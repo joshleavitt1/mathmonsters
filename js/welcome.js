@@ -1,13 +1,30 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
+const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
+const PRELOADED_SPRITES_STORAGE_KEY = 'mathmonstersPreloadedSprites';
+const HOME_PROGRESS_STORAGE_KEY = 'mathmonstersHomeProgressState';
 const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const LEGACY_PROGRESS_STORAGE_KEYS = Object.freeze(['reefRangersProgress']);
+const LOCAL_STORAGE_KEYS_TO_CLEAR = Object.freeze([
+  PLAYER_PROFILE_STORAGE_KEY,
+  NEXT_BATTLE_SNAPSHOT_STORAGE_KEY,
+  HOME_PROGRESS_STORAGE_KEY,
+]);
+const SESSION_STORAGE_KEYS_TO_CLEAR = Object.freeze([
+  PLAYER_PROFILE_STORAGE_KEY,
+  NEXT_BATTLE_SNAPSHOT_STORAGE_KEY,
+  PRELOADED_SPRITES_STORAGE_KEY,
+  HOME_PROGRESS_STORAGE_KEY,
+]);
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const REGISTER_PAGE_URL = 'register.html';
 
 const createDefaultProgress = () => ({
-  battleLevel: 1,
+  currentLevel: 2,
+  currentBattle: 1,
+  battleLevel: 2,
 });
 
 const clearLandingVisitState = (localStorageRef) => {
@@ -27,12 +44,52 @@ const clearLandingVisitState = (localStorageRef) => {
   }
 };
 
-const persistGuestSession = () => {
-  try {
-    const storage = window.localStorage;
-    if (!storage) {
-      return false;
+const clearStoredGuestState = (localStorageRef, sessionStorageRef) => {
+  const removeKeys = (storage, keys, label) => {
+    if (!storage || typeof storage.removeItem !== 'function') {
+      return;
     }
+
+    keys.forEach((key) => {
+      if (!key) {
+        return;
+      }
+
+      try {
+        storage.removeItem(key);
+      } catch (error) {
+        console.warn(`Unable to clear ${label} key: ${key}`, error);
+      }
+    });
+  };
+
+  removeKeys(localStorageRef, LOCAL_STORAGE_KEYS_TO_CLEAR, 'local storage');
+  removeKeys(sessionStorageRef, SESSION_STORAGE_KEYS_TO_CLEAR, 'session storage');
+};
+
+const persistGuestSession = () => {
+  let storage;
+  try {
+    storage = window.localStorage;
+  } catch (error) {
+    console.warn('Guest session could not be saved.', error);
+    return false;
+  }
+
+  if (!storage) {
+    return false;
+  }
+
+  let sessionStorageRef = null;
+  try {
+    sessionStorageRef = window.sessionStorage;
+  } catch (error) {
+    console.warn('Session storage is not available for guest session reset.', error);
+  }
+
+  clearStoredGuestState(storage, sessionStorageRef);
+
+  try {
     storage.setItem(GUEST_SESSION_KEY, GUEST_SESSION_ACTIVE_VALUE);
     storage.setItem(
       PROGRESS_STORAGE_KEY,

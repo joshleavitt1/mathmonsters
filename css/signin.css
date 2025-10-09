@@ -39,6 +39,26 @@
   gap: 16px;
 }
 
+.preloader__errors {
+  width: min(420px, 100%);
+  margin: 0;
+  color: #FF6A00;
+  text-align: center;
+}
+
+.preloader__error-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1vw, 10px);
+}
+
+.preloader__error-list li {
+  font-size: 20px;
+}
+
 .preloader__badge {
   display: block;
   width: min(200px, 100%);
@@ -80,6 +100,18 @@
   background-color: transparent;
   color: #ffffff;
   font-size: 20px;
+}
+
+.preloader__field:-webkit-autofill,
+.preloader__field:-webkit-autofill:hover,
+.preloader__field:-webkit-autofill:focus,
+.preloader__field:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset;
+  box-shadow: 0 0 0px 1000px transparent inset;
+  background-color: transparent !important;
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  transition: background-color 9999s ease 0s, color 9999s ease 0s;
 }
 
 .preloader__field:not(:placeholder-shown) {
