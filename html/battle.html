@@ -156,14 +156,8 @@
               return null;
             }
 
-            const levelValue = Number.isFinite(parsed.currentLevel)
-              ? parsed.currentLevel
-              : Number.isFinite(parsed.battleLevel)
-              ? parsed.battleLevel
-              : null;
-
             const snapshot = {
-              currentLevel: levelValue,
+              battleLevel: Number.isFinite(parsed.battleLevel) ? parsed.battleLevel : null,
               hero: sanitizeEntry(parsed.hero),
               monster: sanitizeEntry(parsed.monster),
               timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),
@@ -239,7 +233,7 @@
     </script>
     <div id="question">
       <div class="question__content">
-      <section class="card card--static card--question">
+        <section class="card card--question">
           <p class="title question-text text-large text-dark"></p>
           <div class="choices"></div>
           <div class="meter" data-meter aria-hidden="true">
@@ -275,7 +269,7 @@
       aria-hidden="true"
       tabindex="-1"
     >
-      <section class="card card--pop battle-complete-card">
+      <section class="card card--home card--pop battle-complete-card">
         <h2 id="battle-complete-title" class="battle-complete-card__title battle-title">
           Monster Defeated
         </h2>
@@ -314,12 +308,6 @@
       </section>
     </div>
     <div class="reward-overlay" data-reward-overlay aria-hidden="true">
-      <button
-        type="button"
-        class="reward-overlay__dev-skip"
-        data-reward-dev-skip
-        aria-label="Skip reward (dev tool)"
-      ></button>
       <img
         class="reward-overlay__image"
         src="../images/complete/potion.png"
@@ -327,7 +315,7 @@
         data-reward-sprite
       />
       <section
-        class="card reward-overlay__card"
+        class="card card--home reward-overlay__card"
         data-reward-card
         aria-hidden="true"
         hidden
@@ -360,7 +348,7 @@
       />
       <img
         class="evolution-overlay__sprite evolution-overlay__sprite--next"
-        src="../images/hero/shellfin_evolution_2.png"
+        src="../images/hero/shellfin_attack_2.png"
         alt="Shellfin evolved"
         data-evolution-next
       />
@@ -373,12 +361,12 @@
       <div class="post-evolution-overlay__content">
         <img
           class="post-evolution-overlay__sprite"
-          src="../images/hero/shellfin_evolution_2.png"
+          src="../images/hero/shellfin_attack_2.png"
           alt="Shellfin evolved"
           data-evolution-complete-sprite
         />
         <section
-          class="card card--pop reward-overlay__card post-evolution-overlay__card"
+          class="card card--home card--pop reward-overlay__card post-evolution-overlay__card"
         >
           <img
             class="reward-overlay__card-avatar post-evolution-overlay__card-avatar"

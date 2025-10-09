@@ -180,46 +180,8 @@ const writePreloadedSpriteSet = (spriteSet) => {
 };
 
 const persistNextBattleSnapshot = (snapshot) => {
-  const normalizedSnapshot =
-    snapshot && typeof snapshot === 'object'
-      ? {
-          currentLevel: Number.isFinite(snapshot.currentLevel)
-            ? snapshot.currentLevel
-            : Number.isFinite(snapshot.battleLevel)
-            ? snapshot.battleLevel
-            : null,
-          hero:
-            snapshot.hero && typeof snapshot.hero === 'object'
-              ? {
-                  name:
-                    typeof snapshot.hero.name === 'string'
-                      ? snapshot.hero.name
-                      : null,
-                  sprite:
-                    typeof snapshot.hero.sprite === 'string'
-                      ? snapshot.hero.sprite
-                      : null,
-                }
-              : null,
-          monster:
-            snapshot.monster && typeof snapshot.monster === 'object'
-              ? {
-                  name:
-                    typeof snapshot.monster.name === 'string'
-                      ? snapshot.monster.name
-                      : null,
-                  sprite:
-                    typeof snapshot.monster.sprite === 'string'
-                      ? snapshot.monster.sprite
-                      : null,
-                }
-              : null,
-          timestamp: Date.now(),
-        }
-      : null;
-
-  if (typeof window !== 'undefined') {
-    window.mathMonstersBattleSnapshot = normalizedSnapshot;
+  if (typeof window !== 'undefined' && snapshot && typeof snapshot === 'object') {
+    window.mathMonstersBattleSnapshot = snapshot;
   }
 
   if (typeof sessionStorage === 'undefined') {
@@ -227,14 +189,47 @@ const persistNextBattleSnapshot = (snapshot) => {
   }
 
   try {
-    if (!normalizedSnapshot) {
+    if (!snapshot || typeof snapshot !== 'object') {
       sessionStorage.removeItem(NEXT_BATTLE_SNAPSHOT_STORAGE_KEY);
       return;
     }
 
+    const normalized = {
+      battleLevel: Number.isFinite(snapshot.battleLevel)
+        ? snapshot.battleLevel
+        : null,
+      hero:
+        snapshot.hero && typeof snapshot.hero === 'object'
+          ? {
+              name:
+                typeof snapshot.hero.name === 'string'
+                  ? snapshot.hero.name
+                  : null,
+              sprite:
+                typeof snapshot.hero.sprite === 'string'
+                  ? snapshot.hero.sprite
+                  : null,
+            }
+          : null,
+      monster:
+        snapshot.monster && typeof snapshot.monster === 'object'
+          ? {
+              name:
+                typeof snapshot.monster.name === 'string'
+                  ? snapshot.monster.name
+                  : null,
+              sprite:
+                typeof snapshot.monster.sprite === 'string'
+                  ? snapshot.monster.sprite
+                  : null,
+            }
+          : null,
+      timestamp: Date.now(),
+    };
+
     sessionStorage.setItem(
       NEXT_BATTLE_SNAPSHOT_STORAGE_KEY,
-      JSON.stringify(normalizedSnapshot)
+      JSON.stringify(normalized)
     );
   } catch (error) {
     console.warn('Unable to persist next battle snapshot.', error);
@@ -274,28 +269,6 @@ const readStoredPlayerProfile = () => {
   } catch (error) {
     console.warn('Stored player profile unavailable in loader.', error);
     return null;
-  }
-};
-
-const persistPlayerProfile = (profile) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    const storage = window.sessionStorage;
-    if (!storage) {
-      return;
-    }
-
-    if (!profile || typeof profile !== 'object') {
-      storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
-      return;
-    }
-
-    storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
-  } catch (error) {
-    console.warn('Unable to persist player profile in loader.', error);
   }
 };
 
@@ -541,33 +514,6 @@ const normalizeBattleLevel = (value) => {
   return null;
 };
 
-const readProgressLevel = (progress) => {
-  if (!isPlainObject(progress)) {
-    return null;
-  }
-
-  const currentLevel = normalizeBattleLevel(progress.currentLevel);
-  if (currentLevel !== null) {
-    return currentLevel;
-  }
-
-  return normalizeBattleLevel(progress.battleLevel);
-};
-
-const assignProgressLevel = (progress, level) => {
-  if (!isPlainObject(progress)) {
-    return;
-  }
-
-  if (level === null) {
-    delete progress.currentLevel;
-  } else {
-    progress.currentLevel = level;
-  }
-
-  delete progress.battleLevel;
-};
-
 const normalizeHeroIdentifier = (value) => {
   if (typeof value !== 'string') {
     return null;
@@ -664,9 +610,9 @@ const determinePlayerHeroLevel = (player) => {
 
   const progress = isPlainObject(player.progress) ? player.progress : null;
 
-  const overallProgressLevel = resolveHeroAssetLevel(readProgressLevel(progress));
-  if (overallProgressLevel !== null) {
-    return overallProgressLevel;
+  const progressBattleLevel = resolveHeroAssetLevel(progress?.battleLevel);
+  if (progressBattleLevel !== null) {
+    return progressBattleLevel;
   }
 
   const currentMathType =
@@ -1413,125 +1359,7 @@ const syncRemoteBattleLevel = (playerData) => {
   }
 };
 
-const dispatchPlayerProfileUpdate = (player) => {
-  if (typeof document === 'undefined') {
-    return;
-  }
-
-  try {
-    document.dispatchEvent(
-      new CustomEvent('player-profile-updated', {
-        detail: player && typeof player === 'object' ? { player } : {},
-      })
-    );
-  } catch (error) {
-    console.warn('Unable to dispatch player profile update event.', error);
-  }
-};
-
-const updatePreloadedPlayerProfile = (player) => {
-  if (!player || typeof player !== 'object') {
-    return;
-  }
-
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  const target =
-    window.preloadedData && typeof window.preloadedData === 'object'
-      ? window.preloadedData
-      : (window.preloadedData = {});
-
-  const progress =
-    player && typeof player.progress === 'object' && player.progress !== null
-      ? { ...player.progress }
-      : {};
-  const battleVariables =
-    player &&
-    typeof player.battleVariables === 'object' &&
-    player.battleVariables !== null
-      ? { ...player.battleVariables }
-      : {};
-
-  target.progress = progress;
-  target.battleVariables = battleVariables;
-  target.player = {
-    ...player,
-    progress,
-    battleVariables,
-  };
-
-  dispatchPlayerProfileUpdate(target.player);
-};
-
 (async function () {
-  let realtimeSyncInitialized = false;
-  let basePlayer = {};
-
-  const startRealtimeSync = () => {
-    if (realtimeSyncInitialized) {
-      return;
-    }
-
-    const subscribeFn = playerProfileUtils?.subscribeToPlayerProfile;
-    if (typeof subscribeFn !== 'function') {
-      return;
-    }
-
-    realtimeSyncInitialized = true;
-
-    const registerSubscription = (subscription) => {
-      if (
-        subscription &&
-        typeof subscription === 'object' &&
-        typeof subscription.unsubscribe === 'function' &&
-        typeof window !== 'undefined'
-      ) {
-        window.mathMonstersPlayerProfileSubscription = subscription;
-      }
-    };
-
-    const subscriptionResult = subscribeFn((remoteProfile) => {
-      if (!remoteProfile || typeof remoteProfile !== 'object') {
-        return;
-      }
-
-      try {
-        syncRemoteBattleLevel(remoteProfile);
-      } catch (error) {
-        console.warn('Failed to sync battle level from realtime update.', error);
-      }
-
-      const extractedRemotePlayer = extractPlayerData(remoteProfile);
-      if (!extractedRemotePlayer || typeof extractedRemotePlayer !== 'object') {
-        return;
-      }
-
-      basePlayer = mergePlayerData(basePlayer, extractedRemotePlayer);
-      applyHeroLevelAssets(basePlayer);
-      persistPlayerProfile(basePlayer);
-      updatePreloadedPlayerProfile(basePlayer);
-    });
-
-    if (subscriptionResult && typeof subscriptionResult.then === 'function') {
-      subscriptionResult
-        .then((subscription) => {
-          registerSubscription(subscription);
-        })
-        .catch((error) => {
-          console.warn('Unable to initialize real-time player profile sync.', error);
-        });
-      return;
-    }
-
-    try {
-      registerSubscription(subscriptionResult);
-    } catch (error) {
-      console.warn('Unable to track player profile subscription.', error);
-    }
-  };
-
   try {
     const [playerRes, levelsRes] = await Promise.all([
       fetch(resolveDataPath('player.json')),
@@ -1552,7 +1380,7 @@ const updatePreloadedPlayerProfile = (player) => {
 
     const storedPlayerProfile = readStoredPlayerProfile();
 
-    basePlayer = extractPlayerData(localPlayerData);
+    let basePlayer = extractPlayerData(localPlayerData);
     basePlayer = mergePlayerWithStoredProfile(basePlayer, storedPlayerProfile);
 
     try {
@@ -1574,7 +1402,6 @@ const updatePreloadedPlayerProfile = (player) => {
     }
 
     applyHeroLevelAssets(basePlayer);
-    persistPlayerProfile(basePlayer);
     const localPlayer = extractPlayerData(localPlayerData);
     if (localPlayer) {
       applyHeroLevelAssets(localPlayer);
@@ -1598,12 +1425,13 @@ const updatePreloadedPlayerProfile = (player) => {
     const progress = { ...baseProgress };
     const battleVariables = { ...baseBattleVariables };
     let experienceMap = normalizeExperienceMap(progress?.experience);
-    let overallProgressLevel = readProgressLevel(progress);
 
     if (storedProgress && typeof storedProgress === 'object') {
-      const storedBattleLevel = readProgressLevel(storedProgress);
+      const storedBattleLevel = normalizeBattleLevel(
+        storedProgress.battleLevel
+      );
       if (storedBattleLevel !== null) {
-        overallProgressLevel = storedBattleLevel;
+        progress.battleLevel = storedBattleLevel;
       }
       if (typeof storedProgress.timeRemainingSeconds === 'number') {
         battleVariables.timeRemainingSeconds =
@@ -1619,40 +1447,32 @@ const updatePreloadedPlayerProfile = (player) => {
       delete progress.experience;
     }
 
-    const normalizedProgressLevel = normalizeBattleLevel(overallProgressLevel);
-    const defaultLevel = normalizeBattleLevel(levels[0]?.battleLevel);
-    const activeBattleLevel =
-      normalizedProgressLevel !== null
-        ? normalizedProgressLevel
-        : defaultLevel !== null
-        ? defaultLevel
-        : null;
+    const normalizedProgressBattleLevel = normalizeBattleLevel(
+      progress.battleLevel
+    );
 
-    if (normalizedProgressLevel !== null) {
-      assignProgressLevel(progress, normalizedProgressLevel);
-      overallProgressLevel = normalizedProgressLevel;
+    const activeBattleLevel =
+      normalizedProgressBattleLevel ?? levels[0]?.battleLevel ?? null;
+
+    if (normalizedProgressBattleLevel !== null) {
+      progress.battleLevel = normalizedProgressBattleLevel;
     } else if (Number.isFinite(activeBattleLevel)) {
-      assignProgressLevel(progress, activeBattleLevel);
-      overallProgressLevel = activeBattleLevel;
+      progress.battleLevel = activeBattleLevel;
     } else {
-      assignProgressLevel(progress, null);
-      overallProgressLevel = null;
+      delete progress.battleLevel;
     }
 
-    const currentLevelEntry =
-      levels.find(
-        (level) => normalizeBattleLevel(level?.battleLevel) === activeBattleLevel
-      ) ||
-      levels[0] ||
+    const currentLevel =
+      levels.find((level) => level?.battleLevel === activeBattleLevel) ??
+      levels[0] ??
       null;
 
     if (
-      currentLevelEntry &&
-      typeof currentLevelEntry.battleLevel === 'number' &&
-      overallProgressLevel !== currentLevelEntry.battleLevel
+      currentLevel &&
+      typeof currentLevel.battleLevel === 'number' &&
+      progress.battleLevel !== currentLevel.battleLevel
     ) {
-      assignProgressLevel(progress, currentLevelEntry.battleLevel);
-      overallProgressLevel = currentLevelEntry.battleLevel;
+      progress.battleLevel = currentLevel.battleLevel;
     }
 
     const levelBattleRaw = currentLevel?.battle ?? {};
@@ -2198,9 +2018,7 @@ const updatePreloadedPlayerProfile = (player) => {
       questions,
     };
 
-    dispatchPlayerProfileUpdate(window.preloadedData.player);
     document.dispatchEvent(new Event('data-loaded'));
-    startRealtimeSync();
   } catch (e) {
     console.error('Failed to load data', e);
     persistNextBattleSnapshot(null);

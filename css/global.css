@@ -337,92 +337,21 @@ button:focus-visible {
 }
 
 .card {
-  --card-translate-x: -50%;
-  --card-translate-y: 32px;
-  --card-translate-z: 0;
-  --card-opacity: 0;
-  --card-bottom-offset: 24;
-  --card-max-width: 480px;
-  --card-gap: 16px;
-  --card-radius: 12px;
-  --card-padding: 24px;
-
-  position: fixed;
-  left: 50%;
-  bottom: calc(var(--card-bottom-offset) + var(--viewport-bottom-offset, 0px));
-  bottom: calc(
-    var(--card-bottom-offset) + var(--viewport-bottom-offset, 0px) +
-    constant(safe-area-inset-bottom)
-  );
-  bottom: calc(
-    var(--card-bottom-offset) + var(--viewport-bottom-offset, 0px) +
-    env(safe-area-inset-bottom, 0px)
-  );
-  width: var(--card-max-width);
-  max-width: 100%;
-  padding: var(--card-padding);
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items:center;
-  gap: var(--card-gap);
-  text-align: left;
-  box-sizing: border-box;
-  border-radius: 12px;
-  background: white;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
-  color: var(--text-color-dark, #272b34);
-  transform: translate3d(
-    var(--card-translate-x),
-    var(--card-translate-y),
-    var(--card-translate-z)
-  );
-  opacity: none;
-  pointer-events: none;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.3s ease;
-  z-index: 6;
-}
-
-.card.is-visible {
-  --card-translate-y: 0px;
-  --card-opacity: 1;
-  pointer-events: auto;
-}
-
-.card.is-exiting {
-  --card-translate-y: 40px;
-  --card-opacity: 0;
-  pointer-events: none;
-}
-
-.card--static {
   --card-translate-x: 0;
   --card-translate-y: 0;
-  --card-opacity: 1;
-
-  position: relative;
-  left: auto;
-  right: auto;
-  top: auto;
-  bottom: auto;
-  width: 100%;
+  --card-translate-z: 0;
+  width: 420px;
   max-width: 100%;
-  margin: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: var(--surface-padding, 24px);
   box-sizing: border-box;
-  transform: none;
-  opacity: 1;
-  pointer-events: auto;
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.2);
-  backdrop-filter: none;
-  transition: none;
-}
-
-.card--static.is-visible,
-.card--static.is-exiting {
-  --card-translate-y: 0;
-  opacity: 1;
-  pointer-events: auto;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
 }
 
 .medal {
@@ -430,7 +359,6 @@ button:focus-visible {
 
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + var(--space-lg));
-  bottom: auto;
   left: 50%;
   transform: translate(-50%, -24px) scale(0.92);
   opacity: 0;
@@ -631,6 +559,42 @@ button:focus-visible {
 
 :root {
   --viewport-bottom-offset: 0px;
+}
+
+.card--home {
+  position: absolute;
+  left: 50%;
+  bottom: calc(24px + var(--viewport-bottom-offset, 0px));
+  bottom: calc(
+    24px + var(--viewport-bottom-offset, 0px) +
+    constant(safe-area-inset-bottom)
+  );
+  bottom: calc(
+    24px + var(--viewport-bottom-offset, 0px) +
+    env(safe-area-inset-bottom, 0px)
+  );
+  --card-translate-x: -50%;
+  transform: translate3d(
+    var(--card-translate-x, 0),
+    var(--card-translate-y, 0),
+    var(--card-translate-z, 0)
+  );
+  width: min(420px, calc(100% - 32px));
+  margin: 0;
+  padding: 24px 28px 28px;
+  gap: 20px;
+  z-index: 6;
+}
+.card--home .battle-info {
+  gap: 4px;
+}
+
+.card--home .progress {
+  margin-inline: auto;
+}
+
+.card--home .battle-btn {
+  width: 100%;
 }
 
 @keyframes pop-in {
