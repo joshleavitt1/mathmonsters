@@ -457,6 +457,26 @@ const setupSettingsLogout = () => {
   attachInteractiveHandler(settingsTrigger, handleLogout);
 };
 
+const setupDevSignOut = () => {
+  const devTrigger = document.querySelector('[data-dev-signout]');
+  if (!devTrigger) {
+    return;
+  }
+
+  if (devTrigger.dataset.devSignoutBound === 'true') {
+    return;
+  }
+  devTrigger.dataset.devSignoutBound = 'true';
+
+  attachInteractiveHandler(devTrigger, async (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    await logoutAndRedirect();
+  });
+};
+
 const ensureAuthenticated = async () => {
   const guestSessionState = readGuestSessionState();
 
@@ -3214,6 +3234,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   let fallbackPlayerData = preloadedData?.fallbackPlayerData ?? null;
 
   setupSettingsLogout();
+  setupDevSignOut();
   setupDevResetTool();
   setupSecretLevelShortcut();
 
