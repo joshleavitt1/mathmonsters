@@ -2040,6 +2040,76 @@ const syncRemoteCurrentLevel = (playerData) => {
       return normalizedCount > 0 ? normalizedCount : 1;
     };
 
+    const mathTypeCandidates = [
+      levelBattle?.mathType,
+      levelBattleRaw?.mathType,
+      currentLevel?.mathType,
+      mathTypeKey,
+      basePlayer?.currentMathType,
+      basePlayer?.mathType,
+      progress?.mathType,
+      progress?.currentMathType,
+    ];
+
+    const totalBattlesForLevel = resolveLevelBattleCount();
+    const resolvedBattleTotal =
+      Number.isFinite(totalBattlesForLevel) && totalBattlesForLevel > 0
+        ? Math.max(1, Math.round(totalBattlesForLevel))
+        : null;
+
+    const applyBattleTotalToEntry = (entry) => {
+      if (!isPlainObject(entry) || resolvedBattleTotal === null) {
+        return;
+      }
+
+      const existingTotal = Number(entry.totalBattles ?? entry.levelBattles);
+      const sanitizedExisting =
+        Number.isFinite(existingTotal) && existingTotal > 0
+          ? Math.max(1, Math.round(existingTotal))
+          : null;
+
+      if (sanitizedExisting === null || sanitizedExisting < resolvedBattleTotal) {
+        entry.totalBattles = resolvedBattleTotal;
+      }
+
+      const entryCurrentBattle = Number(entry.currentBattle);
+      if (
+        Number.isFinite(entryCurrentBattle) &&
+        entryCurrentBattle > resolvedBattleTotal
+      ) {
+        entry.currentBattle = resolvedBattleTotal;
+      }
+    };
+
+    if (resolvedBattleTotal !== null) {
+      applyBattleTotalToEntry(progress);
+      applyBattleTotalToEntry(basePlayer?.progress);
+
+      const { key: mathProgressKey, entry: mathProgressEntry } =
+        findMathProgressEntry(progress, mathTypeCandidates);
+
+      if (mathProgressEntry) {
+        applyBattleTotalToEntry(mathProgressEntry);
+      } else if (
+        typeof mathProgressKey === 'string' &&
+        mathProgressKey &&
+        !isPlainObject(progress?.[mathProgressKey])
+      ) {
+        progress[mathProgressKey] = { totalBattles: resolvedBattleTotal };
+      }
+
+      if (
+        typeof mathProgressKey === 'string' &&
+        mathProgressKey &&
+        isPlainObject(basePlayer?.progress)
+      ) {
+        const baseMathEntry = basePlayer.progress[mathProgressKey];
+        if (isPlainObject(baseMathEntry)) {
+          applyBattleTotalToEntry(baseMathEntry);
+        }
+      }
+    }
+
     const resolveActiveMonsterIndex = () => {
       if (!normalizedMonsters.length) {
         return 0;
