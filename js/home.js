@@ -984,14 +984,76 @@ const updateHomeFromPreloadedData = () => {
   }
 
   if (progressElement && hasProgressState) {
+    const runWhenPreloaderHidden = (callbackFn) => {
+      if (typeof callbackFn !== 'function') {
+        return;
+      }
+
+      if (typeof document === 'undefined') {
+        callbackFn();
+        return;
+      }
+
+      const body = document.body;
+      if (!body) {
+        callbackFn();
+        return;
+      }
+
+      if (!body.classList.contains('is-preloading')) {
+        callbackFn();
+        return;
+      }
+
+      let resolved = false;
+      let observer = null;
+      let fallbackId = null;
+
+      const finish = () => {
+        if (resolved) {
+          return;
+        }
+        resolved = true;
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+        if (fallbackId !== null) {
+          clearTimeout(fallbackId);
+          fallbackId = null;
+        }
+        callbackFn();
+      };
+
+      if (typeof MutationObserver === 'function') {
+        observer = new MutationObserver(() => {
+          if (!body.classList.contains('is-preloading')) {
+            finish();
+          }
+        });
+
+        observer.observe(body, { attributes: true, attributeFilter: ['class'] });
+      }
+
+      fallbackId = setTimeout(finish, 4500);
+
+      if (!body.classList.contains('is-preloading')) {
+        finish();
+      }
+    };
+
     const scheduleInitialProgressAnimation = (callback) => {
       if (typeof callback !== 'function') {
         return;
       }
 
       const completionKey = HOME_PROGRESS_INITIAL_ANIMATION_COMPLETE_DATA_KEY;
+      const startAnimation = () => {
+        runWhenPreloaderHidden(callback);
+      };
+
       if (progressElement.dataset[completionKey] === 'true') {
-        callback();
+        startAnimation();
         return;
       }
 
@@ -1001,7 +1063,7 @@ const updateHomeFromPreloadedData = () => {
 
       if (delayMs <= 0) {
         progressElement.dataset[completionKey] = 'true';
-        callback();
+        startAnimation();
         return;
       }
 
@@ -1014,7 +1076,7 @@ const updateHomeFromPreloadedData = () => {
       const runCallback = () => {
         progressElement.dataset[completionKey] = 'true';
         delete progressElement[timeoutProperty];
-        callback();
+        startAnimation();
       };
 
       const timeoutHandle = setTimeout(runCallback, delayMs);
