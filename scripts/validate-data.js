@@ -124,7 +124,7 @@ function validateQuestionSet(fileName, issues) {
   });
 }
 
-const normalizeBattleLevel = (value) => {
+const normalizeCurrentLevel = (value) => {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : null;
   }
@@ -158,16 +158,16 @@ const normalizeLevelList = (levels, mathTypeKey) => {
         normalizedLevel.mathType = mathTypeKey;
       }
 
-      const resolvedBattleLevel =
-        normalizeBattleLevel(level?.battleLevel) ??
-        normalizeBattleLevel(level?.level) ??
-        normalizeBattleLevel(level?.id) ??
-        normalizeBattleLevel(index + 1);
+      const resolvedCurrentLevel =
+        normalizeCurrentLevel(level?.currentLevel) ??
+        normalizeCurrentLevel(level?.level) ??
+        normalizeCurrentLevel(level?.id) ??
+        normalizeCurrentLevel(index + 1);
 
-      if (resolvedBattleLevel !== null) {
-        normalizedLevel.battleLevel = resolvedBattleLevel;
+      if (resolvedCurrentLevel !== null) {
+        normalizedLevel.currentLevel = resolvedCurrentLevel;
       } else {
-        delete normalizedLevel.battleLevel;
+        delete normalizedLevel.currentLevel;
       }
 
       return normalizedLevel;
@@ -189,14 +189,14 @@ const collectLevelsFromMathType = (mathTypeConfig) => {
       return;
     }
 
-    const normalizedBattleLevel =
-      normalizeBattleLevel(level?.battleLevel) ??
-      normalizeBattleLevel(level?.level) ??
-      normalizeBattleLevel(level?.id);
+    const normalizedCurrentLevel =
+      normalizeCurrentLevel(level?.currentLevel) ??
+      normalizeCurrentLevel(level?.level) ??
+      normalizeCurrentLevel(level?.id);
 
     const dedupeKey =
-      normalizedBattleLevel !== null
-        ? `battle:${normalizedBattleLevel}`
+      normalizedCurrentLevel !== null
+        ? `current:${normalizedCurrentLevel}`
         : typeof level?.id === 'string'
         ? `id:${level.id.trim().toLowerCase()}`
         : `fallback:${fallbackIndex++}`;
@@ -431,9 +431,9 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
 
     const normalizedLevel = { ...level };
     const levelKey =
-      normalizeBattleLevel(level?.battleLevel) ??
-      normalizeBattleLevel(level?.level) ??
-      normalizeBattleLevel(index + 1);
+      normalizeCurrentLevel(level?.currentLevel) ??
+      normalizeCurrentLevel(level?.level) ??
+      normalizeCurrentLevel(index + 1);
 
     const context = { levelKey };
 
@@ -522,8 +522,8 @@ const deriveMathTypeLevels = (levelsData) => {
   const sortedLevels = normalizedLevels
     .map((level, index) => ({ level, index }))
     .sort((a, b) => {
-      const levelA = normalizeBattleLevel(a.level?.battleLevel);
-      const levelB = normalizeBattleLevel(b.level?.battleLevel);
+      const levelA = normalizeCurrentLevel(a.level?.currentLevel);
+      const levelB = normalizeCurrentLevel(b.level?.currentLevel);
 
       if (levelA === null && levelB === null) {
         return a.index - b.index;
@@ -610,8 +610,8 @@ function validatePlayer(issues) {
   }
 
   const levelMap =
-    playerData && typeof playerData.battleLevel === 'object'
-      ? playerData.battleLevel
+    playerData && typeof playerData.currentLevel === 'object'
+      ? playerData.currentLevel
       : {};
 
   Object.entries(levelMap).forEach(([levelKey, levelData]) => {
@@ -619,7 +619,7 @@ function validatePlayer(issues) {
     if (hero && typeof hero === 'object') {
       checkAssetExists(
         hero.sprite,
-        `Player battleLevel ${levelKey} hero sprite`,
+        `Player currentLevel ${levelKey} hero sprite`,
         issues
       );
     }

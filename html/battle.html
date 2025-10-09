@@ -157,7 +157,7 @@
             }
 
             const snapshot = {
-              battleLevel: Number.isFinite(parsed.battleLevel) ? parsed.battleLevel : null,
+              currentLevel: Number.isFinite(parsed.currentLevel) ? parsed.currentLevel : null,
               hero: sanitizeEntry(parsed.hero),
               monster: sanitizeEntry(parsed.monster),
               timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),

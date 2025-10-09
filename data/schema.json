@@ -222,7 +222,7 @@
           "type": "integer",
           "minimum": 1
         },
-        "battleLevel": {
+        "currentLevel": {
           "type": "integer",
           "minimum": 1
         },
@@ -320,7 +320,7 @@
       ],
       "additionalProperties": false
     },
-    "BattleLevelProgress": {
+    "CurrentLevelProgress": {
       "type": "object",
       "properties": {
         "hero": {
@@ -343,10 +343,6 @@
           "type": "string",
           "minLength": 1
         },
-        "currentLevel": {
-          "type": "integer",
-          "minimum": 1
-        },
         "gems": {
           "type": "integer",
           "minimum": 0
@@ -358,10 +354,10 @@
             "$ref": "#/definitions/MathProgress"
           }
         },
-        "battleLevel": {
+        "currentLevel": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/BattleLevelProgress"
+            "$ref": "#/definitions/CurrentLevelProgress"
           }
         },
         "battleVariables": {
@@ -379,7 +375,6 @@
         "id",
         "hero",
         "currentMathType",
-        "currentLevel",
         "gems",
         "progress"
       ],

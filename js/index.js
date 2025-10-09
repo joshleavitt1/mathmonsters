@@ -511,12 +511,12 @@ const fetchPlayerProfile = async () => {
   }
 };
 
-const syncRemoteBattleLevel = (playerData) => {
+const syncRemoteCurrentLevel = (playerData) => {
   if (!playerData) {
     return;
   }
 
-  const syncFn = playerProfileUtils?.syncBattleLevelToStorage;
+  const syncFn = playerProfileUtils?.syncCurrentLevelToStorage;
   if (typeof syncFn !== 'function') {
     return;
   }
@@ -524,7 +524,7 @@ const syncRemoteBattleLevel = (playerData) => {
   try {
     syncFn(playerData, PROGRESS_STORAGE_KEY);
   } catch (error) {
-    console.warn('Failed to sync remote battle level with storage.', error);
+    console.warn('Failed to sync remote current level with storage.', error);
   }
 };
 
@@ -1003,7 +1003,7 @@ const mergeHeroData = (baseHero, overrideHero) => {
   };
 };
 
-const mergeBattleLevelMap = (baseMap, overrideMap) => {
+const mergeCurrentLevelMap = (baseMap, overrideMap) => {
   const base = isPlainObject(baseMap) ? baseMap : null;
   const override = isPlainObject(overrideMap) ? overrideMap : null;
 
@@ -1061,12 +1061,12 @@ const mergePlayerData = (basePlayer, overridePlayer) => {
     merged.hero = mergedHero;
   }
 
-  const mergedBattleLevel = mergeBattleLevelMap(
-    base?.battleLevel,
-    override?.battleLevel
+  const mergedCurrentLevel = mergeCurrentLevelMap(
+    base?.currentLevel,
+    override?.currentLevel
   );
-  if (mergedBattleLevel) {
-    merged.battleLevel = mergedBattleLevel;
+  if (mergedCurrentLevel) {
+    merged.currentLevel = mergedCurrentLevel;
   }
 
   return merged;
@@ -1149,9 +1149,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
   if (storedProgress && typeof storedProgress === 'object') {
     if (typeof storedProgress.currentLevel === 'number') {
       mergedProgress.currentLevel = storedProgress.currentLevel;
-      mergedProgress.battleLevel = storedProgress.currentLevel;
-    } else if (typeof storedProgress.battleLevel === 'number') {
-      mergedProgress.battleLevel = storedProgress.battleLevel;
     }
 
     if (typeof storedProgress.currentBattle === 'number') {
@@ -1222,13 +1219,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     }
   }
 
-  if (
-    Number.isFinite(player.progress?.currentLevel) &&
-    !Number.isFinite(player.progress?.battleLevel)
-  ) {
-    player.progress.battleLevel = Math.max(1, Math.floor(player.progress.currentLevel));
-  }
-
   if (!Number.isFinite(player.progress?.currentBattle) || player.progress.currentBattle <= 0) {
     player.progress.currentBattle = 1;
   } else {
@@ -1286,7 +1276,7 @@ const readPlayerGemCount = (player) => {
   return resolvedGemCount ?? 0;
 };
 
-const normalizeBattleLevel = (value) => {
+const normalizeCurrentLevel = (value) => {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : null;
   }
@@ -1367,16 +1357,16 @@ const normalizeLevelList = (levels, mathTypeKey) => {
         normalizedLevel.mathType = mathTypeKey;
       }
 
-      const resolvedBattleLevel =
-        normalizeBattleLevel(level?.battleLevel) ??
-        normalizeBattleLevel(level?.level) ??
-        normalizeBattleLevel(level?.id) ??
-        normalizeBattleLevel(index + 1);
+      const resolvedCurrentLevel =
+        normalizeCurrentLevel(level?.currentLevel) ??
+        normalizeCurrentLevel(level?.level) ??
+        normalizeCurrentLevel(level?.id) ??
+        normalizeCurrentLevel(index + 1);
 
-      if (resolvedBattleLevel !== null) {
-        normalizedLevel.battleLevel = resolvedBattleLevel;
+      if (resolvedCurrentLevel !== null) {
+        normalizedLevel.currentLevel = resolvedCurrentLevel;
       } else {
-        delete normalizedLevel.battleLevel;
+        delete normalizedLevel.currentLevel;
       }
 
       return normalizedLevel;
@@ -1398,14 +1388,14 @@ const collectLevelsFromMathType = (mathTypeConfig) => {
       return;
     }
 
-    const normalizedBattleLevel =
-      normalizeBattleLevel(level?.battleLevel) ??
-      normalizeBattleLevel(level?.level) ??
-      normalizeBattleLevel(level?.id);
+    const normalizedCurrentLevel =
+      normalizeCurrentLevel(level?.currentLevel) ??
+      normalizeCurrentLevel(level?.level) ??
+      normalizeCurrentLevel(level?.id);
 
     const dedupeKey =
-      normalizedBattleLevel !== null
-        ? `battle:${normalizedBattleLevel}`
+      normalizedCurrentLevel !== null
+        ? `current:${normalizedCurrentLevel}`
         : typeof level?.id === 'string'
         ? `id:${level.id.trim().toLowerCase()}`
         : `fallback:${fallbackIndex++}`;
@@ -1697,9 +1687,9 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
 
     const normalizedLevel = { ...level };
     const levelKey =
-      normalizeBattleLevel(level?.battleLevel) ??
-      normalizeBattleLevel(level?.level) ??
-      normalizeBattleLevel(index + 1);
+      normalizeCurrentLevel(level?.currentLevel) ??
+      normalizeCurrentLevel(level?.level) ??
+      normalizeCurrentLevel(index + 1);
 
     const context = { levelKey };
 
@@ -1819,8 +1809,8 @@ const deriveMathTypeLevels = (levelsData, ...playerSources) => {
   const sortedLevels = normalizedLevels
     .map((level, index) => ({ level, index }))
     .sort((a, b) => {
-      const levelA = normalizeBattleLevel(a.level?.battleLevel);
-      const levelB = normalizeBattleLevel(b.level?.battleLevel);
+      const levelA = normalizeCurrentLevel(a.level?.currentLevel);
+      const levelB = normalizeCurrentLevel(b.level?.currentLevel);
 
       if (levelA === null && levelB === null) {
         return a.index - b.index;
@@ -1918,7 +1908,7 @@ const resolveBattleCountForLevel = (level, levelsList) => {
     return count;
   }
 
-  const levelNumber = normalizeBattleLevel(level?.battleLevel ?? level?.level);
+  const levelNumber = normalizeCurrentLevel(level?.currentLevel ?? level?.level);
   if (!Number.isFinite(levelNumber) || !Array.isArray(levelsList)) {
     return 1;
   }
@@ -1927,7 +1917,7 @@ const resolveBattleCountForLevel = (level, levelsList) => {
     if (!entry || typeof entry !== 'object') {
       return false;
     }
-    const entryLevel = normalizeBattleLevel(entry?.battleLevel ?? entry?.level);
+    const entryLevel = normalizeCurrentLevel(entry?.currentLevel ?? entry?.level);
     return Number.isFinite(entryLevel) && entryLevel === levelNumber;
   });
 
@@ -1941,9 +1931,8 @@ const resolveProgressLevel = (progress) => {
   }
 
   return (
-    normalizeBattleLevel(progress.currentLevel) ??
-    normalizeBattleLevel(progress.battleLevel) ??
-    normalizeBattleLevel(progress.level)
+    normalizeCurrentLevel(progress.currentLevel) ??
+    normalizeCurrentLevel(progress.level)
   );
 };
 
@@ -1963,7 +1952,7 @@ const determineBattlePreview = (levelsData, playerData) => {
   const activeLevel = (() => {
     if (progressLevel !== null) {
       const match = levels.find(
-        (level) => normalizeBattleLevel(level?.battleLevel) === progressLevel
+        (level) => normalizeCurrentLevel(level?.currentLevel) === progressLevel
       );
       if (match) {
         return match;
@@ -1980,7 +1969,7 @@ const determineBattlePreview = (levelsData, playerData) => {
     if (!player || typeof player !== 'object') {
       return null;
     }
-    const map = player.battleLevel;
+    const map = player.currentLevel;
     if (!map || typeof map !== 'object') {
       return null;
     }
@@ -2005,7 +1994,7 @@ const determineBattlePreview = (levelsData, playerData) => {
   const heroData = {
     ...(player?.hero ?? {}),
     ...levelHero,
-    ...(resolvePlayerLevelData(activeLevel?.battleLevel)?.hero ?? {}),
+    ...(resolvePlayerLevelData(activeLevel?.currentLevel)?.hero ?? {}),
   };
 
   const rawHeroSprite =
@@ -2055,17 +2044,17 @@ const determineBattlePreview = (levelsData, playerData) => {
   const levelName = typeof activeLevel?.name === 'string' ? activeLevel.name.trim() : '';
   const battleTitleLabel =
     levelName ||
-    (typeof activeLevel?.battleLevel === 'number'
-      ? `Battle ${activeLevel.battleLevel}`
+    (typeof activeLevel?.currentLevel === 'number'
+      ? `Battle ${activeLevel.currentLevel}`
       : 'Upcoming Battle');
   const heroLevelLabel =
-    typeof activeLevel?.battleLevel === 'number'
-      ? `Level ${activeLevel.battleLevel}`
+    typeof activeLevel?.currentLevel === 'number'
+      ? `Level ${activeLevel.currentLevel}`
       : 'Level';
   const experienceMap = normalizeExperienceMap(player?.progress?.experience);
   const earnedExperience = readExperienceForLevel(
     experienceMap,
-    activeLevel?.battleLevel
+    activeLevel?.currentLevel
   );
   const levelUpRequirement = Number(battle?.levelUp);
   const experienceProgress = computeExperienceProgress(
@@ -2109,7 +2098,7 @@ const determineBattlePreview = (levelsData, playerData) => {
     player,
     preview: {
       activeLevel,
-      battleLevel: activeLevel?.battleLevel ?? null,
+      currentLevel: activeLevel?.currentLevel ?? null,
       mathLabel,
       battleTitleLabel,
       hero: { ...heroData, sprite: heroSprite },
@@ -2132,7 +2121,7 @@ const determineBattlePreview = (levelsData, playerData) => {
 };
 
 const normalizeBattleIndex = (value) => {
-  const normalized = normalizeBattleLevel(value);
+  const normalized = normalizeCurrentLevel(value);
   if (typeof normalized !== 'number' || !Number.isFinite(normalized)) {
     return null;
   }
@@ -2147,7 +2136,7 @@ const HOME_ACTION_GLOW_CLASSES = [
   'home__action--glow-shop',
 ];
 
-const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
+const updateHomeTutorialHighlights = ({ currentLevel, currentBattle } = {}) => {
   const actionsContainer = document.querySelector('.home__actions');
   if (!actionsContainer) {
     return;
@@ -2193,7 +2182,7 @@ const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
     return;
   }
 
-  const resolvedLevel = normalizeBattleIndex(battleLevel);
+  const resolvedLevel = normalizeBattleIndex(currentLevel);
   const resolvedBattle = normalizeBattleIndex(currentBattle);
 
   if (resolvedLevel === 2 && resolvedBattle === 1) {
@@ -2401,20 +2390,20 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
     progressElement.setAttribute('aria-valuetext', ariaText);
   });
 
-  const resolvedBattleLevel = (() => {
-    const fromPreview = normalizeBattleLevel(previewData?.battleLevel);
+  const resolvedCurrentLevel = (() => {
+    const fromPreview = normalizeCurrentLevel(previewData?.currentLevel);
     if (fromPreview !== null) {
       return fromPreview;
     }
 
-    const fromActiveLevel = normalizeBattleLevel(previewData?.activeLevel?.battleLevel);
+    const fromActiveLevel = normalizeCurrentLevel(previewData?.activeLevel?.currentLevel);
     if (fromActiveLevel !== null) {
       return fromActiveLevel;
     }
 
     if (Array.isArray(levels)) {
       for (const level of levels) {
-        const candidate = normalizeBattleLevel(level?.battleLevel);
+        const candidate = normalizeCurrentLevel(level?.currentLevel);
         if (candidate !== null) {
           return candidate;
         }
@@ -2424,7 +2413,7 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
     return null;
   })();
 
-  const isLevelOneLanding = resolvedBattleLevel !== null ? resolvedBattleLevel <= 1 : true;
+  const isLevelOneLanding = resolvedCurrentLevel !== null ? resolvedCurrentLevel <= 1 : true;
 
   if (landingRoot) {
     landingRoot.classList.toggle('is-level-one-landing', isLevelOneLanding);
@@ -2448,7 +2437,7 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
   }
 
   updateHomeTutorialHighlights({
-    battleLevel: resolvedBattleLevel,
+    currentLevel: resolvedCurrentLevel,
     currentBattle: previewData?.progressBattleCurrent,
   });
 
@@ -2546,7 +2535,7 @@ const setupDevResetTool = () => {
 
     const updatedProgress = {
       ...normalizedProgress,
-      battleLevel: DEV_RESET_TARGET_LEVEL,
+      currentLevel: DEV_RESET_TARGET_LEVEL,
       [mathKey]: updatedMathProgress,
     };
 
@@ -2982,7 +2971,7 @@ const preloadLandingAssets = async () => {
     }
 
     if (remotePlayerData) {
-      syncRemoteBattleLevel(remotePlayerData);
+      syncRemoteCurrentLevel(remotePlayerData);
     }
 
     const fallbackPlayer = extractPlayerData(fallbackPlayerData);
@@ -3034,8 +3023,8 @@ const preloadLandingAssets = async () => {
     if (player && typeof player === 'object') {
       collectCharacterSprites(player?.hero);
       const levelMap =
-        player.battleLevel && typeof player.battleLevel === 'object'
-          ? player.battleLevel
+        player.currentLevel && typeof player.currentLevel === 'object'
+          ? player.currentLevel
           : {};
       Object.values(levelMap).forEach((entry) => {
         if (entry && typeof entry === 'object') {
@@ -3178,7 +3167,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
       if (!levelsData) {
         const levelsRes = await fetch('data/levels.json');
         if (!levelsRes.ok) {
-          throw new Error('Failed to load battle level data.');
+          throw new Error('Failed to load current level data.');
         }
         levelsData = await levelsRes.json();
         if (!resolvedLevels.length && Array.isArray(levelsData?.levels)) {
@@ -3196,7 +3185,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
         }
 
         if (rawPlayerData) {
-          syncRemoteBattleLevel(rawPlayerData);
+          syncRemoteCurrentLevel(rawPlayerData);
         }
 
         if (!rawPlayerData) {
