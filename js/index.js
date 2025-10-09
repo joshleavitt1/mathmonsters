@@ -2084,7 +2084,9 @@ const determineBattlePreview = (levelsData, playerData) => {
   const sanitizedBattleTotal = Number.isFinite(totalBattlesForLevel)
     ? Math.max(1, Math.round(totalBattlesForLevel))
     : 1;
-  const storedBattleTotal = Number(mathProgressEntry?.currentLevel);
+  const storedBattleTotal = Number(
+    mathProgressEntry?.totalBattles ?? mathProgressEntry?.currentLevel
+  );
   const resolvedBattleTotal = Number.isFinite(storedBattleTotal) && storedBattleTotal > 0
     ? Math.max(sanitizedBattleTotal, Math.round(storedBattleTotal))
     : sanitizedBattleTotal;

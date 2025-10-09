@@ -355,6 +355,46 @@ const mergePlayerData = (basePlayer, overridePlayer) => {
   return merged;
 };
 
+const mergeProgressState = (baseProgress, storedProgress) => {
+  const base = isPlainObject(baseProgress) ? baseProgress : null;
+  const stored = isPlainObject(storedProgress) ? storedProgress : null;
+
+  if (!base && !stored) {
+    return {};
+  }
+
+  const result = { ...(base || {}) };
+
+  if (!stored) {
+    return result;
+  }
+
+  Object.entries(stored).forEach(([key, value]) => {
+    if (value === undefined) {
+      return;
+    }
+
+    if (key === 'experience') {
+      const mergedExperience = mergeExperienceMaps(result.experience, value);
+      if (Object.keys(mergedExperience).length > 0) {
+        result.experience = mergedExperience;
+      } else {
+        delete result.experience;
+      }
+      return;
+    }
+
+    if (isPlainObject(value)) {
+      result[key] = mergeProgressState(result[key], value);
+      return;
+    }
+
+    result[key] = value;
+  });
+
+  return result;
+};
+
 const mergePlayerWithStoredProfile = (player, storedProfile) => {
   if (!storedProfile || typeof storedProfile !== 'object') {
     return player;
@@ -968,21 +1008,43 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
       ? levelUsage.get(usedKey) ?? new Set()
       : null;
 
-    let startIndex = poolIndices.get(poolKey) ?? 0;
-    for (let attempt = 0; attempt < pool.length; attempt += 1) {
-      const index = (startIndex + attempt) % pool.length;
-      if (usedSet && usedSet.has(index)) {
-        continue;
-      }
+    const recordUsage = (index) => {
       poolIndices.set(poolKey, index + 1);
       if (usedSet) {
         usedSet.add(index);
         levelUsage.set(usedKey, usedSet);
       }
+    };
+
+    if (usedSet) {
+      const availableIndices = [];
+      for (let i = 0; i < pool.length; i += 1) {
+        if (!usedSet.has(i)) {
+          availableIndices.push(i);
+        }
+      }
+
+      if (availableIndices.length > 0) {
+        const randomPosition = Math.floor(Math.random() * availableIndices.length);
+        const selectedIndex = availableIndices[randomPosition];
+        recordUsage(selectedIndex);
+        return pool[selectedIndex];
+      }
+    }
+
+    const startIndex = poolIndices.get(poolKey) ?? 0;
+    for (let attempt = 0; attempt < pool.length; attempt += 1) {
+      const index = (startIndex + attempt) % pool.length;
+      if (usedSet && usedSet.has(index)) {
+        continue;
+      }
+      recordUsage(index);
       return pool[index];
     }
 
-    return pool[startIndex % pool.length];
+    const fallbackIndex = startIndex % pool.length;
+    recordUsage(fallbackIndex);
+    return pool[fallbackIndex];
   };
 
   const applyDefaultStats = (character) => {
@@ -1422,8 +1484,16 @@ const syncRemoteBattleLevel = (playerData) => {
       basePlayer && typeof basePlayer.battleVariables === 'object'
         ? basePlayer.battleVariables
         : {};
-    const progress = { ...baseProgress };
+    const progress = mergeProgressState(baseProgress, storedProgress);
     const battleVariables = { ...baseBattleVariables };
+    const sanitizeGemValue = (value) => {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue)) {
+        return null;
+      }
+      return Math.max(0, Math.round(numericValue));
+    };
+
     let experienceMap = normalizeExperienceMap(progress?.experience);
 
     if (storedProgress && typeof storedProgress === 'object') {
@@ -1452,7 +1522,39 @@ const syncRemoteBattleLevel = (playerData) => {
         battleVariables.timeRemainingSeconds =
           storedProgress.timeRemainingSeconds;
       }
-      experienceMap = mergeExperienceMaps(experienceMap, storedProgress.experience);
+    }
+
+    const gemCandidates = [
+      sanitizeGemValue(progress?.gems),
+      sanitizeGemValue(storedProgress?.gems),
+      sanitizeGemValue(storedProgress?.progress?.gems),
+      sanitizeGemValue(basePlayer?.gems),
+    ].filter((value) => value !== null);
+
+    if (gemCandidates.length > 0) {
+      const resolvedGemTotal = Math.max(...gemCandidates);
+      progress.gems = resolvedGemTotal;
+      if (isPlainObject(basePlayer)) {
+        basePlayer.gems = resolvedGemTotal;
+      }
+    } else if (Object.prototype.hasOwnProperty.call(progress, 'gems')) {
+      delete progress.gems;
+    }
+
+    const gemsAwardedCandidates = [
+      sanitizeGemValue(progress?.gemsAwarded),
+      sanitizeGemValue(storedProgress?.gemsAwarded),
+    ].filter((value) => value !== null);
+
+    if (gemsAwardedCandidates.length > 0) {
+      const resolvedAwarded = Math.max(...gemsAwardedCandidates);
+      if (resolvedAwarded > 0) {
+        progress.gemsAwarded = resolvedAwarded;
+      } else if (Object.prototype.hasOwnProperty.call(progress, 'gemsAwarded')) {
+        delete progress.gemsAwarded;
+      }
+    } else if (Object.prototype.hasOwnProperty.call(progress, 'gemsAwarded')) {
+      delete progress.gemsAwarded;
     }
 
     experienceMap = normalizeExperienceMap(experienceMap);
