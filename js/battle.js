@@ -911,13 +911,39 @@ document.addEventListener('DOMContentLoaded', () => {
       return null;
     }
 
-    const totalRequired = Math.max(state.currentLevelTotal, state.battleCount);
-    let nextBattle = state.currentBattle + 1;
-    let nextLevelTotal = Math.max(state.currentLevelTotal, totalRequired);
+    const toPositiveIntegerOr = (value, fallback = 1, { rounding = Math.round } = {}) => {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue)) {
+        return fallback;
+      }
+      const normalized = rounding(numericValue);
+      return normalized >= 1 ? normalized : fallback;
+    };
+
+    const currentLevelNumber = toPositiveIntegerOr(state.currentLevelNumber);
+    const resolvedCurrentBattle = toPositiveIntegerOr(state.currentBattle);
+
+    const derivedLevelTotal = getBattleCountForLevelNumber(currentLevelNumber);
+    const fallbackLevelTotal = toPositiveIntegerOr(
+      derivedLevelTotal,
+      BATTLES_PER_LEVEL
+    );
+
+    const totalRequired = [state.currentLevelTotal, state.battleCount]
+      .map((value) => {
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue)) {
+          return 0;
+        }
+        const normalized = Math.round(numericValue);
+        return normalized > 0 ? normalized : 0;
+      })
+      .filter((value) => value > 0)
+      .reduce((max, value) => Math.max(max, value), fallbackLevelTotal);
+
+    let nextBattle = resolvedCurrentBattle + 1;
+    let nextLevelTotal = Math.max(totalRequired, toPositiveIntegerOr(state.currentLevelTotal, fallbackLevelTotal));
     let advanceLevel = false;
-    const currentLevelNumber = Number.isFinite(state.currentLevelNumber)
-      ? Math.max(1, Math.round(state.currentLevelNumber))
-      : 1;
     let nextCurrentLevelNumber = currentLevelNumber;
 
     if (nextBattle > totalRequired) {
@@ -925,10 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
       nextBattle = 1;
       nextCurrentLevelNumber = currentLevelNumber + 1;
       const nextLevelCount = getBattleCountForLevelNumber(nextCurrentLevelNumber);
-      nextLevelTotal =
-        Number.isFinite(nextLevelCount) && nextLevelCount > 0
-          ? Math.max(1, Math.round(nextLevelCount))
-          : nextLevelTotal;
+      nextLevelTotal = toPositiveIntegerOr(nextLevelCount, BATTLES_PER_LEVEL);
     }
 
     return {
@@ -950,14 +973,21 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     const storedBattle = Number(rawProgress?.currentBattle);
 
-    const currentLevel = Number.isFinite(storedLevel) && storedLevel > 0
-      ? Math.max(1, Math.floor(storedLevel))
-      : 1;
-    const currentBattle = Number.isFinite(storedBattle) && storedBattle > 0
-      ? Math.max(1, Math.floor(storedBattle))
-      : 1;
+    const toPositiveIntegerOr = (value, fallback = 1, { rounding = Math.round } = {}) => {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue)) {
+        return fallback;
+      }
+      const normalized = rounding(numericValue);
+      return normalized >= 1 ? normalized : fallback;
+    };
 
-    const totalBattles = Math.max(1, Math.floor(requiredBattles));
+    const currentLevel = toPositiveIntegerOr(storedLevel, 1, { rounding: Math.floor });
+    const currentBattle = toPositiveIntegerOr(storedBattle, 1, { rounding: Math.floor });
+
+    const totalBattles = toPositiveIntegerOr(requiredBattles, BATTLES_PER_LEVEL, {
+      rounding: Math.floor,
+    });
     let nextBattle = currentBattle + 1;
     let nextLevel = currentLevel;
 
