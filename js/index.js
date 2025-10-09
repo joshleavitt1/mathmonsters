@@ -13,6 +13,8 @@ const DEV_RESET_TARGET_MATH_KEY = 'addition';
 const DEV_RESET_TARGET_LEVEL = 2;
 const DEV_RESET_TARGET_BATTLE = 1;
 const DEV_RESET_BUTTON_SELECTOR = '[data-dev-reset-level]';
+const SECRET_LEVEL_BUTTON_SELECTOR = '[data-secret-level-two]';
+const SECRET_LEVEL_TARGET_LEVEL = DEV_RESET_TARGET_LEVEL;
 
 const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
 const MONSTER_ENTRANCE_DURATION_MS_BASE = 900;
@@ -453,6 +455,26 @@ const setupSettingsLogout = () => {
   };
 
   attachInteractiveHandler(settingsTrigger, handleLogout);
+};
+
+const setupDevSignOut = () => {
+  const devTrigger = document.querySelector('[data-dev-signout]');
+  if (!devTrigger) {
+    return;
+  }
+
+  if (devTrigger.dataset.devSignoutBound === 'true') {
+    return;
+  }
+  devTrigger.dataset.devSignoutBound = 'true';
+
+  attachInteractiveHandler(devTrigger, async (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    await logoutAndRedirect();
+  });
 };
 
 const ensureAuthenticated = async () => {
@@ -2506,6 +2528,40 @@ const readStoredProgress = () => {
   }
 };
 
+const storeProgressAndReload = (progress, triggerElement) => {
+  try {
+    const storage = window.localStorage;
+    if (storage) {
+      storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
+    }
+  } catch (error) {
+    console.warn('Unable to store progress update.', error);
+    return false;
+  }
+
+  try {
+    window.sessionStorage?.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Unable to clear stored player profile for update.', error);
+  }
+
+  try {
+    window.sessionStorage?.removeItem(NEXT_BATTLE_SNAPSHOT_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Unable to clear stored battle snapshot for update.', error);
+  }
+
+  if (triggerElement && typeof triggerElement.blur === 'function') {
+    triggerElement.blur();
+  }
+
+  if (typeof window !== 'undefined' && typeof window.location?.reload === 'function') {
+    window.location.reload();
+  }
+
+  return true;
+};
+
 const setupDevResetTool = () => {
   const devButton = document.querySelector(DEV_RESET_BUTTON_SELECTOR);
   if (!devButton) {
@@ -2539,34 +2595,9 @@ const setupDevResetTool = () => {
       [mathKey]: updatedMathProgress,
     };
 
-    try {
-      const storage = window.localStorage;
-      if (storage) {
-        storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(updatedProgress));
-      }
-    } catch (error) {
-      console.warn('Unable to store developer reset progress.', error);
+    const success = storeProgressAndReload(updatedProgress, devButton);
+    if (!success) {
       return;
-    }
-
-    try {
-      window.sessionStorage?.removeItem(PLAYER_PROFILE_STORAGE_KEY);
-    } catch (error) {
-      console.warn('Unable to clear stored player profile for reset.', error);
-    }
-
-    try {
-      window.sessionStorage?.removeItem(NEXT_BATTLE_SNAPSHOT_STORAGE_KEY);
-    } catch (error) {
-      console.warn('Unable to clear stored battle snapshot for reset.', error);
-    }
-
-    if (typeof devButton.blur === 'function') {
-      devButton.blur();
-    }
-
-    if (typeof window !== 'undefined' && typeof window.location?.reload === 'function') {
-      window.location.reload();
     }
   };
 
@@ -2576,6 +2607,50 @@ const setupDevResetTool = () => {
 
   devButton.dataset.devResetBound = 'true';
   devButton.addEventListener('click', handleReset);
+};
+
+const setupSecretLevelShortcut = () => {
+  const secretButton = document.querySelector(SECRET_LEVEL_BUTTON_SELECTOR);
+  if (!secretButton) {
+    return;
+  }
+
+  const handleSecret = (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    const storedProgress = readStoredProgress();
+    const normalizedProgress = isPlainObject(storedProgress)
+      ? { ...storedProgress }
+      : {};
+
+    const mathKey = DEV_RESET_TARGET_MATH_KEY;
+    const existingMathProgress = isPlainObject(normalizedProgress[mathKey])
+      ? { ...normalizedProgress[mathKey] }
+      : {};
+
+    const updatedMathProgress = {
+      ...existingMathProgress,
+      currentLevel: SECRET_LEVEL_TARGET_LEVEL,
+    };
+
+    const updatedProgress = {
+      ...normalizedProgress,
+      battleLevel: SECRET_LEVEL_TARGET_LEVEL,
+      currentLevel: SECRET_LEVEL_TARGET_LEVEL,
+      [mathKey]: updatedMathProgress,
+    };
+
+    storeProgressAndReload(updatedProgress, secretButton);
+  };
+
+  if (secretButton.dataset.secretLevelBound === 'true') {
+    return;
+  }
+
+  secretButton.dataset.secretLevelBound = 'true';
+  secretButton.addEventListener('click', handleSecret);
 };
 
 const readStoredPlayerProfile = () => {
@@ -3148,7 +3223,9 @@ const initLandingInteractions = async (preloadedData = {}) => {
   let fallbackPlayerData = preloadedData?.fallbackPlayerData ?? null;
 
   setupSettingsLogout();
+  setupDevSignOut();
   setupDevResetTool();
+  setupSecretLevelShortcut();
 
   updateIntroTimingForLanding({ isLevelOneLanding });
 

@@ -1,6 +1,7 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 const HOME_PROGRESS_STORAGE_KEY = 'mathmonstersHomeProgressState';
+const HOME_PROGRESS_FALLBACK_BATTLES = 5;
 
 const redirectToWelcome = () => {
   window.location.replace('welcome.html');
@@ -214,6 +215,10 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
     candidateKeys.forEach((key) => tryAdd(source.battleVariables[key]));
   }
 
+  if (isPlainObject(source.battleTracking)) {
+    candidateKeys.forEach((key) => tryAdd(source.battleTracking[key]));
+  }
+
   if (isPlainObject(source.progress)) {
     candidateKeys.forEach((key) => tryAdd(source.progress[key]));
   }
@@ -224,6 +229,10 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
 
   if (isPlainObject(source.player)) {
     collectMathTypeCandidates(source.player, accumulator);
+  }
+
+  if (isPlainObject(source.preview)) {
+    collectMathTypeCandidates(source.preview, accumulator);
   }
 
   return accumulator;
@@ -322,21 +331,51 @@ const resolveLevelByBattleNumber = (levels, currentLevelNumber) => {
   );
 };
 
+const clampPositiveIntegerValue = (value, { allowZero = false } = {}) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+
+  if (!allowZero && numeric <= 0) {
+    return null;
+  }
+
+  if (allowZero && numeric < 0) {
+    return null;
+  }
+
+  const rounded = Math.round(numeric);
+  if (!allowZero && rounded <= 0) {
+    return null;
+  }
+
+  if (allowZero && rounded < 0) {
+    return null;
+  }
+
+  return rounded;
+};
+
+const pickFirstIntegerValue = (candidates, options) => {
+  if (!Array.isArray(candidates)) {
+    return null;
+  }
+
+  for (const candidate of candidates) {
+    const normalized = clampPositiveIntegerValue(candidate, options);
+    if (Number.isFinite(normalized)) {
+      return normalized;
+    }
+  }
+
+  return null;
+};
+
 const computeHomeBattleProgress = (data) => {
   if (!isPlainObject(data)) {
     return null;
   }
-
-  const clampPositiveInteger = (value, { allowZeroFallback = false } = {}) => {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric) || numeric < 0) {
-      return null;
-    }
-    if (numeric === 0 && !allowZeroFallback) {
-      return null;
-    }
-    return Math.round(Math.max(allowZeroFallback ? 0 : 1, numeric));
-  };
 
   const mathTypeCandidates = Array.from(collectMathTypeCandidates(data));
   const progressSources = [];
@@ -349,11 +388,18 @@ const computeHomeBattleProgress = (data) => {
     progressSources.push(data.player.progress);
   }
 
+  if (isPlainObject(data.preview?.progress)) {
+    progressSources.push(data.preview.progress);
+  }
+
   let mathProgressEntry = null;
   let mathProgressKey = null;
 
   for (const source of progressSources) {
     const { key, entry } = findMathProgressEntry(source, mathTypeCandidates);
+    if (!mathProgressKey && key) {
+      mathProgressKey = key;
+    }
     if (entry) {
       mathProgressEntry = entry;
       mathProgressKey = key;
@@ -422,20 +468,55 @@ const computeHomeBattleProgress = (data) => {
     if (normalizedCurrentLevel) {
       return resolveLevelByBattleNumber(data.levels, normalizedCurrentLevel);
     }
+
+    if (Number.isFinite(normalizedBattleLevel)) {
+      return resolveLevelByBattleNumber(data.levels, normalizedBattleLevel) || null;
+    }
+
     return null;
   })();
 
-  const levelBattleCount = resolveBattleCountForLevel(activeLevel);
-  if (Number.isFinite(levelBattleCount) && levelBattleCount) {
-    totalBattles = Math.max(totalBattles ?? 0, levelBattleCount);
+  const totalBattleCandidates = [
+    mathProgressEntry?.totalBattles,
+    mathProgressEntry?.levelBattles,
+    data.preview?.progressBattleTotal,
+    data.preview?.activeLevel?.totalBattles,
+    data.battle?.totalBattles,
+    data.progress?.totalBattles,
+    data.player?.progress?.totalBattles,
+  ];
+
+  let totalBattles = pickFirstIntegerValue(totalBattleCandidates);
+
+  if (!Number.isFinite(totalBattles) || totalBattles <= 0) {
+    const levelBattleCount = resolveBattleCountForLevel(activeLevel);
+    if (Number.isFinite(levelBattleCount) && levelBattleCount > 0) {
+      totalBattles = levelBattleCount;
+    }
   }
 
-  if (!Number.isFinite(totalBattles) || totalBattles === null) {
-    totalBattles = Math.max(currentBattle, levelBattleCount || 5);
+  if (!Number.isFinite(totalBattles) || totalBattles <= 0) {
+    totalBattles = HOME_PROGRESS_FALLBACK_BATTLES;
+  }
+
+  const currentBattleCandidates = [
+    mathProgressEntry?.currentBattle,
+    data.preview?.progressBattleCurrent,
+    data.battle?.currentBattle,
+    data.battleTracking?.currentBattle,
+    data.battleTracking?.battle,
+  ];
+
+  let currentBattle = pickFirstIntegerValue(currentBattleCandidates, {
+    allowZero: true,
+  });
+
+  if (!Number.isFinite(currentBattle) || currentBattle <= 0) {
+    currentBattle = 1;
   }
 
   if (currentBattle > totalBattles) {
-    totalBattles = currentBattle;
+    currentBattle = totalBattles;
   }
 
   const ratio = totalBattles > 0 ? Math.max(0, Math.min(1, currentBattle / totalBattles)) : 0;
@@ -911,9 +992,7 @@ const updateHomeFromPreloadedData = () => {
     progressElement.setAttribute('aria-valuemin', '0');
   }
 
-  writeStoredHomeBattleProgress(hasProgressState ? progressState : null);
-
-  const currentBattle = Number(data.progress?.currentBattle);
+  writeStoredHomeBattleProgress(progressState);
 
   storeBattleSnapshot({
     currentLevel: Number.isFinite(currentLevel) ? currentLevel : null,
@@ -969,8 +1048,29 @@ const setupHomeLogout = () => {
   attachInteractiveHandler(logoutTrigger, handleLogout);
 };
 
+const setupDevSignOut = () => {
+  const devTrigger = document.querySelector('[data-dev-signout]');
+  if (!devTrigger) {
+    return;
+  }
+
+  if (devTrigger.dataset.devSignoutBound === 'true') {
+    return;
+  }
+  devTrigger.dataset.devSignoutBound = 'true';
+
+  attachInteractiveHandler(devTrigger, async (event) => {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    await logoutAndRedirect();
+  });
+};
+
 const initializeHomePage = () => {
   setupHomeLogout();
+  setupDevSignOut();
   applySnapshotToHome(readBattleSnapshot());
   updateHomeFromPreloadedData();
 };

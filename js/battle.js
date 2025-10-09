@@ -153,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const rewardCard = rewardOverlay?.querySelector('[data-reward-card]');
   const rewardCardText = rewardCard?.querySelector('.reward-overlay__card-text');
   const rewardCardButton = rewardCard?.querySelector('[data-reward-card-button]');
+  const rewardDevSkipButton = rewardOverlay?.querySelector('[data-reward-dev-skip]');
   const evolutionOverlay = document.querySelector('[data-evolution-overlay]');
   const evolutionCurrentSprite = evolutionOverlay?.querySelector(
     '[data-evolution-current]'
@@ -2055,12 +2056,16 @@ document.addEventListener('DOMContentLoaded', () => {
       let gemRevealed = false;
       let cardDisplayed = false;
       let fallbackTimeout = null;
+      let devSkipHandler = null;
 
       const cleanup = () => {
         rewardSprite.removeEventListener('animationend', handleChestPopEnd);
         rewardSprite.removeEventListener('animationend', handlePulseEnd);
         rewardSprite.removeEventListener('animationend', handleGemPopEnd);
         rewardSprite.removeEventListener('animationiteration', handlePulseIteration);
+        if (rewardDevSkipButton && devSkipHandler) {
+          rewardDevSkipButton.removeEventListener('click', devSkipHandler);
+        }
         if (fallbackTimeout !== null) {
           window.clearTimeout(fallbackTimeout);
           fallbackTimeout = null;
@@ -2086,6 +2091,16 @@ document.addEventListener('DOMContentLoaded', () => {
         finish();
         window.location.href = '../index.html';
       };
+
+      const handleDevSkipClick = (event) => {
+        event.preventDefault();
+        navigateHome();
+      };
+
+      if (rewardDevSkipButton) {
+        devSkipHandler = handleDevSkipClick;
+        rewardDevSkipButton.addEventListener('click', devSkipHandler);
+      }
 
       const displayRewardCopy = () => {
         if (cardDisplayed) {
