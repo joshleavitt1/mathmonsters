@@ -2637,6 +2637,7 @@ const setupSecretLevelShortcut = () => {
 
     const updatedProgress = {
       ...normalizedProgress,
+      battleLevel: SECRET_LEVEL_TARGET_LEVEL,
       currentLevel: SECRET_LEVEL_TARGET_LEVEL,
       [mathKey]: updatedMathProgress,
     };
