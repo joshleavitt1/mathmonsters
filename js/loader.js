@@ -1265,6 +1265,12 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
       }
     }
 
+    if (battleEntries.length) {
+      normalizedLevel.battles = battleEntries;
+    } else if (Object.prototype.hasOwnProperty.call(normalizedLevel, 'battles')) {
+      delete normalizedLevel.battles;
+    }
+
     if (chosenBattle) {
       normalizedLevel.battle = chosenBattle;
     } else {
@@ -1604,11 +1610,67 @@ const syncRemoteCurrentLevel = (playerData) => {
       progress.currentLevel = currentLevel.currentLevel;
     }
 
-    const levelBattleRaw = currentLevel?.battle ?? {};
-    const levelBattle =
-      levelBattleRaw && typeof levelBattleRaw === 'object'
-        ? { ...levelBattleRaw }
-        : {};
+    const fallbackBattleConfig =
+      currentLevel?.battle && typeof currentLevel.battle === 'object'
+        ? currentLevel.battle
+        : null;
+    const levelBattleList = Array.isArray(currentLevel?.battles)
+      ? currentLevel.battles.filter((entry) => entry && typeof entry === 'object')
+      : [];
+
+    const battleSelectionCandidates = [
+      fallbackBattleConfig?.mathType,
+      currentLevel?.mathType,
+      mathTypeKey,
+      progress?.mathType,
+      basePlayer?.currentMathType,
+      basePlayer?.mathType,
+    ];
+    const { entry: mathProgressEntry } = findMathProgressEntry(
+      progress,
+      battleSelectionCandidates
+    );
+
+    const storedBattleCurrent = Number(mathProgressEntry?.currentBattle);
+    let resolvedBattleCurrent =
+      Number.isFinite(storedBattleCurrent) && storedBattleCurrent > 0
+        ? Math.round(storedBattleCurrent)
+        : progress.currentBattle ?? 1;
+    if (!Number.isFinite(resolvedBattleCurrent) || resolvedBattleCurrent <= 0) {
+      resolvedBattleCurrent = 1;
+    }
+
+    const battleCountForSelection = levelBattleList.length
+      ? levelBattleList.length
+      : Array.isArray(fallbackBattleConfig?.monsters)
+      ? fallbackBattleConfig.monsters.filter(Boolean).length || 1
+      : 1;
+    if (resolvedBattleCurrent > battleCountForSelection) {
+      resolvedBattleCurrent = battleCountForSelection;
+    }
+
+    const selectedBattleConfig = levelBattleList.length
+      ? levelBattleList[Math.min(resolvedBattleCurrent - 1, levelBattleList.length - 1)]
+      : null;
+
+    const baseBattleConfig = fallbackBattleConfig
+      ? { ...fallbackBattleConfig }
+      : {};
+
+    if (selectedBattleConfig && typeof selectedBattleConfig === 'object') {
+      Object.entries(selectedBattleConfig).forEach(([key, value]) => {
+        if (key === 'monsters' && Array.isArray(baseBattleConfig.monsters)) {
+          return;
+        }
+        if (value !== undefined) {
+          baseBattleConfig[key] = value;
+        }
+      });
+    }
+
+    const levelBattleRaw = selectedBattleConfig || fallbackBattleConfig || {};
+    const levelBattle = baseBattleConfig;
+    progress.currentBattle = resolvedBattleCurrent;
 
     const resolveAssetPath = (path) => normalizeAssetPath(path);
 
@@ -2114,6 +2176,9 @@ const syncRemoteCurrentLevel = (playerData) => {
 
     const nextBattleSnapshot = {
       currentLevel: Number.isFinite(activeCurrentLevel) ? activeCurrentLevel : null,
+      currentBattle: Number.isFinite(progress.currentBattle)
+        ? Math.max(1, Math.round(progress.currentBattle))
+        : null,
       hero: hero
         ? {
             name: typeof hero.name === 'string' ? hero.name : null,

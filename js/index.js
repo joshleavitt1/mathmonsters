@@ -1761,6 +1761,12 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
       }
     }
 
+    if (battleEntries.length) {
+      normalizedLevel.battles = battleEntries;
+    } else if (Object.prototype.hasOwnProperty.call(normalizedLevel, 'battles')) {
+      delete normalizedLevel.battles;
+    }
+
     if (chosenBattle) {
       normalizedLevel.battle = chosenBattle;
     } else {
@@ -2012,12 +2018,73 @@ const determineBattlePreview = (levelsData, playerData) => {
     return null;
   };
 
-  const levelHero = activeLevel?.battle?.hero ?? {};
-  const heroData = {
-    ...(player?.hero ?? {}),
-    ...levelHero,
-    ...(resolvePlayerLevelData(activeLevel?.currentLevel)?.hero ?? {}),
+  const normalizedBattles = Array.isArray(activeLevel?.battles)
+    ? activeLevel.battles.filter((entry) => entry && typeof entry === 'object')
+    : [];
+  const fallbackBattle =
+    activeLevel?.battle && typeof activeLevel.battle === 'object'
+      ? activeLevel.battle
+      : null;
+
+  const { key: mathProgressKey, entry: mathProgressEntry } = findMathProgressEntry(
+    player?.progress,
+    mathTypeKey
+  );
+
+  const totalBattlesForLevel = resolveBattleCountForLevel(activeLevel, levels);
+  const sanitizedBattleTotal = Number.isFinite(totalBattlesForLevel)
+    ? Math.max(1, Math.round(totalBattlesForLevel))
+    : 1;
+  const storedBattleTotal = Number(
+    mathProgressEntry?.totalBattles ?? mathProgressEntry?.currentLevel
+  );
+  const resolvedBattleTotal =
+    Number.isFinite(storedBattleTotal) && storedBattleTotal > 0
+      ? Math.max(sanitizedBattleTotal, Math.round(storedBattleTotal))
+      : sanitizedBattleTotal;
+  const storedBattleCurrent = Number(mathProgressEntry?.currentBattle);
+  let resolvedBattleCurrent = Number.isFinite(storedBattleCurrent)
+    ? Math.round(storedBattleCurrent)
+    : 1;
+  if (!Number.isFinite(resolvedBattleCurrent) || resolvedBattleCurrent <= 0) {
+    resolvedBattleCurrent = 1;
+  }
+  if (resolvedBattleCurrent > resolvedBattleTotal) {
+    resolvedBattleCurrent = resolvedBattleTotal;
+  }
+
+  const selectBattleByIndex = (index) => {
+    if (!normalizedBattles.length) {
+      return null;
+    }
+    const clampedIndex = Math.max(0, Math.min(index, normalizedBattles.length - 1));
+    const candidate = normalizedBattles[clampedIndex];
+    return candidate && typeof candidate === 'object' ? candidate : null;
   };
+
+  const prioritizedBattle =
+    selectBattleByIndex(resolvedBattleCurrent - 1) ??
+    selectBattleByIndex(0) ??
+    (fallbackBattle && typeof fallbackBattle === 'object' ? fallbackBattle : null);
+
+  const battle = prioritizedBattle ?? {};
+
+  const heroData = {};
+  [
+    player?.hero,
+    fallbackBattle?.hero,
+    battle?.hero,
+    resolvePlayerLevelData(activeLevel?.currentLevel)?.hero,
+  ].forEach((source) => {
+    if (!source || typeof source !== 'object') {
+      return;
+    }
+    Object.entries(source).forEach(([key, value]) => {
+      if (value !== undefined) {
+        heroData[key] = value;
+      }
+    });
+  });
 
   const rawHeroSprite =
     typeof heroData?.sprite === 'string' ? heroData.sprite.trim() : '';
@@ -2025,7 +2092,45 @@ const determineBattlePreview = (levelsData, playerData) => {
   const heroName = typeof heroData?.name === 'string' ? heroData.name.trim() : '';
   const heroAlt = heroName ? `${heroName} ready for battle` : 'Hero ready for battle';
 
-  const battle = activeLevel?.battle ?? {};
+  const selectMonsterFromList = (list) => {
+    if (!Array.isArray(list) || list.length === 0) {
+      return null;
+    }
+    const sanitized = list.filter((entry) => entry && typeof entry === 'object');
+    if (!sanitized.length) {
+      return null;
+    }
+    const clampedIndex = Math.max(0, Math.min(resolvedBattleCurrent - 1, sanitized.length - 1));
+    return sanitized[clampedIndex] ?? sanitized[0] ?? null;
+  };
+
+  const monsterData = (() => {
+    if (battle && typeof battle.monster === 'object' && battle.monster !== null) {
+      return battle.monster;
+    }
+    const fromBattleList = selectMonsterFromList(battle?.monsters);
+    if (fromBattleList) {
+      return fromBattleList;
+    }
+    if (fallbackBattle && typeof fallbackBattle === 'object') {
+      if (typeof fallbackBattle.monster === 'object' && fallbackBattle.monster !== null) {
+        return fallbackBattle.monster;
+      }
+      const fallbackListMatch = selectMonsterFromList(fallbackBattle.monsters);
+      if (fallbackListMatch) {
+        return fallbackListMatch;
+      }
+    }
+    return {};
+  })();
+
+  const rawMonsterSprite =
+    typeof monsterData?.sprite === 'string' ? monsterData.sprite.trim() : '';
+  const monsterSprite = sanitizeAssetPath(rawMonsterSprite) || rawMonsterSprite;
+  const monsterName =
+    typeof monsterData?.name === 'string' ? monsterData.name.trim() : '';
+  const monsterAlt = monsterName ? `${monsterName} ready for battle` : 'Monster ready for battle';
+
   const mathLabelSource =
     typeof activeLevel?.mathLabel === 'string'
       ? activeLevel.mathLabel
@@ -2041,27 +2146,6 @@ const determineBattlePreview = (levelsData, playerData) => {
       ? mathTypeKey
       : 'Math Mission';
   const mathLabel = mathLabelSource.trim() || 'Math Mission';
-
-  const monsterData = (() => {
-    if (battle && typeof battle.monster === 'object' && battle.monster !== null) {
-      return battle.monster;
-    }
-    if (Array.isArray(battle?.monsters)) {
-      const match = battle.monsters.find(
-        (candidate) => candidate && typeof candidate === 'object'
-      );
-      if (match) {
-        return match;
-      }
-    }
-    return {};
-  })();
-  const rawMonsterSprite =
-    typeof monsterData?.sprite === 'string' ? monsterData.sprite.trim() : '';
-  const monsterSprite = sanitizeAssetPath(rawMonsterSprite) || rawMonsterSprite;
-  const monsterName =
-    typeof monsterData?.name === 'string' ? monsterData.name.trim() : '';
-  const monsterAlt = monsterName ? `${monsterName} ready for battle` : 'Monster ready for battle';
 
   const levelName = typeof activeLevel?.name === 'string' ? activeLevel.name.trim() : '';
   const battleTitleLabel =
@@ -2086,31 +2170,6 @@ const determineBattlePreview = (levelsData, playerData) => {
   const progressText = experienceProgress.text;
   const playerGems = readPlayerGemCount(player);
 
-  const { key: mathProgressKey, entry: mathProgressEntry } = findMathProgressEntry(
-    player?.progress,
-    mathTypeKey
-  );
-
-  const totalBattlesForLevel = resolveBattleCountForLevel(activeLevel, levels);
-  const sanitizedBattleTotal = Number.isFinite(totalBattlesForLevel)
-    ? Math.max(1, Math.round(totalBattlesForLevel))
-    : 1;
-  const storedBattleTotal = Number(
-    mathProgressEntry?.totalBattles ?? mathProgressEntry?.currentLevel
-  );
-  const resolvedBattleTotal = Number.isFinite(storedBattleTotal) && storedBattleTotal > 0
-    ? Math.max(sanitizedBattleTotal, Math.round(storedBattleTotal))
-    : sanitizedBattleTotal;
-  const storedBattleCurrent = Number(mathProgressEntry?.currentBattle);
-  let resolvedBattleCurrent = Number.isFinite(storedBattleCurrent)
-    ? Math.round(storedBattleCurrent)
-    : 1;
-  if (!Number.isFinite(resolvedBattleCurrent) || resolvedBattleCurrent <= 0) {
-    resolvedBattleCurrent = 1;
-  }
-  if (resolvedBattleCurrent > resolvedBattleTotal) {
-    resolvedBattleCurrent = resolvedBattleTotal;
-  }
   const battleProgressRatio = resolvedBattleTotal > 0
     ? Math.max(0, Math.min(1, resolvedBattleCurrent / resolvedBattleTotal))
     : 0;
@@ -3092,6 +3151,17 @@ const preloadLandingAssets = async () => {
           battle.monsters.forEach((monster) => collectCharacterSprites(monster));
         }
         collectMonsterPools(battle?.monsterSprites);
+        const battleList = Array.isArray(level?.battles)
+          ? level.battles.filter((entry) => entry && typeof entry === 'object')
+          : [];
+        battleList.forEach((entry) => {
+          collectCharacterSprites(entry?.hero);
+          collectCharacterSprites(entry?.monster);
+          if (Array.isArray(entry?.monsters)) {
+            entry.monsters.forEach((monster) => collectCharacterSprites(monster));
+          }
+          collectMonsterPools(entry?.monsterSprites);
+        });
       });
     }
 
