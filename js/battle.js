@@ -919,22 +919,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const persistGemTotal = (total) => {
     const safeTotal = Math.max(0, Math.round(Number(total) || 0));
-    persistProgress({ gems: safeTotal });
+    const previousTotal = readCurrentGemTotal();
+    const normalizedPrevious = Math.max(0, Math.round(Number(previousTotal) || 0));
+    const rawIncrement = safeTotal - normalizedPrevious;
+    const sanitizedIncrement = rawIncrement > 0 ? rawIncrement : 0;
+
+    persistProgress({
+      gems: safeTotal,
+      gemsAwarded: sanitizedIncrement,
+    });
+
+    const sanitizeGemValue = (value) => {
+      const numericValue = Number(value);
+      return Number.isFinite(numericValue)
+        ? Math.max(0, Math.round(numericValue))
+        : 0;
+    };
 
     if (window.preloadedData) {
-      if (window.preloadedData.progress && typeof window.preloadedData.progress === 'object') {
+      if (
+        window.preloadedData.progress &&
+        typeof window.preloadedData.progress === 'object'
+      ) {
+        const existingAwarded = sanitizeGemValue(
+          window.preloadedData.progress.gemsAwarded
+        );
+        const updatedAwarded = existingAwarded + sanitizedIncrement;
         window.preloadedData.progress.gems = safeTotal;
+        if (updatedAwarded > 0) {
+          window.preloadedData.progress.gemsAwarded = updatedAwarded;
+        } else {
+          delete window.preloadedData.progress.gemsAwarded;
+        }
       }
       if (
         window.preloadedData.player &&
         typeof window.preloadedData.player === 'object'
       ) {
-        window.preloadedData.player.gems = safeTotal;
+        const playerData = window.preloadedData.player;
+        const existingPlayerAwarded = sanitizeGemValue(playerData.gemsAwarded);
+        const updatedPlayerAwarded =
+          existingPlayerAwarded + sanitizedIncrement;
+        playerData.gems = safeTotal;
+        if (updatedPlayerAwarded > 0) {
+          playerData.gemsAwarded = updatedPlayerAwarded;
+        } else {
+          delete playerData.gemsAwarded;
+        }
         if (
-          window.preloadedData.player.progress &&
-          typeof window.preloadedData.player.progress === 'object'
+          playerData.progress &&
+          typeof playerData.progress === 'object'
         ) {
-          window.preloadedData.player.progress.gems = safeTotal;
+          const existingProgressAwarded = sanitizeGemValue(
+            playerData.progress.gemsAwarded
+          );
+          const updatedProgressAwarded =
+            existingProgressAwarded + sanitizedIncrement;
+          playerData.progress.gems = safeTotal;
+          if (updatedProgressAwarded > 0) {
+            playerData.progress.gemsAwarded = updatedProgressAwarded;
+          } else {
+            delete playerData.progress.gemsAwarded;
+          }
         }
       }
     }
@@ -2221,6 +2267,25 @@ document.addEventListener('DOMContentLoaded', () => {
           result.experience = mergedExperience;
         } else {
           delete result.experience;
+        }
+        return;
+      }
+
+      if (key === 'gemsAwarded') {
+        const currentAwarded = Number(result.gemsAwarded);
+        const normalizedCurrent = Number.isFinite(currentAwarded)
+          ? Math.max(0, Math.round(currentAwarded))
+          : 0;
+        const addition = Number(value);
+        const normalizedAddition = Number.isFinite(addition)
+          ? Math.max(0, Math.round(addition))
+          : 0;
+
+        const updatedAwarded = normalizedCurrent + normalizedAddition;
+        if (updatedAwarded > 0) {
+          result.gemsAwarded = updatedAwarded;
+        } else {
+          delete result.gemsAwarded;
         }
         return;
       }
