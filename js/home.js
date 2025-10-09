@@ -2,6 +2,10 @@ const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 const HOME_PROGRESS_STORAGE_KEY = 'mathmonstersHomeProgressState';
 const HOME_PROGRESS_FALLBACK_BATTLES = 5;
+const HOME_PROGRESS_INITIAL_ANIMATION_DELAY_MS = 1000;
+const HOME_PROGRESS_INITIAL_ANIMATION_COMPLETE_DATA_KEY =
+  'progressInitialAnimationComplete';
+const HOME_PROGRESS_INITIAL_TIMEOUT_PROPERTY = '__homeInitialProgressTimeout';
 
 const redirectToWelcome = () => {
   window.location.replace('welcome.html');
@@ -980,6 +984,43 @@ const updateHomeFromPreloadedData = () => {
   }
 
   if (progressElement && hasProgressState) {
+    const scheduleInitialProgressAnimation = (callback) => {
+      if (typeof callback !== 'function') {
+        return;
+      }
+
+      const completionKey = HOME_PROGRESS_INITIAL_ANIMATION_COMPLETE_DATA_KEY;
+      if (progressElement.dataset[completionKey] === 'true') {
+        callback();
+        return;
+      }
+
+      const delayMs = Number.isFinite(HOME_PROGRESS_INITIAL_ANIMATION_DELAY_MS)
+        ? Math.max(0, Math.round(HOME_PROGRESS_INITIAL_ANIMATION_DELAY_MS))
+        : 0;
+
+      if (delayMs <= 0) {
+        progressElement.dataset[completionKey] = 'true';
+        callback();
+        return;
+      }
+
+      const timeoutProperty = HOME_PROGRESS_INITIAL_TIMEOUT_PROPERTY;
+      const existingTimeout = progressElement[timeoutProperty];
+      if (existingTimeout !== undefined && existingTimeout !== null) {
+        clearTimeout(existingTimeout);
+      }
+
+      const runCallback = () => {
+        progressElement.dataset[completionKey] = 'true';
+        delete progressElement[timeoutProperty];
+        callback();
+      };
+
+      const timeoutHandle = setTimeout(runCallback, delayMs);
+      progressElement[timeoutProperty] = timeoutHandle;
+    };
+
     const playStandardAnimation = () => {
       applyBattleProgressAttributes(progressElement, progressState);
       animateProgressValue(progressElement, progressState.ratio || 0);
@@ -998,18 +1039,21 @@ const updateHomeFromPreloadedData = () => {
         totalBattles: resolvedPreviousTotal ?? previousProgressState.totalBattles,
         ratio: 1,
       };
-      applyBattleProgressAttributes(progressElement, previousState);
-      animateProgressValue(progressElement, 1, {
-        onComplete: () => {
-          if (heroLevelEl && progressState?.levelLabel) {
-            heroLevelEl.textContent = progressState.levelLabel;
-            triggerHeroLevelPop(heroLevelEl);
-          }
-          playStandardAnimation();
-        },
+
+      scheduleInitialProgressAnimation(() => {
+        applyBattleProgressAttributes(progressElement, previousState);
+        animateProgressValue(progressElement, 1, {
+          onComplete: () => {
+            if (heroLevelEl && progressState?.levelLabel) {
+              heroLevelEl.textContent = progressState.levelLabel;
+              triggerHeroLevelPop(heroLevelEl);
+            }
+            playStandardAnimation();
+          },
+        });
       });
     } else {
-      playStandardAnimation();
+      scheduleInitialProgressAnimation(playStandardAnimation);
     }
   } else if (progressElement) {
     progressElement.style.setProperty('--progress-value', '0');
