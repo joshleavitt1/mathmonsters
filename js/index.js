@@ -203,6 +203,91 @@ const getActiveHeroElement = () => {
   return getLevelOneHeroElement() ?? getStandardHeroElement();
 };
 
+const HERO_FLOAT_DEFAULT_RANGE_PX = 32;
+const HERO_FLOAT_DEFAULT_DURATION_MS = 3500;
+const HERO_FLOAT_REDUCED_RANGE_PX = 0;
+const HERO_FLOAT_REDUCED_DURATION_MS = 0;
+
+const heroFloatPreferenceQuery =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)')
+    : null;
+
+const getHeroFloatElements = () => {
+  if (typeof document === 'undefined') {
+    return [];
+  }
+
+  return Array.from(document.querySelectorAll('[data-hero-sprite]')).filter(
+    (element) => element instanceof HTMLElement
+  );
+};
+
+const resolveHeroFloatPreference = () => Boolean(heroFloatPreferenceQuery?.matches);
+
+const applyHeroFloatValues = ({ rangePx, durationMs, offsetPx }) => {
+  const heroElements = getHeroFloatElements();
+  if (heroElements.length === 0) {
+    return;
+  }
+
+  const rangeValue = `${Math.max(0, Number(rangePx) || 0)}px`;
+  const durationValue = formatDurationSeconds(durationMs);
+  const offsetValue = `${Math.max(0, Number(offsetPx) || 0)}px`;
+
+  heroElements.forEach((element) => {
+    element.style.setProperty('--hero-float-range', rangeValue);
+    element.style.setProperty('--hero-float-duration', durationValue);
+    if (offsetPx === null) {
+      element.style.removeProperty('--hero-float-offset');
+    } else {
+      element.style.setProperty('--hero-float-offset', offsetValue);
+    }
+  });
+};
+
+const updateHeroFloat = () => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const prefersReducedMotion = resolveHeroFloatPreference();
+
+  if (prefersReducedMotion) {
+    applyHeroFloatValues({
+      rangePx: HERO_FLOAT_REDUCED_RANGE_PX,
+      durationMs: HERO_FLOAT_REDUCED_DURATION_MS,
+      offsetPx: 0,
+    });
+    return;
+  }
+
+  applyHeroFloatValues({
+    rangePx: HERO_FLOAT_DEFAULT_RANGE_PX,
+    durationMs: HERO_FLOAT_DEFAULT_DURATION_MS,
+    offsetPx: null,
+  });
+};
+
+const initHeroFloatPreferenceWatcher = () => {
+  if (!heroFloatPreferenceQuery) {
+    return;
+  }
+
+  const handleChange = () => {
+    updateHeroFloat();
+  };
+
+  if (typeof heroFloatPreferenceQuery.addEventListener === 'function') {
+    heroFloatPreferenceQuery.addEventListener('change', handleChange);
+  } else if (typeof heroFloatPreferenceQuery.addListener === 'function') {
+    heroFloatPreferenceQuery.addListener(handleChange);
+  }
+};
+
+updateHeroFloat();
+initHeroFloatPreferenceWatcher();
+
 const getActiveBattleButton = () => {
   if (document.body.classList.contains('is-standard-landing')) {
     return document.querySelector('[data-standard-landing] [data-battle-button]');
