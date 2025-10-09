@@ -914,6 +914,8 @@ const updateHomeFromPreloadedData = () => {
     progressElement.setAttribute('aria-valuemin', '0');
   }
 
+  writeStoredHomeBattleProgress(hasProgressState ? progressState : null);
+
   const currentBattle = Number(data.progress?.currentBattle);
 
   storeBattleSnapshot({
