@@ -503,6 +503,24 @@ body.is-post-evolution-active #complete-message {
   z-index: 60;
 }
 
+.reward-overlay__dev-skip {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  font-size: 0;
+}
+
+body.is-reward-active .reward-overlay__dev-skip {
+  pointer-events: auto;
+}
+
 .reward-overlay--visible {
   opacity: 1;
   visibility: visible;
