@@ -252,14 +252,10 @@
       ],
       "additionalProperties": false
     },
-    "MathType": {
+    "LevelContent": {
       "type": "object",
       "properties": {
         "label": {
-          "type": "string",
-          "minLength": 1
-        },
-        "name": {
           "type": "string",
           "minLength": 1
         },
@@ -279,22 +275,6 @@
       },
       "required": [
         "levels"
-      ],
-      "additionalProperties": false
-    },
-    "MathContent": {
-      "type": "object",
-      "properties": {
-        "mathTypes": {
-          "type": "object",
-          "minProperties": 1,
-          "additionalProperties": {
-            "$ref": "#/definitions/MathType"
-          }
-        }
-      },
-      "required": [
-        "mathTypes"
       ],
       "additionalProperties": false
     },
@@ -339,20 +319,12 @@
         "hero": {
           "$ref": "#/definitions/CharacterProfile"
         },
-        "currentMathType": {
-          "type": "string",
-          "minLength": 1
-        },
         "gems": {
           "type": "integer",
           "minimum": 0
         },
         "progress": {
-          "type": "object",
-          "minProperties": 1,
-          "additionalProperties": {
-            "$ref": "#/definitions/MathProgress"
-          }
+          "$ref": "#/definitions/MathProgress"
         },
         "currentLevel": {
           "type": "object",
@@ -374,7 +346,6 @@
       "required": [
         "id",
         "hero",
-        "currentMathType",
         "gems",
         "progress"
       ],

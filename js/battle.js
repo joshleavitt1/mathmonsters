@@ -34,8 +34,6 @@ const progressUtils =
 
 const INTRO_QUESTION_LEVELS = new Set([1]);
 
-const MEDAL_DISPLAY_DURATION_MS = 3000;
-const LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY = 'level-1:first-correct';
 const DEV_DAMAGE_AMOUNT = 100;
 const DEV_SKIP_TARGET_LEVEL = 4;
 
@@ -171,338 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
     '[data-evolution-complete-sprite]'
   );
 
-  const medalElement = document.querySelector('[data-medal]');
-  let medalHideTimeoutId = null;
-  let medalFinalizeTimeoutId = null;
-  const displayedMedals = new Set();
-
-  const finalizeMedalHide = () => {
-    if (!medalElement || medalElement.classList.contains('medal--visible')) {
-      return;
-    }
-
-    medalElement.setAttribute('aria-hidden', 'true');
-    if (!medalElement.hasAttribute('hidden')) {
-      medalElement.setAttribute('hidden', 'hidden');
-    }
-  };
-
-  const hideMedal = ({ immediate = false } = {}) => {
-    if (!medalElement) {
-      return;
-    }
-
-    if (medalHideTimeoutId !== null) {
-      window.clearTimeout(medalHideTimeoutId);
-      medalHideTimeoutId = null;
-    }
-
-    if (medalFinalizeTimeoutId !== null) {
-      window.clearTimeout(medalFinalizeTimeoutId);
-      medalFinalizeTimeoutId = null;
-    }
-
-    const removeVisibility = () => {
-      medalElement.classList.remove('medal--visible');
-      medalElement.classList.remove('medal--pop');
-    };
-
-    if (immediate) {
-      removeVisibility();
-      finalizeMedalHide();
-      return;
-    }
-
-    const handleTransitionEnd = (event) => {
-      if (event.target !== medalElement || event.propertyName !== 'opacity') {
-        return;
-      }
-      medalElement.removeEventListener('transitionend', handleTransitionEnd);
-      finalizeMedalHide();
-    };
-
-    medalElement.addEventListener('transitionend', handleTransitionEnd, {
-      once: true,
-    });
-
-    removeVisibility();
-
-    medalFinalizeTimeoutId = window.setTimeout(() => {
-      medalFinalizeTimeoutId = null;
-      finalizeMedalHide();
-    }, 450);
-  };
-
-  const showMedal = () => {
-    if (!medalElement) {
-      return;
-    }
-
-    if (medalHideTimeoutId !== null) {
-      window.clearTimeout(medalHideTimeoutId);
-      medalHideTimeoutId = null;
-    }
-
-    if (medalFinalizeTimeoutId !== null) {
-      window.clearTimeout(medalFinalizeTimeoutId);
-      medalFinalizeTimeoutId = null;
-    }
-
-    medalElement.classList.remove('medal--pop');
-    medalElement.removeAttribute('hidden');
-    void medalElement.offsetWidth;
-    medalElement.setAttribute('aria-hidden', 'false');
-    medalElement.classList.add('medal--visible', 'medal--pop');
-
-    medalHideTimeoutId = window.setTimeout(() => {
-      medalHideTimeoutId = null;
-      hideMedal();
-    }, MEDAL_DISPLAY_DURATION_MS);
-  };
-
-  if (medalElement) {
-    medalElement.addEventListener('animationend', (event) => {
-      if (event.target !== medalElement || event.animationName !== 'medal-pop') {
-        return;
-      }
-
-      medalElement.classList.remove('medal--pop');
-    });
-  }
-
-  const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
-  const summaryTimeText = ensureStatValueText(summaryTimeValue);
-
-  const defaultRewardCardText =
-    rewardCardText && typeof rewardCardText.textContent === 'string'
-      ? rewardCardText.textContent.trim()
-      : 'I made this potion from the monster. Can you guess what it does?';
-  const defaultRewardCardButtonText =
-    rewardCardButton && typeof rewardCardButton.textContent === 'string'
-      ? rewardCardButton.textContent.trim()
-      : 'Use Potion';
-  const REGISTER_REWARD_CARD_TEXT =
-    'Your creature just evolved! It’s stronger now and ready for new adventures!';
-  const REGISTER_REWARD_CARD_BUTTON_TEXT = 'Register Now';
-
-  const waitForImageToSettle = (image) =>
-    new Promise((resolve) => {
-      if (!image) {
-        resolve(false);
-        return;
-      }
-
-      if (image.complete) {
-        resolve(image.naturalWidth > 0 && image.naturalHeight > 0);
-        return;
-      }
-
-      let settled = false;
-      const finalize = () => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        image.removeEventListener('load', finalize);
-        image.removeEventListener('error', finalize);
-        resolve(image.naturalWidth > 0 && image.naturalHeight > 0);
-      };
-
-      image.addEventListener('load', finalize, { once: true });
-      image.addEventListener('error', finalize, { once: true });
-
-      if (typeof image.decode === 'function') {
-        image
-          .decode()
-          .then(finalize)
-          .catch(() => {});
-      }
-    });
-
-  const HERO_SPRITE_WIDTH_PROPERTY = '--battle-hero-sprite-width';
-  const HERO_SPRITE_MAX_WIDTH_PROPERTY = '--battle-hero-sprite-max-width';
-
-  const createHeroSpriteCustomPropertyUpdater = (image) => {
-    if (!image) {
-      return () => Promise.resolve(false);
-    }
-
-    const rootElement = image.ownerDocument?.documentElement ?? document.documentElement;
-
-    if (!rootElement) {
-      return () => Promise.resolve(false);
-    }
-
-    let latestUpdateId = 0;
-
-    const clearSpriteDimensions = () => {
-      rootElement.style.removeProperty(HERO_SPRITE_WIDTH_PROPERTY);
-      rootElement.style.removeProperty(HERO_SPRITE_MAX_WIDTH_PROPERTY);
-    };
-
-    const readHeroSpriteDefaultWidth = () => {
-      const defaultView =
-        rootElement.ownerDocument?.defaultView ??
-        (typeof window !== 'undefined' ? window : null);
-
-      if (!defaultView || typeof defaultView.getComputedStyle !== 'function') {
-        return null;
-      }
-
-      try {
-        const computedStyle = defaultView.getComputedStyle(rootElement);
-        const propertyValue = computedStyle.getPropertyValue(HERO_SPRITE_WIDTH_PROPERTY);
-        const parsedWidth = Number.parseFloat(propertyValue);
-
-        if (Number.isFinite(parsedWidth) && parsedWidth > 0) {
-          return parsedWidth;
-        }
-      } catch (error) {
-        console.warn('Unable to read default hero sprite width.', error);
-      }
-
-      return null;
-    };
-
-    const heroSpriteDefaultWidth = readHeroSpriteDefaultWidth();
-
-    const applySpriteDimensions = () => {
-      const naturalWidth = Math.round(image.naturalWidth || 0);
-      const naturalHeight = Math.round(image.naturalHeight || 0);
-
-      if (naturalWidth > 0 && naturalHeight > 0) {
-        const clampedWidth = heroSpriteDefaultWidth
-          ? Math.min(naturalWidth, heroSpriteDefaultWidth)
-          : naturalWidth;
-        const widthValue = `${clampedWidth}px`;
-        const maxWidthValue = `min(${widthValue}, 80vw)`;
-        rootElement.style.setProperty(HERO_SPRITE_WIDTH_PROPERTY, widthValue);
-        rootElement.style.setProperty(HERO_SPRITE_MAX_WIDTH_PROPERTY, maxWidthValue);
-        return true;
-      }
-
-      clearSpriteDimensions();
-      return false;
-    };
-
-    return () => {
-      const updateId = ++latestUpdateId;
-
-      const finalize = () => {
-        if (updateId !== latestUpdateId) {
-          return false;
-        }
-
-        if (image.naturalWidth > 0 && image.naturalHeight > 0) {
-          return applySpriteDimensions();
-        }
-
-        clearSpriteDimensions();
-        return false;
-      };
-
-      if (image.complete) {
-        return Promise.resolve(finalize());
-      }
-
-      return waitForImageToSettle(image)
-        .then(finalize)
-        .catch(() => {
-          if (updateId === latestUpdateId) {
-            clearSpriteDimensions();
-          }
-          return false;
-        });
-    };
-  };
-
-  const updateHeroSpriteCustomProperties = createHeroSpriteCustomPropertyUpdater(heroImg);
-
-  if (bannerAccuracyValue) bannerAccuracyValue.textContent = '100%';
-  if (bannerTimeValue) bannerTimeValue.textContent = '0s';
-  if (summaryAccuracyText) summaryAccuracyText.textContent = '100%';
-  if (summaryTimeText) summaryTimeText.textContent = '0s';
-
-  const MIN_STREAK_GOAL = 1;
-  const MAX_STREAK_GOAL = 5;
-  const DEFAULT_STREAK_GOAL = 3;
-  const STREAK_GOAL = Math.min(
-    Math.max(DEFAULT_STREAK_GOAL, MIN_STREAK_GOAL),
-    MAX_STREAK_GOAL
-  );
-
-  let questions = [];
-  let questionIds = [];
-  let questionMap = new Map();
-  let currentQuestionId = null;
-  let totalQuestionCount = 0;
-  let streak = 0;
-  let streakMaxed = false;
-  let useIntroQuestionOrder = false;
-  let introQuestionIds = [];
-  let nextIntroQuestionIndex = 0;
-
-  const getResolvedCurrentLevel = () => {
-    if (Number.isFinite(currentCurrentLevel)) {
-      return currentCurrentLevel;
-    }
-
-    const preloadedLevel = Number(window.preloadedData?.level?.currentLevel);
-    return Number.isFinite(preloadedLevel) ? preloadedLevel : null;
-  };
-  let correctAnswers = 0;
-  let totalAnswers = 0;
-  let wrongAnswers = 0;
-  let accuracyGoal = null;
-  let timeGoalSeconds = 0;
-  let timeRemaining = 0;
-  let initialTimeRemaining = 0;
-  let battleTimerDeadline = null;
-  let battleTimerInterval = null;
-  let battleEnded = false;
-  let currentCurrentLevel = null;
-  let battleStartTime = null;
-  let currentLevelAdvanced = false;
-  let battleGoalsMet = false;
-  let heroSuperAttackBase = null;
-  let monsterDefeatAnimationTimeout = null;
-  let levelExperienceEarned = 0;
-  let levelExperienceRequirement = 0;
-  let levelUpAvailable = false;
-  let hasPendingLevelUpReward = false;
-  let rewardAnimationPlayed = false;
-  let pendingGemReward = null;
-  let gemRewardIntroShown = false;
-  let shouldAdvanceCurrentLevel = false;
-  let nextMissionProcessing = false;
-  let levelProgressUpdateTimeout = null;
-  let levelProgressAnimationTimeout = null;
-  let rewardCardButtonHandler = null;
-  let evolutionGrowthStartTimeout = null;
-  let evolutionGrowthFallbackTimeout = null;
-  let evolutionRevealFallbackTimeout = null;
-  let evolutionCardDelayTimeout = null;
-
-  const maybeShowFirstCorrectMedal = (resolvedLevel, correctCount) => {
-    if (!medalElement) {
-      return;
-    }
-
-    if (!Number.isFinite(resolvedLevel) || resolvedLevel !== 1) {
-      return;
-    }
-
-    if (displayedMedals.has(LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY)) {
-      return;
-    }
-
-    if (correctCount !== 1) {
-      return;
-    }
-
-    displayedMedals.add(LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY);
-    hideMedal({ immediate: true });
-  };
   let evolutionInProgress = false;
   let rewardCardDisplayTimeout = null;
   let heroSpriteReadyPromise = null;
@@ -702,65 +368,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   };
 
-  const resolveMathTypeKey = () => {
-    const candidates = [
-      window.preloadedData?.level?.mathType,
-      window.preloadedData?.level?.mathTypeKey,
-      window.preloadedData?.battle?.mathType,
-      window.preloadedData?.battle?.mathTypeKey,
-      window.preloadedData?.player?.currentMathType,
-      window.preloadedData?.player?.mathType,
-      window.preloadedData?.progress?.mathType,
-    ];
-
-    for (const candidate of candidates) {
-      if (typeof candidate === 'string') {
-        const trimmed = candidate.trim();
-        if (trimmed) {
-          return trimmed;
-        }
-      }
-    }
-
-    return null;
-  };
-
-  const findMathProgressKey = (candidateKey) => {
-    const progressRoot = resolveProgressRoot();
-    const normalizedCandidate =
-      typeof candidateKey === 'string' && candidateKey.trim()
-        ? candidateKey.trim().toLowerCase()
-        : '';
-
-    if (progressRoot) {
-      const keys = Object.keys(progressRoot);
-
-      if (normalizedCandidate) {
-        const directMatch = keys.find((key) => {
-          if (typeof key !== 'string') {
-            return false;
-          }
-          return key.trim().toLowerCase() === normalizedCandidate;
-        });
-
-        if (directMatch) {
-          return directMatch;
-        }
-      }
-
-      const fallback = keys.find((key) => isPlainObject(progressRoot[key]));
-      if (fallback) {
-        return fallback;
-      }
-    }
-
-    if (typeof candidateKey === 'string' && candidateKey.trim()) {
-      return candidateKey.trim();
-    }
-
-    return normalizedCandidate || null;
-  };
-
   const resolveCurrentLevels = () =>
     Array.isArray(window.preloadedData?.levels)
       ? window.preloadedData.levels.filter(
@@ -805,21 +412,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return entries.length > 0 ? entries.length : 1;
   };
 
-  const readMathProgressState = () => {
-    const mathTypeCandidate = resolveMathTypeKey();
-    const mathKey = findMathProgressKey(mathTypeCandidate);
+  const readProgressState = () => {
     const progressRoot = resolveProgressRoot();
-    const entry =
-      progressRoot && mathKey && isPlainObject(progressRoot[mathKey])
-        ? progressRoot[mathKey]
-        : null;
+    const entry = isPlainObject(progressRoot) ? progressRoot : null;
 
     const numericOrNull = (value) => {
       const parsed = Number(value);
-      if (!Number.isFinite(parsed)) {
-        return null;
-      }
-      if (parsed <= 0) {
+      if (!Number.isFinite(parsed) || parsed <= 0) {
         return null;
       }
       return Math.round(parsed);
@@ -829,88 +428,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fallbackLevelCandidates = [
       getResolvedCurrentLevel(),
-      numericOrNull(progressRoot?.currentLevel),
-      numericOrNull(progressRoot?.level),
+      numericOrNull(entry?.currentLevel),
+      numericOrNull(entry?.level),
       numericOrNull(preloaded?.level?.currentLevel),
     ];
 
-    if (typeof mathKey === 'string') {
-      fallbackLevelCandidates.push(numericOrNull(mathKey));
-    }
+    const currentLevelNumber =
+      fallbackLevelCandidates.find((value) => Number.isFinite(value)) ?? 1;
 
-    const entryLevelCandidate = numericOrNull(entry?.currentLevel);
-    const entryTotalCandidate = numericOrNull(entry?.totalBattles);
+    const currentBattle = numericOrNull(entry?.currentBattle) ?? 1;
 
-    let resolvedCurrentLevel = fallbackLevelCandidates.find(
-      (candidate) => Number.isFinite(candidate) && candidate > 0
-    );
+    const totalBattlesCandidate =
+      numericOrNull(entry?.totalBattles) ?? getBattleCountForLevelNumber(currentLevelNumber);
 
-    if (Number.isFinite(entryLevelCandidate) && entryLevelCandidate > 0) {
-      const matchesFallback =
-        Number.isFinite(resolvedCurrentLevel) && entryLevelCandidate === resolvedCurrentLevel;
-      if (entryTotalCandidate || matchesFallback || !Number.isFinite(resolvedCurrentLevel)) {
-        resolvedCurrentLevel = entryLevelCandidate;
-      }
-    }
-
-    if (!Number.isFinite(resolvedCurrentLevel) || resolvedCurrentLevel <= 0) {
-      resolvedCurrentLevel = 1;
-    } else {
-      resolvedCurrentLevel = Math.max(1, Math.round(resolvedCurrentLevel));
-    }
-
-    let resolvedTotalBattles = Number.isFinite(entryTotalCandidate)
-      ? Math.max(1, Math.round(entryTotalCandidate))
-      : null;
-
-    if (!resolvedTotalBattles && Number.isFinite(entryLevelCandidate)) {
-      const differsFromLevel = entryLevelCandidate !== resolvedCurrentLevel;
-      if (differsFromLevel || !entryTotalCandidate) {
-        resolvedTotalBattles = Math.max(1, Math.round(entryLevelCandidate));
-      }
-    }
-
-    const derivedFromLevel = getBattleCountForLevelNumber(resolvedCurrentLevel);
-    if (!resolvedTotalBattles) {
-      if (Number.isFinite(derivedFromLevel) && derivedFromLevel > 0) {
-        resolvedTotalBattles = Math.max(1, Math.round(derivedFromLevel));
-      } else {
-        resolvedTotalBattles = 1;
-      }
-    } else if (
-      Number.isFinite(derivedFromLevel) &&
-      derivedFromLevel > 0 &&
-      resolvedTotalBattles < derivedFromLevel
-    ) {
-      resolvedTotalBattles = Math.max(resolvedTotalBattles, Math.round(derivedFromLevel));
-    }
-
-    const storedBattleCurrent = numericOrNull(entry?.currentBattle);
-    let resolvedBattleCurrent = storedBattleCurrent ? Math.max(1, storedBattleCurrent) : 1;
-
-    if (resolvedBattleCurrent > resolvedTotalBattles) {
-      resolvedBattleCurrent = resolvedTotalBattles;
-    }
+    const battleCount =
+      Number.isFinite(totalBattlesCandidate) && totalBattlesCandidate > 0
+        ? totalBattlesCandidate
+        : BATTLES_PER_LEVEL;
 
     return {
-      mathKey,
-      mathTypeCandidate,
-      entry,
-      currentLevelNumber: resolvedCurrentLevel,
-      battleCount: resolvedTotalBattles,
-      currentBattle: resolvedBattleCurrent,
-      currentLevelTotal: resolvedTotalBattles,
+      currentLevelNumber,
+      currentBattle,
+      battleCount,
+      currentLevelTotal: battleCount,
     };
   };
 
-  const computeNextMathProgressOnWin = () => {
-    const state = readMathProgressState();
-    const effectiveKey = state.mathKey || state.mathTypeCandidate;
-
-    if (!effectiveKey) {
-      return null;
-    }
-
+  const computeNextProgressOnWin = () => {
+    const state = readProgressState();
     const totalRequired = Math.max(state.currentLevelTotal, state.battleCount);
     let nextBattle = state.currentBattle + 1;
     let nextLevelTotal = Math.max(state.currentLevelTotal, totalRequired);
@@ -925,14 +470,12 @@ document.addEventListener('DOMContentLoaded', () => {
       nextBattle = 1;
       nextCurrentLevelNumber = currentLevelNumber + 1;
       const nextLevelCount = getBattleCountForLevelNumber(nextCurrentLevelNumber);
-      nextLevelTotal =
-        Number.isFinite(nextLevelCount) && nextLevelCount > 0
-          ? Math.max(1, Math.round(nextLevelCount))
-          : nextLevelTotal;
+      if (Number.isFinite(nextLevelCount) && nextLevelCount > 0) {
+        nextLevelTotal = Math.max(1, Math.round(nextLevelCount));
+      }
     }
 
     return {
-      mathKey: effectiveKey,
       nextBattle,
       nextLevelTotal,
       advanceLevel,
@@ -940,7 +483,6 @@ document.addEventListener('DOMContentLoaded', () => {
       totalRequired,
     };
   };
-
   const computeNextGlobalProgressOnWin = (requiredBattles = BATTLES_PER_LEVEL) => {
     const rawProgress =
       window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
@@ -4008,7 +3550,7 @@ document.addEventListener('DOMContentLoaded', () => {
     battleGoalsMet = goalsAchieved;
 
     const resolvedCurrentLevel = resolveCurrentLevelForExperience();
-    const progressState = readMathProgressState();
+    const progressState = readProgressState();
     const rewardCurrentLevel =
       normalizePositiveInteger(progressState?.currentLevelNumber) ??
       normalizePositiveInteger(resolvedCurrentLevel);
@@ -4020,46 +3562,30 @@ document.addEventListener('DOMContentLoaded', () => {
     persistGemTotal(updatedGemTotal);
 
     if (win) {
-      const mathProgressUpdate = computeNextMathProgressOnWin();
-      shouldAdvanceCurrentLevel = Boolean(mathProgressUpdate?.advanceLevel);
+      const progressUpdate = computeNextProgressOnWin();
+      shouldAdvanceCurrentLevel = Boolean(progressUpdate?.advanceLevel);
 
       const globalProgressUpdate = computeNextGlobalProgressOnWin(
-        Number.isFinite(mathProgressUpdate?.totalRequired)
-          ? mathProgressUpdate.totalRequired
+        Number.isFinite(progressUpdate?.totalRequired)
+          ? progressUpdate.totalRequired
           : undefined
       );
 
       const updatePayload = {};
 
-      if (mathProgressUpdate && mathProgressUpdate.mathKey) {
-        const nextBattleValue = Number(mathProgressUpdate.nextBattle);
-        const resolvedNextBattle = Number.isFinite(nextBattleValue)
-          ? Math.max(1, Math.round(nextBattleValue))
-          : null;
-        const nextLevelNumber = Number.isFinite(
-          mathProgressUpdate.nextCurrentLevelNumber
-        )
-          ? Math.max(1, Math.round(mathProgressUpdate.nextCurrentLevelNumber))
-          : null;
-        const nextLevelTotal = Number.isFinite(mathProgressUpdate.nextLevelTotal)
-          ? Math.max(1, Math.round(mathProgressUpdate.nextLevelTotal))
-          : null;
+      const nextBattleValue = Number(progressUpdate?.nextBattle);
+      if (Number.isFinite(nextBattleValue) && nextBattleValue > 0) {
+        updatePayload.currentBattle = Math.max(1, Math.round(nextBattleValue));
+      }
 
-        if (resolvedNextBattle !== null) {
-          updatePayload[mathProgressUpdate.mathKey] = {
-            currentBattle: resolvedNextBattle,
-          };
+      const nextLevelNumber = Number(progressUpdate?.nextCurrentLevelNumber);
+      if (Number.isFinite(nextLevelNumber) && nextLevelNumber > 0) {
+        updatePayload.currentLevel = Math.max(1, Math.round(nextLevelNumber));
+      }
 
-          if (nextLevelNumber !== null) {
-            updatePayload[mathProgressUpdate.mathKey].currentLevel =
-              nextLevelNumber;
-          }
-
-          if (nextLevelTotal !== null) {
-            updatePayload[mathProgressUpdate.mathKey].totalBattles =
-              nextLevelTotal;
-          }
-        }
+      const nextLevelTotal = Number(progressUpdate?.nextLevelTotal);
+      if (Number.isFinite(nextLevelTotal) && nextLevelTotal > 0) {
+        updatePayload.totalBattles = Math.max(1, Math.round(nextLevelTotal));
       }
 
       if (globalProgressUpdate && typeof globalProgressUpdate === 'object') {
