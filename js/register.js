@@ -52,7 +52,7 @@ const applyStartingBattleLevel = (playerData) => {
         },
         [STARTING_BATTLE_LEVEL]: {
           hero: {
-            sprite: '/mathmonsters/images/hero/shellfin_attack_2.png',
+            sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
           },
         },
       },
@@ -89,7 +89,7 @@ const applyStartingBattleLevel = (playerData) => {
   if (!isPlainObject(clonedData.battleLevel[STARTING_BATTLE_LEVEL])) {
     clonedData.battleLevel[STARTING_BATTLE_LEVEL] = {
       hero: {
-        sprite: '/mathmonsters/images/hero/shellfin_attack_2.png',
+        sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
       },
     };
   }

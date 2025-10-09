@@ -22,6 +22,8 @@ const OFFLINE_ASSETS = [
   './js/loader.js',
   'images/brand/logo.png',
   'images/hero/shellfin_evolution_1.png',
+  'images/hero/shellfin_evolution_2.png',
+  'images/hero/shellfin_attack_1.png',
   'images/hero/shellfin_attack_2.png',
   'images/battle/battle_time.png',
   'images/monster/addition_battle_1.png',

@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const REWARD_POTION_SRC = '../images/complete/potion.png';
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
-  const HERO_LEVEL_2_SRC = '../images/hero/shellfin_attack_2.png';
+  const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
 
   const rewardSpritePreloadCache = new Map();
 
