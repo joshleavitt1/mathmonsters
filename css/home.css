@@ -91,6 +91,7 @@ body.home-page {
   font-size: 20px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.5);
+  display: inline-block;
 }
 
 .home__progress {
@@ -107,6 +108,27 @@ body.home-page {
 .home__progress-fill::after {
   inset: 2px 6px 0px 6px;
   height: 6px;
+}
+
+.home__hero-level--pop {
+  animation: home-hero-level-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes home-hero-level-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .home__hero-sprite {
