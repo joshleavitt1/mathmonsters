@@ -621,6 +621,94 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   };
 
+  const spriteElementCache =
+    typeof window !== 'undefined' && window.mathMonstersSpriteCache instanceof Map
+      ? window.mathMonstersSpriteCache
+      : null;
+
+  const toAbsoluteSpriteUrl = (path) => {
+    if (typeof path !== 'string') {
+      return null;
+    }
+
+    const trimmed = path.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const sanitized = sanitizeHeroSpritePath(trimmed);
+
+    if (/^data:/i.test(sanitized) || /^[a-z]+:/i.test(sanitized)) {
+      return sanitized;
+    }
+
+    if (typeof document === 'undefined' || typeof document.baseURI !== 'string') {
+      return sanitized;
+    }
+
+    try {
+      return new URL(sanitized, document.baseURI).href;
+    } catch (error) {
+      return sanitized;
+    }
+  };
+
+  const getPreloadedSpriteInfo = (...candidates) => {
+    if (!spriteElementCache) {
+      return null;
+    }
+
+    for (const candidate of candidates) {
+      if (typeof candidate !== 'string') {
+        continue;
+      }
+
+      const absolute = toAbsoluteSpriteUrl(candidate);
+      if (!absolute) {
+        continue;
+      }
+
+      if (spriteElementCache.has(absolute)) {
+        const cached = spriteElementCache.get(absolute);
+        if (cached) {
+          const currentSrc = cached.currentSrc || cached.src || absolute;
+          return {
+            src: currentSrc,
+            key: absolute,
+            image: cached,
+          };
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const applySpriteSource = (image, spriteInfo, fallbackSrc) => {
+    if (!image) {
+      return null;
+    }
+
+    const resolvedSrc =
+      (spriteInfo && typeof spriteInfo.src === 'string' && spriteInfo.src.trim()) ||
+      (typeof fallbackSrc === 'string' && fallbackSrc.trim()) ||
+      null;
+
+    if (!resolvedSrc) {
+      return null;
+    }
+
+    const currentSrc = image.currentSrc || image.src || '';
+    const normalizedCurrent = toAbsoluteSpriteUrl(currentSrc) || currentSrc;
+    const normalizedNext = toAbsoluteSpriteUrl(resolvedSrc) || resolvedSrc;
+
+    if (normalizedCurrent !== normalizedNext) {
+      image.src = resolvedSrc;
+    }
+
+    return resolvedSrc;
+  };
+
   const hero = {
     attack: 1,
     health: 5,
@@ -3172,9 +3260,19 @@ document.addEventListener('DOMContentLoaded', () => {
     delete hero.basicAttack;
     delete hero.superAttack;
 
-    const heroSprite = resolveAssetPath(heroData.sprite);
-    if (heroSprite && heroImg) {
-      heroImg.src = heroSprite;
+    const heroResolvedSprite = resolveAssetPath(heroData.sprite);
+    const heroSpriteInfo = getPreloadedSpriteInfo(
+      heroData.spritePreloadKey,
+      heroResolvedSprite,
+      heroData.sprite
+    );
+    const heroSprite = heroImg
+      ? applySpriteSource(heroImg, heroSpriteInfo, heroResolvedSprite)
+      : heroResolvedSprite;
+    if (heroSprite) {
+      hero.sprite = heroSprite;
+    } else {
+      delete hero.sprite;
     }
     if (heroImg) {
       heroSpriteReadyPromise = updateHeroSpriteCustomProperties();
@@ -3198,15 +3296,29 @@ document.addEventListener('DOMContentLoaded', () => {
     delete monster.basicAttack;
     delete monster.superAttack;
 
-    const monsterSprite = resolveAssetPath(monsterData.sprite);
-    if (monsterSprite && monsterImg) {
-      monsterImg.src = monsterSprite;
+    const monsterResolvedSprite = resolveAssetPath(monsterData.sprite);
+    const monsterSpriteInfo = getPreloadedSpriteInfo(
+      monsterData.spritePreloadKey,
+      monsterResolvedSprite,
+      monsterData.sprite
+    );
+    const monsterSprite = monsterImg
+      ? applySpriteSource(monsterImg, monsterSpriteInfo, monsterResolvedSprite)
+      : monsterResolvedSprite;
+    if (monsterSprite) {
+      monster.sprite = monsterSprite;
+    } else {
+      delete monster.sprite;
     }
     if (monsterImg && monster.name) {
       monsterImg.alt = `${monster.name} ready for battle`;
     }
-    if (monsterSprite && completeMonsterImg) {
-      completeMonsterImg.src = monsterSprite;
+    if (completeMonsterImg) {
+      applySpriteSource(
+        completeMonsterImg,
+        monsterSpriteInfo,
+        monsterSprite || monsterResolvedSprite
+      );
     }
 
     updateHeroAttackDisplay();

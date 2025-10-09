@@ -118,6 +118,51 @@ const toAbsoluteAssetUrl = (path) => {
   }
 };
 
+const spriteElementCache = (() => {
+  if (typeof window !== 'undefined') {
+    if (window.mathMonstersSpriteCache instanceof Map) {
+      return window.mathMonstersSpriteCache;
+    }
+
+    const cache = new Map();
+    window.mathMonstersSpriteCache = cache;
+    return cache;
+  }
+
+  return new Map();
+})();
+
+const toSpriteCacheKey = (path) => {
+  if (typeof path !== 'string') {
+    return null;
+  }
+
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const absolute = toAbsoluteAssetUrl(trimmed);
+  return absolute || trimmed;
+};
+
+const registerSpriteElement = (path, image) => {
+  if (!image) {
+    return;
+  }
+
+  const cacheKey = toSpriteCacheKey(path);
+  if (!cacheKey) {
+    return;
+  }
+
+  spriteElementCache.set(cacheKey, image);
+
+  if (typeof window !== 'undefined') {
+    window.mathMonstersSpriteCache = spriteElementCache;
+  }
+};
+
 const readPreloadedSpriteSet = () => {
   const result = new Set();
 
@@ -1698,18 +1743,20 @@ const syncRemoteCurrentLevel = (playerData) => {
 
     const registerAsset = (path) => {
       if (!assetRegistrationEnabled || typeof path !== 'string') {
-        return;
+        return null;
       }
 
       const trimmed = path.trim();
       if (!trimmed) {
-        return;
+        return null;
       }
 
-      const absolutePath = toAbsoluteAssetUrl(trimmed);
+      const absolutePath = toSpriteCacheKey(trimmed);
       if (absolutePath && !characterAssetSet.has(absolutePath)) {
         characterAssetSet.add(absolutePath);
       }
+
+      return absolutePath || null;
     };
 
     const withAssetRegistration = (enabled, callback) => {
@@ -1735,9 +1782,15 @@ const syncRemoteCurrentLevel = (playerData) => {
       );
       if (resolvedSprite) {
         normalized.sprite = resolvedSprite;
-        registerAsset(resolvedSprite);
+        const preloadKey = registerAsset(resolvedSprite);
+        if (preloadKey) {
+          normalized.spritePreloadKey = preloadKey;
+        } else {
+          delete normalized.spritePreloadKey;
+        }
       } else {
         delete normalized.sprite;
+        delete normalized.spritePreloadKey;
       }
 
       const attackSprites = normalizeAttackSprites(merged);
@@ -1766,16 +1819,28 @@ const syncRemoteCurrentLevel = (playerData) => {
           return;
         }
 
+        const cacheKey = toSpriteCacheKey(path);
+        if (cacheKey && spriteElementCache.has(cacheKey)) {
+          const cached = spriteElementCache.get(cacheKey);
+          if (cached && cached.complete && cached.naturalWidth > 0) {
+            resolve(true);
+            return;
+          }
+        }
+
         const img = new Image();
         img.decoding = 'async';
         const finalize = (success) => {
           img.onload = null;
           img.onerror = null;
+          if (success) {
+            registerSpriteElement(cacheKey || path, img);
+          }
           resolve(success);
         };
         img.onload = () => finalize(true);
         img.onerror = () => finalize(false);
-        img.src = path;
+        img.src = cacheKey || path;
       });
 
     let questions = [];
@@ -2146,6 +2211,40 @@ const syncRemoteCurrentLevel = (playerData) => {
       charactersByLevel: levelCharacters,
       questions,
     };
+
+    if (typeof document !== 'undefined') {
+      const registerDisplayedSprite = (element, fallbackPath) => {
+        if (!element) {
+          return;
+        }
+
+        const elementSrc = element.currentSrc || element.src || fallbackPath;
+        if (elementSrc) {
+          registerSpriteElement(elementSrc, element);
+        }
+      };
+
+      const heroSpriteSource = hero?.spritePreloadKey || hero?.sprite || null;
+      const monsterSpriteSource =
+        battle?.monster?.spritePreloadKey || battle?.monster?.sprite || null;
+
+      registerDisplayedSprite(
+        document.querySelector('[data-hero-sprite]'),
+        heroSpriteSource
+      );
+      registerDisplayedSprite(
+        document.getElementById('battle-shellfin'),
+        heroSpriteSource
+      );
+      registerDisplayedSprite(
+        document.getElementById('battle-monster'),
+        monsterSpriteSource
+      );
+      registerDisplayedSprite(
+        document.querySelector('#complete-message .monster-image'),
+        monsterSpriteSource
+      );
+    }
 
     document.dispatchEvent(new Event('data-loaded'));
   } catch (e) {
