@@ -20,37 +20,6 @@ const clonePlainObject = (value) => {
   }
 };
 
-const assignPlayerIdentifier = (playerData, identifier) => {
-  if (!isPlainObject(playerData)) {
-    return playerData;
-  }
-
-  const normalizedId =
-    typeof identifier === 'string' && identifier.trim() ? identifier.trim() : '';
-
-  if (!normalizedId) {
-    return playerData;
-  }
-
-  const updateId = (target) => {
-    if (!isPlainObject(target)) {
-      return;
-    }
-
-    const currentId = typeof target.id === 'string' ? target.id.trim() : '';
-    if (!currentId || currentId === 'player-001') {
-      target.id = normalizedId;
-    }
-  };
-
-  updateId(playerData);
-  if (isPlainObject(playerData.player)) {
-    updateId(playerData.player);
-  }
-
-  return playerData;
-};
-
 const extractPlayerData = (rawPlayerData) => {
   if (!isPlainObject(rawPlayerData)) {
     return null;
@@ -70,7 +39,7 @@ const applyStartingBattleLevel = (playerData) => {
   if (!isPlainObject(clonedData)) {
     return {
       progress: {
-        currentLevel: STARTING_BATTLE_LEVEL,
+        battleLevel: STARTING_BATTLE_LEVEL,
       },
       battleVariables: {
         timeRemainingSeconds: null,
@@ -83,7 +52,7 @@ const applyStartingBattleLevel = (playerData) => {
         },
         [STARTING_BATTLE_LEVEL]: {
           hero: {
-            sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
+            sprite: '/mathmonsters/images/hero/shellfin_attack_2.png',
           },
         },
       },
@@ -96,9 +65,8 @@ const applyStartingBattleLevel = (playerData) => {
 
   clonedData.progress = {
     ...progressSection,
-    currentLevel: STARTING_BATTLE_LEVEL,
+    battleLevel: STARTING_BATTLE_LEVEL,
   };
-  delete clonedData.progress.battleLevel;
 
   if (!isPlainObject(clonedData.battleVariables)) {
     clonedData.battleVariables = {
@@ -121,7 +89,7 @@ const applyStartingBattleLevel = (playerData) => {
   if (!isPlainObject(clonedData.battleLevel[STARTING_BATTLE_LEVEL])) {
     clonedData.battleLevel[STARTING_BATTLE_LEVEL] = {
       hero: {
-        sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
+        sprite: '/mathmonsters/images/hero/shellfin_attack_2.png',
       },
     };
   }
@@ -170,11 +138,6 @@ const storePlayerDataForAccount = async (supabase, userId, playerData) => {
   const payload = clonePlainObject(playerData);
   if (!payload) {
     return false;
-  }
-
-  assignPlayerIdentifier(payload, userId);
-  if (isPlainObject(payload.player)) {
-    assignPlayerIdentifier(payload.player, userId);
   }
 
   try {

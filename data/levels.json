@@ -1,256 +1,6 @@
 {
-  "totalLevels": 6,
-  "totalBattles": 21,
-  "levels": [
-    {
-      "name": "Level 1 Questions",
-      "levelUpRequirement": "completeAllBattles",
-      "battles": [
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_1_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        }
-      ],
-      "battleLevel": 1,
-      "id": "addition-1"
-    },
-    {
-      "name": "Level 2 Questions",
-      "levelUpRequirement": "completeAllBattles",
-      "battles": [
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_2_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_2_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_2_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "boss",
-          "questions": {
-            "path": "questions/level_2_questions.json"
-          },
-          "monster": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_2.png",
-            "name": "Razorclaw"
-          }
-        }
-      ],
-      "battleLevel": 2,
-      "id": "addition-2"
-    },
-    {
-      "name": "Level 3 Questions",
-      "levelUpRequirement": "completeAllBattles",
-      "battles": [
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_3_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_3_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_3_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "boss",
-          "questions": {
-            "path": "questions/level_3_questions.json"
-          },
-          "monster": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_3.png",
-            "name": "Lockjaw"
-          }
-        }
-      ],
-      "battleLevel": 3,
-      "id": "addition-3"
-    },
-    {
-      "name": "Level 4 Questions",
-      "levelUpRequirement": "completeAllBattles",
-      "battles": [
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_4_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_4_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_4_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "boss",
-          "questions": {
-            "path": "questions/level_4_questions.json"
-          },
-          "monster": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_4.png",
-            "name": "Spikewave"
-          }
-        }
-      ],
-      "battleLevel": 4,
-      "id": "addition-4"
-    },
-    {
-      "name": "Level 5 Questions",
-      "levelUpRequirement": "completeAllBattles",
-      "battles": [
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_5_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_5_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_5_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "boss",
-          "questions": {
-            "path": "questions/level_5_questions.json"
-          },
-          "monster": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_5.png",
-            "name": "Crabsnap"
-          }
-        }
-      ],
-      "battleLevel": 5,
-      "id": "addition-5"
-    },
-    {
-      "name": "Level 6 Questions",
-      "levelUpRequirement": "completeAllBattles",
-      "battles": [
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_6_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_6_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "standard",
-          "questions": {
-            "path": "questions/level_6_questions.json"
-          },
-          "monster": {
-            "spritePool": "standardPool"
-          }
-        },
-        {
-          "type": "boss",
-          "questions": {
-            "path": "questions/level_6_questions.json"
-          },
-          "monster": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_6.png",
-            "name": "Clamquake"
-          }
-        }
-      ],
-      "battleLevel": 6,
-      "id": "addition-6"
-    }
-  ],
   "mathTypes": {
     "addition": {
-      "id": "addition",
-      "name": "Addition",
-      "label": "Addition",
-      "code": "addition",
       "totalLevels": 6,
       "totalBattles": 21,
       "defaultStats": {
@@ -319,6 +69,7 @@
       },
       "levels": [
         {
+          "level": 1,
           "name": "Level 1 Questions",
           "levelUpRequirement": "completeAllBattles",
           "battles": [
@@ -331,11 +82,10 @@
                 "spritePool": "standardPool"
               }
             }
-          ],
-          "battleLevel": 1,
-          "id": "addition-1"
+          ]
         },
         {
+          "level": 2,
           "name": "Level 2 Questions",
           "levelUpRequirement": "completeAllBattles",
           "battles": [
@@ -376,11 +126,10 @@
                 "name": "Razorclaw"
               }
             }
-          ],
-          "battleLevel": 2,
-          "id": "addition-2"
+          ]
         },
         {
+          "level": 3,
           "name": "Level 3 Questions",
           "levelUpRequirement": "completeAllBattles",
           "battles": [
@@ -421,11 +170,10 @@
                 "name": "Lockjaw"
               }
             }
-          ],
-          "battleLevel": 3,
-          "id": "addition-3"
+          ]
         },
         {
+          "level": 4,
           "name": "Level 4 Questions",
           "levelUpRequirement": "completeAllBattles",
           "battles": [
@@ -466,11 +214,10 @@
                 "name": "Spikewave"
               }
             }
-          ],
-          "battleLevel": 4,
-          "id": "addition-4"
+          ]
         },
         {
+          "level": 5,
           "name": "Level 5 Questions",
           "levelUpRequirement": "completeAllBattles",
           "battles": [
@@ -511,11 +258,10 @@
                 "name": "Crabsnap"
               }
             }
-          ],
-          "battleLevel": 5,
-          "id": "addition-5"
+          ]
         },
         {
+          "level": 6,
           "name": "Level 6 Questions",
           "levelUpRequirement": "completeAllBattles",
           "battles": [
@@ -556,9 +302,7 @@
                 "name": "Clamquake"
               }
             }
-          ],
-          "battleLevel": 6,
-          "id": "addition-6"
+          ]
         }
       ]
     }

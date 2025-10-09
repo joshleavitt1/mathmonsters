@@ -13,8 +13,7 @@ const DEV_RESET_TARGET_MATH_KEY = 'addition';
 const DEV_RESET_TARGET_LEVEL = 2;
 const DEV_RESET_TARGET_BATTLE = 1;
 const DEV_RESET_BUTTON_SELECTOR = '[data-dev-reset-level]';
-const DEV_PLAYER_DATA_BUTTON_SELECTOR = '[data-dev-player-data]';
-const DEV_SIGN_OUT_BUTTON_SELECTOR = '[data-dev-sign-out]';
+
 const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
 const MONSTER_ENTRANCE_DURATION_MS_BASE = 900;
 const HERO_EXIT_DURATION_MS_BASE = 550;
@@ -202,91 +201,6 @@ const getActiveHeroElement = () => {
   }
   return getLevelOneHeroElement() ?? getStandardHeroElement();
 };
-
-const HERO_FLOAT_DEFAULT_RANGE_PX = 32;
-const HERO_FLOAT_DEFAULT_DURATION_MS = 3500;
-const HERO_FLOAT_REDUCED_RANGE_PX = 0;
-const HERO_FLOAT_REDUCED_DURATION_MS = 0;
-
-const heroFloatPreferenceQuery =
-  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)')
-    : null;
-
-const getHeroFloatElements = () => {
-  if (typeof document === 'undefined') {
-    return [];
-  }
-
-  return Array.from(document.querySelectorAll('[data-hero-sprite]')).filter(
-    (element) => element instanceof HTMLElement
-  );
-};
-
-const resolveHeroFloatPreference = () => Boolean(heroFloatPreferenceQuery?.matches);
-
-const applyHeroFloatValues = ({ rangePx, durationMs, offsetPx }) => {
-  const heroElements = getHeroFloatElements();
-  if (heroElements.length === 0) {
-    return;
-  }
-
-  const rangeValue = `${Math.max(0, Number(rangePx) || 0)}px`;
-  const durationValue = formatDurationSeconds(durationMs);
-  const offsetValue = `${Math.max(0, Number(offsetPx) || 0)}px`;
-
-  heroElements.forEach((element) => {
-    element.style.setProperty('--hero-float-range', rangeValue);
-    element.style.setProperty('--hero-float-duration', durationValue);
-    if (offsetPx === null) {
-      element.style.removeProperty('--hero-float-offset');
-    } else {
-      element.style.setProperty('--hero-float-offset', offsetValue);
-    }
-  });
-};
-
-const updateHeroFloat = () => {
-  if (typeof document === 'undefined') {
-    return;
-  }
-
-  const prefersReducedMotion = resolveHeroFloatPreference();
-
-  if (prefersReducedMotion) {
-    applyHeroFloatValues({
-      rangePx: HERO_FLOAT_REDUCED_RANGE_PX,
-      durationMs: HERO_FLOAT_REDUCED_DURATION_MS,
-      offsetPx: 0,
-    });
-    return;
-  }
-
-  applyHeroFloatValues({
-    rangePx: HERO_FLOAT_DEFAULT_RANGE_PX,
-    durationMs: HERO_FLOAT_DEFAULT_DURATION_MS,
-    offsetPx: null,
-  });
-};
-
-const initHeroFloatPreferenceWatcher = () => {
-  if (!heroFloatPreferenceQuery) {
-    return;
-  }
-
-  const handleChange = () => {
-    updateHeroFloat();
-  };
-
-  if (typeof heroFloatPreferenceQuery.addEventListener === 'function') {
-    heroFloatPreferenceQuery.addEventListener('change', handleChange);
-  } else if (typeof heroFloatPreferenceQuery.addListener === 'function') {
-    heroFloatPreferenceQuery.addListener(handleChange);
-  }
-};
-
-updateHeroFloat();
-initHeroFloatPreferenceWatcher();
 
 const getActiveBattleButton = () => {
   if (document.body.classList.contains('is-standard-landing')) {
@@ -1179,42 +1093,15 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       return;
     }
 
-    const existingGemSources = [
-      mergedProgress.gems,
-      player.gems,
-      player?.progress?.gems,
-      player?.currency?.gems,
-      player?.currencies?.gems,
-      player?.wallet?.gems,
-      player?.inventory?.gems,
-    ];
-
-    let existingGemCount = null;
-    for (const value of existingGemSources) {
-      const sanitizedValue = sanitizeGemCount(value);
-      if (sanitizedValue === null) {
-        continue;
-      }
-      existingGemCount =
-        existingGemCount === null
-          ? sanitizedValue
-          : Math.max(existingGemCount, sanitizedValue);
-    }
-
-    const resolvedGemCount =
-      existingGemCount === null
-        ? gemCount
-        : Math.max(existingGemCount, gemCount);
-
-    mergedProgress.gems = resolvedGemCount;
+    mergedProgress.gems = gemCount;
 
     const assignIfObject = (container, key) => {
       if (container && typeof container === 'object') {
-        container[key] = resolvedGemCount;
+        container[key] = gemCount;
       }
     };
 
-    player.gems = resolvedGemCount;
+    player.gems = gemCount;
     assignIfObject(player.progress, 'gems');
     assignIfObject(player.currency, 'gems');
     assignIfObject(player.currencies, 'gems');
@@ -1227,7 +1114,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       ? sourceData.progress
       : {};
   const mergedProgress = { ...baseProgress };
-  let mergedProgressLevel = readProgressLevel(mergedProgress);
   const baseBattleVariables =
     sourceData && typeof sourceData.battleVariables === 'object'
       ? sourceData.battleVariables
@@ -1253,9 +1139,8 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       : { ...baseBattleVariables };
 
   if (storedProgress && typeof storedProgress === 'object') {
-    const storedBattleLevel = readProgressLevel(storedProgress);
-    if (storedBattleLevel !== null) {
-      mergedProgressLevel = storedBattleLevel;
+    if (typeof storedProgress.battleLevel === 'number') {
+      mergedProgress.battleLevel = storedProgress.battleLevel;
     }
 
     if (typeof storedProgress.timeRemainingSeconds === 'number') {
@@ -1280,15 +1165,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     }
   }
 
-  if (mergedProgressLevel === null) {
-    const existingPlayerLevel = readProgressLevel(player.progress);
-    if (existingPlayerLevel !== null) {
-      mergedProgressLevel = existingPlayerLevel;
-    }
-  }
-
-  assignProgressLevel(mergedProgress, mergedProgressLevel);
-
   if (!player.progress || typeof player.progress !== 'object') {
     player.progress = mergedProgress;
   } else {
@@ -1299,15 +1175,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
         ...normalizedExisting,
         ...mergedProgress.experience,
       };
-    }
-    assignProgressLevel(player.progress, mergedProgressLevel);
-  }
-
-  if (mergedProgressLevel !== null) {
-    const sanitizedLevel = Math.max(1, Math.round(Number(mergedProgressLevel) || 1));
-    const existingLevel = Number(player.currentLevel);
-    if (!Number.isFinite(existingLevel) || sanitizedLevel > existingLevel) {
-      player.currentLevel = sanitizedLevel;
     }
   }
 
@@ -1353,33 +1220,6 @@ const normalizeBattleLevel = (value) => {
   }
 
   return null;
-};
-
-const readProgressLevel = (progress) => {
-  if (!isPlainObject(progress)) {
-    return null;
-  }
-
-  const currentLevel = normalizeBattleLevel(progress.currentLevel);
-  if (currentLevel !== null) {
-    return currentLevel;
-  }
-
-  return normalizeBattleLevel(progress.battleLevel);
-};
-
-const assignProgressLevel = (progress, level) => {
-  if (!isPlainObject(progress)) {
-    return;
-  }
-
-  if (level === null) {
-    delete progress.currentLevel;
-  } else {
-    progress.currentLevel = level;
-  }
-
-  delete progress.battleLevel;
 };
 
 const collectMathTypeCandidates = (source, accumulator = new Set()) => {
@@ -2026,7 +1866,7 @@ const determineBattlePreview = (levelsData, playerData) => {
     return { levels, player, preview: null };
   }
 
-  const progressLevel = readProgressLevel(player?.progress);
+  const progressLevel = normalizeBattleLevel(player?.progress?.battleLevel);
   const activeLevel = (() => {
     if (progressLevel !== null) {
       const match = levels.find(
@@ -2151,9 +1991,7 @@ const determineBattlePreview = (levelsData, playerData) => {
   const sanitizedBattleTotal = Number.isFinite(totalBattlesForLevel)
     ? Math.max(1, Math.round(totalBattlesForLevel))
     : 1;
-  const storedBattleTotal = Number(
-    mathProgressEntry?.currentLevel ?? mathProgressEntry?.battleLevel
-  );
+  const storedBattleTotal = Number(mathProgressEntry?.currentLevel);
   const resolvedBattleTotal = Number.isFinite(storedBattleTotal) && storedBattleTotal > 0
     ? Math.max(sanitizedBattleTotal, Math.round(storedBattleTotal))
     : sanitizedBattleTotal;
@@ -2194,7 +2032,6 @@ const determineBattlePreview = (levelsData, playerData) => {
       progressExperienceTotal: experienceProgress.total,
       progressExperienceText: progressText,
       playerGems,
-      currentLevel: activeLevel?.battleLevel ?? null,
     },
   };
 };
@@ -2242,19 +2079,11 @@ const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
     }
 
     element.hidden = false;
-    element.removeAttribute('hidden');
     element.removeAttribute('aria-hidden');
     element.classList.remove('pulsating-glow');
     HOME_ACTION_GLOW_CLASSES.forEach((className) => {
       element.classList.remove(className);
     });
-
-    const actionImage = element.querySelector('.home__action-image');
-    if (actionImage instanceof HTMLElement) {
-      actionImage.hidden = false;
-      actionImage.removeAttribute('hidden');
-      actionImage.removeAttribute('aria-hidden');
-    }
   };
 
   actionElements.forEach((element) => resetActionState(element));
@@ -2276,13 +2105,6 @@ const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
     if (shopAction) {
       shopAction.hidden = true;
       shopAction.setAttribute('aria-hidden', 'true');
-
-      const shopImage = shopAction.querySelector('.home__action-image');
-      if (shopImage instanceof HTMLElement) {
-        shopImage.hidden = true;
-        shopImage.setAttribute('hidden', '');
-        shopImage.setAttribute('aria-hidden', 'true');
-      }
     }
 
     if (battleAction) {
@@ -2301,13 +2123,6 @@ const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
     if (shopAction) {
       shopAction.hidden = false;
       shopAction.removeAttribute('aria-hidden');
-
-      const shopImage = shopAction.querySelector('.home__action-image');
-      if (shopImage instanceof HTMLElement) {
-        shopImage.hidden = false;
-        shopImage.removeAttribute('hidden');
-        shopImage.removeAttribute('aria-hidden');
-      }
       shopAction.classList.add(
         'pulsating-glow',
         'home__action--glow',
@@ -2500,9 +2315,7 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
   });
 
   const resolvedBattleLevel = (() => {
-    const fromPreview = normalizeBattleLevel(
-      previewData?.currentLevel ?? previewData?.battleLevel
-    );
+    const fromPreview = normalizeBattleLevel(previewData?.battleLevel);
     if (fromPreview !== null) {
       return fromPreview;
     }
@@ -2646,9 +2459,9 @@ const setupDevResetTool = () => {
 
     const updatedProgress = {
       ...normalizedProgress,
+      battleLevel: DEV_RESET_TARGET_LEVEL,
       [mathKey]: updatedMathProgress,
     };
-    assignProgressLevel(updatedProgress, DEV_RESET_TARGET_LEVEL);
 
     try {
       const storage = window.localStorage;
@@ -2687,582 +2500,6 @@ const setupDevResetTool = () => {
 
   devButton.dataset.devResetBound = 'true';
   devButton.addEventListener('click', handleReset);
-};
-
-const cloneForDevTools = (value) => {
-  if (!value || typeof value !== 'object') {
-    return value;
-  }
-
-  if (typeof structuredClone === 'function') {
-    try {
-      return structuredClone(value);
-    } catch (error) {
-      // Fallback to JSON serialization below.
-    }
-  }
-
-  try {
-    return JSON.parse(JSON.stringify(value));
-  } catch (error) {
-    return value;
-  }
-};
-
-const normalizeNumericValue = (value) => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return null;
-    }
-
-    const parsed = Number(trimmed);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return null;
-};
-
-const assignIfMeaningful = (target, key, value) => {
-  if (typeof value === 'undefined' || value === null) {
-    return;
-  }
-
-  if (typeof value === 'number') {
-    if (Number.isFinite(value)) {
-      target[key] = value;
-    }
-    return;
-  }
-
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (trimmed) {
-      target[key] = trimmed;
-    }
-    return;
-  }
-
-  if (typeof value === 'boolean') {
-    target[key] = value;
-    return;
-  }
-
-  if (Array.isArray(value)) {
-    if (value.length > 0) {
-      target[key] = value;
-    }
-    return;
-  }
-
-  if (isPlainObject(value)) {
-    if (Object.keys(value).length > 0) {
-      target[key] = value;
-    }
-  }
-};
-
-const createCompactHero = (hero) => {
-  if (!isPlainObject(hero)) {
-    return null;
-  }
-
-  const compact = {};
-  assignIfMeaningful(compact, 'id', hero.id);
-  assignIfMeaningful(compact, 'name', hero.name);
-  assignIfMeaningful(compact, 'sprite', hero.sprite);
-  assignIfMeaningful(compact, 'attackSprite', hero.attackSprite);
-
-  const attack = normalizeNumericValue(hero.attack);
-  if (attack !== null) {
-    compact.attack = attack;
-  }
-
-  const health = normalizeNumericValue(hero.health);
-  if (health !== null) {
-    compact.health = health;
-  }
-
-  const damage = normalizeNumericValue(hero.damage);
-  if (damage !== null) {
-    compact.damage = damage;
-  }
-
-  return Object.keys(compact).length > 0 ? compact : null;
-};
-
-const createCompactProgressEntry = (entry) => {
-  if (!isPlainObject(entry)) {
-    return null;
-  }
-
-  const compact = {};
-  const currentLevel = normalizeNumericValue(entry.currentLevel);
-  if (currentLevel !== null) {
-    compact.currentLevel = currentLevel;
-  }
-
-  const currentBattle = normalizeNumericValue(entry.currentBattle);
-  if (currentBattle !== null) {
-    compact.currentBattle = currentBattle;
-  }
-
-  return Object.keys(compact).length > 0 ? compact : null;
-};
-
-const createCompactProgress = (progress) => {
-  if (!isPlainObject(progress)) {
-    return null;
-  }
-
-  const compact = {};
-
-  const gems = normalizeNumericValue(progress.gems);
-  if (gems !== null) {
-    compact.gems = gems;
-  }
-
-  Object.entries(progress).forEach(([key, value]) => {
-    if (key === 'gems' || key === 'battleLevel' || key === 'currentLevel') {
-      return;
-    }
-
-    const entry = createCompactProgressEntry(value);
-    if (entry) {
-      compact[key] = entry;
-    }
-  });
-
-  const overallLevel =
-    normalizeNumericValue(progress.currentLevel) ??
-    normalizeNumericValue(progress.battleLevel);
-  if (overallLevel !== null) {
-    compact.currentLevel = overallLevel;
-  }
-
-  return Object.keys(compact).length > 0 ? compact : null;
-};
-
-const createCompactBattleVariables = (variables) => {
-  if (!isPlainObject(variables)) {
-    return null;
-  }
-
-  const compact = {};
-  const timeRemaining = normalizeNumericValue(variables.timeRemainingSeconds);
-  if (timeRemaining !== null) {
-    compact.timeRemainingSeconds = timeRemaining;
-  }
-
-  return Object.keys(compact).length > 0 ? compact : null;
-};
-
-const createCompactMedals = (medals) => {
-  if (!Array.isArray(medals)) {
-    return null;
-  }
-
-  const filtered = medals.filter((entry) => {
-    if (entry === null || typeof entry === 'undefined') {
-      return false;
-    }
-
-    if (typeof entry === 'string') {
-      return entry.trim().length > 0;
-    }
-
-    if (typeof entry === 'number') {
-      return Number.isFinite(entry);
-    }
-
-    if (typeof entry === 'boolean') {
-      return true;
-    }
-
-    if (Array.isArray(entry)) {
-      return entry.length > 0;
-    }
-
-    if (isPlainObject(entry)) {
-      return Object.keys(entry).length > 0;
-    }
-
-    return false;
-  });
-
-  return filtered.length > 0 ? filtered : null;
-};
-
-const createCompactPlayerProfile = (rawPlayerData) => {
-  const player = extractPlayerData(rawPlayerData);
-  if (!isPlainObject(player)) {
-    return null;
-  }
-
-  const compact = {};
-
-  assignIfMeaningful(compact, 'id', player.id);
-  assignIfMeaningful(compact, 'currentMathType', player.currentMathType);
-
-  const numericKeys = [
-    'currentLevel',
-    'currentBattle',
-    'gems',
-    'dailyStreak',
-    'totalAnswered',
-    'totalAccuracy',
-    'totalTime',
-  ];
-
-  numericKeys.forEach((key) => {
-    const value = normalizeNumericValue(player[key]);
-    if (value !== null) {
-      compact[key] = value;
-    }
-  });
-
-  const hero = createCompactHero(player.hero);
-  if (hero) {
-    compact.hero = hero;
-  }
-
-  const progress = createCompactProgress(player.progress);
-  if (progress) {
-    compact.progress = progress;
-  }
-
-  const battleVariables = createCompactBattleVariables(player.battleVariables);
-  if (battleVariables) {
-    compact.battleVariables = battleVariables;
-  }
-
-  const medals = createCompactMedals(player.medals);
-  if (medals) {
-    compact.medals = medals;
-  }
-
-  return Object.keys(compact).length > 0 ? compact : null;
-};
-
-const collectLivePlayerProfileSnapshot = async () => {
-  const timestamp = new Date().toISOString();
-  const sourceMap = {};
-  const issues = [];
-
-  const applySource = (label, candidate) => {
-    if (!candidate || typeof candidate !== 'object') {
-      return;
-    }
-
-    const normalized = extractPlayerData(candidate);
-    if (!normalized || typeof normalized !== 'object') {
-      return;
-    }
-
-    const compact = createCompactPlayerProfile(normalized);
-    if (compact) {
-      sourceMap[label] = cloneForDevTools(compact);
-    } else if (!(label in sourceMap)) {
-      sourceMap[label] = null;
-    }
-    return normalized;
-  };
-
-  let mergedPlayer = {};
-
-  const mergeFromSource = (label, candidate) => {
-    const normalized = applySource(label, candidate);
-    if (!normalized || typeof normalized !== 'object') {
-      return;
-    }
-    mergedPlayer = mergePlayerData(mergedPlayer, normalized);
-  };
-
-  if (typeof window !== 'undefined') {
-    const preloaded = window.preloadedData;
-    mergeFromSource('preloaded.player', preloaded?.player);
-    mergeFromSource('preloaded.playerData', preloaded?.playerData);
-    mergeFromSource('preloaded.fallbackPlayerData', preloaded?.fallbackPlayerData);
-  }
-
-  const storedProfile = readStoredPlayerProfile();
-  mergeFromSource('session.playerProfile', storedProfile);
-
-  try {
-    const remoteProfile = await fetchPlayerProfile();
-    mergeFromSource('remote.playerProfile', remoteProfile);
-  } catch (error) {
-    console.warn('Unable to fetch live player profile for developer tool.', error);
-    issues.push(
-      `Supabase fetch failed${error?.message ? `: ${error.message}` : '.'}`
-    );
-  }
-
-  const hasSources = Object.keys(sourceMap).length > 0;
-  const compactMerged = createCompactPlayerProfile(mergedPlayer);
-
-  return {
-    generatedAt: timestamp,
-    player: hasSources && compactMerged ? cloneForDevTools(compactMerged) : null,
-    sources: sourceMap,
-    warnings: issues,
-  };
-};
-
-const formatDevPlayerSnapshot = (snapshot) => {
-  const safeSnapshot = snapshot && typeof snapshot === 'object' ? snapshot : {};
-  return JSON.stringify(safeSnapshot, null, 2);
-};
-
-const setupDevPlayerDataTool = () => {
-  const devButton = document.querySelector(DEV_PLAYER_DATA_BUTTON_SELECTOR);
-  if (!devButton) {
-    return;
-  }
-
-  if (devButton.dataset.devPlayerDataBound === 'true') {
-    return;
-  }
-
-  const createInlineViewerController = () => {
-    if (typeof document === 'undefined') {
-      return null;
-    }
-
-    const body = document.body || document.documentElement;
-    if (!body) {
-      return null;
-    }
-
-    const overlay = document.createElement('div');
-    overlay.id = 'dev-player-data-viewer';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.style.position = 'fixed';
-    overlay.style.inset = '0';
-    overlay.style.background = 'rgba(15, 23, 42, 0.85)';
-    overlay.style.zIndex = '2147483647';
-    overlay.style.display = 'none';
-    overlay.style.alignItems = 'center';
-    overlay.style.justifyContent = 'center';
-    overlay.style.padding = '24px';
-    overlay.style.boxSizing = 'border-box';
-
-    const panel = document.createElement('div');
-    panel.style.width = '100%';
-    panel.style.maxWidth = '760px';
-    panel.style.maxHeight = '90vh';
-    panel.style.background = '#0f172a';
-    panel.style.color = '#e2e8f0';
-    panel.style.borderRadius = '12px';
-    panel.style.boxShadow = '0 20px 45px rgba(15, 23, 42, 0.45)';
-    panel.style.display = 'flex';
-    panel.style.flexDirection = 'column';
-    panel.style.overflow = 'hidden';
-
-    const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.alignItems = 'center';
-    header.style.justifyContent = 'space-between';
-    header.style.padding = '16px';
-    header.style.background = 'rgba(15, 23, 42, 0.9)';
-    header.style.borderBottom = '1px solid rgba(148, 163, 184, 0.2)';
-
-    const title = document.createElement('span');
-    title.textContent = 'Developer Player Data';
-    title.style.fontWeight = '600';
-    title.style.fontSize = '16px';
-
-    const closeButton = document.createElement('button');
-    closeButton.type = 'button';
-    closeButton.textContent = 'Close';
-    closeButton.style.marginLeft = '16px';
-    closeButton.style.padding = '6px 12px';
-    closeButton.style.fontSize = '14px';
-    closeButton.style.fontWeight = '600';
-    closeButton.style.borderRadius = '999px';
-    closeButton.style.border = '1px solid rgba(148, 163, 184, 0.6)';
-    closeButton.style.background = 'rgba(30, 41, 59, 0.85)';
-    closeButton.style.color = '#e2e8f0';
-    closeButton.style.cursor = 'pointer';
-
-    const content = document.createElement('pre');
-    content.style.margin = '0';
-    content.style.padding = '16px';
-    content.style.flex = '1 1 auto';
-    content.style.font =
-      "13px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
-    content.style.background = '#020617';
-    content.style.overflow = 'auto';
-    content.style.whiteSpace = 'pre-wrap';
-    content.style.wordBreak = 'break-word';
-
-    header.appendChild(title);
-    header.appendChild(closeButton);
-    panel.appendChild(header);
-    panel.appendChild(content);
-    overlay.appendChild(panel);
-
-    let lastActiveElement = null;
-    let isVisible = false;
-
-    const updateContent = (text) => {
-      const stringified = typeof text === 'string' ? text : String(text ?? '');
-      content.textContent = stringified;
-    };
-
-    const show = (text) => {
-      if (!overlay.isConnected) {
-        body.appendChild(overlay);
-      }
-
-      if (!isVisible) {
-        lastActiveElement = document.activeElement;
-        overlay.style.display = 'flex';
-        isVisible = true;
-        try {
-          if (body !== document.body) {
-            document.body?.appendChild(overlay);
-          }
-        } catch (error) {
-          // Ignore body append failures.
-        }
-        try {
-          document.body && (document.body.style.overflow = 'hidden');
-        } catch (error) {
-          // Ignore overflow manipulation failures.
-        }
-        setTimeout(() => {
-          try {
-            closeButton.focus();
-          } catch (error) {
-            // Ignore focus failures.
-          }
-        }, 0);
-      }
-
-      updateContent(text);
-    };
-
-    const hide = () => {
-      if (!isVisible) {
-        return;
-      }
-
-      overlay.style.display = 'none';
-      isVisible = false;
-      updateContent('');
-
-      try {
-        if (document.body) {
-          document.body.style.overflow = '';
-        }
-      } catch (error) {
-        // Ignore overflow manipulation failures.
-      }
-
-      if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
-        try {
-          lastActiveElement.focus();
-        } catch (error) {
-          // Ignore focus restoration failures.
-        }
-      }
-      lastActiveElement = null;
-    };
-
-    closeButton.addEventListener('click', hide);
-    overlay.addEventListener('click', (event) => {
-      if (event && event.target === overlay) {
-        hide();
-      }
-    });
-    document.addEventListener('keydown', (event) => {
-      if (!isVisible) {
-        return;
-      }
-      if (event && event.key === 'Escape') {
-        hide();
-      }
-    });
-
-    return {
-      show,
-      update: updateContent,
-      hide,
-    };
-  };
-
-  let inlineViewer = null;
-
-  const ensureInlineViewer = () => {
-    if (inlineViewer) {
-      return inlineViewer;
-    }
-
-    inlineViewer = createInlineViewerController();
-    return inlineViewer;
-  };
-
-  const handleClick = async (event) => {
-    if (event && typeof event.preventDefault === 'function') {
-      event.preventDefault();
-    }
-
-    const inlineViewerController = ensureInlineViewer();
-    if (!inlineViewerController) {
-      try {
-        window.alert?.('Unable to show developer player data viewer.');
-      } catch (error) {
-        // Ignore alert failures.
-      }
-      return;
-    }
-
-    inlineViewerController.show('Loading player data…');
-
-    try {
-      const snapshot = await collectLivePlayerProfileSnapshot();
-      const formatted = formatDevPlayerSnapshot(snapshot);
-      inlineViewerController.update(formatted);
-    } catch (error) {
-      const message =
-        'Unable to load live player data.' +
-        (error && error.message ? `\n\n${error.message}` : '');
-      inlineViewerController.update(message);
-    }
-  };
-
-  devButton.dataset.devPlayerDataBound = 'true';
-  devButton.addEventListener('click', handleClick);
-};
-
-const setupDevSignOutTool = () => {
-  const devButton = document.querySelector(DEV_SIGN_OUT_BUTTON_SELECTOR);
-  if (!devButton) {
-    return;
-  }
-
-  if (devButton.dataset.devSignOutBound === 'true') {
-    return;
-  }
-
-  const handleSignOut = async (event) => {
-    if (event && typeof event.preventDefault === 'function') {
-      event.preventDefault();
-    }
-
-    await logoutAndRedirect();
-  };
-
-  devButton.dataset.devSignOutBound = 'true';
-  devButton.addEventListener('click', handleSignOut);
 };
 
 const readStoredPlayerProfile = () => {
@@ -3630,8 +2867,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
   setupSettingsLogout();
   setupDevResetTool();
-  setupDevPlayerDataTool();
-  setupDevSignOutTool();
 
   updateIntroTimingForLanding({ isLevelOneLanding });
 

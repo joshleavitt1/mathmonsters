@@ -24,18 +24,6 @@
     data-dev-reset-level
     aria-label="Reset progress to Level 2 Battle 1"
   ></button>
-  <button
-    class="dev-player-data"
-    type="button"
-    data-dev-player-data
-    aria-label="View player.json data"
-  ></button>
-  <button
-    class="dev-sign-out"
-    type="button"
-    data-dev-sign-out
-    aria-label="Sign out"
-  ></button>
   <div
     class="preloader app-safe-area"
     data-preloader
@@ -88,7 +76,7 @@
       ></span>
     </div>
 
-    <div class="landing__intro" data-level-one-landing>
+    <div data-level-one-landing>
       <section class="landing__hero-info" aria-live="polite">
         <p class="landing__hero-name text-large text-white" data-hero-name>
           Shellfin
@@ -111,7 +99,7 @@
       </section>
 
       <img
-        class="hero landing__intro-sprite"
+        class="hero"
         src="./images/hero/shellfin_evolution_1.png"
         alt="Shellfin ready for battle"
         data-hero-sprite
@@ -140,6 +128,20 @@
       aria-live="polite"
     >
       <section class="home__content" aria-live="polite">
+        <div class="home__top">
+          <div class="home__gem-box" aria-live="polite">
+            <img
+              class="home__gem-icon"
+              src="./images/complete/gem.png"
+              alt=""
+              aria-hidden="true"
+            />
+            <p class="home__gem-text">
+              <span class="home__gem-value" data-hero-gems>0</span>
+              <span class="home__gem-label">Gems</span>
+            </p>
+          </div>
+        </div>
         <div class="home__identity">
           <p class="home__hero-name" data-hero-name>Shellfin</p>
           <p class="home__hero-level" data-hero-level>Level 2</p>
@@ -154,22 +156,10 @@
           >
             <div class="progress__fill home__progress-fill" aria-hidden="true"></div>
           </div>
-          <div class="home__gem-box" aria-live="polite">
-            <img
-              class="home__gem-icon"
-              src="./images/complete/gem.png"
-              alt=""
-              aria-hidden="true"
-            />
-            <p class="home__gem-text">
-              <span class="home__gem-value" data-hero-gems>0</span>
-              <span class="home__gem-label">Gems</span>
-            </p>
-          </div>
         </div>
         <img
           class="home__hero-sprite"
-          src="./images/hero/shellfin_evolution_2.png"
+          src="./images/hero/shellfin_attack_2.png"
           alt="Shellfin ready for the next adventure"
           data-hero-sprite
         />
@@ -221,8 +211,8 @@
       />
     </button>
 
-    <section
-      class="card level-one-intro__card"
+    <div
+      class="card card--home level-one-intro__card"
       data-level-one-card="welcome"
       aria-hidden="true"
     >
@@ -233,20 +223,20 @@
         width="80"
         height="80"
       />
-      <p class="level-one-intro__card-text text-medium text-dark">
+      <p class="level-one-intro__card-text">
         Hi! I’m Dr. Wave. I study math monsters. I think this egg is about to hatch!
       </p>
       <button
-        class="btn-primary level-one-intro__card-button"
+        class="btn-primary"
         type="button"
         data-level-one-card-continue
       >
         Continue
       </button>
-    </section>
+    </div>
 
-    <section
-      class="card level-one-intro__card"
+    <div
+      class="card card--home level-one-intro__card"
       data-level-one-card="battle"
       aria-hidden="true"
     >
@@ -257,17 +247,17 @@
         width="80"
         height="80"
       />
-      <p class="level-one-intro__card-text text-medium text-dark">
+      <p class="level-one-intro__card-text">
         Wow! This creature fights monsters with math. Go ahead — give it a shot!
       </p>
       <button
-        class="btn-primary level-one-intro__card-button"
+        class="btn-primary"
         type="button"
         data-level-one-card-battle
       >
         Battle
       </button>
-    </section>
+    </div>
   </div>
   <script>
     window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';

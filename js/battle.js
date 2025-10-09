@@ -1,9 +1,6 @@
 const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
-const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
-const LEVEL_UP_CELEBRATION_STORAGE_KEY = 'mathmonstersLevelUpCelebration';
-const LEVEL_UP_CELEBRATION_MIN_LEVEL = 3;
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 
 const MONSTER_DEFEAT_ANIMATION_DELAY = 1000;
@@ -52,206 +49,6 @@ const {
   readExperienceForLevel,
   computeExperienceProgress,
 } = progressUtils;
-
-const playerProfileUtils =
-  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
-  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
-
-const clonePlainObject = (value) => {
-  if (!value || typeof value !== 'object') {
-    return null;
-  }
-
-  try {
-    return JSON.parse(JSON.stringify(value));
-  } catch (error) {
-    console.warn('Unable to clone player profile for sync.', error);
-    return null;
-  }
-};
-
-let pendingSupabaseProfileSync = null;
-let supabaseProfileSyncInFlight = false;
-let cachedSupabaseUserId = null;
-let supabaseUserIdPromise = null;
-
-const resolveSupabaseUserId = async () => {
-  if (cachedSupabaseUserId) {
-    return cachedSupabaseUserId;
-  }
-
-  if (supabaseUserIdPromise) {
-    try {
-      const cached = await supabaseUserIdPromise;
-      return cached ?? null;
-    } catch (error) {
-      console.warn('Supabase user resolution failed.', error);
-      supabaseUserIdPromise = null;
-      return null;
-    }
-  }
-
-  const resolver = (async () => {
-    if (playerProfileUtils && typeof playerProfileUtils.resolveCurrentUserId === 'function') {
-      try {
-        const resolved = await playerProfileUtils.resolveCurrentUserId();
-        if (resolved) {
-          cachedSupabaseUserId = resolved;
-          return resolved;
-        }
-      } catch (error) {
-        console.warn('Player profile utility user lookup failed.', error);
-      }
-    }
-
-    const supabase = window.supabaseClient;
-    if (!supabase?.auth) {
-      return null;
-    }
-
-    try {
-      if (typeof supabase.auth.getUser === 'function') {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) {
-          console.warn('Supabase user lookup for sync failed.', error);
-        }
-        const userId = data?.user?.id ?? null;
-        if (userId) {
-          cachedSupabaseUserId = userId;
-        }
-        return userId;
-      }
-
-      if (typeof supabase.auth.getSession === 'function') {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.warn('Supabase session lookup for sync failed.', error);
-        }
-        const userId = data?.session?.user?.id ?? null;
-        if (userId) {
-          cachedSupabaseUserId = userId;
-        }
-        return userId;
-      }
-    } catch (error) {
-      console.warn('Unable to resolve Supabase user for sync.', error);
-    }
-
-    return null;
-  })();
-
-  supabaseUserIdPromise = resolver;
-
-  try {
-    const resolved = await resolver;
-    if (!resolved) {
-      supabaseUserIdPromise = null;
-    }
-    return resolved ?? null;
-  } catch (error) {
-    supabaseUserIdPromise = null;
-    console.warn('Supabase user promise rejected.', error);
-    return null;
-  }
-};
-
-const prepareProfileForSupabase = (profile, userId) => {
-  if (!profile || typeof profile !== 'object') {
-    return null;
-  }
-
-  if (
-    playerProfileUtils &&
-    typeof playerProfileUtils.ensurePlayerIdentifiers === 'function'
-  ) {
-    const ensured = playerProfileUtils.ensurePlayerIdentifiers(profile, userId);
-    if (ensured) {
-      return ensured;
-    }
-  }
-
-  const clone = clonePlainObject(profile);
-  if (!clone) {
-    return null;
-  }
-
-  if (typeof userId === 'string' && userId) {
-    if (!clone.id || clone.id === 'player-001') {
-      clone.id = userId;
-    }
-
-    if (clone.player && typeof clone.player === 'object') {
-      if (!clone.player.id || clone.player.id === 'player-001') {
-        clone.player.id = userId;
-      }
-    }
-  }
-
-  return clone;
-};
-
-const syncProfileToSupabase = async (profile) => {
-  const supabase = window.supabaseClient;
-  if (!supabase?.from) {
-    return;
-  }
-
-  const userId = await resolveSupabaseUserId();
-  if (!userId) {
-    return;
-  }
-
-  const payload = prepareProfileForSupabase(profile, userId);
-  if (!payload) {
-    return;
-  }
-
-  try {
-    const { error } = await supabase
-      .from('player_profiles')
-      .upsert({ id: userId, player_data: payload }, { onConflict: 'id' });
-
-    if (error) {
-      console.warn('Supabase profile sync failed.', error);
-    }
-  } catch (error) {
-    console.warn('Unable to sync player profile with Supabase.', error);
-  }
-};
-
-const enqueueSupabaseProfileSync = (profile) => {
-  if (!profile || typeof profile !== 'object') {
-    return;
-  }
-
-  const clonedProfile = clonePlainObject(profile);
-  if (!clonedProfile) {
-    return;
-  }
-
-  pendingSupabaseProfileSync = clonedProfile;
-  if (supabaseProfileSyncInFlight) {
-    return;
-  }
-
-  supabaseProfileSyncInFlight = true;
-
-  const flushQueue = async () => {
-    try {
-      while (pendingSupabaseProfileSync) {
-        const nextProfile = pendingSupabaseProfileSync;
-        pendingSupabaseProfileSync = null;
-        await syncProfileToSupabase(nextProfile);
-      }
-    } catch (error) {
-      console.warn('Unexpected error during Supabase profile sync.', error);
-    } finally {
-      supabaseProfileSyncInFlight = false;
-    }
-  };
-
-  flushQueue();
-};
 
 const readVisitedFlag = (storage, label) => {
   if (!storage) {
@@ -355,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const rewardCard = rewardOverlay?.querySelector('[data-reward-card]');
   const rewardCardText = rewardCard?.querySelector('.reward-overlay__card-text');
   const rewardCardButton = rewardCard?.querySelector('[data-reward-card-button]');
-  const rewardDevSkipButton = rewardOverlay?.querySelector('[data-reward-dev-skip]');
   const evolutionOverlay = document.querySelector('[data-evolution-overlay]');
   const evolutionCurrentSprite = evolutionOverlay?.querySelector(
     '[data-evolution-current]'
@@ -650,16 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const preloadedLevel = Number(window.preloadedData?.level?.battleLevel);
-    if (Number.isFinite(preloadedLevel)) {
-      return preloadedLevel;
-    }
-
-    const progressLevel = Number(
-      typeof window.preloadedData?.progress?.currentLevel === 'number'
-        ? window.preloadedData.progress.currentLevel
-        : window.preloadedData?.progress?.battleLevel
-    );
-    return Number.isFinite(progressLevel) ? progressLevel : null;
+    return Number.isFinite(preloadedLevel) ? preloadedLevel : null;
   };
   let correctAnswers = 0;
   let totalAnswers = 0;
@@ -736,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const REWARD_POTION_SRC = '../images/complete/potion.png';
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
-  const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
+  const HERO_LEVEL_2_SRC = '../images/hero/shellfin_attack_2.png';
 
   const rewardSpritePreloadCache = new Map();
 
@@ -1132,12 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const persistGemTotal = (total) => {
     const safeTotal = Math.max(0, Math.round(Number(total) || 0));
-    const previousTotal = readCurrentGemTotal();
-    const delta = safeTotal - previousTotal;
-
-    if (delta !== 0) {
-      persistProgress({ gems: delta });
-    }
+    persistProgress({ gems: safeTotal });
 
     if (window.preloadedData) {
       if (window.preloadedData.progress && typeof window.preloadedData.progress === 'object') {
@@ -1871,7 +1653,6 @@ document.addEventListener('DOMContentLoaded', () => {
       'reward-overlay__image--chest-pop',
       'reward-overlay__image--hatching',
       'reward-overlay__image--potion-pop',
-      'reward-overlay__image--potion-pulse',
       'reward-overlay__image--swap-in',
       'reward-overlay__image--swap-out',
       'reward-overlay__image--visible'
@@ -2074,20 +1855,8 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardSprite.alt = 'Potion level-up reward';
 
     setRewardStage('potion');
-    rewardSprite.classList.remove('reward-overlay__image--potion-pulse');
     void rewardSprite.offsetWidth;
     rewardSprite.classList.add('reward-overlay__image--visible');
-    rewardSprite.classList.add('reward-overlay__image--potion-pop');
-    const handlePotionPopEnd = (event) => {
-      if (!event || event.animationName !== 'reward-overlay-egg-pop') {
-        return;
-      }
-      rewardSprite.classList.remove('reward-overlay__image--potion-pop');
-      rewardSprite.classList.add('reward-overlay__image--potion-pulse');
-    };
-    rewardSprite.addEventListener('animationend', handlePotionPopEnd, {
-      once: true,
-    });
 
     rewardCardDisplayTimeout = window.setTimeout(() => {
       rewardCardDisplayTimeout = null;
@@ -2324,34 +2093,6 @@ document.addEventListener('DOMContentLoaded', () => {
     nextMissionBtn.dataset.action = 'next';
   };
 
-  const skipRewardFlowInstantly = () => {
-    if (pendingGemReward?.isFirstGemReward) {
-      markGemRewardIntroSeen();
-    }
-
-    pendingGemReward = null;
-    hasPendingLevelUpReward = false;
-    rewardAnimationPlayed = true;
-
-    if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
-      advanceBattleLevel();
-    }
-
-    if (nextMissionBtn) {
-      nextMissionBtn.removeAttribute('aria-busy');
-    }
-    nextMissionProcessing = false;
-
-    if (document.body) {
-      document.body.classList.remove('is-reward-transitioning');
-    }
-
-    resetRewardOverlay();
-    updateNextMissionButton(true);
-
-    window.location.href = '../index.html';
-  };
-
   const updateLevelProgressDisplay = () => {
     const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
     if (sanitizedEarned !== levelExperienceEarned) {
@@ -2432,19 +2173,13 @@ document.addEventListener('DOMContentLoaded', () => {
     scheduleProgressAnimation();
 
 
-    const hasExperienceRequirement = levelExperienceRequirement > 0;
     const requirementMet =
-      hasExperienceRequirement && sanitizedEarned >= levelExperienceRequirement;
+      levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
+    levelUpAvailable = requirementMet;
 
-    if (hasExperienceRequirement) {
-      levelUpAvailable = requirementMet;
-
-      if (!requirementMet) {
-        hasPendingLevelUpReward = false;
-        rewardAnimationPlayed = false;
-      }
-    } else {
-      levelUpAvailable = true;
+    if (!requirementMet) {
+      hasPendingLevelUpReward = false;
+      rewardAnimationPlayed = false;
     }
   };
 
@@ -2475,15 +2210,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const applyProgressUpdate = (baseProgress, update) => {
     const result = isPlainObject(baseProgress) ? { ...baseProgress } : {};
-
-    if (
-      Object.prototype.hasOwnProperty.call(result, 'battleLevel') &&
-      !Object.prototype.hasOwnProperty.call(result, 'currentLevel')
-    ) {
-      result.currentLevel = result.battleLevel;
-    }
-    delete result.battleLevel;
-
     if (!isPlainObject(update)) {
       return result;
     }
@@ -2496,37 +2222,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           delete result.experience;
         }
-        return;
-      }
-
-      if (key === 'battleLevel') {
-        if (value === undefined) {
-          delete result.currentLevel;
-        } else {
-          result.currentLevel = value;
-        }
-        return;
-      }
-
-      if (key === 'currentLevel') {
-        if (value === undefined) {
-          delete result.currentLevel;
-        } else {
-          result.currentLevel = value;
-        }
-        return;
-      }
-
-      if (key === 'gems') {
-        const numericValue = Number(value);
-        if (!Number.isFinite(numericValue)) {
-          return;
-        }
-
-        const baseValue = Number(result.gems);
-        const resolvedBase = Number.isFinite(baseValue) ? baseValue : 0;
-        const nextTotal = resolvedBase + Math.round(numericValue);
-        result.gems = Math.max(0, nextTotal);
         return;
       }
 
@@ -2544,178 +2239,7 @@ document.addEventListener('DOMContentLoaded', () => {
       result[key] = value;
     });
 
-    if (
-      Object.prototype.hasOwnProperty.call(result, 'battleLevel') &&
-      !Object.prototype.hasOwnProperty.call(result, 'currentLevel')
-    ) {
-      result.currentLevel = result.battleLevel;
-    }
-    delete result.battleLevel;
-
     return result;
-  };
-
-  const sanitizeProgressProfileUpdate = (update) => {
-    if (!isPlainObject(update)) {
-      return null;
-    }
-
-    const sanitized = {};
-    Object.entries(update).forEach(([key, value]) => {
-      if (key === 'timeRemainingSeconds') {
-        return;
-      }
-
-      if (isPlainObject(value)) {
-        const nested = sanitizeProgressProfileUpdate(value);
-        if (nested && Object.keys(nested).length > 0) {
-          sanitized[key] = nested;
-        }
-        return;
-      }
-
-      sanitized[key] = value;
-    });
-
-    return Object.keys(sanitized).length > 0 ? sanitized : null;
-  };
-
-  const updateStoredPlayerProfile = (updater) => {
-    if (typeof updater !== 'function') {
-      return;
-    }
-
-    try {
-      const storage = window.sessionStorage;
-      if (!storage) {
-        return;
-      }
-
-      const raw = storage.getItem(PLAYER_PROFILE_STORAGE_KEY);
-      let profile = null;
-      if (raw) {
-        try {
-          profile = JSON.parse(raw);
-        } catch (error) {
-          profile = null;
-        }
-      }
-
-      const baseProfile = isPlainObject(profile) ? profile : {};
-      const updatedProfile = updater({ ...baseProfile });
-
-      if (!updatedProfile || typeof updatedProfile !== 'object') {
-        storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
-        return;
-      }
-
-      storage.setItem(
-        PLAYER_PROFILE_STORAGE_KEY,
-        JSON.stringify(updatedProfile)
-      );
-
-      enqueueSupabaseProfileSync(updatedProfile);
-    } catch (error) {
-      console.warn('Unable to persist player profile update.', error);
-    }
-  };
-
-  const persistPlayerProfileProgress = (update) => {
-    const sanitizedUpdate = sanitizeProgressProfileUpdate(update);
-    if (!sanitizedUpdate) {
-      return;
-    }
-
-    updateStoredPlayerProfile((baseProfile) => {
-      const progressBase = isPlainObject(baseProfile.progress)
-        ? baseProfile.progress
-        : {};
-      const nextProgress = applyProgressUpdate(progressBase, sanitizedUpdate);
-      return {
-        ...baseProfile,
-        progress: nextProgress,
-      };
-    });
-  };
-
-  const persistPlayerLevel = (level) => {
-    const numericLevel = Number(level);
-    if (!Number.isFinite(numericLevel)) {
-      return;
-    }
-
-    const resolvedLevel = Math.max(1, Math.round(numericLevel));
-
-    if (window.preloadedData && isPlainObject(window.preloadedData.player)) {
-      window.preloadedData.player.currentLevel = resolvedLevel;
-      const playerProgress = isPlainObject(window.preloadedData.player.progress)
-        ? window.preloadedData.player.progress
-        : {};
-      window.preloadedData.player.progress = applyProgressUpdate(
-        playerProgress,
-        { currentLevel: resolvedLevel }
-      );
-    }
-
-    updateStoredPlayerProfile((baseProfile) => {
-      const progressBase = isPlainObject(baseProfile.progress)
-        ? baseProfile.progress
-        : {};
-      const nextProgress = applyProgressUpdate(progressBase, {
-        currentLevel: resolvedLevel,
-      });
-
-      return {
-        ...baseProfile,
-        currentLevel: resolvedLevel,
-        progress: nextProgress,
-      };
-    });
-  };
-
-  const queueLevelUpCelebration = (nextLevel, previousLevel) => {
-    const numericLevel = Number(nextLevel);
-    if (!Number.isFinite(numericLevel)) {
-      return;
-    }
-
-    const resolvedLevel = Math.max(1, Math.round(numericLevel));
-    if (resolvedLevel < LEVEL_UP_CELEBRATION_MIN_LEVEL) {
-      try {
-        window.sessionStorage?.removeItem(LEVEL_UP_CELEBRATION_STORAGE_KEY);
-      } catch (error) {
-        console.warn('Unable to clear level-up celebration flag.', error);
-      }
-      if (typeof window !== 'undefined') {
-        window.mathMonstersLevelUpCelebration = null;
-      }
-      return;
-    }
-
-    const previousNumeric = Number(previousLevel);
-    const resolvedPrevious = Number.isFinite(previousNumeric)
-      ? Math.max(1, Math.round(previousNumeric))
-      : Math.max(1, resolvedLevel - 1);
-
-    const payload = {
-      level: resolvedLevel,
-      previousLevel: resolvedPrevious,
-      timestamp: Date.now(),
-    };
-
-    if (typeof window !== 'undefined') {
-      window.mathMonstersLevelUpCelebration = payload;
-    }
-
-    try {
-      const storage = window.sessionStorage;
-      if (!storage) {
-        return;
-      }
-      storage.setItem(LEVEL_UP_CELEBRATION_STORAGE_KEY, JSON.stringify(payload));
-    } catch (error) {
-      console.warn('Unable to persist level-up celebration.', error);
-    }
   };
 
   const resolveBattleLevelForExperience = () => {
@@ -2723,16 +2247,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return currentBattleLevel;
     }
     const fallbackLevel = Number(window.preloadedData?.level?.battleLevel);
-    if (Number.isFinite(fallbackLevel)) {
-      return fallbackLevel;
-    }
-
-    const progressLevel = Number(
-      typeof window.preloadedData?.progress?.currentLevel === 'number'
-        ? window.preloadedData.progress.currentLevel
-        : window.preloadedData?.progress?.battleLevel
-    );
-    return Number.isFinite(progressLevel) ? progressLevel : null;
+    return Number.isFinite(fallbackLevel) ? fallbackLevel : null;
   };
 
   const resolveExperiencePointsForMonster = () => {
@@ -3223,8 +2738,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    persistPlayerProfileProgress(update);
-
     try {
       const storage = window.localStorage;
       if (!storage) {
@@ -3256,15 +2769,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const baseLevel =
       typeof currentBattleLevel === 'number'
         ? currentBattleLevel
-        : typeof window.preloadedData?.progress?.currentLevel === 'number'
-        ? window.preloadedData.progress.currentLevel
         : typeof window.preloadedData?.progress?.battleLevel === 'number'
         ? window.preloadedData.progress.battleLevel
         : 0;
     const nextLevel = baseLevel + 1;
-    persistProgress({ currentLevel: nextLevel });
-    persistPlayerLevel(nextLevel);
-    queueLevelUpCelebration(nextLevel, baseLevel);
+    persistProgress({ battleLevel: nextLevel });
     currentBattleLevel = nextLevel;
     battleLevelAdvanced = true;
     shouldAdvanceBattleLevel = false;
@@ -3275,11 +2784,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const battleData = data.battle ?? {};
     const heroData = data.hero ?? {};
     const monsterData = data.monster ?? {};
-    const progressDataSource = data.progress ?? data.player?.progress ?? {};
-    const progressData =
-      progressDataSource && typeof progressDataSource === 'object'
-        ? { ...progressDataSource }
-        : {};
+    const progressData = data.progress ?? data.player?.progress ?? {};
     gemRewardIntroShown = Boolean(progressData?.gemRewardIntroShown);
     const experienceMap = normalizeExperienceMap(progressData?.experience);
     if (isPlainObject(data.progress)) {
@@ -3418,38 +2923,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return result;
     };
 
-    const progressLevelCandidate = Number(
-      typeof progressData.currentLevel === 'number'
-        ? progressData.currentLevel
-        : progressData.battleLevel
-    );
-    currentBattleLevel = Number.isFinite(progressLevelCandidate)
-      ? progressLevelCandidate
-      : typeof data.level?.battleLevel === 'number'
-      ? data.level.battleLevel
-      : null;
-
-    const normalizedCurrentLevel = Number.isFinite(currentBattleLevel)
-      ? Math.max(1, Math.round(currentBattleLevel))
-      : null;
-
-    if (isPlainObject(data.progress)) {
-      if (normalizedCurrentLevel !== null) {
-        data.progress.currentLevel = normalizedCurrentLevel;
-      } else {
-        delete data.progress.currentLevel;
-      }
-      delete data.progress.battleLevel;
-    }
-
-    if (isPlainObject(data.player?.progress)) {
-      if (normalizedCurrentLevel !== null) {
-        data.player.progress.currentLevel = normalizedCurrentLevel;
-      } else {
-        delete data.player.progress.currentLevel;
-      }
-      delete data.player.progress.battleLevel;
-    }
+    currentBattleLevel =
+      typeof progressData.battleLevel === 'number'
+        ? progressData.battleLevel
+        : typeof data.level?.battleLevel === 'number'
+        ? data.level.battleLevel
+        : null;
 
     levelExperienceEarned = readExperienceForLevel(
       experienceMap,
@@ -3633,7 +3112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    persistProgress({ currentLevel: sanitizedLevel });
+    persistProgress({ battleLevel: sanitizedLevel });
     currentBattleLevel = sanitizedLevel;
     battleLevelAdvanced = false;
 
@@ -4392,7 +3871,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win && !hasPendingLevelUpReward) {
       const isInitialLevel =
-        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel === 1;
+        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel <= 1;
       const noExperienceRequirement = levelExperienceRequirement <= 0;
       if (
         isInitialLevel &&
@@ -4548,14 +4027,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     scheduleFirstQuestion();
-  }
-
-  if (rewardDevSkipButton) {
-    rewardDevSkipButton.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      skipRewardFlowInstantly();
-    });
   }
 
   if (devHeroDamageButton) {

@@ -7,8 +7,8 @@ body {
   margin: 0;
   min-height: 100%;
   overflow: hidden;
-  background: #001b41;
-  padding: clamp(16px, 4vw, 32px);
+  background: url('../images/background/background.png') no-repeat center/cover;
+  padding: 16px;
   box-sizing: border-box;
 }
 
@@ -512,14 +512,6 @@ body.is-post-evolution-active #complete-message {
   background: rgba(0, 0, 0, 0.3);
 }
 
-.reward-overlay--with-card .reward-overlay__image {
-  z-index: 0;
-}
-
-.reward-overlay--with-card .reward-overlay__card {
-  z-index: 1;
-}
-
 body.is-reward-active > *:not(.reward-overlay) {
   visibility: hidden;
   display: none !important;
@@ -632,26 +624,6 @@ body.is-reward-active .reward-overlay {
   width: 100%;
 }
 
-
-.reward-overlay__dev-skip {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 3.5rem;
-  height: 3.5rem;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  opacity: 0;
-  z-index: 1;
-}
-
-.reward-overlay__dev-skip:focus-visible {
-  outline: 2px solid #fff;
-  opacity: 0.2;
-}
-
 .reward-overlay__image {
   --reward-direction: 1;
   --reward-scale: 1;
@@ -691,11 +663,6 @@ body.is-reward-active .reward-overlay {
 
 .reward-overlay__image--potion-pop {
   animation: reward-overlay-egg-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.reward-overlay__image--potion-pulse {
-  animation: reward-overlay-potion-pulse 2.4s ease-in-out infinite;
-  animation-fill-mode: both;
 }
 
 .reward-overlay__image--swap-out {
@@ -837,28 +804,6 @@ body.is-reward-active .reward-overlay {
   100% {
     transform: scaleX(var(--reward-direction)) scale(0.5);
     opacity: 0;
-  }
-}
-
-@keyframes reward-overlay-potion-pulse {
-  0% {
-    transform: scaleX(var(--reward-direction)) scale(1);
-    opacity: 1;
-  }
-
-  45% {
-    transform: scaleX(var(--reward-direction)) scale(1.08);
-    opacity: 1;
-  }
-
-  70% {
-    transform: scaleX(var(--reward-direction)) scale(0.98);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scaleX(var(--reward-direction)) scale(1);
-    opacity: 1;
   }
 }
 
@@ -1069,6 +1014,7 @@ body.is-reward-active .reward-overlay {
 }
 
 .battle-complete-card__sprite-frame {
+  position: relative;
   width: 200px;
   height: 200px;
   display: flex;

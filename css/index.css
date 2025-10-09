@@ -31,61 +31,8 @@ body {
   outline: none;
 }
 
-.dev-player-data {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 48px;
-  height: 48px;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 1000;
-}
-
-.dev-player-data:focus {
-  outline: none;
-}
-
-.dev-sign-out {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 48px;
-  height: 48px;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 1000;
-}
-
-.dev-sign-out:focus {
-  outline: none;
-}
-
 body.is-level-one-landing {
   margin: 0;
-}
-
-body.is-level-one-landing main.landing {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(32px, 8vw, 96px) clamp(16px, 4vw, 32px);
-}
-
-body.is-level-one-landing .landing__intro {
-  position: relative;
-  width: min(520px, 90vw);
-  min-height: min(620px, 80vh);
-  display: grid;
-  place-items: center;
 }
 
 body.is-standard-landing {
@@ -349,23 +296,15 @@ body.is-level-one-landing .monster {
 }
 
 body.is-level-one-landing .hero {
-  position: relative;
-  left: auto;
-  top: auto;
-  width: min(360px, 80vw);
-  max-width: clamp(220px, 60vw, 360px);
-  height: auto;
-  transform: translate3d(0, 32px, 0);
   opacity: 0;
   visibility: hidden;
   animation: none;
-  transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.36, 0, 0.66, 1);
+  transition: opacity 0.4s ease;
 }
 
 body.is-level-one-landing .hero.is-revealed {
   opacity: 1;
   visibility: visible;
-  transform: translate3d(0, 0, 0);
 }
 
 body.is-level-one-landing .hero.is-exiting {
@@ -381,12 +320,8 @@ body:not(.is-level-one-landing) .level-one-intro {
   position: fixed;
   inset: 0;
   display: grid;
-  grid-template-rows: 1fr auto;
-  justify-items: center;
-  align-items: center;
-  gap: 32px;
-  padding: 32px 16px 48px;
-  min-height: 100vh;
+  place-items: center;
+  padding: clamp(16px, 5vw, 32px);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -397,16 +332,15 @@ body:not(.is-level-one-landing) .level-one-intro {
 .level-one-intro__overlay {
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.3);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.35s ease;
-  z-index: 5;
+  z-index: 1;
 }
 
 .level-one-intro__overlay.is-visible {
   opacity: 1;
-  pointer-events: auto;
 }
 
 .level-one-intro.is-active {
@@ -415,18 +349,47 @@ body:not(.is-level-one-landing) .level-one-intro {
   pointer-events: auto;
 }
 .level-one-intro__egg-button {
-  width: 240px;
-  height: 240px;
+  position: relative;
+  width: 230px;
+  height: 230px;
   padding: 0;
-  margin: 0;
   border: none;
-  background: transparent;
+  border-radius: 50%;
+  background: none;
+  background-image: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: default;
   transition: opacity 0.3s ease;
   z-index: 4;
+  overflow: visible;
+}
+
+.level-one-intro__egg-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  background: rgba(2, 221, 255, 0.50);
+  filter: blur(64px);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  transition-delay: 0s;
+}
+
+.level-one-intro__egg-button.is-visible::before {
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+.level-one-intro__egg-button:hover,
+.level-one-intro__egg-button:focus-visible {
+  background: none;
+  background-image: none;
+  transform: none;
 }
 
 .level-one-intro__egg-button[disabled] {
@@ -442,7 +405,7 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 .level-one-intro__egg-image {
   width: 100%;
-  height: auto;
+  height: 100%;
   object-fit: contain;
   transform: scale(1);
   opacity: 0;
@@ -460,22 +423,36 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 
 .level-one-intro__card {
-  --surface-padding: 24px;
-  --card-max-width: 480px;
-  --card-gap: 16px;
-  justify-self: left;
+  --card-translate-y: 24px;
+  opacity: 0;
+  pointer-events: none;
+  align-items: flex-start;
+  text-align: left;
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(
+    var(--card-translate-x, -50%),
+    var(--card-translate-y, 24px),
+    var(--card-translate-z, 0)
+  );
+  position: relative;
+  z-index: 5;
 }
 
 .level-one-intro__card.is-visible {
-  --card-translate-y: 0;
+  --card-translate-y: 0px;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .level-one-intro__card.is-exiting {
-  --card-translate-y: 40px;
+  --card-translate-y: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.45, 0, 0.75, 0.45);
 }
 
 .level-one-intro__card-avatar {
-  align-self: center;
+  align-self: flex-start;
   width: 80px;
   height: 80px;
   object-fit: contain;
@@ -483,14 +460,10 @@ body:not(.is-level-one-landing) .level-one-intro {
 
 .level-one-intro__card-text {
   margin: 0;
-  color: inherit;
+  color: rgba(31, 45, 72, 0.96);
   font-size: var(--text-size-medium);
   line-height: 1.4;
-  text-align: center;
-}
-
-.level-one-intro__card-button {
-  width: 100%;
+  text-align: left;
 }
 
 @keyframes level-one-egg-pop {
@@ -656,7 +629,7 @@ body.is-battle-transition .bubbles {
   }
 }
 
-.card.is-battle-transition {
+.card--home.is-battle-transition {
   will-change: transform, opacity;
   animation: card-pop-out 0.58s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
