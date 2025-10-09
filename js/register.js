@@ -1,7 +1,8 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
-const STARTING_BATTLE_LEVEL = 2;
+const STARTING_LEVEL = 2;
+const STARTING_BATTLE = 1;
 const HOME_PAGE_PATH = '../index.html';
 
 const isPlainObject = (value) =>
@@ -39,7 +40,9 @@ const applyStartingBattleLevel = (playerData) => {
   if (!isPlainObject(clonedData)) {
     return {
       progress: {
-        battleLevel: STARTING_BATTLE_LEVEL,
+        currentLevel: STARTING_LEVEL,
+        currentBattle: STARTING_BATTLE,
+        battleLevel: STARTING_LEVEL,
       },
       battleVariables: {
         timeRemainingSeconds: null,
@@ -50,7 +53,7 @@ const applyStartingBattleLevel = (playerData) => {
             sprite: '/mathmonsters/images/hero/shellfin_evolution_1.png',
           },
         },
-        [STARTING_BATTLE_LEVEL]: {
+        [STARTING_LEVEL]: {
           hero: {
             sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
           },
@@ -65,7 +68,9 @@ const applyStartingBattleLevel = (playerData) => {
 
   clonedData.progress = {
     ...progressSection,
-    battleLevel: STARTING_BATTLE_LEVEL,
+    currentLevel: STARTING_LEVEL,
+    currentBattle: STARTING_BATTLE,
+    battleLevel: STARTING_LEVEL,
   };
 
   if (!isPlainObject(clonedData.battleVariables)) {
@@ -86,8 +91,8 @@ const applyStartingBattleLevel = (playerData) => {
     };
   }
 
-  if (!isPlainObject(clonedData.battleLevel[STARTING_BATTLE_LEVEL])) {
-    clonedData.battleLevel[STARTING_BATTLE_LEVEL] = {
+  if (!isPlainObject(clonedData.battleLevel[STARTING_LEVEL])) {
+    clonedData.battleLevel[STARTING_LEVEL] = {
       hero: {
         sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
       },
@@ -324,7 +329,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           data: {
             gradeLevel,
             referralSource,
-            accountLevel: STARTING_BATTLE_LEVEL,
+            accountLevel: STARTING_LEVEL,
             playerData: startingPlayerData,
           },
         },
@@ -350,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         try {
           await supabase.auth.updateUser({
-            data: { accountLevel: STARTING_BATTLE_LEVEL },
+            data: { accountLevel: STARTING_LEVEL },
           });
         } catch (error) {
           console.warn(

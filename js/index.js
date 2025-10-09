@@ -1147,8 +1147,15 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       : { ...baseBattleVariables };
 
   if (storedProgress && typeof storedProgress === 'object') {
-    if (typeof storedProgress.battleLevel === 'number') {
+    if (typeof storedProgress.currentLevel === 'number') {
+      mergedProgress.currentLevel = storedProgress.currentLevel;
+      mergedProgress.battleLevel = storedProgress.currentLevel;
+    } else if (typeof storedProgress.battleLevel === 'number') {
       mergedProgress.battleLevel = storedProgress.battleLevel;
+    }
+
+    if (typeof storedProgress.currentBattle === 'number') {
+      mergedProgress.currentBattle = storedProgress.currentBattle;
     }
 
     if (typeof storedProgress.timeRemainingSeconds === 'number') {
@@ -1213,6 +1220,22 @@ const mergePlayerWithProgress = (rawPlayerData) => {
         ...mergedProgress.experience,
       };
     }
+  }
+
+  if (
+    Number.isFinite(player.progress?.currentLevel) &&
+    !Number.isFinite(player.progress?.battleLevel)
+  ) {
+    player.progress.battleLevel = Math.max(1, Math.floor(player.progress.currentLevel));
+  }
+
+  if (!Number.isFinite(player.progress?.currentBattle) || player.progress.currentBattle <= 0) {
+    player.progress.currentBattle = 1;
+  } else {
+    player.progress.currentBattle = Math.max(
+      1,
+      Math.round(player.progress.currentBattle)
+    );
   }
 
   return player;
@@ -1912,6 +1935,18 @@ const resolveBattleCountForLevel = (level, levelsList) => {
   return count > 0 ? count : 1;
 };
 
+const resolveProgressLevel = (progress) => {
+  if (!progress || typeof progress !== 'object') {
+    return null;
+  }
+
+  return (
+    normalizeBattleLevel(progress.currentLevel) ??
+    normalizeBattleLevel(progress.battleLevel) ??
+    normalizeBattleLevel(progress.level)
+  );
+};
+
 const determineBattlePreview = (levelsData, playerData) => {
   const player = mergePlayerWithProgress(playerData);
   const { levels, mathTypeLabel, mathTypeKey } = deriveMathTypeLevels(
@@ -1924,7 +1959,7 @@ const determineBattlePreview = (levelsData, playerData) => {
     return { levels, player, preview: null };
   }
 
-  const progressLevel = normalizeBattleLevel(player?.progress?.battleLevel);
+  const progressLevel = resolveProgressLevel(player?.progress);
   const activeLevel = (() => {
     if (progressLevel !== null) {
       const match = levels.find(
