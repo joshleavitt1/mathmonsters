@@ -469,8 +469,8 @@ const computeHomeBattleProgress = (data) => {
       return resolveLevelByBattleNumber(data.levels, normalizedCurrentLevel);
     }
 
-    if (Number.isFinite(normalizedBattleLevel)) {
-      return resolveLevelByBattleNumber(data.levels, normalizedBattleLevel) || null;
+    if (Number.isFinite(normalizedcurrentLevel)) {
+      return resolveLevelByBattleNumber(data.levels, normalizedcurrentLevel) || null;
     }
 
     return null;
