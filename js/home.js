@@ -958,7 +958,9 @@ const updateHomeFromPreloadedData = () => {
     .map((value) => Number(value))
     .find((value) => Number.isFinite(value) && value > 0);
   const heroLevelEl = document.querySelector('[data-hero-level]');
-  const progressElement = document.querySelector('[data-battle-progress]');
+  const progressElement = document.querySelector(
+    '.home__progress[data-battle-progress]'
+  );
 
   const previousProgressState = readStoredHomeBattleProgress();
   const progressState = computeHomeBattleProgress(data);
