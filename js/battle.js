@@ -17,6 +17,7 @@ const HERO_EVOLUTION_CARD_REVEAL_DELAY_MS = 2000;
 const REWARD_CARD_CLOSE_DURATION_MS = 1000;
 const REWARD_SPRITE_SWAP_DURATION_MS = 400;
 const REWARD_SPRITE_HOLD_DURATION_MS = 1000;
+const SPRITE_ENTRANCE_READY_DELAY_MS = 1400;
 const GEM_REWARD_WIN_AMOUNT = 5;
 const GEM_REWARD_LOSS_AMOUNT = 1;
 const GEM_REWARD_INITIAL_PAUSE_MS = 500;
@@ -2586,6 +2587,103 @@ document.addEventListener('DOMContentLoaded', () => {
     img.classList.add('battle-ready');
   };
 
+  const createSpriteEntranceController = (
+    img,
+    { animationNames = [], readyDelay = SPRITE_ENTRANCE_READY_DELAY_MS } = {}
+  ) => {
+    if (!img) {
+      return null;
+    }
+
+    const allowedAnimationNames = Array.isArray(animationNames)
+      ? animationNames.filter(Boolean)
+      : [];
+    const animationNameSet = new Set(allowedAnimationNames);
+
+    let entranceActive = false;
+    let readyTimeoutId = null;
+
+    const clearReadyTimeout = () => {
+      if (readyTimeoutId !== null) {
+        window.clearTimeout(readyTimeoutId);
+        readyTimeoutId = null;
+      }
+    };
+
+    const finishEntrance = () => {
+      if (!entranceActive) {
+        return;
+      }
+      entranceActive = false;
+      clearReadyTimeout();
+      markBattleReady(img);
+    };
+
+    const isEntranceAnimationEvent = (event) => {
+      if (!event || event.target !== img) {
+        return false;
+      }
+
+      if (animationNameSet.size === 0) {
+        return true;
+      }
+
+      return animationNameSet.has(event.animationName);
+    };
+
+    const handleAnimationEvent = (event) => {
+      if (!entranceActive) {
+        return;
+      }
+
+      if (!isEntranceAnimationEvent(event)) {
+        return;
+      }
+
+      finishEntrance();
+    };
+
+    const prepareForEntrance = () => {
+      clearReadyTimeout();
+      entranceActive = false;
+      img.classList.remove('battle-ready');
+      img.classList.remove('slide-in');
+      void img.offsetWidth;
+    };
+
+    const playEntrance = () => {
+      clearReadyTimeout();
+      entranceActive = true;
+      img.classList.remove('battle-ready');
+      img.classList.remove('slide-in');
+      void img.offsetWidth;
+      img.classList.add('slide-in');
+
+      if (readyDelay > 0) {
+        readyTimeoutId = window.setTimeout(() => {
+          finishEntrance();
+        }, readyDelay);
+      } else {
+        finishEntrance();
+      }
+    };
+
+    img.addEventListener('animationend', handleAnimationEvent);
+    img.addEventListener('animationcancel', handleAnimationEvent);
+
+    return {
+      prepareForEntrance,
+      playEntrance,
+      markReady: finishEntrance,
+      cancel: () => {
+        clearReadyTimeout();
+        entranceActive = false;
+        img.removeEventListener('animationend', handleAnimationEvent);
+        img.removeEventListener('animationcancel', handleAnimationEvent);
+      },
+    };
+  };
+
   const updateHeroAttackDisplay = () => {
     if (heroAttackVal) {
       heroAttackVal.textContent = hero.attack;
@@ -2729,21 +2827,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   };
 
-  if (heroImg) {
-    heroImg.classList.add('slide-in');
-    heroImg.addEventListener('animationend', () => markBattleReady(heroImg), {
-      once: true,
-    });
-    window.setTimeout(() => markBattleReady(heroImg), 1400);
-  }
+  const heroSpriteEntrance = createSpriteEntranceController(heroImg, {
+    animationNames: ['hero-enter'],
+  });
 
-  if (monsterImg) {
-    monsterImg.classList.add('slide-in');
-    monsterImg.addEventListener('animationend', () => markBattleReady(monsterImg), {
-      once: true,
-    });
-    window.setTimeout(() => markBattleReady(monsterImg), 1400);
-  }
+  const monsterSpriteEntrance = createSpriteEntranceController(monsterImg, {
+    animationNames: ['monster-enter'],
+  });
 
   window.requestAnimationFrame(() => {
     heroStats?.classList.add('show');
@@ -4394,7 +4484,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (summaryTimeValue) {
       summaryTimeValue.classList.remove('goal-result--met', 'goal-result--missed');
     }
+    heroSpriteEntrance?.prepareForEntrance();
+    monsterSpriteEntrance?.prepareForEntrance();
     loadData();
+    heroSpriteEntrance?.playEntrance();
+    monsterSpriteEntrance?.playEntrance();
     updateAccuracyDisplays();
     startBattleTimer();
 
