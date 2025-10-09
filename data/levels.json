@@ -64,12 +64,13 @@
           "name": "Level 1 Questions",
           "battles": [
             {
-              "type": "standard",
+              "type": "boss",
               "questions": {
                 "path": "questions/level_1_questions.json"
               },
               "monster": {
-                "spritePool": "standardPool"
+                "sprite": "/mathmonsters/images/monster/addition_boss_1.png",
+                "name": "Octomurk"
               }
             }
           ]
