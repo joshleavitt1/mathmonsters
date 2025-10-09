@@ -2123,6 +2123,86 @@ const updateHomeTutorialHighlights = ({ currentLevel, currentBattle } = {}) => {
   }
 };
 
+const normalizeLandingProgressValue = (value) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return 0;
+  }
+  if (numericValue <= 0) {
+    return 0;
+  }
+  if (numericValue >= 1) {
+    return 1;
+  }
+  return numericValue;
+};
+
+const scheduleLandingProgressAnimation = (callback) => {
+  if (typeof callback !== 'function') {
+    return;
+  }
+
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.requestAnimationFrame === 'function'
+  ) {
+    window.requestAnimationFrame(callback);
+    return;
+  }
+
+  setTimeout(callback, 16);
+};
+
+const animateLandingProgressFill = (progressElement, targetValue) => {
+  if (!progressElement) {
+    return;
+  }
+
+  const resolvedValue = normalizeLandingProgressValue(targetValue);
+  if (resolvedValue <= 0) {
+    progressElement.style.setProperty('--progress-value', '0');
+    return;
+  }
+
+  let prefersReducedMotion = false;
+  try {
+    prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch (error) {
+    prefersReducedMotion = false;
+  }
+
+  if (prefersReducedMotion) {
+    progressElement.style.setProperty('--progress-value', `${resolvedValue}`);
+    return;
+  }
+
+  const progressFill = progressElement.querySelector('.progress__fill');
+  progressElement.style.setProperty('--progress-value', '0');
+
+  if (progressFill) {
+    const previousTransition = progressFill.style.transition;
+    progressFill.style.transition = 'none';
+
+    // Force the browser to apply the zeroed state before animating to the target value.
+    void progressFill.offsetWidth;
+
+    if (previousTransition) {
+      progressFill.style.transition = previousTransition;
+    } else {
+      progressFill.style.removeProperty('transition');
+    }
+  } else {
+    void progressElement.offsetWidth;
+  }
+
+  scheduleLandingProgressAnimation(() => {
+    progressElement.style.setProperty('--progress-value', `${resolvedValue}`);
+  });
+};
+
 const applyBattlePreview = (previewData = {}, levels = []) => {
   const heroImageElements = document.querySelectorAll('[data-hero-sprite]');
   const monsterImage = document.querySelector('[data-monster]');
@@ -2259,7 +2339,7 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
       const progressValue = totalBattles > 0
         ? Math.max(0, Math.min(1, currentBattle / totalBattles))
         : 0;
-      progressElement.style.setProperty('--progress-value', progressValue);
+      animateLandingProgressFill(progressElement, progressValue);
       progressElement.setAttribute('aria-valuemin', '0');
       progressElement.setAttribute('aria-valuemax', `${totalBattles}`);
       progressElement.setAttribute('aria-valuenow', `${currentBattle}`);
@@ -2280,7 +2360,7 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
       typeof progressTextRaw === 'string' ? progressTextRaw.trim() : '';
     const earnedCount = Number(previewData?.progressExperienceEarned);
     const totalCount = Number(previewData?.progressExperienceTotal);
-    progressElement.style.setProperty('--progress-value', progressValue);
+    animateLandingProgressFill(progressElement, progressValue);
     progressElement.setAttribute('aria-valuemin', '0');
     let resolvedProgressLabel = '';
 
