@@ -2279,7 +2279,9 @@ document.addEventListener('DOMContentLoaded', () => {
       typeof window !== 'undefined' &&
       typeof window.requestAnimationFrame === 'function'
         ? window.requestAnimationFrame.bind(window)
-        : (callback) => window.setTimeout(callback, 16);
+        : typeof setTimeout === 'function'
+        ? (callback) => setTimeout(callback, 16)
+        : () => {};
 
     const applyProgressVisuals = () => {
       requestProgressFrame(() => {
@@ -2294,14 +2296,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const scheduleProgressAnimation = () => {
       if (levelProgressAnimationTimeout !== null) {
-        window.clearTimeout(levelProgressAnimationTimeout);
+        clearTimeout(levelProgressAnimationTimeout);
         levelProgressAnimationTimeout = null;
       }
 
       const animationDelay = LEVEL_PROGRESS_ANIMATION_DELAY_MS;
 
       if (animationDelay > 0) {
-        levelProgressAnimationTimeout = window.setTimeout(() => {
+        levelProgressAnimationTimeout = setTimeout(() => {
           levelProgressAnimationTimeout = null;
           applyProgressVisuals();
         }, animationDelay);
@@ -2331,11 +2333,12 @@ document.addEventListener('DOMContentLoaded', () => {
     scheduleProgressAnimation();
 
 
+    const hasExperienceRequirement = levelExperienceRequirement > 0;
     const requirementMet =
-      levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
+      hasExperienceRequirement && sanitizedEarned >= levelExperienceRequirement;
     levelUpAvailable = requirementMet;
 
-    if (!requirementMet) {
+    if (!requirementMet && hasExperienceRequirement) {
       hasPendingLevelUpReward = false;
       rewardAnimationPlayed = false;
     }
@@ -4020,10 +4023,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const mathProgressUpdate = computeNextMathProgressOnWin();
       shouldAdvanceCurrentLevel = Boolean(mathProgressUpdate?.advanceLevel);
 
+      const globalProgressUpdate = computeNextGlobalProgressOnWin(
+        Number.isFinite(mathProgressUpdate?.totalRequired)
+          ? mathProgressUpdate.totalRequired
+          : undefined
+      );
+
+      const updatePayload = {};
+
       if (mathProgressUpdate && mathProgressUpdate.mathKey) {
-        const globalProgressUpdate = computeNextGlobalProgressOnWin(
-          mathProgressUpdate.totalRequired
-        );
+        const nextBattleValue = Number(mathProgressUpdate.nextBattle);
+        const resolvedNextBattle = Number.isFinite(nextBattleValue)
+          ? Math.max(1, Math.round(nextBattleValue))
+          : null;
         const nextLevelNumber = Number.isFinite(
           mathProgressUpdate.nextCurrentLevelNumber
         )
@@ -4033,24 +4045,28 @@ document.addEventListener('DOMContentLoaded', () => {
           ? Math.max(1, Math.round(mathProgressUpdate.nextLevelTotal))
           : null;
 
-        const updatePayload = {
-          [mathProgressUpdate.mathKey]: {
-            currentBattle: Math.max(1, Math.round(mathProgressUpdate.nextBattle)),
-          },
-        };
+        if (resolvedNextBattle !== null) {
+          updatePayload[mathProgressUpdate.mathKey] = {
+            currentBattle: resolvedNextBattle,
+          };
 
-        if (nextLevelNumber !== null) {
-          updatePayload[mathProgressUpdate.mathKey].currentLevel = nextLevelNumber;
+          if (nextLevelNumber !== null) {
+            updatePayload[mathProgressUpdate.mathKey].currentLevel =
+              nextLevelNumber;
+          }
+
+          if (nextLevelTotal !== null) {
+            updatePayload[mathProgressUpdate.mathKey].totalBattles =
+              nextLevelTotal;
+          }
         }
+      }
 
-        if (nextLevelTotal !== null) {
-          updatePayload[mathProgressUpdate.mathKey].totalBattles = nextLevelTotal;
-        }
+      if (globalProgressUpdate && typeof globalProgressUpdate === 'object') {
+        Object.assign(updatePayload, globalProgressUpdate);
+      }
 
-        if (globalProgressUpdate && typeof globalProgressUpdate === 'object') {
-          Object.assign(updatePayload, globalProgressUpdate);
-        }
-
+      if (Object.keys(updatePayload).length > 0) {
         persistProgress(updatePayload);
       }
     } else {

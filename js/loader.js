@@ -424,6 +424,19 @@ const mergePlayerWithStoredProfile = (player, storedProfile) => {
       : { ...storedProfile.battleVariables };
   }
 
+  if (isPlainObject(storedProfile.progress)) {
+    const mergedProgress = mergeProgressState(
+      nextPlayer.progress,
+      storedProfile.progress
+    );
+
+    if (Object.keys(mergedProgress).length > 0) {
+      nextPlayer.progress = mergedProgress;
+    } else {
+      delete nextPlayer.progress;
+    }
+  }
+
   if (isPlainObject(storedProfile.currentLevel)) {
     const mergedCurrentLevel = mergeCurrentLevelMap(
       storedProfile.currentLevel,

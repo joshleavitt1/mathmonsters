@@ -104,6 +104,12 @@ body.home-page {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
+.home__progress-fill {
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation: home-progress-fill-slide 0.6s ease forwards;
+}
+
 .home__progress-fill::after {
   inset: 2px 6px 0px 6px;
   height: 6px;
@@ -143,6 +149,16 @@ body.home-page {
   padding-top: 24;
 }
 
+@keyframes home-progress-fill-slide {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
 .home__actions {
   width: 100%;
   max-width: 420px;
@@ -178,6 +194,25 @@ body.home-page {
   outline: 2px solid rgba(255, 255, 255, 0.3);
   outline-offset: 2px;
   opacity: 0.1;
+}
+
+.home__level-skip-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1000;
+  touch-action: manipulation;
+}
+
+.home__level-skip-button:focus-visible {
+  outline: none;
 }
 
 .home__action {
