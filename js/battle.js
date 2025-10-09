@@ -2279,7 +2279,9 @@ document.addEventListener('DOMContentLoaded', () => {
       typeof window !== 'undefined' &&
       typeof window.requestAnimationFrame === 'function'
         ? window.requestAnimationFrame.bind(window)
-        : (callback) => window.setTimeout(callback, 16);
+        : typeof setTimeout === 'function'
+        ? (callback) => setTimeout(callback, 16)
+        : () => {};
 
     const applyProgressVisuals = () => {
       requestProgressFrame(() => {
@@ -2294,14 +2296,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const scheduleProgressAnimation = () => {
       if (levelProgressAnimationTimeout !== null) {
-        window.clearTimeout(levelProgressAnimationTimeout);
+        clearTimeout(levelProgressAnimationTimeout);
         levelProgressAnimationTimeout = null;
       }
 
       const animationDelay = LEVEL_PROGRESS_ANIMATION_DELAY_MS;
 
       if (animationDelay > 0) {
-        levelProgressAnimationTimeout = window.setTimeout(() => {
+        levelProgressAnimationTimeout = setTimeout(() => {
           levelProgressAnimationTimeout = null;
           applyProgressVisuals();
         }, animationDelay);

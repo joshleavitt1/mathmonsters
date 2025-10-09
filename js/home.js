@@ -804,7 +804,7 @@ const animateProgressValue = (progressElement, ratio, options = {}) => {
 
     const finalize = () => {
       if (fallbackTimeout !== null) {
-        window.clearTimeout(fallbackTimeout);
+        clearTimeout(fallbackTimeout);
         fallbackTimeout = null;
       }
       if (progressFill && progressFill._progressAnimationCleanup === cleanup) {
@@ -815,7 +815,7 @@ const animateProgressValue = (progressElement, ratio, options = {}) => {
 
     const cleanup = () => {
       if (fallbackTimeout !== null) {
-        window.clearTimeout(fallbackTimeout);
+        clearTimeout(fallbackTimeout);
         fallbackTimeout = null;
       }
       if (progressFill) {
@@ -837,12 +837,12 @@ const animateProgressValue = (progressElement, ratio, options = {}) => {
     if (progressFill) {
       progressFill.addEventListener('transitionend', handleTransitionEnd);
       progressFill._progressAnimationCleanup = cleanup;
-      fallbackTimeout = window.setTimeout(() => {
+      fallbackTimeout = setTimeout(() => {
         cleanup();
         finalize();
       }, 700);
     } else {
-      fallbackTimeout = window.setTimeout(finalize, 450);
+      fallbackTimeout = setTimeout(finalize, 450);
     }
 
     progressElement.style.setProperty('--progress-value', `${normalizedRatio}`);
