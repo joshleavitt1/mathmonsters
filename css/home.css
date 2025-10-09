@@ -159,6 +159,27 @@ body.home-page {
   max-width: 420px;
 }
 
+.dev-signout-button {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1000;
+  touch-action: manipulation;
+}
+
+.dev-signout-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+  opacity: 0.1;
+}
+
 .home__action {
   display: inline-flex;
   position: relative;
