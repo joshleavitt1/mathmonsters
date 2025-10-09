@@ -381,6 +381,7 @@ const computeHomeBattleProgress = (data) => {
     data.level?.battleLevel,
     data.battle?.battleLevel,
     data.player?.currentLevel,
+    mathProgressEntry?.currentLevel,
   ];
 
   if (mathProgressKey && typeof mathProgressKey === 'string') {
@@ -400,9 +401,12 @@ const computeHomeBattleProgress = (data) => {
     currentBattle = 1;
   }
 
-  let totalBattles = clampPositiveInteger(mathProgressEntry?.currentLevel, {
-    allowZeroFallback: true,
-  });
+  let totalBattles = clampPositiveInteger(
+    mathProgressEntry?.totalBattles ?? mathProgressEntry?.currentLevel,
+    {
+      allowZeroFallback: true,
+    }
+  );
 
   if (!Number.isFinite(totalBattles) || totalBattles === null) {
     totalBattles = null;
