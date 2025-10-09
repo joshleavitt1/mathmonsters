@@ -2632,13 +2632,16 @@ const setupSecretLevelShortcut = () => {
 
     const updatedMathProgress = {
       ...existingMathProgress,
+      currentBattle: DEV_RESET_TARGET_BATTLE,
       currentLevel: SECRET_LEVEL_TARGET_LEVEL,
     };
 
     const updatedProgress = {
       ...normalizedProgress,
       battleLevel: SECRET_LEVEL_TARGET_LEVEL,
+      currentBattle: DEV_RESET_TARGET_BATTLE,
       currentLevel: SECRET_LEVEL_TARGET_LEVEL,
+      gems: 0,
       [mathKey]: updatedMathProgress,
     };
 
