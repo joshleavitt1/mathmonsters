@@ -141,6 +141,7 @@ body.home-page {
   animation: hero-swim 4.5s ease-in-out 0.6s infinite;
   will-change: transform;
   pointer-events: none;
+  padding-top: 24;
 }
 
 .home__actions {
