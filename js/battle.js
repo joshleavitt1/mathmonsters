@@ -2955,15 +2955,49 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const createMirroredProgressUpdate = (update) => {
+    if (!isPlainObject(update)) {
+      return null;
+    }
+
+    const filteredEntries = {};
+
+    Object.entries(update).forEach(([key, value]) => {
+      if (key === 'progress') {
+        return;
+      }
+
+      filteredEntries[key] = value;
+    });
+
+    if (Object.keys(filteredEntries).length === 0) {
+      return null;
+    }
+
+    const mirrored = applyProgressUpdate({}, filteredEntries);
+    return Object.keys(mirrored).length > 0 ? mirrored : null;
+  };
+
   function persistProgress(update) {
     if (!isPlainObject(update)) {
       return;
     }
 
+    const mirroredProgressUpdate = createMirroredProgressUpdate(update);
+    const updatePayload = mirroredProgressUpdate
+      ? {
+          ...update,
+          progress: applyProgressUpdate(
+            isPlainObject(update.progress) ? update.progress : {},
+            mirroredProgressUpdate
+          ),
+        }
+      : update;
+
     if (window.preloadedData) {
       const mergedProgress = applyProgressUpdate(
         window.preloadedData.progress,
-        update
+        updatePayload
       );
       window.preloadedData.progress = mergedProgress;
 
@@ -2981,12 +3015,12 @@ document.addEventListener('DOMContentLoaded', () => {
       ) {
         window.preloadedData.player.progress = applyProgressUpdate(
           window.preloadedData.player.progress,
-          update
+          updatePayload
         );
       }
 
-      if (Object.prototype.hasOwnProperty.call(update, 'timeRemainingSeconds')) {
-        const timeRemaining = update.timeRemainingSeconds;
+      if (Object.prototype.hasOwnProperty.call(updatePayload, 'timeRemainingSeconds')) {
+        const timeRemaining = updatePayload.timeRemainingSeconds;
 
         if (
           window.preloadedData.battleVariables &&
@@ -3031,7 +3065,7 @@ document.addEventListener('DOMContentLoaded', () => {
           storedProgress = {};
         }
       }
-      const mergedProgress = applyProgressUpdate(storedProgress, update);
+      const mergedProgress = applyProgressUpdate(storedProgress, updatePayload);
       storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(mergedProgress));
     } catch (error) {
       console.warn('Unable to save progress.', error);
