@@ -4088,8 +4088,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (win && !hasPendingLevelUpReward) {
-      const isInitialLevel =
-        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel <= 1;
+      // If the current level cannot be resolved (common during the intro flow),
+      // treat it as level one so the evolution fallback still runs.
+      const isInitialLevel = Number.isFinite(resolvedCurrentLevel)
+        ? resolvedCurrentLevel <= 1
+        : true;
       const noExperienceRequirement = levelExperienceRequirement <= 0;
       if (
         isInitialLevel &&
