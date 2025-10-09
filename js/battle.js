@@ -2333,11 +2333,12 @@ document.addEventListener('DOMContentLoaded', () => {
     scheduleProgressAnimation();
 
 
+    const hasExperienceRequirement = levelExperienceRequirement > 0;
     const requirementMet =
-      levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
+      hasExperienceRequirement && sanitizedEarned >= levelExperienceRequirement;
     levelUpAvailable = requirementMet;
 
-    if (!requirementMet) {
+    if (!requirementMet && hasExperienceRequirement) {
       hasPendingLevelUpReward = false;
       rewardAnimationPlayed = false;
     }
