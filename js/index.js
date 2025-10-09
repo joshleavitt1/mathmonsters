@@ -2108,11 +2108,7 @@ const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
     }
 
     if (battleAction) {
-      battleAction.classList.add(
-        'pulsating-glow',
-        'home__action--glow',
-        'home__action--glow-sword'
-      );
+      battleAction.classList.add('home__action--glow', 'home__action--glow-sword');
     }
 
     actionsContainer.classList.add('home__actions--single');
@@ -2123,11 +2119,7 @@ const updateHomeTutorialHighlights = ({ battleLevel, currentBattle } = {}) => {
     if (shopAction) {
       shopAction.hidden = false;
       shopAction.removeAttribute('aria-hidden');
-      shopAction.classList.add(
-        'pulsating-glow',
-        'home__action--glow',
-        'home__action--glow-shop'
-      );
+      shopAction.classList.add('home__action--glow', 'home__action--glow-shop');
     }
 
     return;
