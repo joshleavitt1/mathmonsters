@@ -882,16 +882,40 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   };
 
-  const getBattleCountForLevelNumber = (currentLevelNumber) => {
-    const levelData = findLevelByBattleNumber(currentLevelNumber);
-    if (!levelData || typeof levelData !== 'object') {
-      return 1;
+  const countBattlesFromBattleData = (battleData) => {
+    if (!battleData || typeof battleData !== 'object') {
+      return 0;
     }
 
-    const entries = Array.isArray(levelData.battles)
-      ? levelData.battles.filter(Boolean)
+    const monsters = Array.isArray(battleData.monsters)
+      ? battleData.monsters.filter(Boolean)
       : [];
-    return entries.length > 0 ? entries.length : 1;
+    if (monsters.length > 0) {
+      return monsters.length;
+    }
+
+    return battleData.monster ? 1 : 0;
+  };
+
+  const countBattlesFromLevelData = (levelData) => {
+    if (!levelData || typeof levelData !== 'object') {
+      return 0;
+    }
+
+    if (Array.isArray(levelData.battles)) {
+      const entries = levelData.battles.filter(Boolean);
+      if (entries.length > 0) {
+        return entries.length;
+      }
+    }
+
+    return countBattlesFromBattleData(levelData.battle);
+  };
+
+  const getBattleCountForLevelNumber = (currentLevelNumber) => {
+    const levelData = findLevelByBattleNumber(currentLevelNumber);
+    const count = countBattlesFromLevelData(levelData);
+    return count > 0 ? count : 1;
   };
 
   const readMathProgressState = () => {
@@ -1000,9 +1024,47 @@ document.addEventListener('DOMContentLoaded', () => {
       return null;
     }
 
-    const totalRequired = Math.max(state.currentLevelTotal, state.battleCount);
-    let nextBattle = state.currentBattle + 1;
-    let nextLevelTotal = Math.max(state.currentLevelTotal, totalRequired);
+    const resolvedCurrentBattle = Number.isFinite(state.currentBattle)
+      ? Math.max(1, Math.round(state.currentBattle))
+      : 1;
+    const normalizedCounts = [];
+
+    const resolvedCurrentTotal = Number.isFinite(state.currentLevelTotal)
+      ? Math.max(1, Math.round(state.currentLevelTotal))
+      : null;
+    if (resolvedCurrentTotal !== null) {
+      normalizedCounts.push(resolvedCurrentTotal);
+    }
+
+    const resolvedBattleCount = Number.isFinite(state.battleCount)
+      ? Math.max(1, Math.round(state.battleCount))
+      : null;
+    if (resolvedBattleCount !== null) {
+      normalizedCounts.push(resolvedBattleCount);
+    }
+
+    const levelListCount = getBattleCountForLevelNumber(currentLevelNumber);
+    if (Number.isFinite(levelListCount) && levelListCount > 0) {
+      normalizedCounts.push(Math.max(1, Math.round(levelListCount)));
+    }
+
+    const activeLevelCount = countBattlesFromLevelData(window.preloadedData?.level);
+    if (activeLevelCount > 0) {
+      normalizedCounts.push(activeLevelCount);
+    }
+
+    const activeBattleCount = countBattlesFromBattleData(window.preloadedData?.battle);
+    if (activeBattleCount > 0) {
+      normalizedCounts.push(activeBattleCount);
+    }
+
+    const totalRequired = normalizedCounts.reduce(
+      (max, value) => (Number.isFinite(value) && value > max ? value : max),
+      1
+    );
+
+    let nextBattle = resolvedCurrentBattle + 1;
+    let nextLevelTotal = Math.max(resolvedCurrentTotal ?? 1, totalRequired);
     let advanceLevel = false;
     const currentLevelNumber = Number.isFinite(state.currentLevelNumber)
       ? Math.max(1, Math.round(state.currentLevelNumber))
