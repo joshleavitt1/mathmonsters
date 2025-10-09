@@ -305,6 +305,21 @@ const clearGuestMode = () => {
   }
 };
 
+const activateGuestMode = () => {
+  try {
+    const storage = window.localStorage;
+    if (!storage || isRegistrationRequiredForGuest(storage.getItem(GUEST_SESSION_KEY))) {
+      return false;
+    }
+
+    storage.setItem(GUEST_SESSION_KEY, GUEST_SESSION_ACTIVE_VALUE);
+    return true;
+  } catch (error) {
+    console.warn('Unable to enable guest mode fallback.', error);
+    return false;
+  }
+};
+
 const supportsNativeDisabled = (element) => {
   if (!element || typeof element !== 'object') {
     return false;
@@ -488,10 +503,18 @@ const ensureAuthenticated = async () => {
     return true;
   }
 
-  const supabase = window.supabaseClient;
-  if (!supabase) {
+  const fallbackToGuestMode = () => {
+    if (activateGuestMode()) {
+      return true;
+    }
+
     redirectToWelcome();
     return false;
+  };
+
+  const supabase = window.supabaseClient;
+  if (!supabase) {
+    return fallbackToGuestMode();
   }
 
   try {
@@ -501,15 +524,13 @@ const ensureAuthenticated = async () => {
     }
 
     if (!data?.session) {
-      redirectToWelcome();
-      return false;
+      return fallbackToGuestMode();
     }
     clearGuestMode();
     return true;
   } catch (error) {
     console.warn('Unexpected authentication error', error);
-    redirectToWelcome();
-    return false;
+    return fallbackToGuestMode();
   }
 };
 
