@@ -911,9 +911,31 @@ document.addEventListener('DOMContentLoaded', () => {
       return null;
     }
 
-    const totalRequired = Math.max(state.currentLevelTotal, state.battleCount);
-    let nextBattle = state.currentBattle + 1;
-    let nextLevelTotal = Math.max(state.currentLevelTotal, totalRequired);
+    const normalizePositiveInteger = (value, { minimum = 1 } = {}) => {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue)) {
+        return minimum;
+      }
+      const rounded = Math.round(numericValue);
+      return Math.max(minimum, rounded);
+    };
+
+    const resolvedCurrentBattle = normalizePositiveInteger(state.currentBattle);
+    const totalCandidates = [state.currentLevelTotal, state.battleCount]
+      .map((value) => {
+        const numericValue = Number(value);
+        return Number.isFinite(numericValue) && numericValue > 0
+          ? Math.round(numericValue)
+          : 0;
+      })
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    const totalRequired = totalCandidates.length
+      ? Math.max(...totalCandidates)
+      : 1;
+
+    let nextBattle = resolvedCurrentBattle + 1;
+    let nextLevelTotal = Math.max(totalRequired, normalizePositiveInteger(state.currentLevelTotal));
     let advanceLevel = false;
     const currentLevelNumber = Number.isFinite(state.currentLevelNumber)
       ? Math.max(1, Math.round(state.currentLevelNumber))
@@ -957,7 +979,10 @@ document.addEventListener('DOMContentLoaded', () => {
       ? Math.max(1, Math.floor(storedBattle))
       : 1;
 
-    const totalBattles = Math.max(1, Math.floor(requiredBattles));
+    const normalizedRequired = Number.isFinite(Number(requiredBattles))
+      ? Number(requiredBattles)
+      : BATTLES_PER_LEVEL;
+    const totalBattles = Math.max(1, Math.floor(normalizedRequired));
     let nextBattle = currentBattle + 1;
     let nextLevel = currentLevel;
 
