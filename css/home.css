@@ -180,6 +180,25 @@ body.home-page {
   opacity: 0.1;
 }
 
+.home__level-skip-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1000;
+  touch-action: manipulation;
+}
+
+.home__level-skip-button:focus-visible {
+  outline: none;
+}
+
 .home__action {
   display: inline-flex;
   position: relative;
