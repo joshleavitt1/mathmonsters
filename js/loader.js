@@ -968,21 +968,43 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
       ? levelUsage.get(usedKey) ?? new Set()
       : null;
 
-    let startIndex = poolIndices.get(poolKey) ?? 0;
-    for (let attempt = 0; attempt < pool.length; attempt += 1) {
-      const index = (startIndex + attempt) % pool.length;
-      if (usedSet && usedSet.has(index)) {
-        continue;
-      }
+    const recordUsage = (index) => {
       poolIndices.set(poolKey, index + 1);
       if (usedSet) {
         usedSet.add(index);
         levelUsage.set(usedKey, usedSet);
       }
+    };
+
+    if (usedSet) {
+      const availableIndices = [];
+      for (let i = 0; i < pool.length; i += 1) {
+        if (!usedSet.has(i)) {
+          availableIndices.push(i);
+        }
+      }
+
+      if (availableIndices.length > 0) {
+        const randomPosition = Math.floor(Math.random() * availableIndices.length);
+        const selectedIndex = availableIndices[randomPosition];
+        recordUsage(selectedIndex);
+        return pool[selectedIndex];
+      }
+    }
+
+    const startIndex = poolIndices.get(poolKey) ?? 0;
+    for (let attempt = 0; attempt < pool.length; attempt += 1) {
+      const index = (startIndex + attempt) % pool.length;
+      if (usedSet && usedSet.has(index)) {
+        continue;
+      }
+      recordUsage(index);
       return pool[index];
     }
 
-    return pool[startIndex % pool.length];
+    const fallbackIndex = startIndex % pool.length;
+    recordUsage(fallbackIndex);
+    return pool[fallbackIndex];
   };
 
   const applyDefaultStats = (character) => {
