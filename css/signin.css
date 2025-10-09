@@ -48,7 +48,8 @@
 
 .preloader__error-list {
   margin: 0;
-  padding-left: clamp(20px, 4vw, 28px);
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
   gap: clamp(6px, 1vw, 10px);
