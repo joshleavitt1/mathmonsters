@@ -601,24 +601,38 @@ const shouldPlayLevelCompletionSequence = (previousState, nextState) => {
   const prevTotal = Number(previousState.totalBattles);
   const nextCurrent = Number(nextState.currentBattle);
 
+  const hasAdvancedLevel =
+    Number.isFinite(prevLevel) &&
+    Number.isFinite(nextLevel) &&
+    nextLevel > prevLevel;
+
+  const nextIsFirstBattle = Number.isFinite(nextCurrent) && nextCurrent === 1;
+
   const previousComplete =
     Number.isFinite(prevCurrent) &&
     Number.isFinite(prevTotal) &&
     prevTotal > 0 &&
     prevCurrent >= prevTotal;
 
-  if (!previousComplete) {
-    return false;
-  }
-
-  if (Number.isFinite(prevLevel) && Number.isFinite(nextLevel)) {
-    if (nextLevel > prevLevel) {
+  if (previousComplete) {
+    if (hasAdvancedLevel) {
       return true;
     }
 
-    if (nextLevel === prevLevel && Number.isFinite(nextCurrent)) {
+    if (
+      Number.isFinite(prevLevel) &&
+      Number.isFinite(nextLevel) &&
+      nextLevel === prevLevel &&
+      Number.isFinite(nextCurrent)
+    ) {
       return nextCurrent === 1;
     }
+
+    return false;
+  }
+
+  if (hasAdvancedLevel && nextIsFirstBattle) {
+    return true;
   }
 
   return false;
@@ -970,8 +984,16 @@ const updateHomeFromPreloadedData = () => {
     };
 
     if (shouldAnimateLevelUp && previousProgressState) {
+      const resolvedPreviousTotal = Number.isFinite(previousProgressState.totalBattles)
+        ? Math.max(1, Math.round(previousProgressState.totalBattles))
+        : Number.isFinite(progressState?.totalBattles)
+        ? Math.max(1, Math.round(progressState.totalBattles))
+        : null;
+
       const previousState = {
         ...previousProgressState,
+        currentBattle: resolvedPreviousTotal ?? previousProgressState.currentBattle,
+        totalBattles: resolvedPreviousTotal ?? previousProgressState.totalBattles,
         ratio: 1,
       };
       applyBattleProgressAttributes(progressElement, previousState);
