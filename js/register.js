@@ -34,7 +34,7 @@ const extractPlayerData = (rawPlayerData) => {
   return rawPlayerData;
 };
 
-const applyStartingBattleLevel = (playerData) => {
+const applyStartingCurrentLevel = (playerData) => {
   const clonedData = clonePlainObject(playerData) ?? {};
 
   if (!isPlainObject(clonedData)) {
@@ -42,12 +42,11 @@ const applyStartingBattleLevel = (playerData) => {
       progress: {
         currentLevel: STARTING_LEVEL,
         currentBattle: STARTING_BATTLE,
-        battleLevel: STARTING_LEVEL,
       },
       battleVariables: {
         timeRemainingSeconds: null,
       },
-      battleLevel: {
+      currentLevel: {
         1: {
           hero: {
             sprite: '/mathmonsters/images/hero/shellfin_evolution_1.png',
@@ -70,7 +69,6 @@ const applyStartingBattleLevel = (playerData) => {
     ...progressSection,
     currentLevel: STARTING_LEVEL,
     currentBattle: STARTING_BATTLE,
-    battleLevel: STARTING_LEVEL,
   };
 
   if (!isPlainObject(clonedData.battleVariables)) {
@@ -79,20 +77,20 @@ const applyStartingBattleLevel = (playerData) => {
     };
   }
 
-  if (!isPlainObject(clonedData.battleLevel)) {
-    clonedData.battleLevel = {};
+  if (!isPlainObject(clonedData.currentLevel)) {
+    clonedData.currentLevel = {};
   }
 
-  if (!isPlainObject(clonedData.battleLevel[1])) {
-    clonedData.battleLevel[1] = {
+  if (!isPlainObject(clonedData.currentLevel[1])) {
+    clonedData.currentLevel[1] = {
       hero: {
         sprite: '/mathmonsters/images/hero/shellfin_evolution_1.png',
       },
     };
   }
 
-  if (!isPlainObject(clonedData.battleLevel[STARTING_LEVEL])) {
-    clonedData.battleLevel[STARTING_LEVEL] = {
+  if (!isPlainObject(clonedData.currentLevel[STARTING_LEVEL])) {
+    clonedData.currentLevel[STARTING_LEVEL] = {
       hero: {
         sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
       },
@@ -321,7 +319,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       const defaultPlayerData = await loadDefaultPlayerData();
-      const startingPlayerData = applyStartingBattleLevel(defaultPlayerData);
+      const startingPlayerData = applyStartingCurrentLevel(defaultPlayerData);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,

@@ -8,7 +8,7 @@
       ? self
       : {};
 
-  const toNumericBattleLevel = (value) => {
+  const toNumericCurrentLevel = (value) => {
     if (typeof value === 'number' && Number.isFinite(value)) {
       return value;
     }
@@ -27,18 +27,16 @@
     return null;
   };
 
-  const syncBattleLevelToStorage = (playerData, storageKey) => {
+  const syncCurrentLevelToStorage = (playerData, storageKey) => {
     if (!playerData || typeof storageKey !== 'string' || !storageKey) {
       return;
     }
 
     const progress = playerData?.progress ?? {};
-    const numericLevel =
-      toNumericBattleLevel(progress?.currentLevel) ??
-      toNumericBattleLevel(progress?.battleLevel);
+    const numericLevel = toNumericCurrentLevel(progress?.currentLevel);
     const numericBattle =
-      toNumericBattleLevel(progress?.currentBattle) ??
-      toNumericBattleLevel(progress?.battleCurrent);
+      toNumericCurrentLevel(progress?.currentBattle) ??
+      toNumericCurrentLevel(progress?.battleCurrent);
     if (numericLevel === null && numericBattle === null) {
       return;
     }
@@ -63,7 +61,6 @@
         parsed && typeof parsed === 'object' ? { ...parsed } : {};
       if (numericLevel !== null) {
         nextValue.currentLevel = numericLevel;
-        nextValue.battleLevel = numericLevel;
       } else {
         delete nextValue.currentLevel;
       }
@@ -76,7 +73,7 @@
 
       storage.setItem(storageKey, JSON.stringify(nextValue));
     } catch (error) {
-      console.warn('Failed to sync battle level with storage.', error);
+      console.warn('Failed to sync current level with storage.', error);
     }
   };
 
@@ -136,5 +133,5 @@
       globalScope.mathMonstersPlayerProfile || {});
 
   namespace.fetchPlayerProfile = fetchPlayerProfile;
-  namespace.syncBattleLevelToStorage = syncBattleLevelToStorage;
+  namespace.syncCurrentLevelToStorage = syncCurrentLevelToStorage;
 })();

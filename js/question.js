@@ -437,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('close-question', closeQuestion);
 
   document.addEventListener('question-opened', (event) => {
-    const levelDetail = Number(event?.detail?.battleLevel);
+    const levelDetail = Number(event?.detail?.currentLevel);
     isMeterDisabled = !Number.isFinite(levelDetail) || levelDetail < 5;
     syncMeterDisabledAttribute();
     button.classList.remove('result', 'correct', 'incorrect');

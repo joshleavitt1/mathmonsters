@@ -442,12 +442,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let introQuestionIds = [];
   let nextIntroQuestionIndex = 0;
 
-  const getResolvedBattleLevel = () => {
-    if (Number.isFinite(currentBattleLevel)) {
-      return currentBattleLevel;
+  const getResolvedCurrentLevel = () => {
+    if (Number.isFinite(currentCurrentLevel)) {
+      return currentCurrentLevel;
     }
 
-    const preloadedLevel = Number(window.preloadedData?.level?.battleLevel);
+    const preloadedLevel = Number(window.preloadedData?.level?.currentLevel);
     return Number.isFinite(preloadedLevel) ? preloadedLevel : null;
   };
   let correctAnswers = 0;
@@ -460,9 +460,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let battleTimerDeadline = null;
   let battleTimerInterval = null;
   let battleEnded = false;
-  let currentBattleLevel = null;
+  let currentCurrentLevel = null;
   let battleStartTime = null;
-  let battleLevelAdvanced = false;
+  let currentLevelAdvanced = false;
   let battleGoalsMet = false;
   let heroSuperAttackBase = null;
   let monsterDefeatAnimationTimeout = null;
@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let rewardAnimationPlayed = false;
   let pendingGemReward = null;
   let gemRewardIntroShown = false;
-  let shouldAdvanceBattleLevel = false;
+  let shouldAdvanceCurrentLevel = false;
   let nextMissionProcessing = false;
   let levelProgressUpdateTimeout = null;
   let levelProgressAnimationTimeout = null;
@@ -761,40 +761,40 @@ document.addEventListener('DOMContentLoaded', () => {
     return normalizedCandidate || null;
   };
 
-  const resolveBattleLevels = () =>
+  const resolveCurrentLevels = () =>
     Array.isArray(window.preloadedData?.levels)
       ? window.preloadedData.levels.filter(
           (level) => level && typeof level === 'object'
         )
       : [];
 
-  const findLevelByBattleNumber = (battleLevelNumber) => {
-    if (!Number.isFinite(battleLevelNumber)) {
+  const findLevelByBattleNumber = (currentLevelNumber) => {
+    if (!Number.isFinite(currentLevelNumber)) {
       return null;
     }
 
     const directLevel = window.preloadedData?.level;
-    const directLevelNumber = Number(directLevel?.battleLevel ?? directLevel?.level);
+    const directLevelNumber = Number(directLevel?.currentLevel ?? directLevel?.level);
     if (
       directLevel &&
       typeof directLevel === 'object' &&
       Number.isFinite(directLevelNumber) &&
-      directLevelNumber === battleLevelNumber
+      directLevelNumber === currentLevelNumber
     ) {
       return directLevel;
     }
 
-    const levelsList = resolveBattleLevels();
+    const levelsList = resolveCurrentLevels();
     return (
       levelsList.find((level) => {
-        const candidateNumber = Number(level?.battleLevel ?? level?.level);
-        return Number.isFinite(candidateNumber) && candidateNumber === battleLevelNumber;
+        const candidateNumber = Number(level?.currentLevel ?? level?.level);
+        return Number.isFinite(candidateNumber) && candidateNumber === currentLevelNumber;
       }) || null
     );
   };
 
-  const getBattleCountForLevelNumber = (battleLevelNumber) => {
-    const levelData = findLevelByBattleNumber(battleLevelNumber);
+  const getBattleCountForLevelNumber = (currentLevelNumber) => {
+    const levelData = findLevelByBattleNumber(currentLevelNumber);
     if (!levelData || typeof levelData !== 'object') {
       return 1;
     }
@@ -828,12 +828,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const preloaded = typeof window !== 'undefined' ? window.preloadedData : null;
 
     const fallbackLevelCandidates = [
-      getResolvedBattleLevel(),
-      numericOrNull(progressRoot?.battleLevel),
+      getResolvedCurrentLevel(),
       numericOrNull(progressRoot?.currentLevel),
       numericOrNull(progressRoot?.level),
-      numericOrNull(preloaded?.level?.battleLevel),
-      numericOrNull(preloaded?.player?.currentLevel),
+      numericOrNull(preloaded?.level?.currentLevel),
     ];
 
     if (typeof mathKey === 'string') {
@@ -843,22 +841,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const entryLevelCandidate = numericOrNull(entry?.currentLevel);
     const entryTotalCandidate = numericOrNull(entry?.totalBattles);
 
-    let resolvedBattleLevel = fallbackLevelCandidates.find(
+    let resolvedCurrentLevel = fallbackLevelCandidates.find(
       (candidate) => Number.isFinite(candidate) && candidate > 0
     );
 
     if (Number.isFinite(entryLevelCandidate) && entryLevelCandidate > 0) {
       const matchesFallback =
-        Number.isFinite(resolvedBattleLevel) && entryLevelCandidate === resolvedBattleLevel;
-      if (entryTotalCandidate || matchesFallback || !Number.isFinite(resolvedBattleLevel)) {
-        resolvedBattleLevel = entryLevelCandidate;
+        Number.isFinite(resolvedCurrentLevel) && entryLevelCandidate === resolvedCurrentLevel;
+      if (entryTotalCandidate || matchesFallback || !Number.isFinite(resolvedCurrentLevel)) {
+        resolvedCurrentLevel = entryLevelCandidate;
       }
     }
 
-    if (!Number.isFinite(resolvedBattleLevel) || resolvedBattleLevel <= 0) {
-      resolvedBattleLevel = 1;
+    if (!Number.isFinite(resolvedCurrentLevel) || resolvedCurrentLevel <= 0) {
+      resolvedCurrentLevel = 1;
     } else {
-      resolvedBattleLevel = Math.max(1, Math.round(resolvedBattleLevel));
+      resolvedCurrentLevel = Math.max(1, Math.round(resolvedCurrentLevel));
     }
 
     let resolvedTotalBattles = Number.isFinite(entryTotalCandidate)
@@ -866,13 +864,13 @@ document.addEventListener('DOMContentLoaded', () => {
       : null;
 
     if (!resolvedTotalBattles && Number.isFinite(entryLevelCandidate)) {
-      const differsFromLevel = entryLevelCandidate !== resolvedBattleLevel;
+      const differsFromLevel = entryLevelCandidate !== resolvedCurrentLevel;
       if (differsFromLevel || !entryTotalCandidate) {
         resolvedTotalBattles = Math.max(1, Math.round(entryLevelCandidate));
       }
     }
 
-    const derivedFromLevel = getBattleCountForLevelNumber(resolvedBattleLevel);
+    const derivedFromLevel = getBattleCountForLevelNumber(resolvedCurrentLevel);
     if (!resolvedTotalBattles) {
       if (Number.isFinite(derivedFromLevel) && derivedFromLevel > 0) {
         resolvedTotalBattles = Math.max(1, Math.round(derivedFromLevel));
@@ -898,7 +896,7 @@ document.addEventListener('DOMContentLoaded', () => {
       mathKey,
       mathTypeCandidate,
       entry,
-      battleLevelNumber: resolvedBattleLevel,
+      currentLevelNumber: resolvedCurrentLevel,
       battleCount: resolvedTotalBattles,
       currentBattle: resolvedBattleCurrent,
       currentLevelTotal: resolvedTotalBattles,
@@ -917,16 +915,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let nextBattle = state.currentBattle + 1;
     let nextLevelTotal = Math.max(state.currentLevelTotal, totalRequired);
     let advanceLevel = false;
-    const currentLevelNumber = Number.isFinite(state.battleLevelNumber)
-      ? Math.max(1, Math.round(state.battleLevelNumber))
+    const currentLevelNumber = Number.isFinite(state.currentLevelNumber)
+      ? Math.max(1, Math.round(state.currentLevelNumber))
       : 1;
-    let nextBattleLevelNumber = currentLevelNumber;
+    let nextCurrentLevelNumber = currentLevelNumber;
 
     if (nextBattle > totalRequired) {
       advanceLevel = true;
       nextBattle = 1;
-      nextBattleLevelNumber = currentLevelNumber + 1;
-      const nextLevelCount = getBattleCountForLevelNumber(nextBattleLevelNumber);
+      nextCurrentLevelNumber = currentLevelNumber + 1;
+      const nextLevelCount = getBattleCountForLevelNumber(nextCurrentLevelNumber);
       nextLevelTotal =
         Number.isFinite(nextLevelCount) && nextLevelCount > 0
           ? Math.max(1, Math.round(nextLevelCount))
@@ -938,7 +936,7 @@ document.addEventListener('DOMContentLoaded', () => {
       nextBattle,
       nextLevelTotal,
       advanceLevel,
-      nextBattleLevelNumber,
+      nextCurrentLevelNumber,
       totalRequired,
     };
   };
@@ -948,7 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
 
     const storedLevel = Number(
-      rawProgress?.currentLevel ?? rawProgress?.battleLevel ?? rawProgress?.level
+      rawProgress?.currentLevel ?? rawProgress?.level
     );
     const storedBattle = Number(rawProgress?.currentBattle);
 
@@ -971,7 +969,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return {
       currentLevel: nextLevel,
       currentBattle: nextBattle,
-      battleLevel: nextLevel,
     };
   };
 
@@ -1783,8 +1780,8 @@ document.addEventListener('DOMContentLoaded', () => {
       text: defaultRewardCardText,
       buttonText: defaultRewardCardButtonText,
       onClick: () => {
-        if (battleGoalsMet && !battleLevelAdvanced) {
-          advanceBattleLevel();
+        if (battleGoalsMet && !currentLevelAdvanced) {
+          advanceCurrentLevel();
         }
         startEvolutionSequence();
       },
@@ -2016,8 +2013,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const playGemRewardAnimation = (rewardConfig = {}) =>
     new Promise((resolve) => {
       const fallbackNavigateHome = () => {
-        if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
-          advanceBattleLevel();
+        if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
+          advanceCurrentLevel();
         }
         resetRewardOverlay();
         resolve();
@@ -2043,15 +2040,15 @@ document.addEventListener('DOMContentLoaded', () => {
         ? Math.max(0, Math.round(rewardAmountRaw))
         : GEM_REWARD_WIN_AMOUNT;
       const isFirstGemReward = rewardConfig?.isFirstGemReward === true;
-      const rewardBattleLevel = normalizePositiveInteger(
-        rewardConfig?.battleLevel
+      const rewardCurrentLevel = normalizePositiveInteger(
+        rewardConfig?.currentLevel
       );
       const rewardBattleIndex = normalizePositiveInteger(
         rewardConfig?.currentBattle
       );
       const rewardIsWin = rewardConfig?.win !== false;
       const includeShopPrompt =
-        rewardBattleLevel === 2 && rewardBattleIndex === 1;
+        rewardCurrentLevel === 2 && rewardBattleIndex === 1;
 
       pendingGemReward = null;
       updateNextMissionButton(true);
@@ -2087,8 +2084,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (document.body) {
           document.body.classList.add('is-reward-transitioning');
         }
-        if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
-          advanceBattleLevel();
+        if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
+          advanceCurrentLevel();
         }
         resetRewardOverlay();
         finish();
@@ -2422,11 +2419,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return result;
   };
 
-  const resolveBattleLevelForExperience = () => {
-    if (Number.isFinite(currentBattleLevel)) {
-      return currentBattleLevel;
+  const resolveCurrentLevelForExperience = () => {
+    if (Number.isFinite(currentCurrentLevel)) {
+      return currentCurrentLevel;
     }
-    const fallbackLevel = Number(window.preloadedData?.level?.battleLevel);
+    const fallbackLevel = Number(window.preloadedData?.level?.currentLevel);
     return Number.isFinite(fallbackLevel) ? fallbackLevel : null;
   };
 
@@ -2450,7 +2447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const points = resolveExperiencePointsForMonster();
-    const level = resolveBattleLevelForExperience();
+    const level = resolveCurrentLevelForExperience();
     const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
     const wasComplete =
       levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
@@ -2685,7 +2682,7 @@ document.addEventListener('DOMContentLoaded', () => {
     questionIds.sort((a, b) => a - b);
     totalQuestionCount = questionIds.length;
 
-    const resolvedLevel = getResolvedBattleLevel();
+    const resolvedLevel = getResolvedCurrentLevel();
     if (
       typeof resolvedLevel === 'number' &&
       Number.isFinite(resolvedLevel) &&
@@ -2880,12 +2877,11 @@ document.addEventListener('DOMContentLoaded', () => {
       window.preloadedData.progress = mergedProgress;
 
       const mergedLevel = Number(
-        mergedProgress?.currentLevel ??
-          mergedProgress?.battleLevel ??
+          mergedProgress?.currentLevel ??
           mergedProgress?.level
       );
       if (Number.isFinite(mergedLevel)) {
-        currentBattleLevel = Math.max(1, Math.floor(mergedLevel));
+        currentCurrentLevel = Math.max(1, Math.floor(mergedLevel));
       }
 
       if (
@@ -2951,23 +2947,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function advanceBattleLevel() {
-    if (battleLevelAdvanced) {
+  function advanceCurrentLevel() {
+    if (currentLevelAdvanced) {
       return;
     }
 
     const progress =
       window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
     const resolvedLevel = Number(
-      progress?.currentLevel ?? progress?.battleLevel ?? progress?.level
+      progress?.currentLevel ?? progress?.level
     );
 
     if (Number.isFinite(resolvedLevel)) {
-      currentBattleLevel = Math.max(1, Math.floor(resolvedLevel));
+      currentCurrentLevel = Math.max(1, Math.floor(resolvedLevel));
     }
 
-    battleLevelAdvanced = true;
-    shouldAdvanceBattleLevel = false;
+    currentLevelAdvanced = true;
+    shouldAdvanceCurrentLevel = false;
   }
 
   function loadData() {
@@ -3114,16 +3110,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return result;
     };
 
-    currentBattleLevel =
-      typeof progressData.battleLevel === 'number'
-        ? progressData.battleLevel
-        : typeof data.level?.battleLevel === 'number'
-        ? data.level.battleLevel
+    currentCurrentLevel =
+      typeof progressData.currentLevel === 'number'
+        ? progressData.currentLevel
+        : typeof data.level?.currentLevel === 'number'
+        ? data.level.currentLevel
         : null;
 
     levelExperienceEarned = readExperienceForLevel(
       experienceMap,
-      currentBattleLevel
+      currentCurrentLevel
     );
     const levelUpValue = Number(battleData.levelUp);
     levelExperienceRequirement = Number.isFinite(levelUpValue)
@@ -3291,25 +3287,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function skipToBattleLevel(targetLevel) {
+  function skipToCurrentLevel(targetLevel) {
     const numericLevel = Number(targetLevel);
     if (!Number.isFinite(numericLevel)) {
       return;
     }
 
     const sanitizedLevel = Math.max(1, Math.floor(numericLevel));
-    const resolvedCurrentLevel = getResolvedBattleLevel();
+    const resolvedCurrentLevel = getResolvedCurrentLevel();
     if (resolvedCurrentLevel === sanitizedLevel) {
       return;
     }
 
     persistProgress({
-      battleLevel: sanitizedLevel,
+      currentLevel: sanitizedLevel,
       currentLevel: sanitizedLevel,
       currentBattle: 1,
     });
-    currentBattleLevel = sanitizedLevel;
-    battleLevelAdvanced = false;
+    currentCurrentLevel = sanitizedLevel;
+    currentLevelAdvanced = false;
 
     window.setTimeout(() => {
       window.location.reload();
@@ -3486,11 +3482,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     questionBox.classList.add('show');
 
-    const resolvedBattleLevel = getResolvedBattleLevel();
+    const resolvedCurrentLevel = getResolvedCurrentLevel();
 
     document.dispatchEvent(
       new CustomEvent('question-opened', {
-        detail: { battleLevel: resolvedBattleLevel },
+        detail: { currentLevel: resolvedCurrentLevel },
       })
     );
   }
@@ -3895,7 +3891,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const correct = e.detail.correct;
-    const resolvedLevel = getResolvedBattleLevel();
+    const resolvedLevel = getResolvedCurrentLevel();
     totalAnswers++;
     if (correct) {
       correctAnswers++;
@@ -4008,11 +4004,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     battleGoalsMet = goalsAchieved;
 
-    const resolvedBattleLevel = resolveBattleLevelForExperience();
+    const resolvedCurrentLevel = resolveCurrentLevelForExperience();
     const progressState = readMathProgressState();
-    const rewardBattleLevel =
-      normalizePositiveInteger(progressState?.battleLevelNumber) ??
-      normalizePositiveInteger(resolvedBattleLevel);
+    const rewardCurrentLevel =
+      normalizePositiveInteger(progressState?.currentLevelNumber) ??
+      normalizePositiveInteger(resolvedCurrentLevel);
     const rewardBattleIndex = normalizePositiveInteger(
       progressState?.currentBattle
     );
@@ -4022,16 +4018,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win) {
       const mathProgressUpdate = computeNextMathProgressOnWin();
-      shouldAdvanceBattleLevel = Boolean(mathProgressUpdate?.advanceLevel);
+      shouldAdvanceCurrentLevel = Boolean(mathProgressUpdate?.advanceLevel);
 
       if (mathProgressUpdate && mathProgressUpdate.mathKey) {
         const globalProgressUpdate = computeNextGlobalProgressOnWin(
           mathProgressUpdate.totalRequired
         );
         const nextLevelNumber = Number.isFinite(
-          mathProgressUpdate.nextBattleLevelNumber
+          mathProgressUpdate.nextCurrentLevelNumber
         )
-          ? Math.max(1, Math.round(mathProgressUpdate.nextBattleLevelNumber))
+          ? Math.max(1, Math.round(mathProgressUpdate.nextCurrentLevelNumber))
           : null;
         const nextLevelTotal = Number.isFinite(mathProgressUpdate.nextLevelTotal)
           ? Math.max(1, Math.round(mathProgressUpdate.nextLevelTotal))
@@ -4058,19 +4054,19 @@ document.addEventListener('DOMContentLoaded', () => {
         persistProgress(updatePayload);
       }
     } else {
-      shouldAdvanceBattleLevel = false;
+      shouldAdvanceCurrentLevel = false;
     }
 
     if (win) {
       const isLevelTwoPlus =
-        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel >= 2;
+        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel >= 2;
       if (isLevelTwoPlus) {
         pendingGemReward = {
           amount: gemRewardAmount,
           totalAfter: updatedGemTotal,
           useClaimLabel: !gemRewardIntroShown,
           isFirstGemReward: !gemRewardIntroShown,
-          battleLevel: rewardBattleLevel,
+          currentLevel: rewardCurrentLevel,
           currentBattle: rewardBattleIndex,
           win: true,
         };
@@ -4083,7 +4079,7 @@ document.addEventListener('DOMContentLoaded', () => {
         totalAfter: updatedGemTotal,
         useClaimLabel: true,
         isFirstGemReward: false,
-        battleLevel: rewardBattleLevel,
+        currentLevel: rewardCurrentLevel,
         currentBattle: rewardBattleIndex,
         win: false,
       };
@@ -4091,7 +4087,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win && !hasPendingLevelUpReward) {
       const isInitialLevel =
-        Number.isFinite(resolvedBattleLevel) && resolvedBattleLevel <= 1;
+        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel <= 1;
       const noExperienceRequirement = levelExperienceRequirement <= 0;
       if (
         isInitialLevel &&
@@ -4167,8 +4163,8 @@ document.addEventListener('DOMContentLoaded', () => {
           .catch((error) => {
             console.warn('Gem reward animation failed, falling back to navigation.', error);
             resetRewardOverlay();
-            if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
-              advanceBattleLevel();
+            if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
+              advanceCurrentLevel();
             }
             window.location.href = '../index.html';
           })
@@ -4185,8 +4181,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (battleGoalsMet && shouldAdvanceBattleLevel && !battleLevelAdvanced) {
-        advanceBattleLevel();
+      if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
+        advanceCurrentLevel();
       }
       resetRewardOverlay();
       window.location.href = '../index.html';
@@ -4208,7 +4204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wrongAnswers = 0;
     battleStartTime = null;
     initialTimeRemaining = 0;
-    battleLevelAdvanced = false;
+    currentLevelAdvanced = false;
     battleGoalsMet = false;
     levelExperienceEarned = 0;
     levelExperienceRequirement = 0;
@@ -4263,7 +4259,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (devSkipBattleButton) {
     devSkipBattleButton.addEventListener('click', () => {
-      skipToBattleLevel(DEV_SKIP_TARGET_LEVEL);
+      skipToCurrentLevel(DEV_SKIP_TARGET_LEVEL);
     });
   }
 
