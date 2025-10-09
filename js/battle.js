@@ -4141,7 +4141,10 @@ document.addEventListener('DOMContentLoaded', () => {
           : undefined
       );
 
-      const updatePayload = {};
+      const updatePayload =
+        globalProgressUpdate && typeof globalProgressUpdate === 'object'
+          ? { ...globalProgressUpdate }
+          : {};
 
       if (mathProgressUpdate && mathProgressUpdate.mathKey) {
         const nextBattleValue = Number(mathProgressUpdate.nextBattle);
@@ -4158,7 +4161,11 @@ document.addEventListener('DOMContentLoaded', () => {
           : null;
 
         if (resolvedNextBattle !== null) {
+          const existingEntry = updatePayload[mathProgressUpdate.mathKey];
+          const baseEntry = isPlainObject(existingEntry) ? existingEntry : {};
+
           updatePayload[mathProgressUpdate.mathKey] = {
+            ...baseEntry,
             currentBattle: resolvedNextBattle,
           };
 
@@ -4172,10 +4179,6 @@ document.addEventListener('DOMContentLoaded', () => {
               nextLevelTotal;
           }
         }
-      }
-
-      if (globalProgressUpdate && typeof globalProgressUpdate === 'object') {
-        Object.assign(updatePayload, globalProgressUpdate);
       }
 
       if (Object.keys(updatePayload).length > 0) {
