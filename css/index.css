@@ -17,6 +17,8 @@ body.is-level-one-landing {
 }
 
 body.is-standard-landing {
+  margin: 0;
+  padding: 16px;
   overflow: hidden;
 }
 
