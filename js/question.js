@@ -53,16 +53,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const meterIcon = meter?.querySelector('[data-meter-icon]');
   const QUESTION_OVERLAY_CLASS = 'question--with-overlay';
 
+  const globalScope =
+    typeof globalThis !== 'undefined'
+      ? globalThis
+      : typeof window !== 'undefined'
+      ? window
+      : typeof self !== 'undefined'
+      ? self
+      : {};
+
   const requestFrame =
-    typeof window !== 'undefined' &&
-    typeof window.requestAnimationFrame === 'function'
-      ? window.requestAnimationFrame.bind(window)
-      : (callback) => window.setTimeout(callback, 16);
+    typeof globalScope.requestAnimationFrame === 'function'
+      ? globalScope.requestAnimationFrame.bind(globalScope)
+      : typeof setTimeout === 'function'
+      ? (callback) => setTimeout(callback, 16)
+      : () => {};
   const cancelFrame =
-    typeof window !== 'undefined' &&
-    typeof window.cancelAnimationFrame === 'function'
-      ? window.cancelAnimationFrame.bind(window)
-      : (id) => window.clearTimeout(id);
+    typeof globalScope.cancelAnimationFrame === 'function'
+      ? globalScope.cancelAnimationFrame.bind(globalScope)
+      : typeof clearTimeout === 'function'
+      ? (id) => clearTimeout(id)
+      : () => {};
   let pendingMeterFrame = null;
   let pendingMeterFillFrame = null;
   let isMeterDisabled = false;
