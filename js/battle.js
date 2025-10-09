@@ -725,6 +725,33 @@ document.addEventListener('DOMContentLoaded', () => {
     attackSprites: {},
   };
 
+  const toFiniteNumber = (value, fallback = 0) => {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+    const fallbackParsed = Number(fallback);
+    return Number.isFinite(fallbackParsed) ? fallbackParsed : 0;
+  };
+
+  const clampDamageToHealth = (damage, health) => {
+    const resolvedHealth = toFiniteNumber(health, 0);
+    const resolvedDamage = toFiniteNumber(damage, 0);
+    if (resolvedHealth <= 0) {
+      return Math.max(0, resolvedDamage);
+    }
+    return Math.max(0, Math.min(resolvedHealth, resolvedDamage));
+  };
+
+  const hasEntityBeenDefeated = (health, damage) => {
+    const resolvedHealth = toFiniteNumber(health, 0);
+    if (resolvedHealth <= 0) {
+      return true;
+    }
+    const resolvedDamage = toFiniteNumber(damage, 0);
+    return resolvedDamage >= resolvedHealth;
+  };
+
   const clearTimeoutSafe = (timeoutId) => {
     if (timeoutId !== null) {
       window.clearTimeout(timeoutId);
@@ -3432,9 +3459,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initialTimeRemaining = Number.isFinite(timeRemaining) ? timeRemaining : 0;
 
     heroSuperAttackBase = null;
-    hero.attack = Number(heroData.attack) || hero.attack;
-    hero.health = Number(heroData.health) || hero.health;
-    hero.damage = Number(heroData.damage) || hero.damage;
+    hero.attack = toFiniteNumber(heroData.attack, hero.attack);
+    hero.health = toFiniteNumber(heroData.health, hero.health);
+    hero.damage = clampDamageToHealth(
+      toFiniteNumber(heroData.damage, hero.damage),
+      hero.health
+    );
     hero.name = heroData.name || hero.name;
     const heroAttackSprites = normalizeAttackSprites(hero, heroData);
     if (Object.keys(heroAttackSprites).length > 0) {
@@ -3467,9 +3497,12 @@ document.addEventListener('DOMContentLoaded', () => {
       heroImg.alt = `${hero.name} ready for battle`;
     }
 
-    monster.attack = Number(monsterData.attack) || monster.attack;
-    monster.health = Number(monsterData.health) || monster.health;
-    monster.damage = Number(monsterData.damage) || monster.damage;
+    monster.attack = toFiniteNumber(monsterData.attack, monster.attack);
+    monster.health = toFiniteNumber(monsterData.health, monster.health);
+    monster.damage = clampDamageToHealth(
+      toFiniteNumber(monsterData.damage, monster.damage),
+      monster.health
+    );
     monster.name = monsterData.name || monster.name;
 
     const monsterAttackSprites = normalizeAttackSprites(monster, monsterData);
@@ -3534,11 +3567,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateHealthBars() {
+    const heroHealth = toFiniteNumber(hero.health, 0);
+    const heroDamage = clampDamageToHealth(hero.damage, heroHealth);
+    hero.damage = heroDamage;
     const heroPercent =
-      hero.health > 0 ? ((hero.health - hero.damage) / hero.health) * 100 : 0;
+      heroHealth > 0 ? ((heroHealth - heroDamage) / heroHealth) * 100 : 0;
+    const monsterHealth = toFiniteNumber(monster.health, 0);
+    const monsterDamage = clampDamageToHealth(monster.damage, monsterHealth);
+    monster.damage = monsterDamage;
     const monsterPercent =
-      monster.health > 0
-        ? ((monster.health - monster.damage) / monster.health) * 100
+      monsterHealth > 0
+        ? ((monsterHealth - monsterDamage) / monsterHealth) * 100
         : 0;
     updateHealthBar(heroHpBar, heroHpFill, heroPercent);
     updateHealthBar(monsterHpBar, monsterHpFill, monsterPercent);
@@ -3552,16 +3591,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return;
     }
-    if (!hero || typeof hero.health !== 'number') {
+    if (!hero) {
       return;
     }
-    const newDamage = Math.min(hero.health, hero.damage + numericAmount);
-    if (newDamage === hero.damage) {
+    const heroHealth = toFiniteNumber(hero.health, 0);
+    const currentDamage = clampDamageToHealth(hero.damage, heroHealth);
+    const newDamage = clampDamageToHealth(
+      currentDamage + numericAmount,
+      heroHealth
+    );
+    if (newDamage === currentDamage) {
       return;
     }
     hero.damage = newDamage;
     updateHealthBars();
-    if (hero.damage >= hero.health) {
+    if (hasEntityBeenDefeated(heroHealth, hero.damage)) {
       endBattle(false, { waitForHpDrain: heroHpFill });
     }
   }
@@ -3574,16 +3618,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return;
     }
-    if (!monster || typeof monster.health !== 'number') {
+    if (!monster) {
       return;
     }
-    const newDamage = Math.min(monster.health, monster.damage + numericAmount);
-    if (newDamage === monster.damage) {
+    const monsterHealth = toFiniteNumber(monster.health, 0);
+    const currentDamage = clampDamageToHealth(monster.damage, monsterHealth);
+    const newDamage = clampDamageToHealth(
+      currentDamage + numericAmount,
+      monsterHealth
+    );
+    if (newDamage === currentDamage) {
       return;
     }
     monster.damage = newDamage;
     updateHealthBars();
-    if (monster.damage >= monster.health) {
+    if (hasEntityBeenDefeated(monsterHealth, monster.damage)) {
       endBattle(true, { waitForHpDrain: monsterHpFill });
     }
   }
@@ -3910,7 +3959,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (battleEnded) {
               return;
             }
-            if (monster.damage >= monster.health) {
+            if (hasEntityBeenDefeated(monster.health, monster.damage)) {
               endBattle(true, { waitForHpDrain: monsterHpFill });
             } else {
               showQuestion();
@@ -3929,7 +3978,16 @@ document.addEventListener('DOMContentLoaded', () => {
             cleanupAfterShake();
             return;
           }
-          monster.damage += hero.attack;
+          const currentDamage = clampDamageToHealth(
+            monster.damage,
+            monster.health
+          );
+          const attackAmount = toFiniteNumber(hero.attack, 0);
+          const updatedDamage = clampDamageToHealth(
+            currentDamage + attackAmount,
+            monster.health
+          );
+          monster.damage = updatedDamage;
           updateHealthBars();
           if (useSuperAttack) {
             streak = 0;
@@ -4077,7 +4135,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (battleEnded) {
             return;
           }
-          if (hero.damage >= hero.health) {
+          if (hasEntityBeenDefeated(hero.health, hero.damage)) {
             endBattle(false, { waitForHpDrain: heroHpFill });
           } else {
             window.setTimeout(() => {
@@ -4098,7 +4156,13 @@ document.addEventListener('DOMContentLoaded', () => {
             cleanupAfterShake();
             return;
           }
-          hero.damage += monster.attack;
+          const currentDamage = clampDamageToHealth(hero.damage, hero.health);
+          const attackAmount = toFiniteNumber(monster.attack, 0);
+          const updatedDamage = clampDamageToHealth(
+            currentDamage + attackAmount,
+            hero.health
+          );
+          hero.damage = updatedDamage;
           updateHealthBars();
 
           if (ATTACK_SHAKE_DURATION_MS > 0) {
