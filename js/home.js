@@ -445,21 +445,19 @@ const computeHomeBattleProgress = (data) => {
     ? Math.max(1, Math.round(resolvedCurrentLevel))
     : null;
 
-  let currentBattle = clampPositiveInteger(mathProgressEntry?.currentBattle);
-  if (!Number.isFinite(currentBattle) || currentBattle === null) {
-    currentBattle = 1;
-  }
+  const initialCurrentBattle = clampPositiveInteger(mathProgressEntry?.currentBattle);
 
-  let totalBattles = clampPositiveInteger(
+  const initialTotalBattles = clampPositiveInteger(
     mathProgressEntry?.totalBattles ?? mathProgressEntry?.currentLevel,
     {
       allowZeroFallback: true,
     }
   );
 
-  if (!Number.isFinite(totalBattles) || totalBattles === null) {
-    totalBattles = null;
-  }
+  const sanitizedInitialTotal =
+    Number.isFinite(initialTotalBattles) && initialTotalBattles !== null
+      ? initialTotalBattles
+      : null;
 
   const activeLevel = (() => {
     if (
@@ -473,14 +471,17 @@ const computeHomeBattleProgress = (data) => {
       return resolveLevelByBattleNumber(data.levels, normalizedCurrentLevel);
     }
 
-    if (Number.isFinite(normalizedcurrentLevel)) {
-      return resolveLevelByBattleNumber(data.levels, normalizedcurrentLevel) || null;
+    if (Number.isFinite(normalizedCurrentLevel)) {
+      return (
+        resolveLevelByBattleNumber(data.levels, normalizedCurrentLevel) || null
+      );
     }
 
     return null;
   })();
 
   const totalBattleCandidates = [
+    sanitizedInitialTotal,
     mathProgressEntry?.totalBattles,
     mathProgressEntry?.levelBattles,
     data.preview?.progressBattleTotal,
@@ -504,7 +505,7 @@ const computeHomeBattleProgress = (data) => {
   }
 
   const currentBattleCandidates = [
-    mathProgressEntry?.currentBattle,
+    initialCurrentBattle,
     data.preview?.progressBattleCurrent,
     data.battle?.currentBattle,
     data.battleTracking?.currentBattle,
