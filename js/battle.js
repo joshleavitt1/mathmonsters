@@ -1059,6 +1059,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const resolvedCurrentTotal = Number.isFinite(state.currentLevelTotal)
       ? Math.max(1, Math.round(state.currentLevelTotal))
       : null;
+    const currentLevelNumber = Number.isFinite(state.currentLevelNumber)
+      ? Math.max(1, Math.round(state.currentLevelNumber))
+      : 1;
     if (resolvedCurrentTotal !== null) {
       normalizedCounts.push(resolvedCurrentTotal);
     }
@@ -1093,9 +1096,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let nextBattle = resolvedCurrentBattle + 1;
     let nextLevelTotal = Math.max(resolvedCurrentTotal ?? 1, totalRequired);
     let advanceLevel = false;
-    const currentLevelNumber = Number.isFinite(state.currentLevelNumber)
-      ? Math.max(1, Math.round(state.currentLevelNumber))
-      : 1;
     let nextCurrentLevelNumber = currentLevelNumber;
 
     if (nextBattle > totalRequired) {
