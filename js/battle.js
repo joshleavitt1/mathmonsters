@@ -1120,22 +1120,65 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const computeNextGlobalProgressOnWin = (requiredBattles = BATTLES_PER_LEVEL) => {
-    const rawProgress =
-      window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
+    const toPositiveInteger = (value) => {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        return null;
+      }
 
-    const storedLevel = Number(
-      rawProgress?.currentLevel ?? rawProgress?.level
-    );
-    const storedBattle = Number(rawProgress?.currentBattle);
+      return Math.max(1, Math.floor(numericValue));
+    };
 
-    const currentLevel = Number.isFinite(storedLevel) && storedLevel > 0
-      ? Math.max(1, Math.floor(storedLevel))
-      : 1;
-    const currentBattle = Number.isFinite(storedBattle) && storedBattle > 0
-      ? Math.max(1, Math.floor(storedBattle))
-      : 1;
+    const progressSources = [];
+    const visited = new Set();
 
-    const totalBattles = Math.max(1, Math.floor(requiredBattles));
+    const addProgressSource = (source) => {
+      if (!isPlainObject(source) || visited.has(source)) {
+        return;
+      }
+
+      visited.add(source);
+      progressSources.push(source);
+
+      if (isPlainObject(source.progress)) {
+        addProgressSource(source.progress);
+      }
+    };
+
+    addProgressSource(window.preloadedData?.progress);
+    addProgressSource(window.preloadedData?.player?.progress);
+
+    const collectCandidates = (keys) => {
+      const values = [];
+      progressSources.forEach((source) => {
+        keys.forEach((key) => {
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            values.push(source[key]);
+          }
+        });
+      });
+      return values;
+    };
+
+    const findFirstPositiveInteger = (candidates) => {
+      for (const candidate of candidates) {
+        const numeric = toPositiveInteger(candidate);
+        if (numeric !== null) {
+          return numeric;
+        }
+      }
+      return null;
+    };
+
+    const levelCandidates = collectCandidates(['currentLevel', 'level']);
+    const battleCandidates = collectCandidates(['currentBattle', 'battleCurrent']);
+
+    const currentLevel = findFirstPositiveInteger(levelCandidates) ?? 1;
+    const currentBattle = findFirstPositiveInteger(battleCandidates) ?? 1;
+
+    const normalizedRequiredBattles =
+      toPositiveInteger(requiredBattles) ?? BATTLES_PER_LEVEL;
+    const totalBattles = Math.max(1, normalizedRequiredBattles);
     let nextBattle = currentBattle + 1;
     let nextLevel = currentLevel;
 
