@@ -154,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const rewardCard = rewardOverlay?.querySelector('[data-reward-card]');
   const rewardCardText = rewardCard?.querySelector('.reward-overlay__card-text');
   const rewardCardButton = rewardCard?.querySelector('[data-reward-card-button]');
+  const rewardCardAvatar = rewardCard?.querySelector('[data-reward-card-avatar]');
   const rewardDevSkipButton = rewardOverlay?.querySelector('[data-reward-dev-skip]');
   const evolutionOverlay = document.querySelector('[data-evolution-overlay]');
   const evolutionCurrentSprite = evolutionOverlay?.querySelector(
@@ -171,8 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const evolutionCompleteSprite = evolutionCompleteOverlay?.querySelector(
     '[data-evolution-complete-sprite]'
   );
-
-  const potionRewardImageSrc = '../images/complete/potion.png';
 
   const medalElement = document.querySelector('[data-medal]');
   let medalHideTimeoutId = null;
@@ -284,6 +283,14 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardCardButton && typeof rewardCardButton.textContent === 'string'
       ? rewardCardButton.textContent.trim()
       : 'Use Potion';
+  const defaultRewardCardImageSrc =
+    rewardCardAvatar && typeof rewardCardAvatar.getAttribute === 'function'
+      ? rewardCardAvatar.getAttribute('src')
+      : null;
+  const defaultRewardCardImageAlt =
+    rewardCardAvatar && typeof rewardCardAvatar.getAttribute === 'function'
+      ? rewardCardAvatar.getAttribute('alt')
+      : null;
   const REGISTER_REWARD_CARD_TEXT =
     'Your creature just evolved! It’s stronger now and ready for new adventures!';
   const REGISTER_REWARD_CARD_BUTTON_TEXT = 'Register Now';
@@ -1269,16 +1276,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const formatGemRewardMessage = ({
     amount,
     isWin,
-    includeShopPrompt,
+    includeShopPrompt: _includeShopPrompt,
   } = {}) => {
     const normalizedAmount = Math.max(0, Math.round(Number(amount) || 0));
-    const prefix = isWin ? 'Great job! You earned' : 'Great effort! You earned';
-    const gemLabel = `${normalizedAmount} gem${normalizedAmount === 1 ? '' : 's'}`;
-    const baseMessage = `${prefix} ${gemLabel}`;
+    const gemLabel = normalizedAmount
+      ? `${normalizedAmount} Gem${normalizedAmount === 1 ? '' : 's'}`
+      : null;
+    const buttonText = gemLabel
+      ? `Claim ${gemLabel}`
+      : isWin
+      ? 'Continue'
+      : 'Try Again';
 
-    return includeShopPrompt
-      ? `${baseMessage}. Let’s see what cool stuff you can buy in the shop!`
-      : `${baseMessage}.`;
+    return {
+      text: isWin ? 'Monster Defeated' : 'Keep Practicing',
+      buttonText,
+      imageSrc: rewardSpriteSources.gem,
+      imageAlt: normalizedAmount === 1 ? 'Gem reward' : 'Gem rewards',
+    };
   };
 
   const resolveAbsoluteSpritePath = (path) => {
@@ -1889,14 +1904,42 @@ document.addEventListener('DOMContentLoaded', () => {
     buttonText,
     onClick,
     focusButton = true,
+    imageSrc,
+    imageAlt,
   }) => {
     if (!rewardCard || !rewardCardText || !rewardCardButton) {
       return false;
     }
 
-    rewardCardText.textContent = text;
-    rewardCardButton.textContent = buttonText;
+    const resolvedText =
+      typeof text === 'string' && text.trim()
+        ? text
+        : defaultRewardCardText;
+    const resolvedButtonText =
+      typeof buttonText === 'string' && buttonText.trim()
+        ? buttonText
+        : defaultRewardCardButtonText;
+    rewardCardText.textContent = resolvedText;
+    rewardCardButton.textContent = resolvedButtonText;
     rewardCardButton.disabled = false;
+
+    if (rewardCardAvatar) {
+      const resolvedImageSrc =
+        typeof imageSrc === 'string' && imageSrc.trim()
+          ? imageSrc
+          : defaultRewardCardImageSrc;
+      if (resolvedImageSrc) {
+        rewardCardAvatar.src = resolvedImageSrc;
+      }
+
+      const trimmedAlt =
+        typeof imageAlt === 'string' ? imageAlt.trim() : '';
+      if (trimmedAlt) {
+        rewardCardAvatar.alt = trimmedAlt;
+      } else if (defaultRewardCardImageAlt !== null) {
+        rewardCardAvatar.alt = defaultRewardCardImageAlt;
+      }
+    }
 
     if (rewardCardButtonHandler) {
       rewardCardButton.removeEventListener('click', rewardCardButtonHandler);
@@ -2259,14 +2302,16 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         cardDisplayed = true;
-        const cardText = formatGemRewardMessage({
+        const cardContent = formatGemRewardMessage({
           amount: rewardAmount,
           isWin: rewardIsWin,
           includeShopPrompt,
         });
         const displayed = displayRewardCard({
-          text: cardText,
-          buttonText: 'Continue',
+          text: cardContent?.text,
+          buttonText: cardContent?.buttonText,
+          imageSrc: cardContent?.imageSrc,
+          imageAlt: cardContent?.imageAlt,
           onClick: navigateHome,
         });
         if (!displayed) {
@@ -2384,12 +2429,27 @@ document.addEventListener('DOMContentLoaded', () => {
       }, totalFallbackDuration);
     });
 
-  const updateNextMissionButton = (win = true) => {
+  const updateNextMissionButton = (win = true, rewardAmount = null) => {
     if (!nextMissionBtn) {
       return;
     }
 
     const hasPendingReward = Boolean(pendingGemReward);
+
+    const resolvedAmountRaw =
+      rewardAmount ?? (hasPendingReward ? pendingGemReward.amount : null);
+    const normalizedAmount = Number.isFinite(resolvedAmountRaw)
+      ? Math.max(0, Math.round(resolvedAmountRaw))
+      : null;
+
+    if (normalizedAmount) {
+      const label = `Claim ${normalizedAmount} Gem${
+        normalizedAmount === 1 ? '' : 's'
+      }`;
+      nextMissionBtn.textContent = label;
+      nextMissionBtn.dataset.action = 'next';
+      return;
+    }
 
     if (!win && !hasPendingReward) {
       nextMissionBtn.textContent = 'Try Again';
@@ -2397,10 +2457,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const useClaimLabel =
-      !hasPendingReward || pendingGemReward.useClaimLabel === true;
-    nextMissionBtn.textContent = useClaimLabel ? 'Claim Potion' : 'Continue';
-    nextMissionBtn.dataset.action = 'next';
+    nextMissionBtn.textContent = win ? 'Continue' : 'Try Again';
+    nextMissionBtn.dataset.action = win ? 'next' : 'retry';
   };
 
   const updateLevelProgressDisplay = () => {
@@ -4320,23 +4378,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (completeMonsterImg) {
-      if (win) {
-        completeMonsterImg.src = potionRewardImageSrc;
-        completeMonsterImg.alt = 'Potion reward';
-      } else if (monsterImg) {
-        completeMonsterImg.src = monsterImg.src;
-        if (monster.name) {
-          completeMonsterImg.alt = `${monster.name} preparing for the next battle`;
-        } else {
-          completeMonsterImg.alt = 'Monster preparing for the next battle';
-        }
-      }
+      const gemImageSrc = rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
+      completeMonsterImg.src = gemImageSrc;
+      completeMonsterImg.alt = win
+        ? 'Gem reward for defeating the monster'
+        : 'Gem reward for your effort';
     }
 
     const goalsAchieved = win;
 
     if (win) {
-      setBattleCompleteTitleLines('Potion Earned');
+      setBattleCompleteTitleLines('Monster Defeated');
       awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
       setBattleCompleteTitleLines('Keep Practicing');
@@ -4394,27 +4446,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (win) {
-      const isLevelTwoPlus =
-        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel >= 2;
-      if (isLevelTwoPlus) {
-        pendingGemReward = {
-          amount: gemRewardAmount,
-          totalAfter: updatedGemTotal,
-          useClaimLabel: !gemRewardIntroShown,
-          isFirstGemReward: !gemRewardIntroShown,
-          currentLevel: rewardCurrentLevel,
-          win: true,
-        };
-      } else {
-        pendingGemReward = null;
-      }
+      pendingGemReward = {
+        amount: gemRewardAmount,
+        totalAfter: updatedGemTotal,
+        isFirstGemReward: !gemRewardIntroShown,
+        currentLevel: rewardCurrentLevel,
+        currentBattle: rewardBattleIndex,
+        win: true,
+      };
     } else {
       pendingGemReward = {
         amount: gemRewardAmount,
         totalAfter: updatedGemTotal,
-        useClaimLabel: true,
         isFirstGemReward: false,
         currentLevel: rewardCurrentLevel,
+        currentBattle: rewardBattleIndex,
         win: false,
       };
     }
@@ -4434,7 +4480,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    updateNextMissionButton(win);
+    updateNextMissionButton(win, gemRewardAmount);
 
     if (!win) {
       resetRewardOverlay();
@@ -4555,7 +4601,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
-    setBattleCompleteTitleLines('Potion Earned');
+    setBattleCompleteTitleLines('Monster Defeated');
     updateNextMissionButton();
     if (summaryAccuracyValue) {
       summaryAccuracyValue.classList.remove('goal-result--met', 'goal-result--missed');
