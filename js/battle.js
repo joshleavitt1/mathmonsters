@@ -172,6 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
     '[data-evolution-complete-sprite]'
   );
 
+  const potionRewardImageSrc = '../images/complete/potion.png';
+
   const medalElement = document.querySelector('[data-medal]');
   let medalHideTimeoutId = null;
   let medalFinalizeTimeoutId = null;
@@ -2468,7 +2470,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const useClaimLabel =
       !hasPendingReward || pendingGemReward.useClaimLabel === true;
-    nextMissionBtn.textContent = useClaimLabel ? 'Claim Reward' : 'Continue';
+    nextMissionBtn.textContent = useClaimLabel ? 'Claim Potion' : 'Continue';
     nextMissionBtn.dataset.action = 'next';
   };
 
@@ -3132,12 +3134,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function applyMonsterDefeatStyles() {
+    if (!monsterDefeatOverlay) {
+      monsterDefeatAnimationTimeout = null;
+      return;
+    }
     if (completeMonsterImg) {
       completeMonsterImg.classList.add('monster-image--defeated');
     }
-    if (monsterDefeatOverlay) {
-      monsterDefeatOverlay.classList.add('monster-defeat-overlay--visible');
-    }
+    monsterDefeatOverlay.classList.add('monster-defeat-overlay--visible');
     monsterDefeatAnimationTimeout = null;
   }
 
@@ -4388,23 +4392,24 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
 
-    if (completeMonsterImg && monsterImg) {
-      completeMonsterImg.src = monsterImg.src;
-      if (monster.name) {
-        completeMonsterImg.alt = win
-          ? `${monster.name} defeated`
-          : `${monster.name} preparing for the next battle`;
-      } else {
-        completeMonsterImg.alt = win
-          ? 'Monster defeated'
-          : 'Monster preparing for the next battle';
+    if (completeMonsterImg) {
+      if (win) {
+        completeMonsterImg.src = potionRewardImageSrc;
+        completeMonsterImg.alt = 'Potion reward';
+      } else if (monsterImg) {
+        completeMonsterImg.src = monsterImg.src;
+        if (monster.name) {
+          completeMonsterImg.alt = `${monster.name} preparing for the next battle`;
+        } else {
+          completeMonsterImg.alt = 'Monster preparing for the next battle';
+        }
       }
     }
 
     const goalsAchieved = win;
 
     if (win) {
-      setBattleCompleteTitleLines('Monster Defeated');
+      setBattleCompleteTitleLines('Potion Earned');
       awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
       setBattleCompleteTitleLines('Keep Practicing');
@@ -4645,7 +4650,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
-    setBattleCompleteTitleLines('Monster Defeated');
+    setBattleCompleteTitleLines('Potion Earned');
     updateNextMissionButton();
     if (summaryAccuracyValue) {
       summaryAccuracyValue.classList.remove('goal-result--met', 'goal-result--missed');
