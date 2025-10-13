@@ -9,7 +9,6 @@ This scenario verifies that stored progress using a string current level still l
    ```js
    localStorage.setItem('mathmonstersProgress', JSON.stringify({
      currentLevel: '2',
-     currentBattle: '1'
    }));
    ```
 3. Refresh the page. Confirm the hero and monster sprites correspond to level 2 (e.g., the level selector highlights "2" and the level 2 art assets are displayed).

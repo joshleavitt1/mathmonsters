@@ -11,7 +11,6 @@ const MIN_PRELOAD_DURATION_MS = 2000;
 
 const DEV_RESET_TARGET_MATH_KEY = 'addition';
 const DEV_RESET_TARGET_LEVEL = 2;
-const DEV_RESET_TARGET_BATTLE = 1;
 const DEV_RESET_BUTTON_SELECTOR = '[data-dev-reset-level]';
 const SECRET_LEVEL_BUTTON_SELECTOR = '[data-secret-level-two]';
 const SECRET_LEVEL_TARGET_LEVEL = DEV_RESET_TARGET_LEVEL;
@@ -1173,10 +1172,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       mergedProgress.currentLevel = storedProgress.currentLevel;
     }
 
-    if (typeof storedProgress.currentBattle === 'number') {
-      mergedProgress.currentBattle = storedProgress.currentBattle;
-    }
-
     if (typeof storedProgress.timeRemainingSeconds === 'number') {
       player.battleVariables.timeRemainingSeconds =
         storedProgress.timeRemainingSeconds;
@@ -1239,15 +1234,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
         ...mergedProgress.experience,
       };
     }
-  }
-
-  if (!Number.isFinite(player.progress?.currentBattle) || player.progress.currentBattle <= 0) {
-    player.progress.currentBattle = 1;
-  } else {
-    player.progress.currentBattle = Math.max(
-      1,
-      Math.round(player.progress.currentBattle)
-    );
   }
 
   return player;
@@ -2091,30 +2077,6 @@ const determineBattlePreview = (levelsData, playerData) => {
     mathTypeKey
   );
 
-  const totalBattlesForLevel = resolveBattleCountForLevel(activeLevel, levels);
-  const sanitizedBattleTotal = Number.isFinite(totalBattlesForLevel)
-    ? Math.max(1, Math.round(totalBattlesForLevel))
-    : 1;
-  const storedBattleTotal = Number(
-    mathProgressEntry?.totalBattles ?? mathProgressEntry?.currentLevel
-  );
-  const resolvedBattleTotal = Number.isFinite(storedBattleTotal) && storedBattleTotal > 0
-    ? Math.max(sanitizedBattleTotal, Math.round(storedBattleTotal))
-    : sanitizedBattleTotal;
-  const storedBattleCurrent = Number(mathProgressEntry?.currentBattle);
-  let resolvedBattleCurrent = Number.isFinite(storedBattleCurrent)
-    ? Math.round(storedBattleCurrent)
-    : 1;
-  if (!Number.isFinite(resolvedBattleCurrent) || resolvedBattleCurrent <= 0) {
-    resolvedBattleCurrent = 1;
-  }
-  if (resolvedBattleCurrent > resolvedBattleTotal) {
-    resolvedBattleCurrent = resolvedBattleTotal;
-  }
-  const battleProgressRatio = resolvedBattleTotal > 0
-    ? Math.max(0, Math.min(1, resolvedBattleCurrent / resolvedBattleTotal))
-    : 0;
-
   return {
     levels,
     player,
@@ -2130,9 +2092,6 @@ const determineBattlePreview = (levelsData, playerData) => {
       monsterAlt,
       mathTypeKey: typeof mathTypeKey === 'string' ? mathTypeKey : mathProgressKey,
       progressMathKey: mathProgressKey,
-      progressBattleCurrent: resolvedBattleCurrent,
-      progressBattleTotal: resolvedBattleTotal,
-      progressBattleRatio: battleProgressRatio,
       progressExperience: experienceProgress.ratio,
       progressExperienceEarned: experienceProgress.earned,
       progressExperienceTotal: experienceProgress.total,
@@ -2158,7 +2117,7 @@ const HOME_ACTION_GLOW_CLASSES = [
   'home__action--glow-shop',
 ];
 
-const updateHomeTutorialHighlights = ({ currentLevel, currentBattle } = {}) => {
+const updateHomeTutorialHighlights = ({ currentLevel } = {}) => {
   const actionsContainer = document.querySelector('.home__actions');
   if (!actionsContainer) {
     return;
@@ -2205,9 +2164,8 @@ const updateHomeTutorialHighlights = ({ currentLevel, currentBattle } = {}) => {
   }
 
   const resolvedLevel = normalizeBattleIndex(currentLevel);
-  const resolvedBattle = normalizeBattleIndex(currentBattle);
 
-  if (resolvedLevel === 2 && resolvedBattle === 1) {
+  if (resolvedLevel === 2) {
     if (shopAction) {
       shopAction.hidden = true;
       shopAction.setAttribute('aria-hidden', 'true');
@@ -2221,7 +2179,7 @@ const updateHomeTutorialHighlights = ({ currentLevel, currentBattle } = {}) => {
     return;
   }
 
-  if (resolvedLevel === 2 && resolvedBattle === 2) {
+  if (resolvedLevel === 3) {
     if (shopAction) {
       shopAction.hidden = false;
       shopAction.removeAttribute('aria-hidden');
@@ -2355,28 +2313,6 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
       return;
     }
 
-    const battleTotalRaw = Number(previewData?.progressBattleTotal);
-    const battleCurrentRaw = Number(previewData?.progressBattleCurrent);
-    const hasBattleProgress =
-      Number.isFinite(battleTotalRaw) && battleTotalRaw > 0;
-
-    if (hasBattleProgress) {
-      const totalBattles = Math.max(1, Math.round(battleTotalRaw));
-      const currentBattle = Number.isFinite(battleCurrentRaw)
-        ? Math.max(1, Math.min(Math.round(battleCurrentRaw), totalBattles))
-        : Math.min(1, totalBattles);
-      const progressValue = totalBattles > 0
-        ? Math.max(0, Math.min(1, currentBattle / totalBattles))
-        : 0;
-      progressElement.style.setProperty('--progress-value', progressValue);
-      progressElement.setAttribute('aria-valuemin', '0');
-      progressElement.setAttribute('aria-valuemax', `${totalBattles}`);
-      progressElement.setAttribute('aria-valuenow', `${currentBattle}`);
-      const ariaText = `Battle ${currentBattle} of ${totalBattles}`;
-      progressElement.setAttribute('aria-valuetext', ariaText);
-      return;
-    }
-
     const progressValue = Number.isFinite(previewData?.progressExperience)
       ? Math.min(Math.max(previewData.progressExperience, 0), 1)
       : 0;
@@ -2460,7 +2396,6 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
 
   updateHomeTutorialHighlights({
     currentLevel: resolvedCurrentLevel,
-    currentBattle: previewData?.progressBattleCurrent,
   });
 
   updateHeroFloat();
@@ -2585,7 +2520,6 @@ const setupDevResetTool = () => {
 
     const updatedMathProgress = {
       ...existingMathProgress,
-      currentBattle: DEV_RESET_TARGET_BATTLE,
       currentLevel: DEV_RESET_TARGET_LEVEL,
     };
 
@@ -2632,14 +2566,12 @@ const setupSecretLevelShortcut = () => {
 
     const updatedMathProgress = {
       ...existingMathProgress,
-      currentBattle: DEV_RESET_TARGET_BATTLE,
       currentLevel: SECRET_LEVEL_TARGET_LEVEL,
     };
 
     const updatedProgress = {
       ...normalizedProgress,
       battleLevel: SECRET_LEVEL_TARGET_LEVEL,
-      currentBattle: DEV_RESET_TARGET_BATTLE,
       currentLevel: SECRET_LEVEL_TARGET_LEVEL,
       gems: 0,
       [mathKey]: updatedMathProgress,

@@ -120,25 +120,16 @@ const sanitizeBattleProgressState = (state) => {
   };
 
   const currentLevel = clampPositiveInteger(state.currentLevel);
-  const currentBattle = clampPositiveInteger(state.currentBattle);
-  const totalBattles = clampPositiveInteger(state.totalBattles);
   const levelLabel =
     typeof state.levelLabel === 'string' && state.levelLabel.trim()
       ? state.levelLabel.trim()
       : '';
 
-  const resolvedTotal = totalBattles ?? (currentBattle ?? null);
-  const resolvedCurrent = currentBattle ?? (resolvedTotal ?? null);
-
   const ratio =
-    resolvedTotal && resolvedCurrent
-      ? Math.max(0, Math.min(1, resolvedCurrent / resolvedTotal))
-      : 0;
+    typeof state.ratio === 'number' ? Math.max(0, Math.min(1, state.ratio)) : 0;
 
   return {
     currentLevel: currentLevel ?? null,
-    currentBattle: resolvedCurrent ?? null,
-    totalBattles: resolvedTotal ?? null,
     levelLabel,
     ratio,
     timestamp: Number.isFinite(state.timestamp) ? state.timestamp : Date.now(),
@@ -248,8 +239,7 @@ const findMathProgressEntry = (progressRoot, candidates = []) => {
   }
 
   const isProgressEntry = (value) =>
-    isPlainObject(value) &&
-    (value.currentBattle !== undefined || value.currentLevel !== undefined);
+    isPlainObject(value) && value.currentLevel !== undefined;
 
   const keys = Object.keys(progressRoot);
   const normalizedCandidates = candidates
@@ -414,8 +404,7 @@ const computeHomeBattleProgress = (data) => {
   if (!mathProgressEntry) {
     for (const source of progressSources) {
       const fallback = Object.entries(source).find(([, value]) =>
-        isPlainObject(value) &&
-        (value.currentBattle !== undefined || value.currentLevel !== undefined)
+        isPlainObject(value) && value.currentLevel !== undefined
       );
       if (fallback) {
         mathProgressKey = fallback[0];
@@ -425,7 +414,17 @@ const computeHomeBattleProgress = (data) => {
     }
   }
 
+  const clampPositiveInteger = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+      return null;
+    }
+
+    return Math.round(numeric);
+  };
+
   const currentLevelCandidates = [
+    data.preview?.currentLevel,
     data.progress?.currentLevel,
     data.player?.progress?.currentLevel,
     data.level?.currentLevel,
@@ -445,95 +444,14 @@ const computeHomeBattleProgress = (data) => {
     ? Math.max(1, Math.round(resolvedCurrentLevel))
     : null;
 
-  const initialCurrentBattle = clampPositiveInteger(mathProgressEntry?.currentBattle);
-
-  const initialTotalBattles = clampPositiveInteger(
-    mathProgressEntry?.totalBattles ?? mathProgressEntry?.currentLevel,
-    {
-      allowZeroFallback: true,
-    }
-  );
-
-  const sanitizedInitialTotal =
-    Number.isFinite(initialTotalBattles) && initialTotalBattles !== null
-      ? initialTotalBattles
-      : null;
-
-  const activeLevel = (() => {
-    if (
-      isPlainObject(data.level) &&
-      (!normalizedCurrentLevel ||
-        clampPositiveInteger(data.level?.currentLevel) === normalizedCurrentLevel)
-    ) {
-      return data.level;
-    }
-    if (normalizedCurrentLevel) {
-      return resolveLevelByBattleNumber(data.levels, normalizedCurrentLevel);
-    }
-
-    if (Number.isFinite(normalizedCurrentLevel)) {
-      return (
-        resolveLevelByBattleNumber(data.levels, normalizedCurrentLevel) || null
-      );
-    }
-
-    return null;
-  })();
-
-  const totalBattleCandidates = [
-    sanitizedInitialTotal,
-    mathProgressEntry?.totalBattles,
-    mathProgressEntry?.levelBattles,
-    data.preview?.progressBattleTotal,
-    data.preview?.activeLevel?.totalBattles,
-    data.battle?.totalBattles,
-    data.progress?.totalBattles,
-    data.player?.progress?.totalBattles,
-  ];
-
-  let totalBattles = pickFirstIntegerValue(totalBattleCandidates);
-
-  if (!Number.isFinite(totalBattles) || totalBattles <= 0) {
-    const levelBattleCount = resolveBattleCountForLevel(activeLevel);
-    if (Number.isFinite(levelBattleCount) && levelBattleCount > 0) {
-      totalBattles = levelBattleCount;
-    }
-  }
-
-  if (!Number.isFinite(totalBattles) || totalBattles <= 0) {
-    totalBattles = HOME_PROGRESS_FALLBACK_BATTLES;
-  }
-
-  const currentBattleCandidates = [
-    initialCurrentBattle,
-    data.preview?.progressBattleCurrent,
-    data.battle?.currentBattle,
-    data.battleTracking?.currentBattle,
-    data.battleTracking?.battle,
-  ];
-
-  let currentBattle = pickFirstIntegerValue(currentBattleCandidates, {
-    allowZero: true,
-  });
-
-  if (!Number.isFinite(currentBattle) || currentBattle <= 0) {
-    currentBattle = 1;
-  }
-
-  if (currentBattle > totalBattles) {
-    currentBattle = totalBattles;
-  }
-
-  const ratio = totalBattles > 0 ? Math.max(0, Math.min(1, currentBattle / totalBattles)) : 0;
-
   const levelLabel = normalizedCurrentLevel ? `Level ${normalizedCurrentLevel}` : '';
 
   return {
     currentLevel: normalizedCurrentLevel,
     levelLabel,
-    currentBattle,
-    totalBattles,
-    ratio,
+    currentBattle: null,
+    totalBattles: null,
+    ratio: 0,
   };
 };
 
@@ -557,6 +475,8 @@ const applyBattleProgressAttributes = (progressElement, state) => {
     ? Math.min(currentBattle, resolvedTotal ?? currentBattle)
     : resolvedTotal;
 
+  const resolvedLevel = clampPositiveInteger(state.currentLevel);
+
   progressElement.setAttribute('aria-valuemin', '0');
 
   if (resolvedTotal) {
@@ -572,6 +492,20 @@ const applyBattleProgressAttributes = (progressElement, state) => {
       'aria-valuetext',
       `Battle ${resolvedCurrent} of ${resolvedTotal}`
     );
+    return;
+  }
+
+  if (!resolvedTotal) {
+    progressElement.setAttribute('aria-valuemax', '1');
+  }
+
+  const ratio = typeof state.ratio === 'number' ? Math.max(0, Math.min(1, state.ratio)) : 0;
+  progressElement.setAttribute('aria-valuenow', `${ratio}`);
+
+  if (resolvedLevel) {
+    progressElement.setAttribute('aria-valuetext', `Level ${resolvedLevel}`);
+  } else {
+    progressElement.removeAttribute('aria-valuetext');
   }
 };
 
@@ -602,45 +536,7 @@ const shouldPlayLevelCompletionSequence = (previousState, nextState) => {
 
   const prevLevel = Number(previousState.currentLevel);
   const nextLevel = Number(nextState.currentLevel);
-  const prevCurrent = Number(previousState.currentBattle);
-  const prevTotal = Number(previousState.totalBattles);
-  const nextCurrent = Number(nextState.currentBattle);
-
-  const hasAdvancedLevel =
-    Number.isFinite(prevLevel) &&
-    Number.isFinite(nextLevel) &&
-    nextLevel > prevLevel;
-
-  const nextIsFirstBattle = Number.isFinite(nextCurrent) && nextCurrent === 1;
-
-  const previousComplete =
-    Number.isFinite(prevCurrent) &&
-    Number.isFinite(prevTotal) &&
-    prevTotal > 0 &&
-    prevCurrent >= prevTotal;
-
-  if (previousComplete) {
-    if (hasAdvancedLevel) {
-      return true;
-    }
-
-    if (
-      Number.isFinite(prevLevel) &&
-      Number.isFinite(nextLevel) &&
-      nextLevel === prevLevel &&
-      Number.isFinite(nextCurrent)
-    ) {
-      return nextCurrent === 1;
-    }
-
-    return false;
-  }
-
-  if (hasAdvancedLevel && nextIsFirstBattle) {
-    return true;
-  }
-
-  return false;
+  return Number.isFinite(prevLevel) && Number.isFinite(nextLevel) && nextLevel > prevLevel;
 };
 
 const storeBattleSnapshot = (snapshot) => {
@@ -648,9 +544,6 @@ const storeBattleSnapshot = (snapshot) => {
     ? {
         currentLevel: Number.isFinite(snapshot.currentLevel)
           ? snapshot.currentLevel
-          : null,
-        currentBattle: Number.isFinite(snapshot.currentBattle)
-          ? Math.max(1, Math.round(snapshot.currentBattle))
           : null,
         hero: sanitizeSnapshotEntry(snapshot.hero),
         monster: sanitizeSnapshotEntry(snapshot.monster),
@@ -706,9 +599,6 @@ const readBattleSnapshot = () => {
 
     const snapshot = {
       currentLevel: Number.isFinite(parsed.currentLevel) ? parsed.currentLevel : null,
-      currentBattle: Number.isFinite(parsed.currentBattle)
-        ? Math.max(1, Math.round(parsed.currentBattle))
-        : null,
       hero: sanitizeSnapshotEntry(parsed.hero),
       monster: sanitizeSnapshotEntry(parsed.monster),
       timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),
@@ -1096,16 +986,8 @@ const updateHomeFromPreloadedData = () => {
     };
 
     if (shouldAnimateLevelUp && previousProgressState) {
-      const resolvedPreviousTotal = Number.isFinite(previousProgressState.totalBattles)
-        ? Math.max(1, Math.round(previousProgressState.totalBattles))
-        : Number.isFinite(progressState?.totalBattles)
-        ? Math.max(1, Math.round(progressState.totalBattles))
-        : null;
-
       const previousState = {
         ...previousProgressState,
-        currentBattle: resolvedPreviousTotal ?? previousProgressState.currentBattle,
-        totalBattles: resolvedPreviousTotal ?? previousProgressState.totalBattles,
         ratio: 1,
       };
 
@@ -1133,7 +1015,6 @@ const updateHomeFromPreloadedData = () => {
 
   storeBattleSnapshot({
     currentLevel: Number.isFinite(currentLevel) ? currentLevel : null,
-    currentBattle: Number.isFinite(currentBattle) ? currentBattle : null,
     hero,
     monster,
   });

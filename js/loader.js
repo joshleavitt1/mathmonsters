@@ -726,10 +726,6 @@ const determinePlayerHeroLevel = (player) => {
         return mathLevel;
       }
 
-      const mathBattle = resolveHeroAssetLevel(mathProgress.currentBattle);
-      if (mathBattle !== null) {
-        return mathBattle;
-      }
     }
   }
 
@@ -750,11 +746,6 @@ const determinePlayerHeroLevel = (player) => {
         highest = highest === null ? entryLevel : Math.max(highest, entryLevel);
       }
 
-      const entryBattle = resolveHeroAssetLevel(entry.currentBattle);
-      if (entryBattle !== null) {
-        highest =
-          highest === null ? entryBattle : Math.max(highest, entryBattle);
-      }
     });
 
     if (highest !== null) {
@@ -862,8 +853,7 @@ const findMathProgressEntry = (progressRoot, candidates = []) => {
   }
 
   const isProgressEntry = (value) =>
-    isPlainObject(value) &&
-    (value.currentBattle !== undefined || value.currentLevel !== undefined);
+    isPlainObject(value) && value.currentLevel !== undefined;
 
   const keys = Object.keys(progressRoot);
   const normalizedCandidates = candidates
@@ -1562,13 +1552,6 @@ const syncRemoteCurrentLevel = (playerData) => {
         progress.currentLevel = storedCurrentLevel;
       }
 
-      const storedCurrentBattle = normalizeCurrentLevel(
-        storedProgress.currentBattle
-      );
-      if (storedCurrentBattle !== null) {
-        progress.currentBattle = Math.max(1, Math.round(storedCurrentBattle));
-      }
-
       if (typeof storedProgress.timeRemainingSeconds === 'number') {
         battleVariables.timeRemainingSeconds =
           storedProgress.timeRemainingSeconds;
@@ -1628,12 +1611,6 @@ const syncRemoteCurrentLevel = (playerData) => {
       progress.currentLevel = activeCurrentLevel;
     } else {
       delete progress.currentLevel;
-    }
-
-    if (!Number.isFinite(progress.currentBattle) || progress.currentBattle <= 0) {
-      progress.currentBattle = 1;
-    } else {
-      progress.currentBattle = Math.max(1, Math.round(progress.currentBattle));
     }
 
     const currentLevel =
@@ -2051,111 +2028,12 @@ const syncRemoteCurrentLevel = (playerData) => {
       progress?.currentMathType,
     ];
 
-    const totalBattlesForLevel = resolveLevelBattleCount();
-    const resolvedBattleTotal =
-      Number.isFinite(totalBattlesForLevel) && totalBattlesForLevel > 0
-        ? Math.max(1, Math.round(totalBattlesForLevel))
-        : null;
-
-    const applyBattleTotalToEntry = (entry) => {
-      if (!isPlainObject(entry) || resolvedBattleTotal === null) {
-        return;
-      }
-
-      const existingTotal = Number(entry.totalBattles ?? entry.levelBattles);
-      const sanitizedExisting =
-        Number.isFinite(existingTotal) && existingTotal > 0
-          ? Math.max(1, Math.round(existingTotal))
-          : null;
-
-      if (sanitizedExisting === null || sanitizedExisting < resolvedBattleTotal) {
-        entry.totalBattles = resolvedBattleTotal;
-      }
-
-      const entryCurrentBattle = Number(entry.currentBattle);
-      if (
-        Number.isFinite(entryCurrentBattle) &&
-        entryCurrentBattle > resolvedBattleTotal
-      ) {
-        entry.currentBattle = resolvedBattleTotal;
-      }
-    };
-
-    if (resolvedBattleTotal !== null) {
-      applyBattleTotalToEntry(progress);
-      applyBattleTotalToEntry(basePlayer?.progress);
-
-      const { key: mathProgressKey, entry: mathProgressEntry } =
-        findMathProgressEntry(progress, mathTypeCandidates);
-
-      if (mathProgressEntry) {
-        applyBattleTotalToEntry(mathProgressEntry);
-      } else if (
-        typeof mathProgressKey === 'string' &&
-        mathProgressKey &&
-        !isPlainObject(progress?.[mathProgressKey])
-      ) {
-        progress[mathProgressKey] = { totalBattles: resolvedBattleTotal };
-      }
-
-      if (
-        typeof mathProgressKey === 'string' &&
-        mathProgressKey &&
-        isPlainObject(basePlayer?.progress)
-      ) {
-        const baseMathEntry = basePlayer.progress[mathProgressKey];
-        if (isPlainObject(baseMathEntry)) {
-          applyBattleTotalToEntry(baseMathEntry);
-        }
-      }
-    }
-
     const resolveActiveMonsterIndex = () => {
       if (!normalizedMonsters.length) {
         return 0;
       }
 
-      const mathTypeCandidates = [
-        levelBattle?.mathType,
-        levelBattleRaw?.mathType,
-        currentLevel?.mathType,
-        mathTypeKey,
-        basePlayer?.currentMathType,
-        basePlayer?.mathType,
-        progress?.mathType,
-      ];
-
-      const { entry: mathProgressEntry } = findMathProgressEntry(
-        progress,
-        mathTypeCandidates
-      );
-
-      const storedBattleCurrent = Number(mathProgressEntry?.currentBattle);
-      let resolvedIndex =
-        Number.isFinite(storedBattleCurrent) && storedBattleCurrent > 0
-          ? Math.round(storedBattleCurrent) - 1
-          : 0;
-
-      if (!Number.isFinite(resolvedIndex) || resolvedIndex < 0) {
-        resolvedIndex = 0;
-      }
-
-      const maxMonsterIndex = normalizedMonsters.length - 1;
-      const totalBattlesForLevel = resolveLevelBattleCount();
-      const maxBattleIndex = Number.isFinite(totalBattlesForLevel) &&
-        totalBattlesForLevel > 0
-          ? Math.min(Math.max(totalBattlesForLevel - 1, 0), maxMonsterIndex)
-          : maxMonsterIndex;
-
-      if (resolvedIndex > maxBattleIndex) {
-        resolvedIndex = maxBattleIndex;
-      }
-
-      if (!Number.isFinite(resolvedIndex) || resolvedIndex < 0) {
-        return 0;
-      }
-
-      return resolvedIndex;
+      return 0;
     };
 
     if (normalizedMonsters.length === 0) {
