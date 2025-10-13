@@ -26,6 +26,7 @@ const GEM_REWARD_PULSE_DURATION_MS = 2100;
 const GEM_REWARD_PULSE_COUNT = 1;
 const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
 const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
+const GEM_REWARD_HOME_ANIMATION_KEY = 'mathmonstersGemRewardAnimation';
 const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const BATTLES_PER_LEVEL = 4;
@@ -1271,6 +1272,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rounded = Math.round(numericValue);
     return rounded > 0 ? rounded : null;
+  };
+
+  const normalizeNonNegativeInteger = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return null;
+    }
+
+    const rounded = Math.round(numericValue);
+    return rounded >= 0 ? rounded : null;
+  };
+
+  const storeGemRewardHomeAnimation = ({
+    start,
+    end,
+    amount,
+    duration,
+  } = {}) => {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+
+    const normalizedEnd = normalizeNonNegativeInteger(end);
+    if (normalizedEnd === null) {
+      return;
+    }
+
+    const payload = {
+      end: normalizedEnd,
+      timestamp: Date.now(),
+    };
+
+    const normalizedStart = normalizeNonNegativeInteger(start);
+    if (normalizedStart !== null) {
+      payload.start = normalizedStart;
+    }
+
+    const normalizedAmount = normalizeNonNegativeInteger(amount);
+    if (normalizedAmount !== null) {
+      payload.amount = normalizedAmount;
+    }
+
+    const normalizedDuration = normalizeNonNegativeInteger(duration);
+    if (normalizedDuration !== null && normalizedDuration > 0) {
+      payload.duration = normalizedDuration;
+    }
+
+    try {
+      sessionStorage.setItem(
+        GEM_REWARD_HOME_ANIMATION_KEY,
+        JSON.stringify(payload)
+      );
+    } catch (error) {
+      console.warn('Unable to store gem reward animation state.', error);
+    }
   };
 
   const formatGemRewardMessage = ({
@@ -4537,6 +4593,46 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (pendingGemReward) {
+        const rewardLevel = Number(pendingGemReward.currentLevel);
+        const skipGemAnimation = Number.isFinite(rewardLevel) && rewardLevel >= 2;
+
+        if (skipGemAnimation) {
+          nextMissionProcessing = true;
+          nextMissionBtn.setAttribute('aria-busy', 'true');
+          const rewardTotal = normalizeNonNegativeInteger(
+            pendingGemReward.totalAfter
+          );
+          const rewardAmount = normalizeNonNegativeInteger(
+            pendingGemReward.amount
+          );
+          const startTotal =
+            rewardTotal !== null && rewardAmount !== null
+              ? Math.max(0, rewardTotal - rewardAmount)
+              : null;
+
+          if (pendingGemReward.isFirstGemReward) {
+            markGemRewardIntroSeen();
+          }
+
+          if (rewardTotal !== null) {
+            storeGemRewardHomeAnimation({
+              start: startTotal,
+              end: rewardTotal,
+              amount: rewardAmount,
+              duration: 900,
+            });
+          }
+
+          pendingGemReward = null;
+
+          if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
+            advanceCurrentLevel();
+          }
+          resetRewardOverlay();
+          window.location.href = '../index.html';
+          return;
+        }
+
         nextMissionProcessing = true;
         nextMissionBtn.setAttribute('aria-busy', 'true');
         playGemRewardAnimation(pendingGemReward)
