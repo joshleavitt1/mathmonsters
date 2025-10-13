@@ -1,6 +1,7 @@
 const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
+const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 
 const MONSTER_DEFEAT_ANIMATION_DELAY = 1000;
@@ -526,6 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const REWARD_POTION_SRC = '../images/complete/potion.png';
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
   const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
+  const HERO_ATTACK_LEVEL_2_SRC = '../images/hero/shellfin_attack_2.png';
 
   const rewardSpritePreloadCache = new Map();
 
@@ -1399,6 +1401,123 @@ document.addEventListener('DOMContentLoaded', () => {
     return /_evolution_1(?:[^0-9]|$)/.test(currentSprite);
   };
 
+  const toPlayerDataSpritePath = (path, fallback) => {
+    if (typeof path !== 'string') {
+      return fallback || null;
+    }
+
+    const sanitized = sanitizeHeroSpritePath(path.trim());
+    if (!sanitized) {
+      return fallback || null;
+    }
+
+    if (
+      /^[a-z]+:/i.test(sanitized) ||
+      sanitized.startsWith('data:') ||
+      sanitized.startsWith('//')
+    ) {
+      return sanitized;
+    }
+
+    let normalized = sanitized.replace(/^(\.\/)+/, '');
+    normalized = normalized.replace(/^(\.\.\/)+/, '');
+    normalized = normalized.replace(/^\/+/, '');
+
+    return normalized || fallback || sanitized;
+  };
+
+  const persistEvolvedHeroSprite = (nextSpriteSrc) => {
+    const evolvedBattleSprite =
+      sanitizeHeroSpritePath(nextSpriteSrc || '') || HERO_LEVEL_2_SRC;
+    const evolvedBattleAttackSprite =
+      sanitizeHeroSpritePath(HERO_ATTACK_LEVEL_2_SRC) || HERO_ATTACK_LEVEL_2_SRC;
+    const evolvedPlayerSprite =
+      toPlayerDataSpritePath(evolvedBattleSprite, 'images/hero/shellfin_evolution_2.png');
+    const evolvedPlayerAttackSprite =
+      toPlayerDataSpritePath(
+        HERO_ATTACK_LEVEL_2_SRC,
+        'images/hero/shellfin_attack_2.png'
+      );
+
+    if (window.preloadedData && typeof window.preloadedData === 'object') {
+      if (!isPlainObject(window.preloadedData.player)) {
+        window.preloadedData.player = {};
+      }
+
+      if (!isPlainObject(window.preloadedData.player.hero)) {
+        window.preloadedData.player.hero = {};
+      }
+
+      window.preloadedData.player.hero.sprite = evolvedPlayerSprite;
+      window.preloadedData.player.hero.attackSprite = evolvedPlayerAttackSprite;
+
+      const playerAttackSprites = isPlainObject(
+        window.preloadedData.player.hero.attackSprites
+      )
+        ? { ...window.preloadedData.player.hero.attackSprites }
+        : {};
+      playerAttackSprites.basic = evolvedPlayerAttackSprite;
+      playerAttackSprites.super = evolvedPlayerAttackSprite;
+      window.preloadedData.player.hero.attackSprites = playerAttackSprites;
+
+      if (isPlainObject(window.preloadedData.hero)) {
+        window.preloadedData.hero.sprite = evolvedBattleSprite;
+        const heroAttackSprites = isPlainObject(
+          window.preloadedData.hero.attackSprites
+        )
+          ? { ...window.preloadedData.hero.attackSprites }
+          : {};
+        heroAttackSprites.basic = evolvedBattleAttackSprite;
+        heroAttackSprites.super = evolvedBattleAttackSprite;
+        window.preloadedData.hero.attackSprites = heroAttackSprites;
+      }
+    }
+
+    try {
+      const storage = window.sessionStorage;
+      if (!storage) {
+        return;
+      }
+
+      const rawProfile = storage.getItem(PLAYER_PROFILE_STORAGE_KEY);
+      let storedProfile = null;
+
+      if (rawProfile) {
+        try {
+          const parsed = JSON.parse(rawProfile);
+          storedProfile = isPlainObject(parsed) ? { ...parsed } : null;
+        } catch (error) {
+          storedProfile = null;
+        }
+      }
+
+      if (!isPlainObject(storedProfile)) {
+        storedProfile = {};
+      }
+
+      if (!isPlainObject(storedProfile.hero)) {
+        storedProfile.hero = {};
+      }
+
+      storedProfile.hero.sprite = evolvedPlayerSprite;
+      storedProfile.hero.attackSprite = evolvedPlayerAttackSprite;
+
+      const storedAttackSprites = isPlainObject(storedProfile.hero.attackSprites)
+        ? { ...storedProfile.hero.attackSprites }
+        : {};
+      storedAttackSprites.basic = evolvedPlayerAttackSprite;
+      storedAttackSprites.super = evolvedPlayerAttackSprite;
+      storedProfile.hero.attackSprites = storedAttackSprites;
+
+      storage.setItem(
+        PLAYER_PROFILE_STORAGE_KEY,
+        JSON.stringify(storedProfile)
+      );
+    } catch (error) {
+      console.warn('Unable to persist evolved hero sprite.', error);
+    }
+  };
+
   const clearEvolutionTimers = () => {
     evolutionGrowthStartTimeout = clearTimeoutSafe(evolutionGrowthStartTimeout);
     evolutionGrowthFallbackTimeout = clearTimeoutSafe(
@@ -1668,6 +1787,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       evolutionFinalized = true;
+      persistEvolvedHeroSprite(nextSpriteSrc);
       hideRewardOverlayInstantly();
       if (completeMessage) {
         completeMessage.classList.remove('show');
