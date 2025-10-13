@@ -3,6 +3,7 @@ const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 const STARTING_LEVEL = 2;
 const HOME_PAGE_PATH = '../index.html';
+const DEFAULT_HERO_SPRITE = 'images/hero/shellfin_evolution_1.png';
 
 const isPlainObject = (value) =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -20,6 +21,20 @@ const clonePlainObject = (value) => {
   }
 };
 
+const cloneHeroForLevel = (hero) => {
+  const clonedHero = clonePlainObject(hero) ?? {};
+
+  const spriteCandidate =
+    typeof clonedHero.sprite === 'string' && clonedHero.sprite.trim()
+      ? clonedHero.sprite.trim()
+      : DEFAULT_HERO_SPRITE;
+
+  return {
+    ...clonedHero,
+    sprite: spriteCandidate,
+  };
+};
+
 const extractPlayerData = (rawPlayerData) => {
   if (!isPlainObject(rawPlayerData)) {
     return null;
@@ -34,10 +49,17 @@ const extractPlayerData = (rawPlayerData) => {
 };
 
 const applyStartingCurrentLevel = (playerData) => {
-  const clonedData = clonePlainObject(playerData) ?? {};
+  const clonedData = clonePlainObject(playerData);
+  const baseHeroSource = isPlainObject(clonedData)
+    ? clonedData.hero
+    : isPlainObject(playerData)
+    ? playerData.hero
+    : null;
+  const normalizedHero = cloneHeroForLevel(baseHeroSource);
 
   if (!isPlainObject(clonedData)) {
     return {
+      hero: cloneHeroForLevel(normalizedHero),
       progress: {
         currentLevel: STARTING_LEVEL,
       },
@@ -46,18 +68,16 @@ const applyStartingCurrentLevel = (playerData) => {
       },
       currentLevel: {
         1: {
-          hero: {
-            sprite: '/mathmonsters/images/hero/shellfin_evolution_1.png',
-          },
+          hero: cloneHeroForLevel(normalizedHero),
         },
         [STARTING_LEVEL]: {
-          hero: {
-            sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
-          },
+          hero: cloneHeroForLevel(normalizedHero),
         },
       },
     };
   }
+
+  clonedData.hero = cloneHeroForLevel(normalizedHero);
 
   const progressSection = isPlainObject(clonedData.progress)
     ? clonedData.progress
@@ -78,21 +98,16 @@ const applyStartingCurrentLevel = (playerData) => {
     clonedData.currentLevel = {};
   }
 
-  if (!isPlainObject(clonedData.currentLevel[1])) {
-    clonedData.currentLevel[1] = {
-      hero: {
-        sprite: '/mathmonsters/images/hero/shellfin_evolution_1.png',
-      },
-    };
-  }
+  const ensureLevelHero = (levelKey) => {
+    const levelEntry = isPlainObject(clonedData.currentLevel[levelKey])
+      ? clonedData.currentLevel[levelKey]
+      : (clonedData.currentLevel[levelKey] = {});
 
-  if (!isPlainObject(clonedData.currentLevel[STARTING_LEVEL])) {
-    clonedData.currentLevel[STARTING_LEVEL] = {
-      hero: {
-        sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
-      },
-    };
-  }
+    levelEntry.hero = cloneHeroForLevel(levelEntry.hero ?? normalizedHero);
+  };
+
+  ensureLevelHero(1);
+  ensureLevelHero(STARTING_LEVEL);
 
   return clonedData;
 };
