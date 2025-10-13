@@ -612,26 +612,7 @@ const normalizeCurrentLevel = (value) => {
   return null;
 };
 
-const normalizeHeroIdentifier = (value) => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed ? trimmed.toLowerCase() : null;
-};
-
-const resolveHeroAssetLevel = (value) => {
-  const normalized = normalizeCurrentLevel(value);
-  if (normalized === null) {
-    return null;
-  }
-
-  const floored = Math.floor(normalized);
-  return floored >= 1 ? floored : 1;
-};
-
-const updateHeroAssetForLevel = (path, heroId, level) => {
+const updateHeroAssetForLevel = (path) => {
   if (typeof path !== 'string') {
     return path;
   }
@@ -641,132 +622,40 @@ const updateHeroAssetForLevel = (path, heroId, level) => {
     return path;
   }
 
-  if (!heroId || !Number.isFinite(level)) {
-    return sanitizeHeroSpritePath(trimmed);
-  }
-
-  const safeLevel = Math.max(1, Math.floor(level));
-  const pattern = new RegExp(
-    `(${heroId}_(?:evolution|attack)_)(\\d+)((?:\\.[a-z0-9]+)?)(?=[?#]|$)`,
-    'gi'
-  );
-
-  const replaced = trimmed.replace(pattern, (match, prefix, _, extension = '') => {
-    return `${prefix}${safeLevel}${extension || ''}`;
-  });
-
-  return sanitizeHeroSpritePath(replaced);
+  return sanitizeHeroSpritePath(trimmed);
 };
 
-const applyAssetsForHeroLevel = (hero, level, fallbackHeroId = null) => {
+const applyAssetsForHeroLevel = (hero) => {
   if (!isPlainObject(hero)) {
     return;
   }
 
-  const resolvedLevel = resolveHeroAssetLevel(level);
-  if (resolvedLevel === null) {
-    return;
-  }
-
-  const heroId =
-    normalizeHeroIdentifier(hero.id) ?? normalizeHeroIdentifier(fallbackHeroId);
-
-  if (!heroId) {
-    return;
-  }
-
   if (typeof hero.sprite === 'string') {
-    hero.sprite = updateHeroAssetForLevel(hero.sprite, heroId, resolvedLevel);
+    hero.sprite = updateHeroAssetForLevel(hero.sprite);
   }
 
   if (typeof hero.attackSprite === 'string') {
-    hero.attackSprite = updateHeroAssetForLevel(
-      hero.attackSprite,
-      heroId,
-      resolvedLevel
-    );
+    hero.attackSprite = updateHeroAssetForLevel(hero.attackSprite);
   }
 
   if (isPlainObject(hero.attackSprites)) {
     Object.keys(hero.attackSprites).forEach((key) => {
       const spritePath = hero.attackSprites[key];
       if (typeof spritePath === 'string') {
-        hero.attackSprites[key] = updateHeroAssetForLevel(
-          spritePath,
-          heroId,
-          resolvedLevel
-        );
+        hero.attackSprites[key] = updateHeroAssetForLevel(spritePath);
       }
     });
   }
 };
-
-const determinePlayerHeroLevel = (player) => {
-  if (!isPlainObject(player)) {
-    return null;
-  }
-
-  const progress = isPlainObject(player.progress) ? player.progress : null;
-
-  const progressCurrentLevel = resolveHeroAssetLevel(progress?.currentLevel);
-  if (progressCurrentLevel !== null) {
-    return progressCurrentLevel;
-  }
-
-  const currentMathType =
-    typeof player.currentMathType === 'string'
-      ? player.currentMathType.trim()
-      : '';
-
-  if (currentMathType && progress) {
-    const mathProgress = progress[currentMathType];
-    if (isPlainObject(mathProgress)) {
-      const mathLevel = resolveHeroAssetLevel(mathProgress.currentLevel);
-      if (mathLevel !== null) {
-        return mathLevel;
-      }
-
-    }
-  }
-
-  const currentLevel = resolveHeroAssetLevel(player.currentLevel);
-  if (currentLevel !== null) {
-    return currentLevel;
-  }
-
-  if (progress) {
-    let highest = null;
-    Object.values(progress).forEach((entry) => {
-      if (!isPlainObject(entry)) {
-        return;
-      }
-
-      const entryLevel = resolveHeroAssetLevel(entry.currentLevel);
-      if (entryLevel !== null) {
-        highest = highest === null ? entryLevel : Math.max(highest, entryLevel);
-      }
-
-    });
-
-    if (highest !== null) {
-      return highest;
-    }
-  }
-
-  return null;
-};
-
 const applyHeroLevelAssets = (player) => {
   if (!isPlainObject(player)) {
     return;
   }
 
   const baseHero = isPlainObject(player.hero) ? player.hero : null;
-  const baseHeroId = normalizeHeroIdentifier(baseHero?.id);
-  const heroLevel = determinePlayerHeroLevel(player);
 
-  if (baseHero && heroLevel !== null) {
-    applyAssetsForHeroLevel(baseHero, heroLevel, baseHeroId);
+  if (baseHero) {
+    applyAssetsForHeroLevel(baseHero);
   }
 
   const currentLevelMap = isPlainObject(player.currentLevel)
@@ -777,7 +666,7 @@ const applyHeroLevelAssets = (player) => {
     return;
   }
 
-  Object.entries(currentLevelMap).forEach(([levelKey, levelData]) => {
+  Object.values(currentLevelMap).forEach((levelData) => {
     if (!isPlainObject(levelData)) {
       return;
     }
@@ -787,16 +676,7 @@ const applyHeroLevelAssets = (player) => {
       return;
     }
 
-    const levelNumber =
-      resolveHeroAssetLevel(levelData.currentLevel) ??
-      resolveHeroAssetLevel(levelKey) ??
-      heroLevel;
-
-    if (levelNumber === null) {
-      return;
-    }
-
-    applyAssetsForHeroLevel(levelHero, levelNumber, baseHeroId);
+    applyAssetsForHeroLevel(levelHero);
   });
 };
 
