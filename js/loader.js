@@ -157,7 +157,7 @@ const determineAssetBasePath = () => {
   }
 
   const scriptDerivedBase = deriveBaseFromScriptSource(currentScript);
-  if (scriptDerivedBase) {
+  if (scriptDerivedBase && scriptDerivedBase !== '.' && scriptDerivedBase !== './') {
     if (typeof window !== 'undefined') {
       window.mathMonstersAssetBase = scriptDerivedBase;
     }
@@ -183,7 +183,7 @@ const determineAssetBasePath = () => {
       typeof window.mathMonstersAssetBase === 'string'
         ? window.mathMonstersAssetBase.trim()
         : '';
-    if (globalBase) {
+    if (globalBase && globalBase !== '.' && globalBase !== './') {
       return globalBase;
     }
   }
