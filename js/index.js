@@ -1177,6 +1177,26 @@ const mergePlayerWithProgress = (rawPlayerData) => {
         storedProgress.timeRemainingSeconds;
     }
 
+    Object.entries(storedProgress).forEach(([key, value]) => {
+      if (
+        key === 'experience' ||
+        key === 'currentLevel' ||
+        key === 'timeRemainingSeconds' ||
+        key === 'gems' ||
+        key === 'gemsAwarded' ||
+        key === 'progress'
+      ) {
+        return;
+      }
+
+      if (isPlainObject(value)) {
+        const baseEntry = isPlainObject(mergedProgress[key])
+          ? mergedProgress[key]
+          : {};
+        mergedProgress[key] = { ...baseEntry, ...value };
+      }
+    });
+
     const storedGemTotal = sanitizeGemCount(storedProgress.gems);
     const storedGemAwarded = sanitizeGemCount(storedProgress.gemsAwarded);
 
