@@ -304,19 +304,10 @@
         "currentLevel": {
           "type": "integer",
           "minimum": 1
-        },
-        "currentBattle": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "totalBattles": {
-          "type": "integer",
-          "minimum": 1
         }
       },
       "required": [
-        "currentLevel",
-        "currentBattle"
+        "currentLevel"
       ],
       "additionalProperties": false
     },

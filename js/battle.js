@@ -1053,75 +1053,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return null;
     }
 
-    const resolvedCurrentBattle = Number.isFinite(state.currentBattle)
-      ? Math.max(1, Math.round(state.currentBattle))
-      : 1;
-    const normalizedCounts = [];
-
-    const resolvedCurrentTotal = Number.isFinite(state.currentLevelTotal)
-      ? Math.max(1, Math.round(state.currentLevelTotal))
-      : null;
     const currentLevelNumber = Number.isFinite(state.currentLevelNumber)
       ? Math.max(1, Math.round(state.currentLevelNumber))
       : 1;
-    if (resolvedCurrentTotal !== null) {
-      normalizedCounts.push(resolvedCurrentTotal);
-    }
-
-    const resolvedBattleCount = Number.isFinite(state.battleCount)
-      ? Math.max(1, Math.round(state.battleCount))
-      : null;
-    if (resolvedBattleCount !== null) {
-      normalizedCounts.push(resolvedBattleCount);
-    }
-
-    const levelListCount = getBattleCountForLevelNumber(currentLevelNumber);
-    if (Number.isFinite(levelListCount) && levelListCount > 0) {
-      normalizedCounts.push(Math.max(1, Math.round(levelListCount)));
-    }
-
-    const activeLevelCount = countBattlesFromLevelData(window.preloadedData?.level);
-    if (activeLevelCount > 0) {
-      normalizedCounts.push(activeLevelCount);
-    }
-
-    const activeBattleCount = countBattlesFromBattleData(window.preloadedData?.battle);
-    if (activeBattleCount > 0) {
-      normalizedCounts.push(activeBattleCount);
-    }
-
-    const totalRequired = normalizedCounts.reduce(
-      (max, value) => (Number.isFinite(value) && value > max ? value : max),
-      1
-    );
-
-    let nextBattle = resolvedCurrentBattle + 1;
-    let nextLevelTotal = Math.max(resolvedCurrentTotal ?? 1, totalRequired);
-    let advanceLevel = false;
-    let nextCurrentLevelNumber = currentLevelNumber;
-
-    if (nextBattle > totalRequired) {
-      advanceLevel = true;
-      nextBattle = 1;
-      nextCurrentLevelNumber = currentLevelNumber + 1;
-      const nextLevelCount = getBattleCountForLevelNumber(nextCurrentLevelNumber);
-      nextLevelTotal =
-        Number.isFinite(nextLevelCount) && nextLevelCount > 0
-          ? Math.max(1, Math.round(nextLevelCount))
-          : nextLevelTotal;
-    }
 
     return {
       mathKey: effectiveKey,
-      nextBattle,
-      nextLevelTotal,
-      advanceLevel,
-      nextCurrentLevelNumber,
-      totalRequired,
+      advanceLevel: true,
+      nextCurrentLevelNumber: currentLevelNumber + 1,
     };
   };
 
-  const computeNextGlobalProgressOnWin = (requiredBattles = BATTLES_PER_LEVEL) => {
+  const computeNextGlobalProgressOnWin = () => {
     const toPositiveInteger = (value) => {
       const numericValue = Number(value);
       if (!Number.isFinite(numericValue) || numericValue <= 0) {
@@ -1173,25 +1116,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const levelCandidates = collectCandidates(['currentLevel', 'level']);
-    const battleCandidates = collectCandidates(['currentBattle', 'battleCurrent']);
 
     const currentLevel = findFirstPositiveInteger(levelCandidates) ?? 1;
-    const currentBattle = findFirstPositiveInteger(battleCandidates) ?? 1;
-
-    const normalizedRequiredBattles =
-      toPositiveInteger(requiredBattles) ?? BATTLES_PER_LEVEL;
-    const totalBattles = Math.max(1, normalizedRequiredBattles);
-    let nextBattle = currentBattle + 1;
-    let nextLevel = currentLevel;
-
-    if (nextBattle > totalBattles) {
-      nextLevel += 1;
-      nextBattle = 1;
-    }
 
     return {
-      currentLevel: nextLevel,
-      currentBattle: nextBattle,
+      currentLevel: currentLevel + 1,
     };
   };
 
@@ -3698,8 +3627,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     persistProgress({
       currentLevel: sanitizedLevel,
-      currentLevel: sanitizedLevel,
-      currentBattle: 1,
     });
     currentCurrentLevel = sanitizedLevel;
     currentLevelAdvanced = false;
@@ -4433,11 +4360,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const mathProgressUpdate = computeNextMathProgressOnWin();
       shouldAdvanceCurrentLevel = Boolean(mathProgressUpdate?.advanceLevel);
 
-      const globalProgressUpdate = computeNextGlobalProgressOnWin(
-        Number.isFinite(mathProgressUpdate?.totalRequired)
-          ? mathProgressUpdate.totalRequired
-          : undefined
-      );
+      const globalProgressUpdate = computeNextGlobalProgressOnWin();
 
       const updatePayload =
         globalProgressUpdate && typeof globalProgressUpdate === 'object'
@@ -4445,37 +4368,21 @@ document.addEventListener('DOMContentLoaded', () => {
           : {};
 
       if (mathProgressUpdate && mathProgressUpdate.mathKey) {
-        const nextBattleValue = Number(mathProgressUpdate.nextBattle);
-        const resolvedNextBattle = Number.isFinite(nextBattleValue)
-          ? Math.max(1, Math.round(nextBattleValue))
-          : null;
         const nextLevelNumber = Number.isFinite(
           mathProgressUpdate.nextCurrentLevelNumber
         )
           ? Math.max(1, Math.round(mathProgressUpdate.nextCurrentLevelNumber))
           : null;
-        const nextLevelTotal = Number.isFinite(mathProgressUpdate.nextLevelTotal)
-          ? Math.max(1, Math.round(mathProgressUpdate.nextLevelTotal))
-          : null;
+        const existingEntry = updatePayload[mathProgressUpdate.mathKey];
+        const baseEntry = isPlainObject(existingEntry) ? existingEntry : {};
 
-        if (resolvedNextBattle !== null) {
-          const existingEntry = updatePayload[mathProgressUpdate.mathKey];
-          const baseEntry = isPlainObject(existingEntry) ? existingEntry : {};
+        updatePayload[mathProgressUpdate.mathKey] = {
+          ...baseEntry,
+        };
 
-          updatePayload[mathProgressUpdate.mathKey] = {
-            ...baseEntry,
-            currentBattle: resolvedNextBattle,
-          };
-
-          if (nextLevelNumber !== null) {
-            updatePayload[mathProgressUpdate.mathKey].currentLevel =
-              nextLevelNumber;
-          }
-
-          if (nextLevelTotal !== null) {
-            updatePayload[mathProgressUpdate.mathKey].totalBattles =
-              nextLevelTotal;
-          }
+        if (nextLevelNumber !== null) {
+          updatePayload[mathProgressUpdate.mathKey].currentLevel =
+            nextLevelNumber;
         }
       }
 
@@ -4496,7 +4403,6 @@ document.addEventListener('DOMContentLoaded', () => {
           useClaimLabel: !gemRewardIntroShown,
           isFirstGemReward: !gemRewardIntroShown,
           currentLevel: rewardCurrentLevel,
-          currentBattle: rewardBattleIndex,
           win: true,
         };
       } else {
@@ -4509,7 +4415,6 @@ document.addEventListener('DOMContentLoaded', () => {
         useClaimLabel: true,
         isFirstGemReward: false,
         currentLevel: rewardCurrentLevel,
-        currentBattle: rewardBattleIndex,
         win: false,
       };
     }

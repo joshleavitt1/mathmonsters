@@ -34,10 +34,7 @@
 
     const progress = playerData?.progress ?? {};
     const numericLevel = toNumericCurrentLevel(progress?.currentLevel);
-    const numericBattle =
-      toNumericCurrentLevel(progress?.currentBattle) ??
-      toNumericCurrentLevel(progress?.battleCurrent);
-    if (numericLevel === null && numericBattle === null) {
+    if (numericLevel === null) {
       return;
     }
 
@@ -63,12 +60,6 @@
         nextValue.currentLevel = numericLevel;
       } else {
         delete nextValue.currentLevel;
-      }
-
-      if (numericBattle !== null) {
-        nextValue.currentBattle = Math.max(1, Math.round(numericBattle));
-      } else {
-        delete nextValue.currentBattle;
       }
 
       storage.setItem(storageKey, JSON.stringify(nextValue));

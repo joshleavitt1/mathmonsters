@@ -2,7 +2,6 @@ const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 const STARTING_LEVEL = 2;
-const STARTING_BATTLE = 1;
 const HOME_PAGE_PATH = '../index.html';
 
 const isPlainObject = (value) =>
@@ -41,7 +40,6 @@ const applyStartingCurrentLevel = (playerData) => {
     return {
       progress: {
         currentLevel: STARTING_LEVEL,
-        currentBattle: STARTING_BATTLE,
       },
       battleVariables: {
         timeRemainingSeconds: null,
@@ -68,7 +66,6 @@ const applyStartingCurrentLevel = (playerData) => {
   clonedData.progress = {
     ...progressSection,
     currentLevel: STARTING_LEVEL,
-    currentBattle: STARTING_BATTLE,
   };
 
   if (!isPlainObject(clonedData.battleVariables)) {
