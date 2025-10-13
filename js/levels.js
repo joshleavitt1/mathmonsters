@@ -1,5 +1,5 @@
 (() => {
-  const LEVELS_PER_PAGE = 5;
+  const LEVELS_PER_PAGE = 4;
   const DEFAULT_PORTAL_SPRITE = '../images/levels/portal.png';
   const COMPLETED_PORTAL_SPRITE = '../images/levels/portal_check.png';
 
@@ -199,7 +199,9 @@
 
     container.replaceChildren();
 
-    visibleLevels.forEach(({ number }) => {
+    const levelsToRender = [...visibleLevels].sort((a, b) => b.number - a.number);
+
+    levelsToRender.forEach(({ number }) => {
       const state =
         number === currentLevelNumber
           ? 'current'
