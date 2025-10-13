@@ -3369,14 +3369,73 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const progress =
-      window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
-    const resolvedLevel = Number(
-      progress?.currentLevel ?? progress?.level
-    );
+    const resolveStoredProgress = () => {
+      if (window.preloadedData) {
+        if (isPlainObject(window.preloadedData.progress)) {
+          return window.preloadedData.progress;
+        }
 
-    if (Number.isFinite(resolvedLevel)) {
-      currentCurrentLevel = Math.max(1, Math.floor(resolvedLevel));
+        if (
+          window.preloadedData.player &&
+          isPlainObject(window.preloadedData.player.progress)
+        ) {
+          return window.preloadedData.player.progress;
+        }
+      }
+
+      return null;
+    };
+
+    const storedProgress = resolveStoredProgress();
+    const storedLevelRaw =
+      storedProgress &&
+      (storedProgress.currentLevel !== undefined
+        ? storedProgress.currentLevel
+        : storedProgress.level);
+    const storedLevel = Number(storedLevelRaw);
+    const previousLevel = Number.isFinite(currentCurrentLevel)
+      ? Math.max(1, Math.floor(currentCurrentLevel))
+      : null;
+
+    let effectiveLevel = Number.isFinite(storedLevel)
+      ? Math.max(1, Math.floor(storedLevel))
+      : null;
+
+    if (previousLevel !== null) {
+      if (effectiveLevel === null || effectiveLevel <= previousLevel) {
+        effectiveLevel = previousLevel + 1;
+      }
+    }
+
+    if (effectiveLevel === null) {
+      effectiveLevel = 1;
+    }
+
+    currentCurrentLevel = effectiveLevel;
+
+    const assignProgressLevel = (target) => {
+      if (!isPlainObject(target)) {
+        return;
+      }
+
+      target.currentLevel = effectiveLevel;
+    };
+
+    if (window.preloadedData) {
+      if (!isPlainObject(window.preloadedData.progress)) {
+        window.preloadedData.progress = {};
+      }
+      assignProgressLevel(window.preloadedData.progress);
+
+      if (
+        window.preloadedData.player &&
+        typeof window.preloadedData.player === 'object'
+      ) {
+        if (!isPlainObject(window.preloadedData.player.progress)) {
+          window.preloadedData.player.progress = {};
+        }
+        assignProgressLevel(window.preloadedData.player.progress);
+      }
     }
 
     currentLevelAdvanced = true;
