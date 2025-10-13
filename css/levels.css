@@ -50,13 +50,9 @@ body.levels-page {
 .levels__card {
   display: flex;
   align-items: center;
-  gap: clamp(16px, 4vw, 32px);
-  padding: clamp(16px, 4vw, 32px);
-  border-radius: 18px;
+  gap: 16px;
   text-decoration: none;
   color: inherit;
-  backdrop-filter: blur(6px);
-  transition: transform 0.3s ease;
 }
 
 .levels__card:focus-visible {
