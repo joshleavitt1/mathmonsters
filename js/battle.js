@@ -484,6 +484,8 @@ document.addEventListener('DOMContentLoaded', () => {
     preloadRewardSpriteSource(source).catch(() => {});
   });
 
+  const DEFAULT_ASSET_BASE = '/mathmonsters';
+
   const sanitizeHeroSpritePath = (path) => {
     if (typeof path !== 'string') {
       return path;
@@ -500,6 +502,125 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${heroName}_evolution_${safeLevel}${extension || ''}`;
       }
     );
+  };
+
+  const readAssetBasePath = () => {
+    const globalBase =
+      typeof window !== 'undefined' &&
+      typeof window.mathMonstersAssetBase === 'string'
+        ? window.mathMonstersAssetBase.trim()
+        : '';
+
+    return globalBase || '..';
+  };
+
+  const joinAssetBasePath = (base, relativePath) => {
+    const normalizedBase = typeof base === 'string' ? base.trim() : '';
+    const normalizedRelative =
+      typeof relativePath === 'string' ? relativePath.trim() : '';
+
+    const baseWithoutTrailing =
+      normalizedBase === '.' || normalizedBase === './'
+        ? ''
+        : normalizedBase.replace(/\/+$/, '');
+    const relativeWithoutLeading = normalizedRelative.replace(/^\/+/, '');
+
+    if (!baseWithoutTrailing) {
+      return relativeWithoutLeading;
+    }
+
+    if (!relativeWithoutLeading) {
+      return baseWithoutTrailing;
+    }
+
+    return `${baseWithoutTrailing}/${relativeWithoutLeading}`;
+  };
+
+  const resolveBattleAssetPath = (rawPath, { base, sanitize } = {}) => {
+    if (typeof rawPath !== 'string') {
+      return null;
+    }
+
+    const trimmed = rawPath.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const sanitizer =
+      typeof sanitize === 'function'
+        ? sanitize
+        : (value) => value;
+    const sanitizedInput = sanitizer(trimmed);
+
+    if (/^(?:https?:|data:|blob:)/i.test(sanitizedInput)) {
+      return sanitizedInput;
+    }
+
+    if (
+      sanitizedInput.startsWith('../') ||
+      sanitizedInput.startsWith('./')
+    ) {
+      return sanitizedInput;
+    }
+
+    const assetBasePath =
+      typeof base === 'string' && base.trim()
+        ? base.trim()
+        : readAssetBasePath();
+
+    const fallbackBaseRaw =
+      typeof DEFAULT_ASSET_BASE === 'string'
+        ? DEFAULT_ASSET_BASE.trim()
+        : '';
+    const fallbackPrefix = fallbackBaseRaw
+      ? fallbackBaseRaw.startsWith('/')
+        ? fallbackBaseRaw.replace(/\/+$/, '')
+        : `/${fallbackBaseRaw.replace(/\/+$/, '')}`
+      : '';
+
+    const assetBaseComparable =
+      assetBasePath.startsWith('/') && !assetBasePath.startsWith('//')
+        ? assetBasePath.replace(/\/+$/, '').toLowerCase()
+        : assetBasePath.startsWith('.')
+        ? ''
+        : assetBasePath.replace(/\/+$/, '').toLowerCase();
+
+    const fallbackComparable = fallbackPrefix
+      ? fallbackPrefix.toLowerCase()
+      : '';
+
+    const sanitizedHasLeadingSlash = sanitizedInput.startsWith('/');
+    const sanitizedComparableBase = sanitizedHasLeadingSlash
+      ? sanitizedInput.replace(/\/+$/, '')
+      : `/${sanitizedInput.replace(/\/+$/, '')}`;
+    const sanitizedComparable = sanitizedComparableBase.toLowerCase();
+
+    if (
+      fallbackComparable &&
+      sanitizedComparable.startsWith(fallbackComparable) &&
+      (!assetBaseComparable || assetBaseComparable !== fallbackComparable)
+    ) {
+      const remainderComparable = sanitizedComparableBase.slice(
+        fallbackComparable.length
+      );
+      const remainder = sanitizedHasLeadingSlash
+        ? `/${remainderComparable.replace(/^\/+/, '')}`
+        : remainderComparable.replace(/^\/+/, '');
+      const joined = joinAssetBasePath(assetBasePath, remainder);
+      const output = joined || sanitizedInput;
+      return sanitizer(output);
+    }
+
+    if (
+      assetBaseComparable &&
+      sanitizedComparable.startsWith(assetBaseComparable)
+    ) {
+      return sanitizedInput;
+    }
+
+    const joined = joinAssetBasePath(assetBasePath, sanitizedInput);
+    const output = joined || sanitizedInput;
+    return sanitizer(output);
   };
 
   const spriteElementCache =
@@ -3373,54 +3494,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const battleProgress = {};
 
-    const assetBasePath = (() => {
-      const globalBase =
-        typeof window?.mathMonstersAssetBase === 'string'
-          ? window.mathMonstersAssetBase.trim()
-          : '';
-      if (globalBase) {
-        return globalBase;
-      }
-      return '..';
-    })();
+    const assetBasePath = readAssetBasePath();
 
-    const resolveAssetPath = (path) => {
-      if (typeof path !== 'string') {
-        return null;
-      }
-
-      const trimmed = path.trim();
-      if (!trimmed) {
-        return null;
-      }
-
-      const sanitized = sanitizeHeroSpritePath(trimmed);
-
-      if (/^https?:\/\//i.test(sanitized) || /^data:/i.test(sanitized)) {
-        return sanitized;
-      }
-
-      if (sanitized.startsWith('../') || sanitized.startsWith('./')) {
-        return sanitized;
-      }
-
-      if (sanitized.startsWith('/')) {
-        return sanitized;
-      }
-
-      const normalizedBase = assetBasePath.endsWith('/')
-        ? assetBasePath.slice(0, -1)
-        : assetBasePath;
-      const normalizedPath = sanitizeHeroSpritePath(
-        sanitized.replace(/^\/+/, '')
-      );
-
-      if (!normalizedBase || normalizedBase === '.') {
-        return normalizedPath;
-      }
-
-      return sanitizeHeroSpritePath(`${normalizedBase}/${normalizedPath}`);
-    };
+    const resolveAssetPath = (path) =>
+      resolveBattleAssetPath(path, {
+        base: assetBasePath,
+        sanitize: sanitizeHeroSpritePath,
+      });
 
     const isPlainObjectValue = (value) =>
       Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -3797,8 +3877,49 @@ document.addEventListener('DOMContentLoaded', () => {
       div.dataset.correct = !!choice.correct;
       if (choice.image) {
         const img = document.createElement('img');
-        img.src = `/mathmonsters/images/questions/${choice.image}`;
-        img.alt = choice.name || '';
+        const imageCandidates = Array.isArray(choice.image)
+          ? choice.image
+          : [choice.image];
+        let resolvedImage = null;
+        for (const candidate of imageCandidates) {
+          if (typeof candidate !== 'string') {
+            continue;
+          }
+          const trimmedCandidate = candidate.trim();
+          if (!trimmedCandidate) {
+            continue;
+          }
+
+          const hasPathSeparator = /[\\/]/.test(trimmedCandidate);
+          const candidateSources = hasPathSeparator
+            ? [trimmedCandidate]
+            : [
+                `images/questions/${trimmedCandidate}`,
+                trimmedCandidate,
+              ];
+
+          for (const source of candidateSources) {
+            resolvedImage = resolveBattleAssetPath(source);
+            if (resolvedImage) {
+              break;
+            }
+          }
+
+          if (resolvedImage) {
+            break;
+          }
+        }
+        if (resolvedImage) {
+          img.src = resolvedImage;
+        } else if (typeof imageCandidates[0] === 'string') {
+          img.src = imageCandidates[0];
+        }
+        const altText =
+          choice.name !== undefined && choice.name !== null
+            ? String(choice.name)
+            : '';
+        img.alt = altText;
+        img.decoding = 'async';
         div.appendChild(img);
       }
       const p = document.createElement('p');
