@@ -331,46 +331,6 @@ const mergeHeroData = (baseHero, overrideHero) => {
   };
 };
 
-const mergeCurrentLevelMap = (baseMap, overrideMap) => {
-  const base = isPlainObject(baseMap) ? baseMap : null;
-  const override = isPlainObject(overrideMap) ? overrideMap : null;
-
-  if (!base && !override) {
-    return null;
-  }
-
-  const merged = {};
-  const keys = new Set([
-    ...Object.keys(base || {}),
-    ...Object.keys(override || {}),
-  ]);
-
-  keys.forEach((key) => {
-    const baseEntry = isPlainObject(base?.[key]) ? base[key] : null;
-    const overrideEntry = isPlainObject(override?.[key])
-      ? override[key]
-      : null;
-
-    if (!baseEntry && !overrideEntry) {
-      return;
-    }
-
-    const mergedEntry = {
-      ...(baseEntry || {}),
-      ...(overrideEntry || {}),
-    };
-
-    const mergedHero = mergeHeroData(baseEntry?.hero, overrideEntry?.hero);
-    if (mergedHero) {
-      mergedEntry.hero = mergedHero;
-    }
-
-    merged[key] = mergedEntry;
-  });
-
-  return merged;
-};
-
 const mergePlayerData = (basePlayer, overridePlayer) => {
   const base = isPlainObject(basePlayer) ? basePlayer : null;
   const override = isPlainObject(overridePlayer) ? overridePlayer : null;
@@ -389,53 +349,44 @@ const mergePlayerData = (basePlayer, overridePlayer) => {
     merged.hero = mergedHero;
   }
 
-  const mergedCurrentLevel = mergeCurrentLevelMap(
-    base?.currentLevel,
-    override?.currentLevel
-  );
-  if (mergedCurrentLevel) {
-    merged.currentLevel = mergedCurrentLevel;
-  }
-
   return merged;
 };
 
 const mergeProgressState = (baseProgress, storedProgress) => {
-  const base = isPlainObject(baseProgress) ? baseProgress : null;
-  const stored = isPlainObject(storedProgress) ? storedProgress : null;
+  const result = {};
 
-  if (!base && !stored) {
-    return {};
-  }
-
-  const result = { ...(base || {}) };
-
-  if (!stored) {
-    return result;
-  }
-
-  Object.entries(stored).forEach(([key, value]) => {
-    if (value === undefined) {
+  const applySource = (source) => {
+    if (!isPlainObject(source)) {
       return;
     }
 
-    if (key === 'experience') {
-      const mergedExperience = mergeExperienceMaps(result.experience, value);
-      if (Object.keys(mergedExperience).length > 0) {
-        result.experience = mergedExperience;
-      } else {
+    if (source.currentLevel !== undefined) {
+      const normalizedLevel = normalizeCurrentLevel(source.currentLevel);
+      if (normalizedLevel !== null) {
+        result.currentLevel = normalizedLevel;
+      }
+    }
+
+    if (source.gems !== undefined) {
+      const numericGems = Number(source.gems);
+      if (Number.isFinite(numericGems)) {
+        result.gems = Math.max(0, Math.round(numericGems));
+      }
+    }
+
+    if (source.experience !== undefined) {
+      result.experience = mergeExperienceMaps(
+        result.experience,
+        source.experience
+      );
+      if (result.experience && Object.keys(result.experience).length === 0) {
         delete result.experience;
       }
-      return;
     }
+  };
 
-    if (isPlainObject(value)) {
-      result[key] = mergeProgressState(result[key], value);
-      return;
-    }
-
-    result[key] = value;
-  });
+  applySource(baseProgress);
+  applySource(storedProgress);
 
   return result;
 };
@@ -463,12 +414,6 @@ const mergePlayerWithStoredProfile = (player, storedProfile) => {
     nextPlayer.id = storedProfile.id;
   }
 
-  if (isPlainObject(storedProfile.battleVariables)) {
-    nextPlayer.battleVariables = isPlainObject(nextPlayer.battleVariables)
-      ? { ...storedProfile.battleVariables, ...nextPlayer.battleVariables }
-      : { ...storedProfile.battleVariables };
-  }
-
   if (isPlainObject(storedProfile.progress)) {
     const mergedProgress = mergeProgressState(
       nextPlayer.progress,
@@ -479,16 +424,6 @@ const mergePlayerWithStoredProfile = (player, storedProfile) => {
       nextPlayer.progress = mergedProgress;
     } else {
       delete nextPlayer.progress;
-    }
-  }
-
-  if (isPlainObject(storedProfile.currentLevel)) {
-    const mergedCurrentLevel = mergeCurrentLevelMap(
-      storedProfile.currentLevel,
-      nextPlayer.currentLevel
-    );
-    if (mergedCurrentLevel) {
-      nextPlayer.currentLevel = mergedCurrentLevel;
     }
   }
 
@@ -647,39 +582,6 @@ const applyAssetsForHeroLevel = (hero) => {
     });
   }
 };
-const applyHeroLevelAssets = (player) => {
-  if (!isPlainObject(player)) {
-    return;
-  }
-
-  const baseHero = isPlainObject(player.hero) ? player.hero : null;
-
-  if (baseHero) {
-    applyAssetsForHeroLevel(baseHero);
-  }
-
-  const currentLevelMap = isPlainObject(player.currentLevel)
-    ? player.currentLevel
-    : null;
-
-  if (!currentLevelMap) {
-    return;
-  }
-
-  Object.values(currentLevelMap).forEach((levelData) => {
-    if (!isPlainObject(levelData)) {
-      return;
-    }
-
-    const levelHero = isPlainObject(levelData.hero) ? levelData.hero : null;
-    if (!levelHero) {
-      return;
-    }
-
-    applyAssetsForHeroLevel(levelHero);
-  });
-};
-
 const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   if (!source || typeof source !== 'object') {
     return accumulator;
@@ -695,7 +597,6 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   };
 
   const candidateKeys = [
-    'currentMathType',
     'activeMathType',
     'mathType',
     'selectedMathType',
@@ -706,10 +607,6 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
 
   if (source.battle && typeof source.battle === 'object') {
     candidateKeys.forEach((key) => tryAdd(source.battle[key]));
-  }
-
-  if (source.battleVariables && typeof source.battleVariables === 'object') {
-    candidateKeys.forEach((key) => tryAdd(source.battleVariables[key]));
   }
 
   if (source.progress && typeof source.progress === 'object') {
@@ -1439,12 +1336,6 @@ const syncRemoteCurrentLevel = (playerData) => {
       console.warn('Unable to load remote player profile for battle.', error);
     }
 
-    applyHeroLevelAssets(basePlayer);
-    const localPlayer = extractPlayerData(localPlayerData);
-    if (localPlayer) {
-      applyHeroLevelAssets(localPlayer);
-    }
-
     const { levels: derivedLevels, mathTypeKey } = deriveMathTypeLevels(
       levelsData,
       basePlayer,
@@ -1456,12 +1347,7 @@ const syncRemoteCurrentLevel = (playerData) => {
       basePlayer && typeof basePlayer.progress === 'object'
         ? basePlayer.progress
         : {};
-    const baseBattleVariables =
-      basePlayer && typeof basePlayer.battleVariables === 'object'
-        ? basePlayer.battleVariables
-        : {};
     const progress = mergeProgressState(baseProgress, storedProgress);
-    const battleVariables = { ...baseBattleVariables };
     const sanitizeGemValue = (value) => {
       const numericValue = Number(value);
       if (!Number.isFinite(numericValue)) {
@@ -1471,20 +1357,6 @@ const syncRemoteCurrentLevel = (playerData) => {
     };
 
     let experienceMap = normalizeExperienceMap(progress?.experience);
-
-    if (storedProgress && typeof storedProgress === 'object') {
-      const storedCurrentLevel = normalizeCurrentLevel(
-        storedProgress.currentLevel
-      );
-      if (storedCurrentLevel !== null) {
-        progress.currentLevel = storedCurrentLevel;
-      }
-
-      if (typeof storedProgress.timeRemainingSeconds === 'number') {
-        battleVariables.timeRemainingSeconds =
-          storedProgress.timeRemainingSeconds;
-      }
-    }
 
     const gemCandidates = [
       sanitizeGemValue(progress?.gems),
@@ -1826,23 +1698,10 @@ const syncRemoteCurrentLevel = (playerData) => {
     const playerHeroBase =
       basePlayer && typeof basePlayer.hero === 'object' ? basePlayer.hero : {};
 
-    const playerLevelHeroMap = new Map();
-    levels.forEach((level) => {
-      if (!level || typeof level.currentLevel !== 'number') {
-        return;
-      }
-      const levelData = resolvePlayerLevelData(level.currentLevel);
-      if (levelData && typeof levelData.hero === 'object') {
-        playerLevelHeroMap.set(level.currentLevel, levelData.hero);
-      }
-    });
-
     const levelCharacters = levels.map((level) => {
       const levelNumber = level?.currentLevel;
       const battleConfig =
         level && typeof level.battle === 'object' ? level.battle : {};
-      const heroOverride =
-        playerLevelHeroMap.get(levelNumber ?? undefined) ?? null;
 
       const shouldRegisterAssets =
         (Number.isFinite(activeCurrentLevel) &&
@@ -1853,8 +1712,7 @@ const syncRemoteCurrentLevel = (playerData) => {
       return withAssetRegistration(shouldRegisterAssets, () => {
         const preparedHero = prepareCharacter(
           playerHeroBase,
-          battleConfig?.hero,
-          heroOverride
+          battleConfig?.hero
         );
 
         const monsters = [];
@@ -1901,11 +1759,7 @@ const syncRemoteCurrentLevel = (playerData) => {
 
     const hero = currentLevelCharacters.hero
       ? { ...currentLevelCharacters.hero }
-      : prepareCharacter(
-          playerHeroBase,
-          levelBattle?.hero,
-          playerLevelHeroMap.get(activeCurrentLevel)
-        ) || { ...playerHeroBase };
+      : prepareCharacter(playerHeroBase, levelBattle?.hero) || { ...playerHeroBase };
 
     const normalizedMonsters = (currentLevelCharacters.monsters || []).map(
       (monster) => ({ ...monster })
@@ -1950,10 +1804,8 @@ const syncRemoteCurrentLevel = (playerData) => {
       levelBattleRaw?.mathType,
       currentLevel?.mathType,
       mathTypeKey,
-      basePlayer?.currentMathType,
       basePlayer?.mathType,
       progress?.mathType,
-      progress?.currentMathType,
     ];
 
     const resolveActiveMonsterIndex = () => {
@@ -2017,16 +1869,9 @@ const syncRemoteCurrentLevel = (playerData) => {
           typeof immediateNextLevel.battle === 'object'
             ? immediateNextLevel.battle
             : {};
-        const nextLevelOverride = playerLevelHeroMap.get(
-          immediateNextLevel.currentLevel
-        );
 
         withAssetRegistration(true, () =>
-          prepareCharacter(
-            playerHeroBase,
-            nextLevelBattle?.hero,
-            nextLevelOverride
-          )
+          prepareCharacter(playerHeroBase, nextLevelBattle?.hero)
         );
       }
     }
@@ -2075,10 +1920,8 @@ const syncRemoteCurrentLevel = (playerData) => {
       player: {
         ...basePlayer,
         progress,
-        battleVariables,
       },
       progress,
-      battleVariables,
       levels,
       level: currentLevel,
       battle,

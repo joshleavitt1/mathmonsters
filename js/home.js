@@ -372,7 +372,6 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   };
 
   const candidateKeys = [
-    'currentMathType',
     'activeMathType',
     'mathType',
     'selectedMathType',
@@ -383,14 +382,6 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
 
   if (isPlainObject(source.battle)) {
     candidateKeys.forEach((key) => tryAdd(source.battle[key]));
-  }
-
-  if (isPlainObject(source.battleVariables)) {
-    candidateKeys.forEach((key) => tryAdd(source.battleVariables[key]));
-  }
-
-  if (isPlainObject(source.battleTracking)) {
-    candidateKeys.forEach((key) => tryAdd(source.battleTracking[key]));
   }
 
   if (isPlainObject(source.progress)) {
@@ -419,6 +410,10 @@ const findMathProgressEntry = (progressRoot, candidates = []) => {
 
   const isProgressEntry = (value) =>
     isPlainObject(value) && value.currentLevel !== undefined;
+
+  if (isProgressEntry(progressRoot)) {
+    return { key: null, entry: progressRoot };
+  }
 
   const keys = Object.keys(progressRoot);
   const normalizedCandidates = candidates
@@ -628,8 +623,6 @@ const computeHomeBattleProgress = (data) => {
   return {
     currentLevel: normalizedCurrentLevel,
     levelLabel,
-    currentBattle: null,
-    totalBattles: null,
     ratio: 0,
   };
 };
@@ -639,46 +632,19 @@ const applyBattleProgressAttributes = (progressElement, state) => {
     return;
   }
 
-  const clampPositiveInteger = (value) => {
-    const numeric = Number(value);
+  const resolvedLevel = (() => {
+    const numeric = Number(state.currentLevel);
     if (!Number.isFinite(numeric) || numeric <= 0) {
       return null;
     }
     return Math.round(numeric);
-  };
-
-  const totalBattles = clampPositiveInteger(state.totalBattles);
-  const currentBattle = clampPositiveInteger(state.currentBattle);
-  const resolvedTotal = totalBattles ?? (currentBattle ?? null);
-  const resolvedCurrent = currentBattle
-    ? Math.min(currentBattle, resolvedTotal ?? currentBattle)
-    : resolvedTotal;
-
-  const resolvedLevel = clampPositiveInteger(state.currentLevel);
+  })();
 
   progressElement.setAttribute('aria-valuemin', '0');
+  progressElement.setAttribute('aria-valuemax', '1');
 
-  if (resolvedTotal) {
-    progressElement.setAttribute('aria-valuemax', `${resolvedTotal}`);
-  }
-
-  if (resolvedCurrent) {
-    progressElement.setAttribute('aria-valuenow', `${resolvedCurrent}`);
-  }
-
-  if (resolvedTotal && resolvedCurrent) {
-    progressElement.setAttribute(
-      'aria-valuetext',
-      `Battle ${resolvedCurrent} of ${resolvedTotal}`
-    );
-    return;
-  }
-
-  if (!resolvedTotal) {
-    progressElement.setAttribute('aria-valuemax', '1');
-  }
-
-  const ratio = typeof state.ratio === 'number' ? Math.max(0, Math.min(1, state.ratio)) : 0;
+  const ratio =
+    typeof state.ratio === 'number' ? Math.max(0, Math.min(1, state.ratio)) : 0;
   progressElement.setAttribute('aria-valuenow', `${ratio}`);
 
   if (resolvedLevel) {
