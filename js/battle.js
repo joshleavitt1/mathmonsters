@@ -2267,6 +2267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
           advanceCurrentLevel();
         }
+        recordHomeGemAnimation();
         resetRewardOverlay();
         resolve();
         window.location.href = '../index.html';
@@ -2290,6 +2291,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const rewardAmount = Number.isFinite(rewardAmountRaw)
         ? Math.max(0, Math.round(rewardAmountRaw))
         : GEM_REWARD_WIN_AMOUNT;
+      const rewardTotalAfter = normalizeNonNegativeInteger(
+        rewardConfig?.totalAfter
+      );
+      const rewardStartTotal =
+        rewardTotalAfter !== null && Number.isFinite(rewardAmount)
+          ? Math.max(0, rewardTotalAfter - rewardAmount)
+          : null;
+      let homeAnimationStored = false;
+      const recordHomeGemAnimation = () => {
+        if (homeAnimationStored || rewardTotalAfter === null) {
+          return;
+        }
+
+        storeGemRewardHomeAnimation({
+          start: rewardStartTotal,
+          end: rewardTotalAfter,
+          amount: rewardAmount,
+          duration: 900,
+        });
+        homeAnimationStored = true;
+      };
       const isFirstGemReward = rewardConfig?.isFirstGemReward === true;
       const rewardCurrentLevel = normalizePositiveInteger(
         rewardConfig?.currentLevel
@@ -2338,6 +2360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
           advanceCurrentLevel();
         }
+        recordHomeGemAnimation();
         resetRewardOverlay();
         finish();
         window.location.href = '../index.html';
