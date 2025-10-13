@@ -95,6 +95,52 @@ const deriveBaseFromLocation = (fallbackBase) => {
   return computeRelativeBase(segments);
 };
 
+const deriveBaseFromScriptSource = (scriptElement) => {
+  if (!scriptElement || typeof scriptElement !== 'object') {
+    return '';
+  }
+
+  const srcAttribute =
+    typeof scriptElement.getAttribute === 'function'
+      ? scriptElement.getAttribute('src')
+      : scriptElement.src;
+
+  const rawSrc = typeof srcAttribute === 'string' ? srcAttribute.trim() : '';
+  if (!rawSrc) {
+    return '';
+  }
+
+  if (typeof document === 'undefined' || typeof document.baseURI !== 'string') {
+    return '';
+  }
+
+  let resolvedPath = '';
+  try {
+    const resolvedUrl = new URL(rawSrc, document.baseURI);
+    resolvedPath = resolvedUrl.pathname || '';
+  } catch (error) {
+    resolvedPath = rawSrc;
+  }
+
+  if (!resolvedPath) {
+    return '';
+  }
+
+  const trimmedPath = resolvedPath.replace(/[?#].*$/, '').replace(/\/+$/, '');
+  if (!trimmedPath) {
+    return '';
+  }
+
+  const jsDirectoryMatch = trimmedPath.match(/^(.*)\/js(?:\/[^/]+)?$/i);
+  if (jsDirectoryMatch) {
+    const basePath = jsDirectoryMatch[1] || '';
+    return basePath || '.';
+  }
+
+  const directoryPath = trimmedPath.replace(/\/[^/]*$/, '');
+  return directoryPath || '.';
+};
+
 const determineAssetBasePath = () => {
   const fallbackBase = FALLBACK_ASSET_BASE;
   const doc = typeof document !== 'undefined' ? document : null;
@@ -108,6 +154,14 @@ const determineAssetBasePath = () => {
       window.mathMonstersAssetBase = scriptedBase;
     }
     return scriptedBase;
+  }
+
+  const scriptDerivedBase = deriveBaseFromScriptSource(currentScript);
+  if (scriptDerivedBase) {
+    if (typeof window !== 'undefined') {
+      window.mathMonstersAssetBase = scriptDerivedBase;
+    }
+    return scriptDerivedBase;
   }
 
   if (doc) {
