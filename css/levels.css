@@ -66,8 +66,8 @@ body.levels-page {
 
 .levels__image {
   flex: 0 0 auto;
-  width: 160px;
-  height: 160px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
 }
 
