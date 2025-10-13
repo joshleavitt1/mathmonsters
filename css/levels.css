@@ -45,14 +45,17 @@ body.levels-page {
   flex-direction: column;
   gap: clamp(16px, 4vw, 24px);
   width: 100%;
+  align-items: center;
 }
 
 .levels__card {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 16px;
   text-decoration: none;
   color: inherit;
+  width: fit-content;
 }
 
 .levels__card:focus-visible {
