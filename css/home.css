@@ -166,8 +166,8 @@ body.home-page {
   align-self: center;
   margin: 0 auto;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
   gap: clamp(12px, 5vw, 48px);
 }
 
