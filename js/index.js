@@ -3453,6 +3453,10 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
       trigger.dataset.battleTriggerBound = 'true';
 
+      if (trigger.dataset.levelsLink === 'true') {
+        return;
+      }
+
       if (!trigger.hasAttribute('role')) {
         trigger.setAttribute('role', 'button');
       }

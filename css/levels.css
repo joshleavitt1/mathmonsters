@@ -1,0 +1,120 @@
+body.levels-page {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  color: var(--text-color-light);
+  background: #001b41 url('../images/background/background.png') no-repeat center/cover;
+}
+
+.levels {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 960px;
+  padding: clamp(24px, 6vw, 64px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 5vw, 48px);
+  box-sizing: border-box;
+}
+
+.levels__header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 2vw, 16px);
+}
+
+.levels__title {
+  margin: 0;
+  font-size: clamp(32px, 6vw, 48px);
+  font-weight: 400;
+  letter-spacing: 0.6px;
+  color: var(--text-color-light);
+}
+
+.levels__subtitle {
+  margin: 0;
+  font-size: clamp(18px, 3vw, 22px);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.levels__list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 4vw, 24px);
+  width: 100%;
+}
+
+.levels__card {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 4vw, 32px);
+  padding: clamp(16px, 4vw, 32px);
+  border-radius: 18px;
+  background: rgba(5, 29, 73, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
+  transition: transform 0.3s ease, border-color 0.3s ease,
+    box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.levels__card:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 4px;
+}
+
+.levels__card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+  background: rgba(8, 39, 92, 0.85);
+}
+
+.levels__image {
+  flex: 0 0 auto;
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+}
+
+.levels__statbox {
+  margin-left: auto;
+  padding: clamp(14px, 3vw, 22px) clamp(28px, 5vw, 36px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: linear-gradient(180deg, rgba(34, 138, 230, 0.2), rgba(6, 49, 117, 0.55));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  min-height: 100px;
+  text-align: center;
+}
+
+.levels__statbox-value {
+  font-size: clamp(26px, 6vw, 38px);
+  font-weight: 600;
+  color: var(--text-color-light);
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  .levels__card {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .levels__image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .levels__statbox {
+    min-width: 120px;
+  }
+}
