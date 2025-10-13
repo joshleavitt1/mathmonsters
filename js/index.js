@@ -181,6 +181,85 @@ const playerProfileUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
   (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
 
+const DEPRECATED_PLAYER_PROFILE_KEYS = new Set([
+  'battleVariables',
+  'battleState',
+  'battleProgress',
+  'battleTimer',
+  'activeBattle',
+]);
+
+const isSanitizableObject = (value) => {
+  if (!isPlainObject(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+};
+
+const sanitizePlayerProfileValue = (value) => {
+  if (Array.isArray(value)) {
+    let changed = false;
+    const sanitizedItems = value.map((entry) => {
+      const { sanitized, changed: entryChanged } = sanitizePlayerProfileValue(entry);
+      if (entryChanged || sanitized !== entry) {
+        changed = true;
+      }
+      return sanitized;
+    });
+
+    if (!changed) {
+      return { sanitized: value, changed: false };
+    }
+
+    return { sanitized: sanitizedItems, changed: true };
+  }
+
+  if (isSanitizableObject(value)) {
+    let changed = false;
+    const sanitizedObject = {};
+
+    Object.keys(value).forEach((key) => {
+      if (DEPRECATED_PLAYER_PROFILE_KEYS.has(key)) {
+        changed = true;
+        return;
+      }
+
+      const current = value[key];
+      const { sanitized, changed: entryChanged } = sanitizePlayerProfileValue(current);
+
+      if (entryChanged || sanitized !== current) {
+        changed = true;
+      }
+
+      sanitizedObject[key] = sanitized;
+    });
+
+    if (!changed && Object.keys(sanitizedObject).length !== Object.keys(value).length) {
+      changed = true;
+    }
+
+    if (!changed) {
+      return { sanitized: value, changed: false };
+    }
+
+    return { sanitized: sanitizedObject, changed: true };
+  }
+
+  return { sanitized: value, changed: false };
+};
+
+const sanitizePlayerProfileForStorage = (player) => {
+  if (!isSanitizableObject(player)) {
+    return { sanitized: null, changed: false };
+  }
+
+  const { sanitized, changed } = sanitizePlayerProfileValue(player);
+
+  return { sanitized: isSanitizableObject(sanitized) ? sanitized : null, changed };
+};
+
 const redirectToBattle = () => {
   window.location.href = BATTLE_PAGE_URL;
 };
@@ -2530,7 +2609,18 @@ const readStoredPlayerProfile = () => {
     }
 
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : null;
+    const { sanitized, changed } = sanitizePlayerProfileForStorage(parsed);
+
+    if (!sanitized) {
+      storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+      return null;
+    }
+
+    if (changed) {
+      storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(sanitized));
+    }
+
+    return sanitized;
   } catch (error) {
     console.warn('Stored player profile unavailable.', error);
     return null;
@@ -2548,12 +2638,14 @@ const persistPlayerProfile = (player) => {
       return;
     }
 
-    if (!player || typeof player !== 'object') {
+    const { sanitized } = sanitizePlayerProfileForStorage(player);
+
+    if (!sanitized) {
       storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
       return;
     }
 
-    const serialized = JSON.stringify(player);
+    const serialized = JSON.stringify(sanitized);
     storage.setItem(PLAYER_PROFILE_STORAGE_KEY, serialized);
   } catch (error) {
     console.warn('Unable to persist player profile.', error);
