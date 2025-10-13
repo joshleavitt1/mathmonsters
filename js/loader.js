@@ -10,12 +10,42 @@ const deriveBaseFromLocation = (fallbackBase) => {
     return fallbackBase || '.';
   }
 
+  const location = window.location || null;
   const rawFallback =
     typeof fallbackBase === 'string' ? fallbackBase.trim() : '';
   const locationPath =
-    typeof window.location?.pathname === 'string'
-      ? window.location.pathname
-      : '';
+    typeof location?.pathname === 'string' ? location.pathname : '';
+  const isFileProtocol = location?.protocol === 'file:';
+
+  const normalizeSegments = (value) =>
+    value
+      .split('/')
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+
+  const computeRelativeBase = (segments) => {
+    if (!Array.isArray(segments) || segments.length === 0) {
+      return '.';
+    }
+
+    const lastSegment = segments[segments.length - 1] || '';
+    const treatAsDirectory = lastSegment && !lastSegment.includes('.');
+    const depth = treatAsDirectory ? segments.length : segments.length - 1;
+
+    if (depth <= 0) {
+      return '.';
+    }
+
+    return Array(depth).fill('..').join('/');
+  };
+
+  const withoutQuery = locationPath.replace(/[?#].*$/, '');
+  const trimmedPath = withoutQuery.replace(/\/+$/, '');
+  const segments = normalizeSegments(trimmedPath);
+
+  if (segments.length === 0) {
+    return '.';
+  }
 
   if (rawFallback) {
     let fallbackNormalized = rawFallback;
@@ -28,32 +58,41 @@ const deriveBaseFromLocation = (fallbackBase) => {
     if (!fallbackNormalized) {
       fallbackNormalized = '/';
     }
-    const matchesFallback =
-      locationPath === fallbackNormalized ||
-      (fallbackNormalized !== '/' &&
-        locationPath.startsWith(`${fallbackNormalized}/`));
-    if (matchesFallback) {
-      return fallbackBase;
+
+    const fallbackSegments = normalizeSegments(fallbackNormalized);
+
+    if (fallbackSegments.length > 0) {
+      const sequenceLength = fallbackSegments.length;
+      let fallbackIndex = -1;
+
+      for (let index = 0; index <= segments.length - sequenceLength; index += 1) {
+        let matches = true;
+        for (let offset = 0; offset < sequenceLength; offset += 1) {
+          if (segments[index + offset] !== fallbackSegments[offset]) {
+            matches = false;
+            break;
+          }
+        }
+        if (matches) {
+          fallbackIndex = index;
+          break;
+        }
+      }
+
+      if (fallbackIndex === 0 && !isFileProtocol) {
+        return fallbackBase;
+      }
+
+      if (fallbackIndex !== -1) {
+        const remainderSegments = segments.slice(
+          fallbackIndex + fallbackSegments.length
+        );
+        return computeRelativeBase(remainderSegments);
+      }
     }
   }
 
-  const withoutQuery = locationPath.replace(/[?#].*$/, '');
-  const trimmedPath = withoutQuery.replace(/\/+$/, '');
-  const segments = trimmedPath.split('/').filter(Boolean);
-
-  if (segments.length === 0) {
-    return '.';
-  }
-
-  const lastSegment = segments[segments.length - 1] || '';
-  const treatAsDirectory = lastSegment && !lastSegment.includes('.');
-  const depth = treatAsDirectory ? segments.length : segments.length - 1;
-
-  if (depth <= 0) {
-    return '.';
-  }
-
-  return Array(depth).fill('..').join('/');
+  return computeRelativeBase(segments);
 };
 
 const determineAssetBasePath = () => {
