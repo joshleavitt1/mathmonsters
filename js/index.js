@@ -1024,46 +1024,6 @@ const mergeHeroData = (baseHero, overrideHero) => {
   };
 };
 
-const mergeCurrentLevelMap = (baseMap, overrideMap) => {
-  const base = isPlainObject(baseMap) ? baseMap : null;
-  const override = isPlainObject(overrideMap) ? overrideMap : null;
-
-  if (!base && !override) {
-    return null;
-  }
-
-  const merged = {};
-  const keys = new Set([
-    ...Object.keys(base || {}),
-    ...Object.keys(override || {}),
-  ]);
-
-  keys.forEach((key) => {
-    const baseEntry = isPlainObject(base?.[key]) ? base[key] : null;
-    const overrideEntry = isPlainObject(override?.[key])
-      ? override[key]
-      : null;
-
-    if (!baseEntry && !overrideEntry) {
-      return;
-    }
-
-    const mergedEntry = {
-      ...(baseEntry || {}),
-      ...(overrideEntry || {}),
-    };
-
-    const mergedHero = mergeHeroData(baseEntry?.hero, overrideEntry?.hero);
-    if (mergedHero) {
-      mergedEntry.hero = mergedHero;
-    }
-
-    merged[key] = mergedEntry;
-  });
-
-  return merged;
-};
-
 const mergePlayerData = (basePlayer, overridePlayer) => {
   const base = isPlainObject(basePlayer) ? basePlayer : null;
   const override = isPlainObject(overridePlayer) ? overridePlayer : null;
@@ -1080,14 +1040,6 @@ const mergePlayerData = (basePlayer, overridePlayer) => {
   const mergedHero = mergeHeroData(base?.hero, override?.hero);
   if (mergedHero) {
     merged.hero = mergedHero;
-  }
-
-  const mergedCurrentLevel = mergeCurrentLevelMap(
-    base?.currentLevel,
-    override?.currentLevel
-  );
-  if (mergedCurrentLevel) {
-    merged.currentLevel = mergedCurrentLevel;
   }
 
   return merged;
@@ -1143,11 +1095,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     sanitizeGemCount(baseProgress?.gems),
   ];
   const baseGemCount = baseGemCandidates.find((value) => value !== null) ?? null;
-  const baseBattleVariables =
-    sourceData && typeof sourceData.battleVariables === 'object'
-      ? sourceData.battleVariables
-      : {};
-
   const existingExperience = normalizeExperienceMap(player?.progress?.experience);
   const baseExperience = normalizeExperienceMap(baseProgress?.experience);
   const storedExperience = normalizeExperienceMap(storedProgress?.experience);
@@ -1162,26 +1109,15 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     delete mergedProgress.experience;
   }
 
-  player.battleVariables =
-    player && typeof player.battleVariables === 'object'
-      ? { ...baseBattleVariables, ...player.battleVariables }
-      : { ...baseBattleVariables };
-
   if (storedProgress && typeof storedProgress === 'object') {
     if (typeof storedProgress.currentLevel === 'number') {
       mergedProgress.currentLevel = storedProgress.currentLevel;
-    }
-
-    if (typeof storedProgress.timeRemainingSeconds === 'number') {
-      player.battleVariables.timeRemainingSeconds =
-        storedProgress.timeRemainingSeconds;
     }
 
     Object.entries(storedProgress).forEach(([key, value]) => {
       if (
         key === 'experience' ||
         key === 'currentLevel' ||
-        key === 'timeRemainingSeconds' ||
         key === 'gems' ||
         key === 'gemsAwarded' ||
         key === 'progress'
@@ -1336,7 +1272,6 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   };
 
   const candidateKeys = [
-    'currentMathType',
     'activeMathType',
     'mathType',
     'selectedMathType',
@@ -1347,10 +1282,6 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
 
   if (source.battle && typeof source.battle === 'object') {
     candidateKeys.forEach((key) => tryAdd(source.battle[key]));
-  }
-
-  if (source.battleVariables && typeof source.battleVariables === 'object') {
-    candidateKeys.forEach((key) => tryAdd(source.battleVariables[key]));
   }
 
   if (source.progress && typeof source.progress === 'object') {
@@ -1993,36 +1924,10 @@ const determineBattlePreview = (levelsData, playerData) => {
     return { levels, player, preview: null };
   }
 
-  const resolvePlayerLevelData = (level) => {
-    if (!player || typeof player !== 'object') {
-      return null;
-    }
-    const map = player.currentLevel;
-    if (!map || typeof map !== 'object') {
-      return null;
-    }
-
-    if (level === undefined || level === null) {
-      return null;
-    }
-
-    if (level in map && typeof map[level] === 'object') {
-      return map[level];
-    }
-
-    const key = String(level);
-    if (key in map && typeof map[key] === 'object') {
-      return map[key];
-    }
-
-    return null;
-  };
-
   const levelHero = activeLevel?.battle?.hero ?? {};
   const heroData = {
     ...(player?.hero ?? {}),
     ...levelHero,
-    ...(resolvePlayerLevelData(activeLevel?.currentLevel)?.hero ?? {}),
   };
 
   const rawHeroSprite =
@@ -2674,15 +2579,6 @@ const collectDevOverlayPlayerData = () => {
       ? player.progress
       : null;
 
-  const battleVariables =
-    player && typeof player.battleVariables === 'object' && player.battleVariables !== null
-      ? player.battleVariables
-      : preloaded &&
-        typeof preloaded.battleVariables === 'object' &&
-        preloaded.battleVariables !== null
-      ? preloaded.battleVariables
-      : null;
-
   let storedProfile = null;
   try {
     storedProfile = readStoredPlayerProfile();
@@ -2702,7 +2598,6 @@ const collectDevOverlayPlayerData = () => {
     preloadedData: preloaded,
     player,
     progress,
-    battleVariables,
     playerData:
       preloaded && typeof preloaded.playerData === 'object'
         ? preloaded.playerData
@@ -3052,21 +2947,6 @@ const preloadLandingAssets = async () => {
 
     if (player && typeof player === 'object') {
       collectCharacterSprites(player?.hero);
-      const levelMap =
-        player.currentLevel && typeof player.currentLevel === 'object'
-          ? player.currentLevel
-          : {};
-      Object.values(levelMap).forEach((entry) => {
-        if (entry && typeof entry === 'object') {
-          collectCharacterSprites(entry?.hero);
-          if (entry.monster) {
-            collectCharacterSprites(entry.monster);
-          }
-          if (Array.isArray(entry.monsters)) {
-            entry.monsters.forEach((monster) => collectCharacterSprites(monster));
-          }
-        }
-      });
     }
 
     collectCharacterSprites(preview?.hero);
@@ -3078,8 +2958,6 @@ const preloadLandingAssets = async () => {
     const mathTypeKey =
       typeof preview?.mathTypeKey === 'string'
         ? preview.mathTypeKey
-        : typeof results.playerData?.currentMathType === 'string'
-        ? results.playerData.currentMathType
         : typeof results.playerData?.mathType === 'string'
         ? results.playerData.mathType
         : null;

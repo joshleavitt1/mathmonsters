@@ -199,15 +199,6 @@
         "levelUp": {
           "type": "integer",
           "minimum": 0
-        },
-        "accuracyGoal": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "timeGoalSeconds": {
-          "type": "integer",
-          "minimum": 0
         }
       },
       "required": [
@@ -298,28 +289,6 @@
       ],
       "additionalProperties": false
     },
-    "MathProgress": {
-      "type": "object",
-      "properties": {
-        "currentLevel": {
-          "type": "integer",
-          "minimum": 1
-        }
-      },
-      "required": [
-        "currentLevel"
-      ],
-      "additionalProperties": false
-    },
-    "CurrentLevelProgress": {
-      "type": "object",
-      "properties": {
-        "hero": {
-          "$ref": "#/definitions/CharacterProfile"
-        }
-      },
-      "additionalProperties": false
-    },
     "PlayerProfile": {
       "type": "object",
       "properties": {
@@ -330,43 +299,32 @@
         "hero": {
           "$ref": "#/definitions/CharacterProfile"
         },
-        "currentMathType": {
-          "type": "string",
-          "minLength": 1
-        },
         "gems": {
           "type": "integer",
           "minimum": 0
         },
         "progress": {
           "type": "object",
-          "minProperties": 1,
-          "additionalProperties": {
-            "$ref": "#/definitions/MathProgress"
-          }
-        },
-        "currentLevel": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/CurrentLevelProgress"
-          }
-        },
-        "battleVariables": {
-          "type": "object",
           "properties": {
-            "timeRemainingSeconds": {
+            "currentLevel": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "gems": {
               "type": "integer",
               "minimum": 0
             }
           },
+          "required": [
+            "currentLevel",
+            "gems"
+          ],
           "additionalProperties": false
         }
       },
       "required": [
         "id",
         "hero",
-        "currentMathType",
-        "gems",
         "progress"
       ],
       "additionalProperties": false
