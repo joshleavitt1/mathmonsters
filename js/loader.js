@@ -512,6 +512,15 @@ const normalizeAssetPath = (inputPath) => {
     ? ASSET_BASE_PATH.slice(0, -1)
     : ASSET_BASE_PATH;
 
+  const isNeutralBase = base === '.' || base === './' || base === '';
+  if (isNeutralBase) {
+    if (!trimmed) {
+      return suffix ? `.${suffix}` : '.';
+    }
+
+    return `${trimmed}${suffix}`;
+  }
+
   return trimmed ? `${base}/${trimmed}${suffix}` : `${base}${suffix}`;
 };
 
