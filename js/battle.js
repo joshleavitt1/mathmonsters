@@ -99,6 +99,16 @@ const hasVisitedLanding = () => {
 
 const landingVisited = hasVisitedLanding();
 
+const waitForNextFrame = () =>
+  new Promise((resolve) => {
+    const raf =
+      typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => window.setTimeout(callback, 16);
+
+    raf(resolve);
+  });
+
 if (!landingVisited) {
   window.location.replace('../index.html');
 }
@@ -2326,6 +2336,11 @@ document.addEventListener('DOMContentLoaded', () => {
       pendingGemReward = null;
       updateNextMissionButton(true);
 
+      const overlayReadyPromise = (async () => {
+        await waitForNextFrame();
+        await waitForNextFrame();
+      })();
+
       let gemRevealed = false;
       let cardDisplayed = false;
       let fallbackTimeout = null;
@@ -2496,9 +2511,18 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       preloadRewardSpriteSource(rewardSpriteSources.gem).catch(() => {});
+      const scheduleAnimationStart = () => {
+        overlayReadyPromise
+          .then(() => {
+            startAnimationOnce();
+          })
+          .catch(() => {
+            startAnimationOnce();
+          });
+      };
       preloadRewardSpriteSource(rewardSpriteSources.chest)
         .catch(() => {})
-        .finally(startAnimationOnce);
+        .finally(scheduleAnimationStart);
 
       const totalFallbackDuration =
         GEM_REWARD_INITIAL_PAUSE_MS + GEM_REWARD_PULSE_DURATION_MS * GEM_REWARD_PULSE_COUNT + 1200;
