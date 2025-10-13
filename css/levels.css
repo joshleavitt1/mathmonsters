@@ -58,6 +58,23 @@ body.levels-page {
   width: fit-content;
 }
 
+.levels__card--current {
+  cursor: pointer;
+}
+
+.levels__card--disabled {
+  pointer-events: none;
+  cursor: default;
+}
+
+.levels__card--locked .levels__image {
+  filter: saturate(0%);
+}
+
+.levels__card--completed .levels__image {
+  filter: none;
+}
+
 .levels__card:focus-visible {
   outline: 3px solid rgba(255, 255, 255, 0.9);
   outline-offset: 4px;
@@ -89,6 +106,12 @@ body.levels-page {
   font-weight: 400;
   color: var(--text-color-light);
   letter-spacing: 0;
+}
+
+.levels__placeholder {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: clamp(16px, 3vw, 18px);
 }
 
 @media (max-width: 600px) {

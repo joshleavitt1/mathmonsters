@@ -19,72 +19,21 @@
   <body class="levels-page">
     <main class="levels app-safe-area" role="main">
       <section class="levels__list" aria-label="Available levels">
-        <a class="levels__card" href="./battle.html?level=5">
-          <img
-            class="levels__image"
-            src="../images/levels/portal.png"
-            alt="Portal to Level 5"
-            width="160"
-            height="160"
-            loading="lazy"
-          />
-          <div class="levels__statbox">
-            <span class="levels__statbox-value">Level 5</span>
-          </div>
-        </a>
-        <a class="levels__card" href="./battle.html?level=4">
-          <img
-            class="levels__image"
-            src="../images/levels/portal.png"
-            alt="Portal to Level 4"
-            width="160"
-            height="160"
-            loading="lazy"
-          />
-          <div class="levels__statbox">
-            <span class="levels__statbox-value">Level 4</span>
-          </div>
-        </a>
-        <a class="levels__card" href="./battle.html?level=3">
-          <img
-            class="levels__image"
-            src="../images/levels/portal.png"
-            alt="Portal to Level 3"
-            width="160"
-            height="160"
-            loading="lazy"
-          />
-          <div class="levels__statbox">
-            <span class="levels__statbox-value">Level 3</span>
-          </div>
-        </a>
-        <a class="levels__card" href="./battle.html?level=2">
-          <img
-            class="levels__image"
-            src="../images/levels/portal.png"
-            alt="Portal to Level 2"
-            width="160"
-            height="160"
-            loading="lazy"
-          />
-          <div class="levels__statbox">
-            <span class="levels__statbox-value">Level 2</span>
-          </div>
-        </a>
-        <a class="levels__card" href="./battle.html?level=1">
-          <img
-            class="levels__image"
-            src="../images/levels/portal.png"
-            alt="Portal to Level 1"
-            width="160"
-            height="160"
-            loading="lazy"
-          />
-          <div class="levels__statbox">
-            <span class="levels__statbox-value">Level 1</span>
-          </div>
-        </a>
+        <p class="levels__placeholder" data-levels-placeholder>
+          Loading your portals...
+        </p>
       </section>
     </main>
+    <script>
+      window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
+      window.SUPABASE_ANON_KEY =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bHhwdW1jb2loZmFwbXJzYXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjE3MDcsImV4cCI6MjA3Mjk5NzcwN30.PJiDPZ_Dqli_42isJexeYgsf0ebWbCSOwHtR7lsQTN0';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../js/supabaseClient.js" defer></script>
+    <script src="../js/utils/progress.js" defer></script>
+    <script src="../js/utils/playerProfile.js" defer></script>
+    <script src="../js/loader.js" defer></script>
+    <script src="../js/levels.js" defer></script>
   </body>
 </html>

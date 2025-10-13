@@ -13,9 +13,7 @@
   "gems": 0,
   "progress": {
     "addition": {
-      "currentLevel": 1,
-      "currentBattle": 1,
-      "totalBattles": 1
+      "currentLevel": 1
     }
   }
 }

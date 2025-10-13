@@ -23,7 +23,6 @@ const REGISTER_PAGE_URL = 'register.html';
 
 const createDefaultProgress = () => ({
   currentLevel: 1,
-  currentBattle: 1,
 });
 
 const clearLandingVisitState = (localStorageRef) => {
