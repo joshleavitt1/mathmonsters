@@ -3,6 +3,7 @@ body.levels-page {
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
+  align-items: center;
   justify-content: center;
   color: var(--text-color-light);
   background: #001b41 url('../images/background/background.png') no-repeat center/cover;
