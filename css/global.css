@@ -145,18 +145,27 @@ button {
 }
 
 button.result {
-  --btn-hover-gradient-start: var(--btn-gradient-start);
-  --btn-hover-gradient-end: var(--btn-gradient-end);
+  background-image: none;
+}
+
+button.result:hover {
+  background-image: none;
 }
 
 button.result.correct {
-  --btn-gradient-start: #36dc36;
-  --btn-gradient-end: #00b600;
+  background-color: #00b600;
+}
+
+button.result.correct:hover {
+  background-color: #00b600;
 }
 
 button.result.incorrect {
-  --btn-gradient-start: #ff5757;
-  --btn-gradient-end: #e20000;
+  background-color: #e20000;
+}
+
+button.result.incorrect:hover {
+  background-color: #e20000;
 }
 
 button.button--locked {
