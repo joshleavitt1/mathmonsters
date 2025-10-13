@@ -65,7 +65,7 @@ body.levels-page {
 }
 
 .levels__card:hover {
-  transform: translateY(-4px);
+  transform: none;
 }
 
 .levels__image {
