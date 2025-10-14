@@ -1,7 +1,6 @@
 const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
-const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 
 const MONSTER_DEFEAT_ANIMATION_DELAY = 1000;
@@ -27,7 +26,6 @@ const GEM_REWARD_PULSE_DURATION_MS = 2100;
 const GEM_REWARD_PULSE_COUNT = 1;
 const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
 const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
-const GEM_REWARD_HOME_ANIMATION_KEY = 'mathmonstersGemRewardAnimation';
 const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const BATTLES_PER_LEVEL = 4;
@@ -37,6 +35,8 @@ const progressUtils =
 
 const INTRO_QUESTION_LEVELS = new Set([1]);
 
+const MEDAL_DISPLAY_DURATION_MS = 3000;
+const LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY = 'level-1:first-correct';
 const DEV_DAMAGE_AMOUNT = 100;
 const DEV_SKIP_TARGET_LEVEL = 4;
 
@@ -98,16 +98,6 @@ const hasVisitedLanding = () => {
 
 const landingVisited = hasVisitedLanding();
 
-const waitForNextFrame = () =>
-  new Promise((resolve) => {
-    const raf =
-      typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
-        ? window.requestAnimationFrame.bind(window)
-        : (callback) => window.setTimeout(callback, 16);
-
-    raf(resolve);
-  });
-
 if (!landingVisited) {
   window.location.replace('../index.html');
 }
@@ -138,6 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionText = questionBox.querySelector('.question-text');
   const choicesEl = questionBox.querySelector('.choices');
+  const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
+  const bannerTimeValue = document.querySelector('[data-banner-time]');
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
   const heroAttackInc = heroStats.querySelector('.attack .increase');
@@ -148,6 +140,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const battleCompleteTitle = completeMessage?.querySelector('#battle-complete-title');
   const completeMonsterImg = completeMessage?.querySelector('.monster-image');
   const monsterDefeatOverlay = completeMessage?.querySelector('[data-monster-defeat-overlay]');
+  const summaryAccuracyStat = completeMessage?.querySelector('[data-goal="accuracy"]');
+  const summaryTimeStat = completeMessage?.querySelector('[data-goal="time"]');
+  const summaryAccuracyValue = summaryAccuracyStat?.querySelector('.summary-accuracy');
+  const summaryTimeValue = summaryTimeStat?.querySelector('.summary-time');
   const nextMissionBtn = completeMessage?.querySelector('.next-mission-btn');
   const levelProgressMeter = completeMessage?.querySelector(
     '.battle-complete-card__meter .meter__progress'
@@ -158,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const rewardCard = rewardOverlay?.querySelector('[data-reward-card]');
   const rewardCardText = rewardCard?.querySelector('.reward-overlay__card-text');
   const rewardCardButton = rewardCard?.querySelector('[data-reward-card-button]');
-  const rewardCardAvatar = rewardCard?.querySelector('[data-reward-card-avatar]');
   const rewardDevSkipButton = rewardOverlay?.querySelector('[data-reward-dev-skip]');
   const evolutionOverlay = document.querySelector('[data-evolution-overlay]');
   const evolutionCurrentSprite = evolutionOverlay?.querySelector(
@@ -177,6 +172,110 @@ document.addEventListener('DOMContentLoaded', () => {
     '[data-evolution-complete-sprite]'
   );
 
+  const potionRewardImageSrc = '../images/complete/potion.png';
+
+  const medalElement = document.querySelector('[data-medal]');
+  let medalHideTimeoutId = null;
+  let medalFinalizeTimeoutId = null;
+  const displayedMedals = new Set();
+
+  const finalizeMedalHide = () => {
+    if (!medalElement || medalElement.classList.contains('medal--visible')) {
+      return;
+    }
+
+    medalElement.setAttribute('aria-hidden', 'true');
+    if (!medalElement.hasAttribute('hidden')) {
+      medalElement.setAttribute('hidden', 'hidden');
+    }
+  };
+
+  const hideMedal = ({ immediate = false } = {}) => {
+    if (!medalElement) {
+      return;
+    }
+
+    if (medalHideTimeoutId !== null) {
+      window.clearTimeout(medalHideTimeoutId);
+      medalHideTimeoutId = null;
+    }
+
+    if (medalFinalizeTimeoutId !== null) {
+      window.clearTimeout(medalFinalizeTimeoutId);
+      medalFinalizeTimeoutId = null;
+    }
+
+    const removeVisibility = () => {
+      medalElement.classList.remove('medal--visible');
+      medalElement.classList.remove('medal--pop');
+    };
+
+    if (immediate) {
+      removeVisibility();
+      finalizeMedalHide();
+      return;
+    }
+
+    const handleTransitionEnd = (event) => {
+      if (event.target !== medalElement || event.propertyName !== 'opacity') {
+        return;
+      }
+      medalElement.removeEventListener('transitionend', handleTransitionEnd);
+      finalizeMedalHide();
+    };
+
+    medalElement.addEventListener('transitionend', handleTransitionEnd, {
+      once: true,
+    });
+
+    removeVisibility();
+
+    medalFinalizeTimeoutId = window.setTimeout(() => {
+      medalFinalizeTimeoutId = null;
+      finalizeMedalHide();
+    }, 450);
+  };
+
+  const showMedal = () => {
+    if (!medalElement) {
+      return;
+    }
+
+    if (medalHideTimeoutId !== null) {
+      window.clearTimeout(medalHideTimeoutId);
+      medalHideTimeoutId = null;
+    }
+
+    if (medalFinalizeTimeoutId !== null) {
+      window.clearTimeout(medalFinalizeTimeoutId);
+      medalFinalizeTimeoutId = null;
+    }
+
+    medalElement.classList.remove('medal--pop');
+    medalElement.removeAttribute('hidden');
+    void medalElement.offsetWidth;
+    medalElement.setAttribute('aria-hidden', 'false');
+    medalElement.classList.add('medal--visible', 'medal--pop');
+
+    medalHideTimeoutId = window.setTimeout(() => {
+      medalHideTimeoutId = null;
+      hideMedal();
+    }, MEDAL_DISPLAY_DURATION_MS);
+  };
+
+  if (medalElement) {
+    medalElement.addEventListener('animationend', (event) => {
+      if (event.target !== medalElement || event.animationName !== 'medal-pop') {
+        return;
+      }
+
+      medalElement.classList.remove('medal--pop');
+    });
+  }
+
+  const summaryAccuracyText = ensureStatValueText(summaryAccuracyValue);
+  const summaryTimeText = ensureStatValueText(summaryTimeValue);
+
   const defaultRewardCardText =
     rewardCardText && typeof rewardCardText.textContent === 'string'
       ? rewardCardText.textContent.trim()
@@ -185,14 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardCardButton && typeof rewardCardButton.textContent === 'string'
       ? rewardCardButton.textContent.trim()
       : 'Use Potion';
-  const defaultRewardCardImageSrc =
-    rewardCardAvatar && typeof rewardCardAvatar.getAttribute === 'function'
-      ? rewardCardAvatar.getAttribute('src')
-      : null;
-  const defaultRewardCardImageAlt =
-    rewardCardAvatar && typeof rewardCardAvatar.getAttribute === 'function'
-      ? rewardCardAvatar.getAttribute('alt')
-      : null;
   const REGISTER_REWARD_CARD_TEXT =
     'Your creature just evolved! It’s stronger now and ready for new adventures!';
   const REGISTER_REWARD_CARD_BUTTON_TEXT = 'Register Now';
@@ -330,6 +421,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const updateHeroSpriteCustomProperties = createHeroSpriteCustomPropertyUpdater(heroImg);
 
+  if (bannerAccuracyValue) bannerAccuracyValue.textContent = '100%';
+  if (bannerTimeValue) bannerTimeValue.textContent = '0s';
+  if (summaryAccuracyText) summaryAccuracyText.textContent = '100%';
+  if (summaryTimeText) summaryTimeText.textContent = '0s';
+
   const MIN_STREAK_GOAL = 1;
   const MAX_STREAK_GOAL = 5;
   const DEFAULT_STREAK_GOAL = 3;
@@ -360,8 +456,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let correctAnswers = 0;
   let totalAnswers = 0;
   let wrongAnswers = 0;
+  let accuracyGoal = null;
+  let timeGoalSeconds = 0;
+  let timeRemaining = 0;
+  let initialTimeRemaining = 0;
+  let battleTimerDeadline = null;
+  let battleTimerInterval = null;
   let battleEnded = false;
   let currentCurrentLevel = null;
+  let battleStartTime = null;
   let currentLevelAdvanced = false;
   let battleGoalsMet = false;
   let heroSuperAttackBase = null;
@@ -383,6 +486,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let evolutionRevealFallbackTimeout = null;
   let evolutionCardDelayTimeout = null;
 
+  const maybeShowFirstCorrectMedal = (resolvedLevel, correctCount) => {
+    if (!medalElement) {
+      return;
+    }
+
+    if (!Number.isFinite(resolvedLevel) || resolvedLevel !== 1) {
+      return;
+    }
+
+    if (displayedMedals.has(LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY)) {
+      return;
+    }
+
+    if (correctCount !== 1) {
+      return;
+    }
+
+    displayedMedals.add(LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY);
+    hideMedal({ immediate: true });
+  };
   let evolutionInProgress = false;
   let rewardCardDisplayTimeout = null;
   let heroSpriteReadyPromise = null;
@@ -406,7 +529,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const REWARD_POTION_SRC = '../images/complete/potion.png';
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
   const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
-  const HERO_ATTACK_LEVEL_2_SRC = '../images/hero/shellfin_attack_2.png';
 
   const rewardSpritePreloadCache = new Map();
 
@@ -484,8 +606,6 @@ document.addEventListener('DOMContentLoaded', () => {
     preloadRewardSpriteSource(source).catch(() => {});
   });
 
-  const DEFAULT_ASSET_BASE = '/mathmonsters';
-
   const sanitizeHeroSpritePath = (path) => {
     if (typeof path !== 'string') {
       return path;
@@ -502,125 +622,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${heroName}_evolution_${safeLevel}${extension || ''}`;
       }
     );
-  };
-
-  const readAssetBasePath = () => {
-    const globalBase =
-      typeof window !== 'undefined' &&
-      typeof window.mathMonstersAssetBase === 'string'
-        ? window.mathMonstersAssetBase.trim()
-        : '';
-
-    return globalBase || '..';
-  };
-
-  const joinAssetBasePath = (base, relativePath) => {
-    const normalizedBase = typeof base === 'string' ? base.trim() : '';
-    const normalizedRelative =
-      typeof relativePath === 'string' ? relativePath.trim() : '';
-
-    const baseWithoutTrailing =
-      normalizedBase === '.' || normalizedBase === './'
-        ? ''
-        : normalizedBase.replace(/\/+$/, '');
-    const relativeWithoutLeading = normalizedRelative.replace(/^\/+/, '');
-
-    if (!baseWithoutTrailing) {
-      return relativeWithoutLeading;
-    }
-
-    if (!relativeWithoutLeading) {
-      return baseWithoutTrailing;
-    }
-
-    return `${baseWithoutTrailing}/${relativeWithoutLeading}`;
-  };
-
-  const resolveBattleAssetPath = (rawPath, { base, sanitize } = {}) => {
-    if (typeof rawPath !== 'string') {
-      return null;
-    }
-
-    const trimmed = rawPath.trim();
-    if (!trimmed) {
-      return null;
-    }
-
-    const sanitizer =
-      typeof sanitize === 'function'
-        ? sanitize
-        : (value) => value;
-    const sanitizedInput = sanitizer(trimmed);
-
-    if (/^(?:https?:|data:|blob:)/i.test(sanitizedInput)) {
-      return sanitizedInput;
-    }
-
-    if (
-      sanitizedInput.startsWith('../') ||
-      sanitizedInput.startsWith('./')
-    ) {
-      return sanitizedInput;
-    }
-
-    const assetBasePath =
-      typeof base === 'string' && base.trim()
-        ? base.trim()
-        : readAssetBasePath();
-
-    const fallbackBaseRaw =
-      typeof DEFAULT_ASSET_BASE === 'string'
-        ? DEFAULT_ASSET_BASE.trim()
-        : '';
-    const fallbackPrefix = fallbackBaseRaw
-      ? fallbackBaseRaw.startsWith('/')
-        ? fallbackBaseRaw.replace(/\/+$/, '')
-        : `/${fallbackBaseRaw.replace(/\/+$/, '')}`
-      : '';
-
-    const assetBaseComparable =
-      assetBasePath.startsWith('/') && !assetBasePath.startsWith('//')
-        ? assetBasePath.replace(/\/+$/, '').toLowerCase()
-        : assetBasePath.startsWith('.')
-        ? ''
-        : assetBasePath.replace(/\/+$/, '').toLowerCase();
-
-    const fallbackComparable = fallbackPrefix
-      ? fallbackPrefix.toLowerCase()
-      : '';
-
-    const sanitizedHasLeadingSlash = sanitizedInput.startsWith('/');
-    const sanitizedComparableBase = sanitizedHasLeadingSlash
-      ? sanitizedInput.replace(/\/+$/, '')
-      : `/${sanitizedInput.replace(/\/+$/, '')}`;
-    const sanitizedComparable = sanitizedComparableBase.toLowerCase();
-
-    if (
-      fallbackComparable &&
-      sanitizedComparable.startsWith(fallbackComparable) &&
-      (!assetBaseComparable || assetBaseComparable !== fallbackComparable)
-    ) {
-      const remainderComparable = sanitizedComparableBase.slice(
-        fallbackComparable.length
-      );
-      const remainder = sanitizedHasLeadingSlash
-        ? `/${remainderComparable.replace(/^\/+/, '')}`
-        : remainderComparable.replace(/^\/+/, '');
-      const joined = joinAssetBasePath(assetBasePath, remainder);
-      const output = joined || sanitizedInput;
-      return sanitizer(output);
-    }
-
-    if (
-      assetBaseComparable &&
-      sanitizedComparable.startsWith(assetBaseComparable)
-    ) {
-      return sanitizedInput;
-    }
-
-    const joined = joinAssetBasePath(assetBasePath, sanitizedInput);
-    const output = joined || sanitizedInput;
-    return sanitizer(output);
   };
 
   const spriteElementCache =
@@ -825,6 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.preloadedData?.level?.mathTypeKey,
       window.preloadedData?.battle?.mathType,
       window.preloadedData?.battle?.mathTypeKey,
+      window.preloadedData?.player?.currentMathType,
       window.preloadedData?.player?.mathType,
       window.preloadedData?.progress?.mathType,
     ];
@@ -979,13 +981,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const entryLevelCandidate = numericOrNull(entry?.currentLevel);
+    const entryTotalCandidate = numericOrNull(entry?.totalBattles);
 
     let resolvedCurrentLevel = fallbackLevelCandidates.find(
       (candidate) => Number.isFinite(candidate) && candidate > 0
     );
 
     if (Number.isFinite(entryLevelCandidate) && entryLevelCandidate > 0) {
-      resolvedCurrentLevel = entryLevelCandidate;
+      const matchesFallback =
+        Number.isFinite(resolvedCurrentLevel) && entryLevelCandidate === resolvedCurrentLevel;
+      if (entryTotalCandidate || matchesFallback || !Number.isFinite(resolvedCurrentLevel)) {
+        resolvedCurrentLevel = entryLevelCandidate;
+      }
     }
 
     if (!Number.isFinite(resolvedCurrentLevel) || resolvedCurrentLevel <= 0) {
@@ -994,11 +1001,47 @@ document.addEventListener('DOMContentLoaded', () => {
       resolvedCurrentLevel = Math.max(1, Math.round(resolvedCurrentLevel));
     }
 
+    let resolvedTotalBattles = Number.isFinite(entryTotalCandidate)
+      ? Math.max(1, Math.round(entryTotalCandidate))
+      : null;
+
+    if (!resolvedTotalBattles && Number.isFinite(entryLevelCandidate)) {
+      const differsFromLevel = entryLevelCandidate !== resolvedCurrentLevel;
+      if (differsFromLevel || !entryTotalCandidate) {
+        resolvedTotalBattles = Math.max(1, Math.round(entryLevelCandidate));
+      }
+    }
+
+    const derivedFromLevel = getBattleCountForLevelNumber(resolvedCurrentLevel);
+    if (!resolvedTotalBattles) {
+      if (Number.isFinite(derivedFromLevel) && derivedFromLevel > 0) {
+        resolvedTotalBattles = Math.max(1, Math.round(derivedFromLevel));
+      } else {
+        resolvedTotalBattles = 1;
+      }
+    } else if (
+      Number.isFinite(derivedFromLevel) &&
+      derivedFromLevel > 0 &&
+      resolvedTotalBattles < derivedFromLevel
+    ) {
+      resolvedTotalBattles = Math.max(resolvedTotalBattles, Math.round(derivedFromLevel));
+    }
+
+    const storedBattleCurrent = numericOrNull(entry?.currentBattle);
+    let resolvedBattleCurrent = storedBattleCurrent ? Math.max(1, storedBattleCurrent) : 1;
+
+    if (resolvedBattleCurrent > resolvedTotalBattles) {
+      resolvedBattleCurrent = resolvedTotalBattles;
+    }
+
     return {
       mathKey,
       mathTypeCandidate,
       entry,
       currentLevelNumber: resolvedCurrentLevel,
+      battleCount: resolvedTotalBattles,
+      currentBattle: resolvedBattleCurrent,
+      currentLevelTotal: resolvedTotalBattles,
     };
   };
 
@@ -1223,82 +1266,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return rounded > 0 ? rounded : null;
   };
 
-  const normalizeNonNegativeInteger = (value) => {
-    const numericValue = Number(value);
-    if (!Number.isFinite(numericValue)) {
-      return null;
-    }
-
-    const rounded = Math.round(numericValue);
-    return rounded >= 0 ? rounded : null;
-  };
-
-  const storeGemRewardHomeAnimation = ({
-    start,
-    end,
-    amount,
-    duration,
-  } = {}) => {
-    if (typeof sessionStorage === 'undefined') {
-      return;
-    }
-
-    const normalizedEnd = normalizeNonNegativeInteger(end);
-    if (normalizedEnd === null) {
-      return;
-    }
-
-    const payload = {
-      end: normalizedEnd,
-      timestamp: Date.now(),
-    };
-
-    const normalizedStart = normalizeNonNegativeInteger(start);
-    if (normalizedStart !== null) {
-      payload.start = normalizedStart;
-    }
-
-    const normalizedAmount = normalizeNonNegativeInteger(amount);
-    if (normalizedAmount !== null) {
-      payload.amount = normalizedAmount;
-    }
-
-    const normalizedDuration = normalizeNonNegativeInteger(duration);
-    if (normalizedDuration !== null && normalizedDuration > 0) {
-      payload.duration = normalizedDuration;
-    }
-
-    try {
-      sessionStorage.setItem(
-        GEM_REWARD_HOME_ANIMATION_KEY,
-        JSON.stringify(payload)
-      );
-    } catch (error) {
-      console.warn('Unable to store gem reward animation state.', error);
-    }
-  };
-
   const formatGemRewardMessage = ({
     amount,
     isWin,
-    includeShopPrompt: _includeShopPrompt,
+    includeShopPrompt,
   } = {}) => {
     const normalizedAmount = Math.max(0, Math.round(Number(amount) || 0));
-    const gemLabel = normalizedAmount
-      ? `${normalizedAmount} Gem${normalizedAmount === 1 ? '' : 's'}`
-      : null;
-    const buttonText = gemLabel
-      ? `Claim ${gemLabel}`
-      : isWin
-      ? 'Continue'
-      : 'Try Again';
+    const prefix = isWin ? 'Great job! You earned' : 'Great effort! You earned';
+    const gemLabel = `${normalizedAmount} gem${normalizedAmount === 1 ? '' : 's'}`;
+    const baseMessage = `${prefix} ${gemLabel}`;
 
-    return {
-      text: isWin ? 'Monster Defeated' : 'Keep Practicing',
-      buttonText,
-      imageSrc: rewardSpriteSources.gem,
-      imageAlt: normalizedAmount === 1 ? 'Gem reward' : 'Gem rewards',
-    };
+    return includeShopPrompt
+      ? `${baseMessage}. Let’s see what cool stuff you can buy in the shop!`
+      : `${baseMessage}.`;
   };
 
   const resolveAbsoluteSpritePath = (path) => {
@@ -1399,123 +1379,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     return /_evolution_1(?:[^0-9]|$)/.test(currentSprite);
-  };
-
-  const toPlayerDataSpritePath = (path, fallback) => {
-    if (typeof path !== 'string') {
-      return fallback || null;
-    }
-
-    const sanitized = sanitizeHeroSpritePath(path.trim());
-    if (!sanitized) {
-      return fallback || null;
-    }
-
-    if (
-      /^[a-z]+:/i.test(sanitized) ||
-      sanitized.startsWith('data:') ||
-      sanitized.startsWith('//')
-    ) {
-      return sanitized;
-    }
-
-    let normalized = sanitized.replace(/^(\.\/)+/, '');
-    normalized = normalized.replace(/^(\.\.\/)+/, '');
-    normalized = normalized.replace(/^\/+/, '');
-
-    return normalized || fallback || sanitized;
-  };
-
-  const persistEvolvedHeroSprite = (nextSpriteSrc) => {
-    const evolvedBattleSprite =
-      sanitizeHeroSpritePath(nextSpriteSrc || '') || HERO_LEVEL_2_SRC;
-    const evolvedBattleAttackSprite =
-      sanitizeHeroSpritePath(HERO_ATTACK_LEVEL_2_SRC) || HERO_ATTACK_LEVEL_2_SRC;
-    const evolvedPlayerSprite =
-      toPlayerDataSpritePath(evolvedBattleSprite, 'images/hero/shellfin_evolution_2.png');
-    const evolvedPlayerAttackSprite =
-      toPlayerDataSpritePath(
-        HERO_ATTACK_LEVEL_2_SRC,
-        'images/hero/shellfin_attack_2.png'
-      );
-
-    if (window.preloadedData && typeof window.preloadedData === 'object') {
-      if (!isPlainObject(window.preloadedData.player)) {
-        window.preloadedData.player = {};
-      }
-
-      if (!isPlainObject(window.preloadedData.player.hero)) {
-        window.preloadedData.player.hero = {};
-      }
-
-      window.preloadedData.player.hero.sprite = evolvedPlayerSprite;
-      window.preloadedData.player.hero.attackSprite = evolvedPlayerAttackSprite;
-
-      const playerAttackSprites = isPlainObject(
-        window.preloadedData.player.hero.attackSprites
-      )
-        ? { ...window.preloadedData.player.hero.attackSprites }
-        : {};
-      playerAttackSprites.basic = evolvedPlayerAttackSprite;
-      playerAttackSprites.super = evolvedPlayerAttackSprite;
-      window.preloadedData.player.hero.attackSprites = playerAttackSprites;
-
-      if (isPlainObject(window.preloadedData.hero)) {
-        window.preloadedData.hero.sprite = evolvedBattleSprite;
-        const heroAttackSprites = isPlainObject(
-          window.preloadedData.hero.attackSprites
-        )
-          ? { ...window.preloadedData.hero.attackSprites }
-          : {};
-        heroAttackSprites.basic = evolvedBattleAttackSprite;
-        heroAttackSprites.super = evolvedBattleAttackSprite;
-        window.preloadedData.hero.attackSprites = heroAttackSprites;
-      }
-    }
-
-    try {
-      const storage = window.sessionStorage;
-      if (!storage) {
-        return;
-      }
-
-      const rawProfile = storage.getItem(PLAYER_PROFILE_STORAGE_KEY);
-      let storedProfile = null;
-
-      if (rawProfile) {
-        try {
-          const parsed = JSON.parse(rawProfile);
-          storedProfile = isPlainObject(parsed) ? { ...parsed } : null;
-        } catch (error) {
-          storedProfile = null;
-        }
-      }
-
-      if (!isPlainObject(storedProfile)) {
-        storedProfile = {};
-      }
-
-      if (!isPlainObject(storedProfile.hero)) {
-        storedProfile.hero = {};
-      }
-
-      storedProfile.hero.sprite = evolvedPlayerSprite;
-      storedProfile.hero.attackSprite = evolvedPlayerAttackSprite;
-
-      const storedAttackSprites = isPlainObject(storedProfile.hero.attackSprites)
-        ? { ...storedProfile.hero.attackSprites }
-        : {};
-      storedAttackSprites.basic = evolvedPlayerAttackSprite;
-      storedAttackSprites.super = evolvedPlayerAttackSprite;
-      storedProfile.hero.attackSprites = storedAttackSprites;
-
-      storage.setItem(
-        PLAYER_PROFILE_STORAGE_KEY,
-        JSON.stringify(storedProfile)
-      );
-    } catch (error) {
-      console.warn('Unable to persist evolved hero sprite.', error);
-    }
   };
 
   const clearEvolutionTimers = () => {
@@ -1787,7 +1650,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       evolutionFinalized = true;
-      persistEvolvedHeroSprite(nextSpriteSrc);
       hideRewardOverlayInstantly();
       if (completeMessage) {
         completeMessage.classList.remove('show');
@@ -2027,42 +1889,14 @@ document.addEventListener('DOMContentLoaded', () => {
     buttonText,
     onClick,
     focusButton = true,
-    imageSrc,
-    imageAlt,
   }) => {
     if (!rewardCard || !rewardCardText || !rewardCardButton) {
       return false;
     }
 
-    const resolvedText =
-      typeof text === 'string' && text.trim()
-        ? text
-        : defaultRewardCardText;
-    const resolvedButtonText =
-      typeof buttonText === 'string' && buttonText.trim()
-        ? buttonText
-        : defaultRewardCardButtonText;
-    rewardCardText.textContent = resolvedText;
-    rewardCardButton.textContent = resolvedButtonText;
+    rewardCardText.textContent = text;
+    rewardCardButton.textContent = buttonText;
     rewardCardButton.disabled = false;
-
-    if (rewardCardAvatar) {
-      const resolvedImageSrc =
-        typeof imageSrc === 'string' && imageSrc.trim()
-          ? imageSrc
-          : defaultRewardCardImageSrc;
-      if (resolvedImageSrc) {
-        rewardCardAvatar.src = resolvedImageSrc;
-      }
-
-      const trimmedAlt =
-        typeof imageAlt === 'string' ? imageAlt.trim() : '';
-      if (trimmedAlt) {
-        rewardCardAvatar.alt = trimmedAlt;
-      } else if (defaultRewardCardImageAlt !== null) {
-        rewardCardAvatar.alt = defaultRewardCardImageAlt;
-      }
-    }
 
     if (rewardCardButtonHandler) {
       rewardCardButton.removeEventListener('click', rewardCardButtonHandler);
@@ -2334,7 +2168,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
           advanceCurrentLevel();
         }
-        recordHomeGemAnimation();
         resetRewardOverlay();
         resolve();
         window.location.href = '../index.html';
@@ -2358,27 +2191,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const rewardAmount = Number.isFinite(rewardAmountRaw)
         ? Math.max(0, Math.round(rewardAmountRaw))
         : GEM_REWARD_WIN_AMOUNT;
-      const rewardTotalAfter = normalizeNonNegativeInteger(
-        rewardConfig?.totalAfter
-      );
-      const rewardStartTotal =
-        rewardTotalAfter !== null && Number.isFinite(rewardAmount)
-          ? Math.max(0, rewardTotalAfter - rewardAmount)
-          : null;
-      let homeAnimationStored = false;
-      const recordHomeGemAnimation = () => {
-        if (homeAnimationStored || rewardTotalAfter === null) {
-          return;
-        }
-
-        storeGemRewardHomeAnimation({
-          start: rewardStartTotal,
-          end: rewardTotalAfter,
-          amount: rewardAmount,
-          duration: 900,
-        });
-        homeAnimationStored = true;
-      };
       const isFirstGemReward = rewardConfig?.isFirstGemReward === true;
       const rewardCurrentLevel = normalizePositiveInteger(
         rewardConfig?.currentLevel
@@ -2392,11 +2204,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       pendingGemReward = null;
       updateNextMissionButton(true);
-
-      const overlayReadyPromise = (async () => {
-        await waitForNextFrame();
-        await waitForNextFrame();
-      })();
 
       let gemRevealed = false;
       let cardDisplayed = false;
@@ -2432,7 +2239,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
           advanceCurrentLevel();
         }
-        recordHomeGemAnimation();
         resetRewardOverlay();
         finish();
         window.location.href = '../index.html';
@@ -2453,16 +2259,14 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         cardDisplayed = true;
-        const cardContent = formatGemRewardMessage({
+        const cardText = formatGemRewardMessage({
           amount: rewardAmount,
           isWin: rewardIsWin,
           includeShopPrompt,
         });
         const displayed = displayRewardCard({
-          text: cardContent?.text,
-          buttonText: cardContent?.buttonText,
-          imageSrc: cardContent?.imageSrc,
-          imageAlt: cardContent?.imageAlt,
+          text: cardText,
+          buttonText: 'Continue',
           onClick: navigateHome,
         });
         if (!displayed) {
@@ -2568,18 +2372,9 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       preloadRewardSpriteSource(rewardSpriteSources.gem).catch(() => {});
-      const scheduleAnimationStart = () => {
-        overlayReadyPromise
-          .then(() => {
-            startAnimationOnce();
-          })
-          .catch(() => {
-            startAnimationOnce();
-          });
-      };
       preloadRewardSpriteSource(rewardSpriteSources.chest)
         .catch(() => {})
-        .finally(scheduleAnimationStart);
+        .finally(startAnimationOnce);
 
       const totalFallbackDuration =
         GEM_REWARD_INITIAL_PAUSE_MS + GEM_REWARD_PULSE_DURATION_MS * GEM_REWARD_PULSE_COUNT + 1200;
@@ -2589,27 +2384,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }, totalFallbackDuration);
     });
 
-  const updateNextMissionButton = (win = true, rewardAmount = null) => {
+  const updateNextMissionButton = (win = true) => {
     if (!nextMissionBtn) {
       return;
     }
 
     const hasPendingReward = Boolean(pendingGemReward);
-
-    const resolvedAmountRaw =
-      rewardAmount ?? (hasPendingReward ? pendingGemReward.amount : null);
-    const normalizedAmount = Number.isFinite(resolvedAmountRaw)
-      ? Math.max(0, Math.round(resolvedAmountRaw))
-      : null;
-
-    if (normalizedAmount) {
-      const label = `Claim ${normalizedAmount} Gem${
-        normalizedAmount === 1 ? '' : 's'
-      }`;
-      nextMissionBtn.textContent = label;
-      nextMissionBtn.dataset.action = 'next';
-      return;
-    }
 
     if (!win && !hasPendingReward) {
       nextMissionBtn.textContent = 'Try Again';
@@ -2617,8 +2397,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    nextMissionBtn.textContent = win ? 'Continue' : 'Try Again';
-    nextMissionBtn.dataset.action = win ? 'next' : 'retry';
+    const useClaimLabel =
+      !hasPendingReward || pendingGemReward.useClaimLabel === true;
+    nextMissionBtn.textContent = useClaimLabel ? 'Claim Potion' : 'Continue';
+    nextMissionBtn.dataset.action = 'next';
   };
 
   const updateLevelProgressDisplay = () => {
@@ -3250,6 +3032,23 @@ document.addEventListener('DOMContentLoaded', () => {
     return questionMap.get(fallbackId) ?? questions[0] ?? null;
   }
 
+  function ensureStatValueText(valueEl) {
+    if (!valueEl) {
+      return null;
+    }
+    const existing = valueEl.querySelector('.stat-value-text');
+    if (existing) {
+      return existing;
+    }
+    const span = document.createElement('span');
+    span.classList.add('stat-value-text');
+    const initialText = valueEl.textContent ? valueEl.textContent.trim() : '';
+    span.textContent = initialText;
+    valueEl.textContent = '';
+    valueEl.appendChild(span);
+    return span;
+  }
+
   function resetMonsterDefeatAnimation() {
     if (monsterDefeatAnimationTimeout !== null) {
       window.clearTimeout(monsterDefeatAnimationTimeout);
@@ -3273,6 +3072,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     monsterDefeatOverlay.classList.add('monster-defeat-overlay--visible');
     monsterDefeatAnimationTimeout = null;
+  }
+
+  function applyGoalResult(valueEl, textSpan, text, met) {
+    if (!valueEl || !textSpan) {
+      return;
+    }
+    textSpan.textContent = text;
+    const icon = valueEl.querySelector('.goal-result-icon');
+    if (icon) {
+      icon.remove();
+    }
+    valueEl.classList.remove('goal-result--met', 'goal-result--missed');
+    valueEl.classList.add(met ? 'goal-result--met' : 'goal-result--missed');
   }
 
   function setBattleCompleteTitleLines(...lines) {
@@ -3362,6 +3174,33 @@ document.addEventListener('DOMContentLoaded', () => {
         );
       }
 
+      if (Object.prototype.hasOwnProperty.call(updatePayload, 'timeRemainingSeconds')) {
+        const timeRemaining = updatePayload.timeRemainingSeconds;
+
+        if (
+          window.preloadedData.battleVariables &&
+          typeof window.preloadedData.battleVariables === 'object'
+        ) {
+          window.preloadedData.battleVariables.timeRemainingSeconds = timeRemaining;
+        } else {
+          window.preloadedData.battleVariables = { timeRemainingSeconds: timeRemaining };
+        }
+
+        if (
+          window.preloadedData.player &&
+          typeof window.preloadedData.player === 'object'
+        ) {
+          const playerBattleVariables =
+            typeof window.preloadedData.player.battleVariables === 'object' &&
+            window.preloadedData.player.battleVariables !== null
+              ? window.preloadedData.player.battleVariables
+              : {};
+          window.preloadedData.player.battleVariables = {
+            ...playerBattleVariables,
+            timeRemainingSeconds: timeRemaining,
+          };
+        }
+      }
     }
 
     try {
@@ -3393,73 +3232,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const resolveStoredProgress = () => {
-      if (window.preloadedData) {
-        if (isPlainObject(window.preloadedData.progress)) {
-          return window.preloadedData.progress;
-        }
+    const progress =
+      window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
+    const resolvedLevel = Number(
+      progress?.currentLevel ?? progress?.level
+    );
 
-        if (
-          window.preloadedData.player &&
-          isPlainObject(window.preloadedData.player.progress)
-        ) {
-          return window.preloadedData.player.progress;
-        }
-      }
-
-      return null;
-    };
-
-    const storedProgress = resolveStoredProgress();
-    const storedLevelRaw =
-      storedProgress &&
-      (storedProgress.currentLevel !== undefined
-        ? storedProgress.currentLevel
-        : storedProgress.level);
-    const storedLevel = Number(storedLevelRaw);
-    const previousLevel = Number.isFinite(currentCurrentLevel)
-      ? Math.max(1, Math.floor(currentCurrentLevel))
-      : null;
-
-    let effectiveLevel = Number.isFinite(storedLevel)
-      ? Math.max(1, Math.floor(storedLevel))
-      : null;
-
-    if (previousLevel !== null) {
-      if (effectiveLevel === null || effectiveLevel <= previousLevel) {
-        effectiveLevel = previousLevel + 1;
-      }
-    }
-
-    if (effectiveLevel === null) {
-      effectiveLevel = 1;
-    }
-
-    currentCurrentLevel = effectiveLevel;
-
-    const assignProgressLevel = (target) => {
-      if (!isPlainObject(target)) {
-        return;
-      }
-
-      target.currentLevel = effectiveLevel;
-    };
-
-    if (window.preloadedData) {
-      if (!isPlainObject(window.preloadedData.progress)) {
-        window.preloadedData.progress = {};
-      }
-      assignProgressLevel(window.preloadedData.progress);
-
-      if (
-        window.preloadedData.player &&
-        typeof window.preloadedData.player === 'object'
-      ) {
-        if (!isPlainObject(window.preloadedData.player.progress)) {
-          window.preloadedData.player.progress = {};
-        }
-        assignProgressLevel(window.preloadedData.player.progress);
-      }
+    if (Number.isFinite(resolvedLevel)) {
+      currentCurrentLevel = Math.max(1, Math.floor(resolvedLevel));
     }
 
     currentLevelAdvanced = true;
@@ -3492,15 +3272,57 @@ document.addEventListener('DOMContentLoaded', () => {
         delete data.player.progress.experience;
       }
     }
-    const battleProgress = {};
+    const battleProgress =
+      data.battleVariables ?? data.player?.battleVariables ?? {};
 
-    const assetBasePath = readAssetBasePath();
+    const assetBasePath = (() => {
+      const globalBase =
+        typeof window?.mathMonstersAssetBase === 'string'
+          ? window.mathMonstersAssetBase.trim()
+          : '';
+      if (globalBase) {
+        return globalBase;
+      }
+      return '..';
+    })();
 
-    const resolveAssetPath = (path) =>
-      resolveBattleAssetPath(path, {
-        base: assetBasePath,
-        sanitize: sanitizeHeroSpritePath,
-      });
+    const resolveAssetPath = (path) => {
+      if (typeof path !== 'string') {
+        return null;
+      }
+
+      const trimmed = path.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      const sanitized = sanitizeHeroSpritePath(trimmed);
+
+      if (/^https?:\/\//i.test(sanitized) || /^data:/i.test(sanitized)) {
+        return sanitized;
+      }
+
+      if (sanitized.startsWith('../') || sanitized.startsWith('./')) {
+        return sanitized;
+      }
+
+      if (sanitized.startsWith('/')) {
+        return sanitized;
+      }
+
+      const normalizedBase = assetBasePath.endsWith('/')
+        ? assetBasePath.slice(0, -1)
+        : assetBasePath;
+      const normalizedPath = sanitizeHeroSpritePath(
+        sanitized.replace(/^\/+/, '')
+      );
+
+      if (!normalizedBase || normalizedBase === '.') {
+        return normalizedPath;
+      }
+
+      return sanitizeHeroSpritePath(`${normalizedBase}/${normalizedPath}`);
+    };
 
     const isPlainObjectValue = (value) =>
       Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -3583,6 +3405,34 @@ document.addEventListener('DOMContentLoaded', () => {
     levelExperienceRequirement = Number.isFinite(levelUpValue)
       ? Math.max(0, Math.round(levelUpValue))
       : 0;
+
+    accuracyGoal =
+      typeof battleData.accuracyGoal === 'number' &&
+      Number.isFinite(battleData.accuracyGoal)
+        ? battleData.accuracyGoal
+        : null;
+
+    const parsedTimeGoal = Number(battleData.timeGoalSeconds);
+    timeGoalSeconds =
+      Number.isFinite(parsedTimeGoal) && parsedTimeGoal > 0
+        ? Math.floor(parsedTimeGoal)
+        : 0;
+
+    const storedTime = Number(battleProgress.timeRemainingSeconds);
+    if (Number.isFinite(storedTime) && storedTime > 0) {
+      timeRemaining = Math.floor(storedTime);
+      if (timeGoalSeconds > 0) {
+        timeRemaining = Math.min(timeRemaining, timeGoalSeconds);
+      }
+    } else {
+      timeRemaining = timeGoalSeconds;
+    }
+
+    if (!Number.isFinite(timeRemaining) || timeRemaining < 0) {
+      timeRemaining = 0;
+    }
+
+    initialTimeRemaining = Number.isFinite(timeRemaining) ? timeRemaining : 0;
 
     heroSuperAttackBase = null;
     hero.attack = toFiniteNumber(heroData.attack, hero.attack);
@@ -3857,6 +3707,73 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function calculateAccuracy() {
+    if (wrongAnswers === 0) {
+      return 100;
+    }
+    return totalAnswers
+      ? Math.max(0, Math.round((correctAnswers / totalAnswers) * 100))
+      : 100;
+  }
+
+  function updateAccuracyDisplays() {
+    const accuracy = calculateAccuracy();
+    if (bannerAccuracyValue) bannerAccuracyValue.textContent = `${accuracy}%`;
+    if (summaryAccuracyText) summaryAccuracyText.textContent = `${accuracy}%`;
+  }
+
+  function updateBattleTimeDisplay() {
+    const timeValue = Number.isFinite(timeRemaining) ? Math.max(0, Math.floor(timeRemaining)) : 0;
+    if (bannerTimeValue) bannerTimeValue.textContent = `${timeValue}s`;
+    if (summaryTimeText) summaryTimeText.textContent = `${timeValue}s`;
+  }
+
+  function handleBattleTimerTick() {
+    if (battleEnded) {
+      stopBattleTimer();
+      return;
+    }
+    if (!Number.isFinite(battleTimerDeadline)) {
+      stopBattleTimer();
+      return;
+    }
+    const now = Date.now();
+    const secondsLeft = Math.max(0, Math.ceil((battleTimerDeadline - now) / 1000));
+    if (secondsLeft !== timeRemaining) {
+      timeRemaining = secondsLeft;
+      updateBattleTimeDisplay();
+    }
+    if (secondsLeft <= 0) {
+      endBattle(false, { reason: 'timeout' });
+    }
+  }
+
+  function startBattleTimer() {
+    stopBattleTimer();
+    if (!battleStartTime) {
+      battleStartTime = Date.now();
+    }
+    if (!Number.isFinite(timeRemaining) || timeRemaining <= 0) {
+      timeRemaining = Math.max(0, Number.isFinite(timeRemaining) ? Math.floor(timeRemaining) : 0);
+      updateBattleTimeDisplay();
+      if (timeGoalSeconds > 0 && !battleEnded) {
+        endBattle(false, { reason: 'timeout' });
+      }
+      return;
+    }
+    battleTimerDeadline = Date.now() + timeRemaining * 1000;
+    updateBattleTimeDisplay();
+    battleTimerInterval = window.setInterval(handleBattleTimerTick, 250);
+  }
+
+  function stopBattleTimer() {
+    if (battleTimerInterval) {
+      clearInterval(battleTimerInterval);
+      battleTimerInterval = null;
+    }
+    battleTimerDeadline = null;
+  }
+
   function showQuestion() {
     if (battleEnded) {
       return;
@@ -3877,49 +3794,8 @@ document.addEventListener('DOMContentLoaded', () => {
       div.dataset.correct = !!choice.correct;
       if (choice.image) {
         const img = document.createElement('img');
-        const imageCandidates = Array.isArray(choice.image)
-          ? choice.image
-          : [choice.image];
-        let resolvedImage = null;
-        for (const candidate of imageCandidates) {
-          if (typeof candidate !== 'string') {
-            continue;
-          }
-          const trimmedCandidate = candidate.trim();
-          if (!trimmedCandidate) {
-            continue;
-          }
-
-          const hasPathSeparator = /[\\/]/.test(trimmedCandidate);
-          const candidateSources = hasPathSeparator
-            ? [trimmedCandidate]
-            : [
-                `images/questions/${trimmedCandidate}`,
-                trimmedCandidate,
-              ];
-
-          for (const source of candidateSources) {
-            resolvedImage = resolveBattleAssetPath(source);
-            if (resolvedImage) {
-              break;
-            }
-          }
-
-          if (resolvedImage) {
-            break;
-          }
-        }
-        if (resolvedImage) {
-          img.src = resolvedImage;
-        } else if (typeof imageCandidates[0] === 'string') {
-          img.src = imageCandidates[0];
-        }
-        const altText =
-          choice.name !== undefined && choice.name !== null
-            ? String(choice.name)
-            : '';
-        img.alt = altText;
-        img.decoding = 'async';
+        img.src = `/mathmonsters/images/questions/${choice.image}`;
+        img.alt = choice.name || '';
         div.appendChild(img);
       }
       const p = document.createElement('p');
@@ -4354,13 +4230,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const correct = e.detail.correct;
+    const resolvedLevel = getResolvedCurrentLevel();
     totalAnswers++;
     if (correct) {
       correctAnswers++;
     } else {
       wrongAnswers++;
     }
+    updateAccuracyDisplays();
     if (correct) {
+      maybeShowFirstCorrectMedal(resolvedLevel, correctAnswers);
       let incEl = null;
       let incText = '';
       if (!streakMaxed) {
@@ -4399,19 +4278,65 @@ document.addEventListener('DOMContentLoaded', () => {
     resetMonsterDefeatAnimation();
     resetSuperAttackBoost();
     document.dispatchEvent(new Event('close-question'));
+    stopBattleTimer();
+    updateAccuracyDisplays();
+    updateBattleTimeDisplay();
+
+    const accuracy = calculateAccuracy();
+    const accuracyDisplay = `${accuracy}%`;
+    const accuracyGoalMet =
+      typeof accuracyGoal === 'number' ? accuracy / 100 >= accuracyGoal : true;
+
+    const now = Date.now();
+    const elapsedByTimer = initialTimeRemaining > 0
+      ? Math.max(0, Math.round(initialTimeRemaining - timeRemaining))
+      : 0;
+    const elapsedByClock = battleStartTime
+      ? Math.max(0, Math.round((now - battleStartTime) / 1000))
+      : 0;
+    const elapsedSeconds = initialTimeRemaining > 0
+      ? Math.max(elapsedByTimer, elapsedByClock)
+      : elapsedByClock;
+    const timeDisplay = `${elapsedSeconds}s`;
+    const timeGoalMet =
+      timeGoalSeconds > 0 ? elapsedSeconds <= timeGoalSeconds : true;
+
+    if (summaryAccuracyValue && summaryAccuracyText) {
+      applyGoalResult(
+        summaryAccuracyValue,
+        summaryAccuracyText,
+        accuracyDisplay,
+        accuracyGoalMet
+      );
+    }
+
+    if (summaryTimeValue && summaryTimeText) {
+      applyGoalResult(
+        summaryTimeValue,
+        summaryTimeText,
+        timeDisplay,
+        timeGoalMet
+      );
+    }
 
     if (completeMonsterImg) {
-      const gemImageSrc = rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
-      completeMonsterImg.src = gemImageSrc;
-      completeMonsterImg.alt = win
-        ? 'Gem reward for defeating the monster'
-        : 'Gem reward for your effort';
+      if (win) {
+        completeMonsterImg.src = potionRewardImageSrc;
+        completeMonsterImg.alt = 'Potion reward';
+      } else if (monsterImg) {
+        completeMonsterImg.src = monsterImg.src;
+        if (monster.name) {
+          completeMonsterImg.alt = `${monster.name} preparing for the next battle`;
+        } else {
+          completeMonsterImg.alt = 'Monster preparing for the next battle';
+        }
+      }
     }
 
     const goalsAchieved = win;
 
     if (win) {
-      setBattleCompleteTitleLines('Monster Defeated');
+      setBattleCompleteTitleLines('Potion Earned');
       awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
       setBattleCompleteTitleLines('Keep Practicing');
@@ -4424,6 +4349,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const rewardCurrentLevel =
       normalizePositiveInteger(progressState?.currentLevelNumber) ??
       normalizePositiveInteger(resolvedCurrentLevel);
+    const rewardBattleIndex = normalizePositiveInteger(
+      progressState?.currentBattle
+    );
     const gemRewardAmount = win ? GEM_REWARD_WIN_AMOUNT : GEM_REWARD_LOSS_AMOUNT;
     const updatedGemTotal = awardGemReward(gemRewardAmount);
     persistGemTotal(updatedGemTotal);
@@ -4466,21 +4394,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (win) {
-      pendingGemReward = {
-        amount: gemRewardAmount,
-        totalAfter: updatedGemTotal,
-        isFirstGemReward: !gemRewardIntroShown,
-        currentLevel: rewardCurrentLevel,
-        currentBattle: null,
-        win: true,
-      };
+      const isLevelTwoPlus =
+        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel >= 2;
+      if (isLevelTwoPlus) {
+        pendingGemReward = {
+          amount: gemRewardAmount,
+          totalAfter: updatedGemTotal,
+          useClaimLabel: !gemRewardIntroShown,
+          isFirstGemReward: !gemRewardIntroShown,
+          currentLevel: rewardCurrentLevel,
+          win: true,
+        };
+      } else {
+        pendingGemReward = null;
+      }
     } else {
       pendingGemReward = {
         amount: gemRewardAmount,
         totalAfter: updatedGemTotal,
+        useClaimLabel: true,
         isFirstGemReward: false,
         currentLevel: rewardCurrentLevel,
-        currentBattle: null,
         win: false,
       };
     }
@@ -4500,7 +4434,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    updateNextMissionButton(win, gemRewardAmount);
+    updateNextMissionButton(win);
 
     if (!win) {
       resetRewardOverlay();
@@ -4557,46 +4491,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (pendingGemReward) {
-        const rewardLevel = Number(pendingGemReward.currentLevel);
-        const skipGemAnimation = Number.isFinite(rewardLevel) && rewardLevel >= 2;
-
-        if (skipGemAnimation) {
-          nextMissionProcessing = true;
-          nextMissionBtn.setAttribute('aria-busy', 'true');
-          const rewardTotal = normalizeNonNegativeInteger(
-            pendingGemReward.totalAfter
-          );
-          const rewardAmount = normalizeNonNegativeInteger(
-            pendingGemReward.amount
-          );
-          const startTotal =
-            rewardTotal !== null && rewardAmount !== null
-              ? Math.max(0, rewardTotal - rewardAmount)
-              : null;
-
-          if (pendingGemReward.isFirstGemReward) {
-            markGemRewardIntroSeen();
-          }
-
-          if (rewardTotal !== null) {
-            storeGemRewardHomeAnimation({
-              start: startTotal,
-              end: rewardTotal,
-              amount: rewardAmount,
-              duration: 900,
-            });
-          }
-
-          pendingGemReward = null;
-
-          if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
-            advanceCurrentLevel();
-          }
-          resetRewardOverlay();
-          window.location.href = '../index.html';
-          return;
-        }
-
         nextMissionProcessing = true;
         nextMissionBtn.setAttribute('aria-busy', 'true');
         playGemRewardAnimation(pendingGemReward)
@@ -4642,6 +4536,8 @@ document.addEventListener('DOMContentLoaded', () => {
     correctAnswers = 0;
     totalAnswers = 0;
     wrongAnswers = 0;
+    battleStartTime = null;
+    initialTimeRemaining = 0;
     currentLevelAdvanced = false;
     battleGoalsMet = false;
     levelExperienceEarned = 0;
@@ -4659,13 +4555,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
-    setBattleCompleteTitleLines('Monster Defeated');
+    setBattleCompleteTitleLines('Potion Earned');
     updateNextMissionButton();
+    if (summaryAccuracyValue) {
+      summaryAccuracyValue.classList.remove('goal-result--met', 'goal-result--missed');
+    }
+    if (summaryTimeValue) {
+      summaryTimeValue.classList.remove('goal-result--met', 'goal-result--missed');
+    }
     heroSpriteEntrance?.prepareForEntrance();
     monsterSpriteEntrance?.prepareForEntrance();
     loadData();
     heroSpriteEntrance?.playEntrance();
     monsterSpriteEntrance?.playEntrance();
+    updateAccuracyDisplays();
+    startBattleTimer();
 
     const scheduleFirstQuestion = () => {
       if (INITIAL_QUESTION_DELAY_MS <= 0) {

@@ -6,16 +6,6 @@ const HOME_PROGRESS_INITIAL_ANIMATION_DELAY_MS = 1000;
 const HOME_PROGRESS_INITIAL_ANIMATION_COMPLETE_DATA_KEY =
   'progressInitialAnimationComplete';
 const HOME_PROGRESS_INITIAL_TIMEOUT_PROPERTY = '__homeInitialProgressTimeout';
-const GEM_REWARD_ANIMATION_STORAGE_KEY = 'mathmonstersGemRewardAnimation';
-
-const normalizeNonNegativeInteger = (value) => {
-  const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) {
-    return null;
-  }
-
-  return Math.max(0, Math.round(numericValue));
-};
 
 const redirectToWelcome = () => {
   window.location.replace('welcome.html');
@@ -188,175 +178,6 @@ const writeStoredHomeBattleProgress = (state) => {
   }
 };
 
-const takePendingGemRewardAnimation = () => {
-  if (typeof sessionStorage === 'undefined') {
-    return null;
-  }
-
-  try {
-    const raw = sessionStorage.getItem(GEM_REWARD_ANIMATION_STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    sessionStorage.removeItem(GEM_REWARD_ANIMATION_STORAGE_KEY);
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') {
-      return null;
-    }
-
-    const end = normalizeNonNegativeInteger(parsed.end);
-    const start = normalizeNonNegativeInteger(parsed.start);
-    const amount = normalizeNonNegativeInteger(parsed.amount);
-    const duration = normalizeNonNegativeInteger(parsed.duration);
-
-    return {
-      end,
-      start,
-      amount,
-      duration: duration !== null ? duration : null,
-    };
-  } catch (error) {
-    console.warn('Unable to read gem reward animation state.', error);
-    return null;
-  }
-};
-
-const animateNumericValue = (element, startValue, endValue, options = {}) =>
-  new Promise((resolve) => {
-    const targetElement = element;
-    const start = Number(startValue);
-    const end = Number(endValue);
-    if (
-      !targetElement ||
-      !Number.isFinite(start) ||
-      !Number.isFinite(end) ||
-      start === end
-    ) {
-      if (targetElement && Number.isFinite(end)) {
-        targetElement.textContent = `${Math.round(end)}`;
-      }
-      resolve();
-      return;
-    }
-
-    const clampDuration = (value) => {
-      const numeric = Number(value);
-      if (!Number.isFinite(numeric) || numeric <= 0) {
-        return 900;
-      }
-      return Math.max(250, Math.min(1600, Math.round(numeric)));
-    };
-
-    const duration = clampDuration(options.duration);
-    const change = end - start;
-
-    const now =
-      typeof performance !== 'undefined' && typeof performance.now === 'function'
-        ? () => performance.now()
-        : () => Date.now();
-
-    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-    const startTime = now();
-
-    const step = () => {
-      const elapsed = now() - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      const eased = easeOutCubic(progress);
-      const currentValue = Math.round(start + change * eased);
-      targetElement.textContent = `${currentValue}`;
-
-      if (progress < 1 && typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(step);
-      } else if (progress < 1) {
-        setTimeout(step, 16);
-      } else {
-        resolve();
-      }
-    };
-
-    if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(step);
-    } else {
-      step();
-    }
-  });
-
-const triggerGemBoxPulse = (boxElement, valueElement) => {
-  const applyAnimation = (target, className) => {
-    if (!target) {
-      return;
-    }
-
-    target.classList.remove(className);
-    void target.offsetWidth;
-    target.classList.add(className);
-
-    const cleanup = () => {
-      target.classList.remove(className);
-    };
-
-    target.addEventListener('animationend', cleanup, { once: true });
-    target.addEventListener('animationcancel', cleanup, { once: true });
-  };
-
-  applyAnimation(boxElement, 'home__gem-box--pulse');
-  applyAnimation(valueElement, 'home__gem-value--pulse');
-};
-
-const playGemRewardHomeAnimation = ({
-  boxElement,
-  valueElement,
-  animationData,
-  fallbackFinalValue,
-} = {}) => {
-  if (!valueElement) {
-    return false;
-  }
-
-  const normalizedFinal =
-    typeof animationData?.end === 'number'
-      ? normalizeNonNegativeInteger(animationData.end)
-      : normalizeNonNegativeInteger(fallbackFinalValue);
-
-  if (normalizedFinal === null) {
-    return false;
-  }
-
-  const normalizedStart =
-    typeof animationData?.start === 'number'
-      ? normalizeNonNegativeInteger(animationData.start)
-      : null;
-
-  const normalizedAmount =
-    typeof animationData?.amount === 'number'
-      ? normalizeNonNegativeInteger(animationData.amount)
-      : null;
-
-  const startingValue =
-    normalizedStart !== null
-      ? normalizedStart
-      : normalizedAmount !== null
-      ? Math.max(0, normalizedFinal - normalizedAmount)
-      : normalizedFinal;
-
-  const resolvedDuration =
-    typeof animationData?.duration === 'number' && animationData.duration > 0
-      ? Math.max(250, Math.min(1600, Math.round(animationData.duration)))
-      : 900;
-
-  valueElement.textContent = `${startingValue}`;
-  triggerGemBoxPulse(boxElement, valueElement);
-
-  animateNumericValue(valueElement, startingValue, normalizedFinal, {
-    duration: resolvedDuration,
-  }).catch(() => {
-    valueElement.textContent = `${normalizedFinal}`;
-  });
-
-  return true;
-};
-
 const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   if (!source || typeof source !== 'object') {
     return accumulator;
@@ -372,6 +193,7 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   };
 
   const candidateKeys = [
+    'currentMathType',
     'activeMathType',
     'mathType',
     'selectedMathType',
@@ -382,6 +204,14 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
 
   if (isPlainObject(source.battle)) {
     candidateKeys.forEach((key) => tryAdd(source.battle[key]));
+  }
+
+  if (isPlainObject(source.battleVariables)) {
+    candidateKeys.forEach((key) => tryAdd(source.battleVariables[key]));
+  }
+
+  if (isPlainObject(source.battleTracking)) {
+    candidateKeys.forEach((key) => tryAdd(source.battleTracking[key]));
   }
 
   if (isPlainObject(source.progress)) {
@@ -410,10 +240,6 @@ const findMathProgressEntry = (progressRoot, candidates = []) => {
 
   const isProgressEntry = (value) =>
     isPlainObject(value) && value.currentLevel !== undefined;
-
-  if (isProgressEntry(progressRoot)) {
-    return { key: null, entry: progressRoot };
-  }
 
   const keys = Object.keys(progressRoot);
   const normalizedCandidates = candidates
@@ -623,6 +449,8 @@ const computeHomeBattleProgress = (data) => {
   return {
     currentLevel: normalizedCurrentLevel,
     levelLabel,
+    currentBattle: null,
+    totalBattles: null,
     ratio: 0,
   };
 };
@@ -632,19 +460,46 @@ const applyBattleProgressAttributes = (progressElement, state) => {
     return;
   }
 
-  const resolvedLevel = (() => {
-    const numeric = Number(state.currentLevel);
+  const clampPositiveInteger = (value) => {
+    const numeric = Number(value);
     if (!Number.isFinite(numeric) || numeric <= 0) {
       return null;
     }
     return Math.round(numeric);
-  })();
+  };
+
+  const totalBattles = clampPositiveInteger(state.totalBattles);
+  const currentBattle = clampPositiveInteger(state.currentBattle);
+  const resolvedTotal = totalBattles ?? (currentBattle ?? null);
+  const resolvedCurrent = currentBattle
+    ? Math.min(currentBattle, resolvedTotal ?? currentBattle)
+    : resolvedTotal;
+
+  const resolvedLevel = clampPositiveInteger(state.currentLevel);
 
   progressElement.setAttribute('aria-valuemin', '0');
-  progressElement.setAttribute('aria-valuemax', '1');
 
-  const ratio =
-    typeof state.ratio === 'number' ? Math.max(0, Math.min(1, state.ratio)) : 0;
+  if (resolvedTotal) {
+    progressElement.setAttribute('aria-valuemax', `${resolvedTotal}`);
+  }
+
+  if (resolvedCurrent) {
+    progressElement.setAttribute('aria-valuenow', `${resolvedCurrent}`);
+  }
+
+  if (resolvedTotal && resolvedCurrent) {
+    progressElement.setAttribute(
+      'aria-valuetext',
+      `Battle ${resolvedCurrent} of ${resolvedTotal}`
+    );
+    return;
+  }
+
+  if (!resolvedTotal) {
+    progressElement.setAttribute('aria-valuemax', '1');
+  }
+
+  const ratio = typeof state.ratio === 'number' ? Math.max(0, Math.min(1, state.ratio)) : 0;
   progressElement.setAttribute('aria-valuenow', `${ratio}`);
 
   if (resolvedLevel) {
@@ -934,8 +789,6 @@ const updateHomeFromPreloadedData = () => {
   }
 
   const gemValueEl = document.querySelector('[data-hero-gems]');
-  const gemBoxEl = document.querySelector('[data-hero-gem-box]');
-  const pendingGemAnimation = takePendingGemRewardAnimation();
   const sanitizeGemValue = (value) => {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) {
@@ -993,26 +846,8 @@ const updateHomeFromPreloadedData = () => {
     }
   }
 
-  const fallbackGemTotal =
-    resolvedGemCount !== null
-      ? resolvedGemCount
-      : typeof pendingGemAnimation?.end === 'number'
-      ? pendingGemAnimation.end
-      : null;
-
-  if (gemValueEl) {
-    const playedAnimation = pendingGemAnimation
-      ? playGemRewardHomeAnimation({
-          boxElement: gemBoxEl,
-          valueElement: gemValueEl,
-          animationData: pendingGemAnimation,
-          fallbackFinalValue: fallbackGemTotal,
-        })
-      : false;
-
-    if (!playedAnimation && fallbackGemTotal !== null) {
-      gemValueEl.textContent = fallbackGemTotal;
-    }
+  if (gemValueEl && resolvedGemCount !== null) {
+    gemValueEl.textContent = resolvedGemCount;
   }
 
   const levelCandidates = [

@@ -3,7 +3,6 @@ const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 const STARTING_LEVEL = 2;
 const HOME_PAGE_PATH = '../index.html';
-const DEFAULT_HERO_SPRITE = 'images/hero/shellfin_evolution_1.png';
 
 const isPlainObject = (value) =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -21,20 +20,6 @@ const clonePlainObject = (value) => {
   }
 };
 
-const cloneHeroForLevel = (hero) => {
-  const clonedHero = clonePlainObject(hero) ?? {};
-
-  const spriteCandidate =
-    typeof clonedHero.sprite === 'string' && clonedHero.sprite.trim()
-      ? clonedHero.sprite.trim()
-      : DEFAULT_HERO_SPRITE;
-
-  return {
-    ...clonedHero,
-    sprite: spriteCandidate,
-  };
-};
-
 const extractPlayerData = (rawPlayerData) => {
   if (!isPlainObject(rawPlayerData)) {
     return null;
@@ -49,25 +34,30 @@ const extractPlayerData = (rawPlayerData) => {
 };
 
 const applyStartingCurrentLevel = (playerData) => {
-  const clonedData = clonePlainObject(playerData);
-  const baseHeroSource = isPlainObject(clonedData)
-    ? clonedData.hero
-    : isPlainObject(playerData)
-    ? playerData.hero
-    : null;
-  const normalizedHero = cloneHeroForLevel(baseHeroSource);
+  const clonedData = clonePlainObject(playerData) ?? {};
 
   if (!isPlainObject(clonedData)) {
     return {
-      hero: cloneHeroForLevel(normalizedHero),
       progress: {
         currentLevel: STARTING_LEVEL,
-        gems: 0,
+      },
+      battleVariables: {
+        timeRemainingSeconds: null,
+      },
+      currentLevel: {
+        1: {
+          hero: {
+            sprite: '/mathmonsters/images/hero/shellfin_evolution_1.png',
+          },
+        },
+        [STARTING_LEVEL]: {
+          hero: {
+            sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
+          },
+        },
       },
     };
   }
-
-  clonedData.hero = cloneHeroForLevel(normalizedHero);
 
   const progressSection = isPlainObject(clonedData.progress)
     ? clonedData.progress
@@ -76,16 +66,33 @@ const applyStartingCurrentLevel = (playerData) => {
   clonedData.progress = {
     ...progressSection,
     currentLevel: STARTING_LEVEL,
-    gems:
-      typeof progressSection.gems === 'number'
-        ? Math.max(0, Math.round(progressSection.gems))
-        : typeof clonedData.gems === 'number'
-        ? Math.max(0, Math.round(clonedData.gems))
-        : 0,
   };
 
-  delete clonedData.battleVariables;
-  delete clonedData.currentLevel;
+  if (!isPlainObject(clonedData.battleVariables)) {
+    clonedData.battleVariables = {
+      timeRemainingSeconds: null,
+    };
+  }
+
+  if (!isPlainObject(clonedData.currentLevel)) {
+    clonedData.currentLevel = {};
+  }
+
+  if (!isPlainObject(clonedData.currentLevel[1])) {
+    clonedData.currentLevel[1] = {
+      hero: {
+        sprite: '/mathmonsters/images/hero/shellfin_evolution_1.png',
+      },
+    };
+  }
+
+  if (!isPlainObject(clonedData.currentLevel[STARTING_LEVEL])) {
+    clonedData.currentLevel[STARTING_LEVEL] = {
+      hero: {
+        sprite: '/mathmonsters/images/hero/shellfin_evolution_2.png',
+      },
+    };
+  }
 
   return clonedData;
 };
