@@ -93,6 +93,29 @@ body.home-page {
   display: inline-block;
 }
 
+.home__progress {
+  --progress-gradient-start: #2bf542;
+  --progress-gradient-end: #0ea631;
+
+  width: 160px;
+  margin: 0 auto;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.home__progress-fill {
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation-delay: 1s;
+  animation: home-progress-fill-slide 0.6s ease forwards;
+}
+
+.home__progress-fill::after {
+  inset: 2px 6px 0px 6px;
+  height: 6px;
+}
+
 .home__hero-level--pop {
   animation: home-hero-level-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
@@ -249,8 +272,8 @@ body.home-page {
 
 .home__action-image {
   display: block;
-  width: 140px;
-  height: 140px;
+  width: 160px;
+  height: 160px;
   object-fit: contain;
   position: relative;
   z-index: 1;

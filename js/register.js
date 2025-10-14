@@ -62,7 +62,17 @@ const applyStartingCurrentLevel = (playerData) => {
       hero: cloneHeroForLevel(normalizedHero),
       progress: {
         currentLevel: STARTING_LEVEL,
-        gems: 0,
+      },
+      battleVariables: {
+        timeRemainingSeconds: null,
+      },
+      currentLevel: {
+        1: {
+          hero: cloneHeroForLevel(normalizedHero),
+        },
+        [STARTING_LEVEL]: {
+          hero: cloneHeroForLevel(normalizedHero),
+        },
       },
     };
   }
@@ -76,16 +86,28 @@ const applyStartingCurrentLevel = (playerData) => {
   clonedData.progress = {
     ...progressSection,
     currentLevel: STARTING_LEVEL,
-    gems:
-      typeof progressSection.gems === 'number'
-        ? Math.max(0, Math.round(progressSection.gems))
-        : typeof clonedData.gems === 'number'
-        ? Math.max(0, Math.round(clonedData.gems))
-        : 0,
   };
 
-  delete clonedData.battleVariables;
-  delete clonedData.currentLevel;
+  if (!isPlainObject(clonedData.battleVariables)) {
+    clonedData.battleVariables = {
+      timeRemainingSeconds: null,
+    };
+  }
+
+  if (!isPlainObject(clonedData.currentLevel)) {
+    clonedData.currentLevel = {};
+  }
+
+  const ensureLevelHero = (levelKey) => {
+    const levelEntry = isPlainObject(clonedData.currentLevel[levelKey])
+      ? clonedData.currentLevel[levelKey]
+      : (clonedData.currentLevel[levelKey] = {});
+
+    levelEntry.hero = cloneHeroForLevel(levelEntry.hero ?? normalizedHero);
+  };
+
+  ensureLevelHero(1);
+  ensureLevelHero(STARTING_LEVEL);
 
   return clonedData;
 };
