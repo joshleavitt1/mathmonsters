@@ -282,18 +282,15 @@ body.home-page {
 @keyframes hero-swim {
   0%,
   100% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
+    transform: translate3d(0, 0, 0);
   }
 
-  25% {
-    transform: translate3d(10px, -14px, 0) rotate(2deg);
+  25%,
+  75% {
+    transform: translate3d(0, -12px, 0);
   }
 
   50% {
-    transform: translate3d(0, -22px, 0) rotate(-1.5deg);
-  }
-
-  75% {
-    transform: translate3d(-12px, -14px, 0) rotate(-2deg);
+    transform: translate3d(0, -22px, 0);
   }
 }
