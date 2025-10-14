@@ -4221,8 +4221,11 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMonsterImg.alt = `${monster.name} ready for battle`;
     }
 
-    const loadedQuestions = Array.isArray(data.questions)
-      ? data.questions.slice()
+    const rawQuestions = data.questions;
+    const loadedQuestions = Array.isArray(rawQuestions)
+      ? rawQuestions.slice()
+      : isPlainObjectValue(rawQuestions)
+      ? { ...rawQuestions }
       : [];
     resetQuestionPool(loadedQuestions);
 
