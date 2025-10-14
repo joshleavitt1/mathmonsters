@@ -1033,16 +1033,16 @@ body.is-reward-active .reward-overlay {
 
 .battle-complete-card__sprite-frame {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .battle-complete-card .monster-image {
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   object-fit: contain;
   transition: none;
 }

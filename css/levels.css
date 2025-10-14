@@ -87,8 +87,8 @@ body.levels-page {
 
 .levels__image {
   flex: 0 0 auto;
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   object-fit: contain;
 }
 
@@ -122,8 +122,8 @@ body.levels-page {
   }
 
   .levels__image {
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
   }
 
   .levels__statbox {
