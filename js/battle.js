@@ -458,13 +458,28 @@ document.addEventListener('DOMContentLoaded', () => {
   let introQuestionIds = [];
   let nextIntroQuestionIndex = 0;
 
-  const getResolvedCurrentLevel = () => {
-    if (Number.isFinite(currentCurrentLevel)) {
-      return currentCurrentLevel;
+  const sanitizeLevelNumber = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      return null;
     }
 
-    const preloadedLevel = Number(window.preloadedData?.level?.currentLevel);
-    return Number.isFinite(preloadedLevel) ? preloadedLevel : null;
+    return Math.max(1, Math.floor(numericValue));
+  };
+
+  const getResolvedCurrentLevel = () => {
+    const storedLevel = sanitizeLevelNumber(currentCurrentLevel);
+    const battleLevel = sanitizeLevelNumber(window.preloadedData?.level?.currentLevel);
+
+    if (battleLevel !== null && (storedLevel === null || battleLevel > storedLevel)) {
+      return battleLevel;
+    }
+
+    if (storedLevel !== null) {
+      return storedLevel;
+    }
+
+    return battleLevel;
   };
   let correctAnswers = 0;
   let totalAnswers = 0;
@@ -2933,11 +2948,16 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const resolveCurrentLevelForExperience = () => {
-    if (Number.isFinite(currentCurrentLevel)) {
-      return currentCurrentLevel;
+    const resolvedLevel = getResolvedCurrentLevel();
+    if (resolvedLevel === null) {
+      return null;
     }
-    const fallbackLevel = Number(window.preloadedData?.level?.currentLevel);
-    return Number.isFinite(fallbackLevel) ? fallbackLevel : null;
+
+    if (currentCurrentLevel === null || resolvedLevel > currentCurrentLevel) {
+      currentCurrentLevel = resolvedLevel;
+    }
+
+    return resolvedLevel;
   };
 
   const resolveExperiencePointsForMonster = () => {
@@ -3781,12 +3801,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return result;
     };
 
-    currentCurrentLevel =
-      typeof progressData.currentLevel === 'number'
-        ? progressData.currentLevel
-        : typeof data.level?.currentLevel === 'number'
-        ? data.level.currentLevel
-        : null;
+    const storedProgressLevel = sanitizeLevelNumber(progressData?.currentLevel);
+    const legacyProgressLevel = sanitizeLevelNumber(progressData?.level);
+    const providedLevel = sanitizeLevelNumber(data.level?.currentLevel);
+
+    let initialResolvedLevel = storedProgressLevel;
+    if (legacyProgressLevel !== null && (initialResolvedLevel === null || legacyProgressLevel > initialResolvedLevel)) {
+      initialResolvedLevel = legacyProgressLevel;
+    }
+    if (providedLevel !== null && (initialResolvedLevel === null || providedLevel > initialResolvedLevel)) {
+      initialResolvedLevel = providedLevel;
+    }
+
+    currentCurrentLevel = initialResolvedLevel;
 
     levelExperienceEarned = readExperienceForLevel(
       experienceMap,
