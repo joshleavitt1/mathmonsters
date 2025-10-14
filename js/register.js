@@ -3,7 +3,21 @@ const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 const STARTING_LEVEL = 2;
 const HOME_PAGE_PATH = '../index.html';
-const DEFAULT_HERO_SPRITE = 'images/hero/shellfin_evolution_1.png';
+const HERO_APPEARANCE_BY_LEVEL = [
+  Object.freeze({
+    level: 1,
+    sprite: 'images/hero/shellfin_evolution_1.png',
+    attackSprite: 'images/hero/shellfin_attack_1.png',
+  }),
+  Object.freeze({
+    level: 2,
+    sprite: 'images/hero/shellfin_evolution_2.png',
+    attackSprite: 'images/hero/shellfin_attack_2.png',
+  }),
+];
+
+const DEFAULT_HERO_SPRITE = HERO_APPEARANCE_BY_LEVEL[0].sprite;
+const DEFAULT_HERO_ATTACK_SPRITE = HERO_APPEARANCE_BY_LEVEL[0].attackSprite;
 
 const isPlainObject = (value) =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -21,17 +35,71 @@ const clonePlainObject = (value) => {
   }
 };
 
-const cloneHeroForLevel = (hero) => {
-  const clonedHero = clonePlainObject(hero) ?? {};
+const getHeroAppearanceForLevel = (level) => {
+  const numericLevel = Number(level);
+  if (!Number.isFinite(numericLevel)) {
+    return HERO_APPEARANCE_BY_LEVEL[0];
+  }
 
-  const spriteCandidate =
-    typeof clonedHero.sprite === 'string' && clonedHero.sprite.trim()
-      ? clonedHero.sprite.trim()
-      : DEFAULT_HERO_SPRITE;
+  let selectedAppearance = HERO_APPEARANCE_BY_LEVEL[0];
+  for (const appearance of HERO_APPEARANCE_BY_LEVEL) {
+    if (numericLevel >= appearance.level) {
+      selectedAppearance = appearance;
+    }
+  }
+
+  return selectedAppearance;
+};
+
+const isShellfinEvolutionSprite = (value) =>
+  typeof value === 'string' &&
+  /(\/?images\/hero\/shellfin_evolution_\d+\.png)(?=[?#]|$)/i.test(value.trim());
+
+const isShellfinAttackSprite = (value) =>
+  typeof value === 'string' &&
+  /(\/?images\/hero\/shellfin_attack_\d+\.png)(?=[?#]|$)/i.test(value.trim());
+
+const selectSpriteForLevel = (currentSprite, desiredSprite, fallbackSprite) => {
+  const trimmed = typeof currentSprite === 'string' ? currentSprite.trim() : '';
+
+  if (!trimmed) {
+    return desiredSprite ?? fallbackSprite;
+  }
+
+  if (desiredSprite && trimmed !== desiredSprite && isShellfinEvolutionSprite(trimmed)) {
+    return desiredSprite;
+  }
+
+  return trimmed || fallbackSprite;
+};
+
+const selectAttackSpriteForLevel = (currentSprite, desiredSprite, fallbackSprite) => {
+  const trimmed = typeof currentSprite === 'string' ? currentSprite.trim() : '';
+
+  if (!trimmed) {
+    return desiredSprite ?? fallbackSprite;
+  }
+
+  if (desiredSprite && trimmed !== desiredSprite && isShellfinAttackSprite(trimmed)) {
+    return desiredSprite;
+  }
+
+  return trimmed || fallbackSprite;
+};
+
+const cloneHeroForLevel = (hero, level) => {
+  const clonedHero = clonePlainObject(hero) ?? {};
+  const { sprite: desiredSprite, attackSprite: desiredAttackSprite } =
+    getHeroAppearanceForLevel(level);
 
   return {
     ...clonedHero,
-    sprite: spriteCandidate,
+    sprite: selectSpriteForLevel(clonedHero.sprite, desiredSprite, DEFAULT_HERO_SPRITE),
+    attackSprite: selectAttackSpriteForLevel(
+      clonedHero.attackSprite,
+      desiredAttackSprite,
+      DEFAULT_HERO_ATTACK_SPRITE,
+    ),
   };
 };
 
@@ -55,11 +123,12 @@ const applyStartingCurrentLevel = (playerData) => {
     : isPlainObject(playerData)
     ? playerData.hero
     : null;
-  const normalizedHero = cloneHeroForLevel(baseHeroSource);
+  const heroForStartingLevel = cloneHeroForLevel(baseHeroSource, STARTING_LEVEL);
+  const heroForLevelOne = cloneHeroForLevel(baseHeroSource, 1);
 
   if (!isPlainObject(clonedData)) {
     return {
-      hero: cloneHeroForLevel(normalizedHero),
+      hero: cloneHeroForLevel(heroForStartingLevel, STARTING_LEVEL),
       progress: {
         currentLevel: STARTING_LEVEL,
       },
@@ -68,16 +137,16 @@ const applyStartingCurrentLevel = (playerData) => {
       },
       currentLevel: {
         1: {
-          hero: cloneHeroForLevel(normalizedHero),
+          hero: cloneHeroForLevel(heroForLevelOne, 1),
         },
         [STARTING_LEVEL]: {
-          hero: cloneHeroForLevel(normalizedHero),
+          hero: cloneHeroForLevel(heroForStartingLevel, STARTING_LEVEL),
         },
       },
     };
   }
 
-  clonedData.hero = cloneHeroForLevel(normalizedHero);
+  clonedData.hero = cloneHeroForLevel(heroForStartingLevel, STARTING_LEVEL);
 
   const progressSection = isPlainObject(clonedData.progress)
     ? clonedData.progress
@@ -102,8 +171,16 @@ const applyStartingCurrentLevel = (playerData) => {
     const levelEntry = isPlainObject(clonedData.currentLevel[levelKey])
       ? clonedData.currentLevel[levelKey]
       : (clonedData.currentLevel[levelKey] = {});
-
-    levelEntry.hero = cloneHeroForLevel(levelEntry.hero ?? normalizedHero);
+    const numericLevel = Number(levelKey);
+    const appearanceLevel = Number.isFinite(numericLevel) ? numericLevel : undefined;
+    const fallbackHero =
+      Number.isFinite(appearanceLevel) && appearanceLevel > 1
+        ? heroForStartingLevel
+        : heroForLevelOne;
+    levelEntry.hero = cloneHeroForLevel(
+      levelEntry.hero ?? fallbackHero,
+      appearanceLevel,
+    );
   };
 
   ensureLevelHero(1);
