@@ -59,6 +59,35 @@
         </button>
       </header>
       <pre class="dev-overlay__body" data-dev-overlay-body>Loading player data…</pre>
+      <div class="dev-overlay__controls" data-dev-overlay-controls>
+        <div class="dev-overlay__field">
+          <label for="dev-overlay-level-select">Set player level</label>
+          <select
+            id="dev-overlay-level-select"
+            class="dev-overlay__select"
+            data-dev-level-select
+          >
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+            <option value="5">Level 5</option>
+          </select>
+        </div>
+        <button
+          type="button"
+          class="dev-overlay__apply"
+          data-dev-level-apply
+        >
+          Apply
+        </button>
+        <p
+          class="dev-overlay__feedback"
+          data-dev-level-feedback
+          role="status"
+          aria-live="polite"
+        ></p>
+      </div>
     </div>
   </div>
   <div

@@ -2728,6 +2728,36 @@ const setupDevOverlay = () => {
   const backdrop = overlay.querySelector('[data-dev-overlay-backdrop]');
   const content = overlay.querySelector('[data-dev-overlay-body]');
   const panel = overlay.querySelector('[data-dev-overlay-panel]');
+  const levelSelect = overlay.querySelector('[data-dev-level-select]');
+  const applyButton = overlay.querySelector('[data-dev-level-apply]');
+  const feedback = overlay.querySelector('[data-dev-level-feedback]');
+
+  const MIN_DEV_LEVEL = 1;
+  const MAX_DEV_LEVEL = 5;
+
+  const isValidDevLevel = (value) =>
+    Number.isInteger(value) && value >= MIN_DEV_LEVEL && value <= MAX_DEV_LEVEL;
+
+  const setFeedback = (message, state = 'info') => {
+    if (!feedback) {
+      return;
+    }
+
+    if (!message) {
+      feedback.textContent = '';
+      delete feedback.dataset.state;
+      return;
+    }
+
+    feedback.textContent = message;
+    feedback.dataset.state = state;
+  };
+
+  const resolveStoredLevel = () => {
+    const stored = readStoredProgress();
+    const storedLevel = Number(stored?.currentLevel);
+    return isValidDevLevel(storedLevel) ? storedLevel : null;
+  };
 
   const formatForDisplay = (value) => {
     const seen = new WeakSet();
@@ -2759,6 +2789,29 @@ const setupDevOverlay = () => {
     );
   };
 
+  const refreshLevelSelect = (payload) => {
+    if (!levelSelect) {
+      return;
+    }
+
+    if (document.activeElement === levelSelect) {
+      return;
+    }
+
+    const payloadLevel = Number(payload?.progress?.currentLevel);
+    let resolvedLevel = isValidDevLevel(payloadLevel) ? payloadLevel : null;
+
+    if (resolvedLevel === null) {
+      resolvedLevel = resolveStoredLevel();
+    }
+
+    if (resolvedLevel === null) {
+      return;
+    }
+
+    levelSelect.value = String(resolvedLevel);
+  };
+
   const updateContent = () => {
     if (!content) {
       return;
@@ -2767,9 +2820,107 @@ const setupDevOverlay = () => {
     try {
       const payload = collectDevOverlayPlayerData();
       content.textContent = formatForDisplay(payload);
+      refreshLevelSelect(payload);
     } catch (error) {
       console.warn('Unable to format player data for developer overlay.', error);
       content.textContent = 'Unable to load player data.';
+    }
+  };
+
+  const resolveActiveMathKey = (progress) => {
+    const storedMathType =
+      typeof progress?.currentMathType === 'string'
+        ? progress.currentMathType.trim()
+        : '';
+
+    if (storedMathType) {
+      return storedMathType;
+    }
+
+    let overlayData = null;
+    try {
+      overlayData = collectDevOverlayPlayerData();
+    } catch (error) {
+      overlayData = null;
+    }
+
+    const overlayProgressMath =
+      typeof overlayData?.progress?.currentMathType === 'string'
+        ? overlayData.progress.currentMathType.trim()
+        : '';
+
+    if (overlayProgressMath) {
+      return overlayProgressMath;
+    }
+
+    const overlayPlayerMath =
+      typeof overlayData?.player?.currentMathType === 'string'
+        ? overlayData.player.currentMathType.trim()
+        : '';
+
+    if (overlayPlayerMath) {
+      return overlayPlayerMath;
+    }
+
+    return DEV_RESET_TARGET_MATH_KEY;
+  };
+
+  const applyDevLevelChange = (levelValue) => {
+    if (!applyButton) {
+      return false;
+    }
+
+    setFeedback('');
+
+    const numericLevel = Number(levelValue);
+    if (!isValidDevLevel(numericLevel)) {
+      setFeedback(
+        `Select a level between ${MIN_DEV_LEVEL} and ${MAX_DEV_LEVEL}.`,
+        'error'
+      );
+      return false;
+    }
+
+    try {
+      const storedProgress = readStoredProgress();
+      const normalizedProgress = isPlainObject(storedProgress)
+        ? { ...storedProgress }
+        : {};
+
+      const mathKey = resolveActiveMathKey(normalizedProgress) || DEV_RESET_TARGET_MATH_KEY;
+      const existingMathProgress = isPlainObject(normalizedProgress[mathKey])
+        ? { ...normalizedProgress[mathKey] }
+        : {};
+
+      const updatedMathProgress = {
+        ...existingMathProgress,
+        currentLevel: numericLevel,
+      };
+
+      const updatedProgress = {
+        ...normalizedProgress,
+        currentLevel: numericLevel,
+        battleLevel: numericLevel,
+        [mathKey]: updatedMathProgress,
+      };
+
+      const success = storeProgressAndReload(updatedProgress, applyButton);
+      if (!success) {
+        setFeedback('Unable to apply level change. Please try again.', 'error');
+        return false;
+      }
+
+      if (levelSelect) {
+        levelSelect.value = String(numericLevel);
+      }
+
+      setFeedback('Level updated. Reloading…', 'success');
+      updateContent();
+      return true;
+    } catch (error) {
+      console.warn('Unable to apply developer level change.', error);
+      setFeedback('Unable to apply level change. Please try again.', 'error');
+      return false;
     }
   };
 
@@ -2796,6 +2947,7 @@ const setupDevOverlay = () => {
   };
 
   const showOverlay = () => {
+    setFeedback('');
     updateContent();
     overlay.hidden = false;
     overlay.setAttribute('aria-hidden', 'false');
@@ -2851,6 +3003,21 @@ const setupDevOverlay = () => {
       updateContent();
     }
   });
+
+  if (levelSelect) {
+    levelSelect.addEventListener('change', () => setFeedback(''));
+    levelSelect.addEventListener('input', () => setFeedback(''));
+  }
+
+  if (applyButton && levelSelect) {
+    applyButton.addEventListener('click', (event) => {
+      if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+      }
+
+      applyDevLevelChange(levelSelect.value);
+    });
+  }
 };
 
 const initializeDevOverlay = () => {
