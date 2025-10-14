@@ -8,6 +8,22 @@
       ? self
       : {};
 
+  const isPlainObject = (value) =>
+    Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+  const clonePlainObject = (value) => {
+    if (!isPlainObject(value)) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (error) {
+      console.warn('Failed to clone player data for Supabase sync.', error);
+      return null;
+    }
+  };
+
   const toNumericCurrentLevel = (value) => {
     if (typeof value === 'number' && Number.isFinite(value)) {
       return value;
@@ -100,13 +116,10 @@
     }
   };
 
-  const fetchPlayerProfile = async () => {
-    const supabase = globalScope?.supabaseClient;
+  const resolveSupabaseUserId = async (supabase) => {
     if (!supabase?.auth) {
       return null;
     }
-
-    let userId = null;
 
     try {
       if (typeof supabase.auth.getUser === 'function') {
@@ -114,19 +127,47 @@
         if (error) {
           console.warn('Supabase user lookup failed.', error);
         }
-        userId = data?.user?.id ?? null;
-      } else if (typeof supabase.auth.getSession === 'function') {
+        return data?.user?.id ?? null;
+      }
+
+      if (typeof supabase.auth.getSession === 'function') {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
           console.warn('Supabase session lookup failed.', error);
         }
-        userId = data?.session?.user?.id ?? null;
+        return data?.session?.user?.id ?? null;
       }
     } catch (error) {
       console.warn('Failed to obtain Supabase user.', error);
+    }
+
+    return null;
+  };
+
+  const buildPlayerDataPayload = (playerData, progressData) => {
+    const playerClone = clonePlainObject(playerData);
+    const progressClone = clonePlainObject(progressData);
+
+    if (!playerClone && !progressClone) {
       return null;
     }
 
+    const payload = playerClone ?? {};
+
+    if (progressClone) {
+      payload.progress = progressClone;
+    }
+
+    return payload;
+  };
+
+  const fetchPlayerProfile = async () => {
+    const supabase = globalScope?.supabaseClient;
+    if (!supabase?.auth) {
+      return null;
+    }
+
+    const userId = await resolveSupabaseUserId(supabase);
     if (!userId || typeof supabase.from !== 'function') {
       return null;
     }
@@ -151,10 +192,44 @@
     }
   };
 
+  const syncPlayerDataWithSupabase = async (playerData, progressData) => {
+    const supabase = globalScope?.supabaseClient;
+    if (!supabase?.from) {
+      return false;
+    }
+
+    const userId = await resolveSupabaseUserId(supabase);
+    if (!userId) {
+      return false;
+    }
+
+    const payload = buildPlayerDataPayload(playerData, progressData);
+    if (!payload) {
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('player_profiles')
+        .upsert({ id: userId, player_data: payload }, { onConflict: 'id' });
+
+      if (error) {
+        console.warn('Supabase rejected the request to persist player data.', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.warn('Unable to sync player data with Supabase.', error);
+      return false;
+    }
+  };
+
   const namespace =
     (globalScope.mathMonstersPlayerProfile =
       globalScope.mathMonstersPlayerProfile || {});
 
   namespace.fetchPlayerProfile = fetchPlayerProfile;
   namespace.syncCurrentLevelToStorage = syncCurrentLevelToStorage;
+  namespace.syncPlayerDataWithSupabase = syncPlayerDataWithSupabase;
 })();
