@@ -1,165 +1,160 @@
 {
-  "mathTypes": {
-    "addition": {
-      "label": "Addition",
-      "defaultStats": {
-        "attack": 1,
-        "health": 3,
-        "damage": 0
+  "defaultStats": {
+    "attack": 1,
+    "health": 3,
+    "damage": 0
+  },
+  "monsterSprites": {
+    "uniquePerLevel": true,
+    "standardPool": [
+      {
+        "sprite": "/mathmonsters/images/monster/addition_mini_1.png",
+        "name": "Octomurk"
       },
-      "monsterSprites": {
-        "uniquePerLevel": true,
-        "standardPool": [
-          {
-            "sprite": "/mathmonsters/images/monster/addition_mini_1.png",
-            "name": "Octomurk"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_mini_2.png",
-            "name": "Lockjaw"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_mini_3.png",
-            "name": "Spikewave"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_mini_4.png",
-            "name": "Crabsnap"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_mini_5.png",
-            "name": "Clamquake"
-          }
-        ],
-        "bosses": {
-          "1": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_1.png",
-            "name": "Octomurk"
-          },
-          "2": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_2.png",
-            "name": "Razorclaw"
-          },
-          "3": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_3.png",
-            "name": "Lockjaw"
-          },
-          "4": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_4.png",
-            "name": "Spikewave"
-          },
-          "5": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_5.png",
-            "name": "Crabsnap"
-          },
-          "6": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_6.png",
-            "name": "Clamquake"
-          }
-        }
+      {
+        "sprite": "/mathmonsters/images/monster/addition_mini_2.png",
+        "name": "Lockjaw"
       },
-      "levels": [
-        {
-          "level": 1,
-          "name": "Level 1",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_1_questions.json"
-          }
-        },
-        {
-          "level": 2,
-          "name": "Level 2",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_2_questions.json"
-          }
-        },
-        {
-          "level": 3,
-          "name": "Level 3",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_3_questions.json"
-          }
-        },
-        {
-          "level": 4,
-          "name": "Level 4",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_4_questions.json"
-          }
-        },
-        {
-          "level": 5,
-          "name": "Level 5",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_5_questions.json"
-          }
-        },
-        {
-          "level": 6,
-          "name": "Level 6",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_6_questions.json"
-          }
-        },
-        {
-          "level": 7,
-          "name": "Level 7",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_6_questions.json"
-          }
-        },
-        {
-          "level": 8,
-          "name": "Level 8",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_6_questions.json"
-          }
-        },
-        {
-          "level": 9,
-          "name": "Level 9",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_6_questions.json"
-          }
-        },
-        {
-          "level": 10,
-          "name": "Level 10",
-          "monster": {
-            "spritePool": "standardPool"
-          },
-          "questions": {
-            "path": "questions/level_6_questions.json"
-          }
-        }
-      ]
+      {
+        "sprite": "/mathmonsters/images/monster/addition_mini_3.png",
+        "name": "Spikewave"
+      },
+      {
+        "sprite": "/mathmonsters/images/monster/addition_mini_4.png",
+        "name": "Crabsnap"
+      },
+      {
+        "sprite": "/mathmonsters/images/monster/addition_mini_5.png",
+        "name": "Clamquake"
+      }
+    ],
+    "bosses": {
+      "1": {
+        "sprite": "/mathmonsters/images/monster/addition_boss_1.png",
+        "name": "Octomurk"
+      },
+      "2": {
+        "sprite": "/mathmonsters/images/monster/addition_boss_2.png",
+        "name": "Razorclaw"
+      },
+      "3": {
+        "sprite": "/mathmonsters/images/monster/addition_boss_3.png",
+        "name": "Lockjaw"
+      },
+      "4": {
+        "sprite": "/mathmonsters/images/monster/addition_boss_4.png",
+        "name": "Spikewave"
+      },
+      "5": {
+        "sprite": "/mathmonsters/images/monster/addition_boss_5.png",
+        "name": "Crabsnap"
+      },
+      "6": {
+        "sprite": "/mathmonsters/images/monster/addition_boss_6.png",
+        "name": "Clamquake"
+      }
     }
-  }
+  },
+  "levels": [
+    {
+      "level": 1,
+      "name": "Level 1",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_1_questions.json"
+      }
+    },
+    {
+      "level": 2,
+      "name": "Level 2",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_2_questions.json"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Level 3",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_3_questions.json"
+      }
+    },
+    {
+      "level": 4,
+      "name": "Level 4",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_4_questions.json"
+      }
+    },
+    {
+      "level": 5,
+      "name": "Level 5",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_5_questions.json"
+      }
+    },
+    {
+      "level": 6,
+      "name": "Level 6",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_6_questions.json"
+      }
+    },
+    {
+      "level": 7,
+      "name": "Level 7",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_6_questions.json"
+      }
+    },
+    {
+      "level": 8,
+      "name": "Level 8",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_6_questions.json"
+      }
+    },
+    {
+      "level": 9,
+      "name": "Level 9",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_6_questions.json"
+      }
+    },
+    {
+      "level": 10,
+      "name": "Level 10",
+      "monster": {
+        "spritePool": "standardPool"
+      },
+      "questions": {
+        "path": "questions/level_6_questions.json"
+      }
+    }
+  ]
 }
