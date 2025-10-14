@@ -268,6 +268,24 @@ body.home-page {
   position: relative;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: default;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.home__action[data-battle-trigger] {
+  cursor: pointer;
+}
+
+.home__action:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 4px;
 }
 
 .home__action-image {

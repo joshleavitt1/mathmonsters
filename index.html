@@ -188,19 +188,27 @@
           data-hero-sprite
         />
         <div class="home__actions">
-          <a
+          <div class="home__action home__action--chest">
+            <img
+              class="home__action-image"
+              src="./images/home/chest.png"
+              alt="Treasure chest filled with upcoming rewards"
+            />
+          </div>
+          <button
             class="home__action"
-            href="./html/levels.html"
+            type="button"
             data-battle-trigger
-            data-levels-link="true"
-            aria-label="Choose your next level"
+            data-battle-button
+            aria-label="Enter the next battle"
           >
             <img
               class="home__action-image"
-              src="./images/home/sword.png"
-              alt="Forged sword unlocked for the next quest"
+              src="./images/home/portal.png"
+              alt=""
+              aria-hidden="true"
             />
-          </a>
+          </button>
         </div>
       </section>
     </div>
