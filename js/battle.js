@@ -35,6 +35,10 @@ const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
 
+const playerProfileUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
+  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
+
 const INTRO_QUESTION_LEVELS = new Set([1]);
 
 const MEDAL_DISPLAY_DURATION_MS = 3000;
@@ -3492,6 +3496,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const previousLevelRaw = getResolvedCurrentLevel();
+    const previousLevelValue = Number.isFinite(previousLevelRaw)
+      ? Math.max(1, Math.floor(previousLevelRaw))
+      : null;
+    let leveledUp = false;
+
     const mirroredProgressUpdate = createMirroredProgressUpdate(update);
     const updatePayload = mirroredProgressUpdate
       ? {
@@ -3511,11 +3521,18 @@ document.addEventListener('DOMContentLoaded', () => {
       window.preloadedData.progress = mergedProgress;
 
       const mergedLevel = Number(
-          mergedProgress?.currentLevel ??
-          mergedProgress?.level
+        mergedProgress?.currentLevel ??
+        mergedProgress?.level
       );
       if (Number.isFinite(mergedLevel)) {
-        currentCurrentLevel = Math.max(1, Math.floor(mergedLevel));
+        const normalizedMergedLevel = Math.max(1, Math.floor(mergedLevel));
+        if (
+          Number.isFinite(previousLevelValue) &&
+          normalizedMergedLevel > previousLevelValue
+        ) {
+          leveledUp = true;
+        }
+        currentCurrentLevel = normalizedMergedLevel;
       }
 
       if (
@@ -3578,6 +3595,26 @@ document.addEventListener('DOMContentLoaded', () => {
       storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(mergedProgress));
     } catch (error) {
       console.warn('Unable to save progress.', error);
+    }
+
+    if (leveledUp) {
+      const syncFn = playerProfileUtils?.syncPlayerDataWithSupabase;
+      if (typeof syncFn === 'function') {
+        try {
+          const syncResult = syncFn(
+            window.preloadedData?.player ?? null,
+            window.preloadedData?.progress ?? null
+          );
+
+          if (syncResult && typeof syncResult.then === 'function') {
+            syncResult.catch((error) => {
+              console.warn('Failed to sync level progress with Supabase.', error);
+            });
+          }
+        } catch (error) {
+          console.warn('Failed to sync level progress with Supabase.', error);
+        }
+      }
     }
   }
 

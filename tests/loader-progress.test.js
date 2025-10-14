@@ -7,9 +7,19 @@ const vm = require('node:vm');
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const LOADER_PATH = path.join(PROJECT_ROOT, 'js', 'loader.js');
 const PROGRESS_UTILS_PATH = path.join(PROJECT_ROOT, 'js', 'utils', 'progress.js');
+const PLAYER_PROFILE_UTILS_PATH = path.join(
+  PROJECT_ROOT,
+  'js',
+  'utils',
+  'playerProfile.js'
+);
 
 const LOADER_SOURCE = fs.readFileSync(LOADER_PATH, 'utf8');
 const PROGRESS_SOURCE = fs.readFileSync(PROGRESS_UTILS_PATH, 'utf8');
+const PLAYER_PROFILE_SOURCE = fs.readFileSync(
+  PLAYER_PROFILE_UTILS_PATH,
+  'utf8'
+);
 
 const STORAGE_KEY_PROGRESS = 'mathmonstersProgress';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
@@ -346,4 +356,104 @@ test('loader promotes math progress stored within mathTypes container', async ()
   assert.ok(snapshotRaw, 'next battle snapshot should be stored');
   const snapshot = JSON.parse(snapshotRaw);
   assert.strictEqual(snapshot.currentLevel, 9);
+});
+
+test('loader keeps stored current level when remote profile reports a lower one', async () => {
+  const storedProgress = {
+    currentLevel: 11,
+  };
+
+  const playerData = {
+    hero: {
+      name: 'Shellfin',
+      sprite: 'images/shellfin_level_1.png',
+    },
+    progress: {
+      currentLevel: 2,
+    },
+  };
+
+  const levelsData = {
+    mathTypes: {
+      addition: {
+        name: 'Addition',
+        levels: [
+          {
+            id: 'addition-1',
+            currentLevel: 1,
+            battle: {
+              hero: {
+                name: 'Shellfin',
+                sprite: 'images/shellfin_level_1.png',
+              },
+              monster: {
+                name: 'Crabbo',
+                sprite: 'images/monster-crabbo.png',
+              },
+            },
+          },
+          {
+            id: 'addition-11',
+            currentLevel: 11,
+            battle: {
+              hero: {
+                name: 'Shellfin',
+                sprite: 'images/shellfin_level_11.png',
+              },
+              monster: {
+                name: 'Hydrato',
+                sprite: 'images/monster-hydrato.png',
+              },
+            },
+          },
+        ],
+      },
+    },
+  };
+
+  const remoteProfile = {
+    progress: {
+      currentLevel: 4,
+    },
+  };
+
+  const { sandbox, dataLoadedPromise } = createLoaderSandbox({
+    storedProgress,
+    playerData,
+    levelsData,
+  });
+
+  vm.runInNewContext(PROGRESS_SOURCE, sandbox, {
+    filename: PROGRESS_UTILS_PATH,
+  });
+
+  vm.runInNewContext(PLAYER_PROFILE_SOURCE, sandbox, {
+    filename: PLAYER_PROFILE_UTILS_PATH,
+  });
+
+  sandbox.mathMonstersPlayerProfile.fetchPlayerProfile = async () =>
+    remoteProfile;
+
+  vm.runInNewContext(LOADER_SOURCE, sandbox, {
+    filename: LOADER_PATH,
+  });
+
+  await dataLoadedPromise;
+
+  const storedProgressRaw = sandbox.localStorage.getItem(STORAGE_KEY_PROGRESS);
+  assert.ok(storedProgressRaw, 'stored progress should remain available');
+  const stored = JSON.parse(storedProgressRaw);
+  assert.strictEqual(
+    stored.currentLevel,
+    11,
+    'stored current level should remain at the higher value'
+  );
+
+  const preloadedData = sandbox.window.preloadedData;
+  assert.ok(preloadedData, 'preloaded data should exist after loader run');
+  assert.strictEqual(
+    preloadedData.progress.currentLevel,
+    11,
+    'preloaded progress should use the higher stored level'
+  );
 });
