@@ -44,25 +44,59 @@
           data-hero-sprite
         />
 
-        <div class="home__actions">
-          <div class="home__action home__action--chest">
+        <div class="home__actions home__actions--single" data-home-actions>
+          <div
+            class="home__action home__action--chest home__action--hidden"
+            data-home-action="chest"
+            aria-hidden="true"
+          >
             <img
               class="home__action-image"
               src="../images/home/chest.png"
               alt="Treasure chest filled with upcoming rewards"
             />
           </div>
-          <div class="home__actions">
-            <div class="home__action home__action--portal">
-              <img
-                class="home__action-image"
-                src="../images/home/portal.png"
-                alt="Portal to new battles"
-              />
-            </div>
+          <div class="home__action home__action--portal" data-home-action="portal">
+            <img
+              class="home__action-image"
+              src="../images/home/portal.png"
+              alt="Portal to new battles"
+            />
+          </div>
         </div>
       </section>
     </main>
+    <div
+      class="home__level-two-intro"
+      data-level-two-intro
+      aria-hidden="true"
+      hidden
+    >
+      <section
+        class="card card--home home__level-two-intro-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Use the portal to find more monsters"
+      >
+        <img
+          class="home__level-two-intro-avatar"
+          src="../images/intro/doctor.png"
+          alt="Dr. Wave encourages you to find more monsters"
+          width="80"
+          height="80"
+        />
+        <p class="home__level-two-intro-message text-medium text-dark">
+          There are more monsters to battle, use the portal to find them!
+        </p>
+        <button
+          type="button"
+          class="btn-primary home__level-two-intro-button"
+          data-level-two-continue
+        >
+          Continue
+        </button>
+      </section>
+    </div>
     <script>
       window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
       window.SUPABASE_ANON_KEY =
