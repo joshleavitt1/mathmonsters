@@ -10,42 +10,12 @@ const deriveBaseFromLocation = (fallbackBase) => {
     return fallbackBase || '.';
   }
 
-  const location = window.location || null;
   const rawFallback =
     typeof fallbackBase === 'string' ? fallbackBase.trim() : '';
   const locationPath =
-    typeof location?.pathname === 'string' ? location.pathname : '';
-  const isFileProtocol = location?.protocol === 'file:';
-
-  const normalizeSegments = (value) =>
-    value
-      .split('/')
-      .map((segment) => segment.trim())
-      .filter(Boolean);
-
-  const computeRelativeBase = (segments) => {
-    if (!Array.isArray(segments) || segments.length === 0) {
-      return '.';
-    }
-
-    const lastSegment = segments[segments.length - 1] || '';
-    const treatAsDirectory = lastSegment && !lastSegment.includes('.');
-    const depth = treatAsDirectory ? segments.length : segments.length - 1;
-
-    if (depth <= 0) {
-      return '.';
-    }
-
-    return Array(depth).fill('..').join('/');
-  };
-
-  const withoutQuery = locationPath.replace(/[?#].*$/, '');
-  const trimmedPath = withoutQuery.replace(/\/+$/, '');
-  const segments = normalizeSegments(trimmedPath);
-
-  if (segments.length === 0) {
-    return '.';
-  }
+    typeof window.location?.pathname === 'string'
+      ? window.location.pathname
+      : '';
 
   if (rawFallback) {
     let fallbackNormalized = rawFallback;
@@ -58,87 +28,32 @@ const deriveBaseFromLocation = (fallbackBase) => {
     if (!fallbackNormalized) {
       fallbackNormalized = '/';
     }
-
-    const fallbackSegments = normalizeSegments(fallbackNormalized);
-
-    if (fallbackSegments.length > 0) {
-      const sequenceLength = fallbackSegments.length;
-      let fallbackIndex = -1;
-
-      for (let index = 0; index <= segments.length - sequenceLength; index += 1) {
-        let matches = true;
-        for (let offset = 0; offset < sequenceLength; offset += 1) {
-          if (segments[index + offset] !== fallbackSegments[offset]) {
-            matches = false;
-            break;
-          }
-        }
-        if (matches) {
-          fallbackIndex = index;
-          break;
-        }
-      }
-
-      if (fallbackIndex === 0 && !isFileProtocol) {
-        return fallbackBase;
-      }
-
-      if (fallbackIndex !== -1) {
-        const remainderSegments = segments.slice(
-          fallbackIndex + fallbackSegments.length
-        );
-        return computeRelativeBase(remainderSegments);
-      }
+    const matchesFallback =
+      locationPath === fallbackNormalized ||
+      (fallbackNormalized !== '/' &&
+        locationPath.startsWith(`${fallbackNormalized}/`));
+    if (matchesFallback) {
+      return fallbackBase;
     }
   }
 
-  return computeRelativeBase(segments);
-};
+  const withoutQuery = locationPath.replace(/[?#].*$/, '');
+  const trimmedPath = withoutQuery.replace(/\/+$/, '');
+  const segments = trimmedPath.split('/').filter(Boolean);
 
-const deriveBaseFromScriptSource = (scriptElement) => {
-  if (!scriptElement || typeof scriptElement !== 'object') {
-    return '';
+  if (segments.length === 0) {
+    return '.';
   }
 
-  const srcAttribute =
-    typeof scriptElement.getAttribute === 'function'
-      ? scriptElement.getAttribute('src')
-      : scriptElement.src;
+  const lastSegment = segments[segments.length - 1] || '';
+  const treatAsDirectory = lastSegment && !lastSegment.includes('.');
+  const depth = treatAsDirectory ? segments.length : segments.length - 1;
 
-  const rawSrc = typeof srcAttribute === 'string' ? srcAttribute.trim() : '';
-  if (!rawSrc) {
-    return '';
+  if (depth <= 0) {
+    return '.';
   }
 
-  if (typeof document === 'undefined' || typeof document.baseURI !== 'string') {
-    return '';
-  }
-
-  let resolvedPath = '';
-  try {
-    const resolvedUrl = new URL(rawSrc, document.baseURI);
-    resolvedPath = resolvedUrl.pathname || '';
-  } catch (error) {
-    resolvedPath = rawSrc;
-  }
-
-  if (!resolvedPath) {
-    return '';
-  }
-
-  const trimmedPath = resolvedPath.replace(/[?#].*$/, '').replace(/\/+$/, '');
-  if (!trimmedPath) {
-    return '';
-  }
-
-  const jsDirectoryMatch = trimmedPath.match(/^(.*)\/js(?:\/[^/]+)?$/i);
-  if (jsDirectoryMatch) {
-    const basePath = jsDirectoryMatch[1] || '';
-    return basePath || '.';
-  }
-
-  const directoryPath = trimmedPath.replace(/\/[^/]*$/, '');
-  return directoryPath || '.';
+  return Array(depth).fill('..').join('/');
 };
 
 const determineAssetBasePath = () => {
@@ -154,14 +69,6 @@ const determineAssetBasePath = () => {
       window.mathMonstersAssetBase = scriptedBase;
     }
     return scriptedBase;
-  }
-
-  const scriptDerivedBase = deriveBaseFromScriptSource(currentScript);
-  if (scriptDerivedBase && scriptDerivedBase !== '.' && scriptDerivedBase !== './') {
-    if (typeof window !== 'undefined') {
-      window.mathMonstersAssetBase = scriptDerivedBase;
-    }
-    return scriptDerivedBase;
   }
 
   if (doc) {
@@ -183,7 +90,7 @@ const determineAssetBasePath = () => {
       typeof window.mathMonstersAssetBase === 'string'
         ? window.mathMonstersAssetBase.trim()
         : '';
-    if (globalBase && globalBase !== '.' && globalBase !== './') {
+    if (globalBase) {
       return globalBase;
     }
   }
@@ -424,6 +331,46 @@ const mergeHeroData = (baseHero, overrideHero) => {
   };
 };
 
+const mergeCurrentLevelMap = (baseMap, overrideMap) => {
+  const base = isPlainObject(baseMap) ? baseMap : null;
+  const override = isPlainObject(overrideMap) ? overrideMap : null;
+
+  if (!base && !override) {
+    return null;
+  }
+
+  const merged = {};
+  const keys = new Set([
+    ...Object.keys(base || {}),
+    ...Object.keys(override || {}),
+  ]);
+
+  keys.forEach((key) => {
+    const baseEntry = isPlainObject(base?.[key]) ? base[key] : null;
+    const overrideEntry = isPlainObject(override?.[key])
+      ? override[key]
+      : null;
+
+    if (!baseEntry && !overrideEntry) {
+      return;
+    }
+
+    const mergedEntry = {
+      ...(baseEntry || {}),
+      ...(overrideEntry || {}),
+    };
+
+    const mergedHero = mergeHeroData(baseEntry?.hero, overrideEntry?.hero);
+    if (mergedHero) {
+      mergedEntry.hero = mergedHero;
+    }
+
+    merged[key] = mergedEntry;
+  });
+
+  return merged;
+};
+
 const mergePlayerData = (basePlayer, overridePlayer) => {
   const base = isPlainObject(basePlayer) ? basePlayer : null;
   const override = isPlainObject(overridePlayer) ? overridePlayer : null;
@@ -442,44 +389,53 @@ const mergePlayerData = (basePlayer, overridePlayer) => {
     merged.hero = mergedHero;
   }
 
+  const mergedCurrentLevel = mergeCurrentLevelMap(
+    base?.currentLevel,
+    override?.currentLevel
+  );
+  if (mergedCurrentLevel) {
+    merged.currentLevel = mergedCurrentLevel;
+  }
+
   return merged;
 };
 
 const mergeProgressState = (baseProgress, storedProgress) => {
-  const result = {};
+  const base = isPlainObject(baseProgress) ? baseProgress : null;
+  const stored = isPlainObject(storedProgress) ? storedProgress : null;
 
-  const applySource = (source) => {
-    if (!isPlainObject(source)) {
+  if (!base && !stored) {
+    return {};
+  }
+
+  const result = { ...(base || {}) };
+
+  if (!stored) {
+    return result;
+  }
+
+  Object.entries(stored).forEach(([key, value]) => {
+    if (value === undefined) {
       return;
     }
 
-    if (source.currentLevel !== undefined) {
-      const normalizedLevel = normalizeCurrentLevel(source.currentLevel);
-      if (normalizedLevel !== null) {
-        result.currentLevel = normalizedLevel;
-      }
-    }
-
-    if (source.gems !== undefined) {
-      const numericGems = Number(source.gems);
-      if (Number.isFinite(numericGems)) {
-        result.gems = Math.max(0, Math.round(numericGems));
-      }
-    }
-
-    if (source.experience !== undefined) {
-      result.experience = mergeExperienceMaps(
-        result.experience,
-        source.experience
-      );
-      if (result.experience && Object.keys(result.experience).length === 0) {
+    if (key === 'experience') {
+      const mergedExperience = mergeExperienceMaps(result.experience, value);
+      if (Object.keys(mergedExperience).length > 0) {
+        result.experience = mergedExperience;
+      } else {
         delete result.experience;
       }
+      return;
     }
-  };
 
-  applySource(baseProgress);
-  applySource(storedProgress);
+    if (isPlainObject(value)) {
+      result[key] = mergeProgressState(result[key], value);
+      return;
+    }
+
+    result[key] = value;
+  });
 
   return result;
 };
@@ -507,6 +463,12 @@ const mergePlayerWithStoredProfile = (player, storedProfile) => {
     nextPlayer.id = storedProfile.id;
   }
 
+  if (isPlainObject(storedProfile.battleVariables)) {
+    nextPlayer.battleVariables = isPlainObject(nextPlayer.battleVariables)
+      ? { ...storedProfile.battleVariables, ...nextPlayer.battleVariables }
+      : { ...storedProfile.battleVariables };
+  }
+
   if (isPlainObject(storedProfile.progress)) {
     const mergedProgress = mergeProgressState(
       nextPlayer.progress,
@@ -517,6 +479,16 @@ const mergePlayerWithStoredProfile = (player, storedProfile) => {
       nextPlayer.progress = mergedProgress;
     } else {
       delete nextPlayer.progress;
+    }
+  }
+
+  if (isPlainObject(storedProfile.currentLevel)) {
+    const mergedCurrentLevel = mergeCurrentLevelMap(
+      storedProfile.currentLevel,
+      nextPlayer.currentLevel
+    );
+    if (mergedCurrentLevel) {
+      nextPlayer.currentLevel = mergedCurrentLevel;
     }
   }
 
@@ -605,15 +577,6 @@ const normalizeAssetPath = (inputPath) => {
     ? ASSET_BASE_PATH.slice(0, -1)
     : ASSET_BASE_PATH;
 
-  const isNeutralBase = base === '.' || base === './' || base === '';
-  if (isNeutralBase) {
-    if (!trimmed) {
-      return suffix ? `.${suffix}` : '.';
-    }
-
-    return `${trimmed}${suffix}`;
-  }
-
   return trimmed ? `${base}/${trimmed}${suffix}` : `${base}${suffix}`;
 };
 
@@ -684,6 +647,39 @@ const applyAssetsForHeroLevel = (hero) => {
     });
   }
 };
+const applyHeroLevelAssets = (player) => {
+  if (!isPlainObject(player)) {
+    return;
+  }
+
+  const baseHero = isPlainObject(player.hero) ? player.hero : null;
+
+  if (baseHero) {
+    applyAssetsForHeroLevel(baseHero);
+  }
+
+  const currentLevelMap = isPlainObject(player.currentLevel)
+    ? player.currentLevel
+    : null;
+
+  if (!currentLevelMap) {
+    return;
+  }
+
+  Object.values(currentLevelMap).forEach((levelData) => {
+    if (!isPlainObject(levelData)) {
+      return;
+    }
+
+    const levelHero = isPlainObject(levelData.hero) ? levelData.hero : null;
+    if (!levelHero) {
+      return;
+    }
+
+    applyAssetsForHeroLevel(levelHero);
+  });
+};
+
 const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   if (!source || typeof source !== 'object') {
     return accumulator;
@@ -699,6 +695,7 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
   };
 
   const candidateKeys = [
+    'currentMathType',
     'activeMathType',
     'mathType',
     'selectedMathType',
@@ -709,6 +706,10 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
 
   if (source.battle && typeof source.battle === 'object') {
     candidateKeys.forEach((key) => tryAdd(source.battle[key]));
+  }
+
+  if (source.battleVariables && typeof source.battleVariables === 'object') {
+    candidateKeys.forEach((key) => tryAdd(source.battleVariables[key]));
   }
 
   if (source.progress && typeof source.progress === 'object') {
@@ -1438,6 +1439,12 @@ const syncRemoteCurrentLevel = (playerData) => {
       console.warn('Unable to load remote player profile for battle.', error);
     }
 
+    applyHeroLevelAssets(basePlayer);
+    const localPlayer = extractPlayerData(localPlayerData);
+    if (localPlayer) {
+      applyHeroLevelAssets(localPlayer);
+    }
+
     const { levels: derivedLevels, mathTypeKey } = deriveMathTypeLevels(
       levelsData,
       basePlayer,
@@ -1449,7 +1456,12 @@ const syncRemoteCurrentLevel = (playerData) => {
       basePlayer && typeof basePlayer.progress === 'object'
         ? basePlayer.progress
         : {};
+    const baseBattleVariables =
+      basePlayer && typeof basePlayer.battleVariables === 'object'
+        ? basePlayer.battleVariables
+        : {};
     const progress = mergeProgressState(baseProgress, storedProgress);
+    const battleVariables = { ...baseBattleVariables };
     const sanitizeGemValue = (value) => {
       const numericValue = Number(value);
       if (!Number.isFinite(numericValue)) {
@@ -1459,6 +1471,20 @@ const syncRemoteCurrentLevel = (playerData) => {
     };
 
     let experienceMap = normalizeExperienceMap(progress?.experience);
+
+    if (storedProgress && typeof storedProgress === 'object') {
+      const storedCurrentLevel = normalizeCurrentLevel(
+        storedProgress.currentLevel
+      );
+      if (storedCurrentLevel !== null) {
+        progress.currentLevel = storedCurrentLevel;
+      }
+
+      if (typeof storedProgress.timeRemainingSeconds === 'number') {
+        battleVariables.timeRemainingSeconds =
+          storedProgress.timeRemainingSeconds;
+      }
+    }
 
     const gemCandidates = [
       sanitizeGemValue(progress?.gems),
@@ -1800,10 +1826,23 @@ const syncRemoteCurrentLevel = (playerData) => {
     const playerHeroBase =
       basePlayer && typeof basePlayer.hero === 'object' ? basePlayer.hero : {};
 
+    const playerLevelHeroMap = new Map();
+    levels.forEach((level) => {
+      if (!level || typeof level.currentLevel !== 'number') {
+        return;
+      }
+      const levelData = resolvePlayerLevelData(level.currentLevel);
+      if (levelData && typeof levelData.hero === 'object') {
+        playerLevelHeroMap.set(level.currentLevel, levelData.hero);
+      }
+    });
+
     const levelCharacters = levels.map((level) => {
       const levelNumber = level?.currentLevel;
       const battleConfig =
         level && typeof level.battle === 'object' ? level.battle : {};
+      const heroOverride =
+        playerLevelHeroMap.get(levelNumber ?? undefined) ?? null;
 
       const shouldRegisterAssets =
         (Number.isFinite(activeCurrentLevel) &&
@@ -1814,7 +1853,8 @@ const syncRemoteCurrentLevel = (playerData) => {
       return withAssetRegistration(shouldRegisterAssets, () => {
         const preparedHero = prepareCharacter(
           playerHeroBase,
-          battleConfig?.hero
+          battleConfig?.hero,
+          heroOverride
         );
 
         const monsters = [];
@@ -1861,7 +1901,11 @@ const syncRemoteCurrentLevel = (playerData) => {
 
     const hero = currentLevelCharacters.hero
       ? { ...currentLevelCharacters.hero }
-      : prepareCharacter(playerHeroBase, levelBattle?.hero) || { ...playerHeroBase };
+      : prepareCharacter(
+          playerHeroBase,
+          levelBattle?.hero,
+          playerLevelHeroMap.get(activeCurrentLevel)
+        ) || { ...playerHeroBase };
 
     const normalizedMonsters = (currentLevelCharacters.monsters || []).map(
       (monster) => ({ ...monster })
@@ -1906,8 +1950,10 @@ const syncRemoteCurrentLevel = (playerData) => {
       levelBattleRaw?.mathType,
       currentLevel?.mathType,
       mathTypeKey,
+      basePlayer?.currentMathType,
       basePlayer?.mathType,
       progress?.mathType,
+      progress?.currentMathType,
     ];
 
     const resolveActiveMonsterIndex = () => {
@@ -1971,9 +2017,16 @@ const syncRemoteCurrentLevel = (playerData) => {
           typeof immediateNextLevel.battle === 'object'
             ? immediateNextLevel.battle
             : {};
+        const nextLevelOverride = playerLevelHeroMap.get(
+          immediateNextLevel.currentLevel
+        );
 
         withAssetRegistration(true, () =>
-          prepareCharacter(playerHeroBase, nextLevelBattle?.hero)
+          prepareCharacter(
+            playerHeroBase,
+            nextLevelBattle?.hero,
+            nextLevelOverride
+          )
         );
       }
     }
@@ -2022,8 +2075,10 @@ const syncRemoteCurrentLevel = (playerData) => {
       player: {
         ...basePlayer,
         progress,
+        battleVariables,
       },
       progress,
+      battleVariables,
       levels,
       level: currentLevel,
       battle,
