@@ -11,52 +11,10 @@
         "uniquePerLevel": true,
         "standardPool": [
           {
-            "sprite": "/mathmonsters/images/monster/addition_mini_1.png",
-            "name": "Octomurk"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_mini_2.png",
-            "name": "Lockjaw"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_mini_3.png",
-            "name": "Spikewave"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_mini_4.png",
-            "name": "Crabsnap"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_mini_5.png",
-            "name": "Clamquake"
+            "sprite": "/mathmonsters/images/monster/addition_monster_1.png",
+            "name": "Snapjaw"
           }
-        ],
-        "bosses": {
-          "1": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_1.png",
-            "name": "Octomurk"
-          },
-          "2": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_2.png",
-            "name": "Razorclaw"
-          },
-          "3": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_3.png",
-            "name": "Lockjaw"
-          },
-          "4": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_4.png",
-            "name": "Spikewave"
-          },
-          "5": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_5.png",
-            "name": "Crabsnap"
-          },
-          "6": {
-            "sprite": "/mathmonsters/images/monster/addition_boss_6.png",
-            "name": "Clamquake"
-          }
-        }
+        ]
       },
       "levels": [
         {
