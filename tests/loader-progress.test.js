@@ -262,3 +262,88 @@ test('loader promotes nested math progress level to root state', async () => {
   const snapshot = JSON.parse(snapshotRaw);
   assert.strictEqual(snapshot.currentLevel, 7);
 });
+
+test('loader promotes math progress stored within mathTypes container', async () => {
+  const storedProgress = {
+    mathType: 'addition',
+    mathTypes: {
+      addition: {
+        currentLevel: 9,
+      },
+    },
+  };
+
+  const playerData = {
+    hero: {
+      name: 'Shellfin',
+      sprite: 'images/shellfin_level_1.png',
+    },
+    progress: {},
+  };
+
+  const levelsData = {
+    mathTypes: {
+      addition: {
+        name: 'Addition',
+        levels: [
+          {
+            id: 'addition-1',
+            currentLevel: 1,
+            battle: {
+              hero: {
+                name: 'Shellfin',
+                sprite: 'images/shellfin_level_1.png',
+              },
+              monster: {
+                name: 'Crabbo',
+                sprite: 'images/monster-crabbo.png',
+              },
+            },
+          },
+          {
+            id: 'addition-9',
+            currentLevel: 9,
+            battle: {
+              hero: {
+                name: 'Shellfin',
+                sprite: 'images/shellfin_level_9.png',
+              },
+              monster: {
+                name: 'Hydrato',
+                sprite: 'images/monster-hydrato.png',
+              },
+            },
+          },
+        ],
+      },
+    },
+  };
+
+  const { sandbox, dataLoadedPromise, sessionStorage } = createLoaderSandbox({
+    storedProgress,
+    playerData,
+    levelsData,
+  });
+
+  vm.runInNewContext(PROGRESS_SOURCE, sandbox, {
+    filename: PROGRESS_UTILS_PATH,
+  });
+
+  vm.runInNewContext(LOADER_SOURCE, sandbox, {
+    filename: LOADER_PATH,
+  });
+
+  await dataLoadedPromise;
+
+  const preloadedData = sandbox.window.preloadedData;
+  assert.ok(preloadedData, 'preloaded data should be available');
+  assert.strictEqual(preloadedData.progress.currentLevel, 9);
+  assert.strictEqual(preloadedData.level?.currentLevel, 9);
+
+  const snapshotRaw = sessionStorage.getItem(
+    NEXT_BATTLE_SNAPSHOT_STORAGE_KEY
+  );
+  assert.ok(snapshotRaw, 'next battle snapshot should be stored');
+  const snapshot = JSON.parse(snapshotRaw);
+  assert.strictEqual(snapshot.currentLevel, 9);
+});
