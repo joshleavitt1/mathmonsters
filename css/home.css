@@ -302,12 +302,15 @@ body.home-page {
     transform: translate3d(0, 0, 0);
   }
 
-  25%,
-  75% {
-    transform: translate3d(0, -12px, 0);
+  25% {
+    transform: translate3d(0, -22px, 0);
   }
 
   50% {
-    transform: translate3d(0, -22px, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  75% {
+    transform: translate3d(0, 16px, 0);
   }
 }
