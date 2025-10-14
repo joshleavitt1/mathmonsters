@@ -414,13 +414,9 @@ const collectMathTypeCandidates = (source, accumulator = new Set()) => {
 
 const findMathProgressEntry = (progressRoot, candidates = []) => {
   if (!isPlainObject(progressRoot)) {
-    return { key: null, entry: null };
+    return { key: null, entry: null, container: null };
   }
 
-  const isProgressEntry = (value) =>
-    isPlainObject(value) && value.currentLevel !== undefined;
-
-  const keys = Object.keys(progressRoot);
   const normalizedCandidates = candidates
     .map((candidate) =>
       typeof candidate === 'string' && candidate.trim()
@@ -429,38 +425,121 @@ const findMathProgressEntry = (progressRoot, candidates = []) => {
     )
     .filter(Boolean);
 
-  const pickEntry = (key) => {
-    if (typeof key !== 'string') {
+  const normalizedCandidateSet = new Set(normalizedCandidates);
+
+  const isProgressEntry = (value) =>
+    isPlainObject(value) && value.currentLevel !== undefined;
+
+  const pickEntry = (container, key) => {
+    if (!isPlainObject(container) || typeof key !== 'string') {
       return null;
     }
-    const entry = progressRoot[key];
-    return isProgressEntry(entry) ? { key, entry } : null;
+
+    const entry = container[key];
+    return isProgressEntry(entry) ? { key, entry, container } : null;
   };
 
-  for (const candidate of normalizedCandidates) {
-    const matchKey = keys.find((key) => {
-      if (typeof key !== 'string') {
-        return false;
-      }
-      return key.trim().toLowerCase() === candidate;
-    });
+  const shouldPrioritizeContainerKey = (key) => {
+    if (typeof key !== 'string') {
+      return false;
+    }
 
-    if (matchKey) {
-      const match = pickEntry(matchKey);
+    const normalizedKey = key.trim().toLowerCase();
+    if (!normalizedKey) {
+      return false;
+    }
+
+    if (normalizedCandidateSet.has(normalizedKey)) {
+      return true;
+    }
+
+    const prioritizedPatterns = [
+      'math',
+      'type',
+      'progress',
+      'category',
+      'subject',
+      'collection',
+      'map',
+      'entry',
+      'level',
+    ];
+
+    return prioritizedPatterns.some((pattern) =>
+      normalizedKey.includes(pattern)
+    );
+  };
+
+  const visited = new Set();
+
+  const searchContainer = (container) => {
+    if (!isPlainObject(container) || visited.has(container)) {
+      return null;
+    }
+
+    visited.add(container);
+
+    const keys = Object.keys(container);
+
+    for (const candidate of normalizedCandidates) {
+      const matchKey = keys.find((key) => {
+        if (typeof key !== 'string') {
+          return false;
+        }
+        return key.trim().toLowerCase() === candidate;
+      });
+
+      if (matchKey) {
+        const match = pickEntry(container, matchKey);
+        if (match) {
+          return match;
+        }
+      }
+    }
+
+    for (const key of keys) {
+      const match = pickEntry(container, key);
       if (match) {
         return match;
       }
     }
-  }
 
-  for (const key of keys) {
-    const match = pickEntry(key);
-    if (match) {
-      return match;
+    const nestedKeys = keys
+      .filter((key) => {
+        if (typeof key !== 'string') {
+          return false;
+        }
+
+        const value = container[key];
+        return isPlainObject(value) && !isProgressEntry(value);
+      })
+      .sort((a, b) => {
+        const aPriority = shouldPrioritizeContainerKey(a) ? 0 : 1;
+        const bPriority = shouldPrioritizeContainerKey(b) ? 0 : 1;
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority;
+        }
+        return 0;
+      });
+
+    for (const key of nestedKeys) {
+      const value = container[key];
+      const match = searchContainer(value);
+      if (match) {
+        return match;
+      }
     }
+
+    return null;
+  };
+
+  const match = searchContainer(progressRoot);
+
+  if (match) {
+    return match;
   }
 
-  return { key: normalizedCandidates[0] || null, entry: null };
+  return { key: normalizedCandidates[0] || null, entry: null, container: null };
 };
 
 const resolveBattleCountForLevel = (levelData) => {
@@ -602,7 +681,19 @@ const computeHomeBattleProgress = (data) => {
     return Math.round(numeric);
   };
 
-  const prioritizedCurrentLevelCandidates = [mathProgressEntry?.currentLevel];
+  const prioritizedCurrentLevelCandidates = [];
+
+  const mathProgressCurrentLevel = clampPositiveInteger(
+    mathProgressEntry?.currentLevel
+  );
+
+  if (mathProgressEntry) {
+    if (Number.isFinite(mathProgressCurrentLevel)) {
+      prioritizedCurrentLevelCandidates.push(mathProgressCurrentLevel);
+    } else {
+      prioritizedCurrentLevelCandidates.push(mathProgressEntry.currentLevel);
+    }
+  }
 
   if (mathProgressKey && typeof mathProgressKey === 'string') {
     prioritizedCurrentLevelCandidates.push(mathProgressKey);
