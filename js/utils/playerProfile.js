@@ -27,14 +27,17 @@
     return null;
   };
 
-  const syncCurrentLevelToStorage = (playerData, storageKey) => {
-    if (!playerData || typeof storageKey !== 'string' || !storageKey) {
-      return;
+  const clampToPositiveInteger = (value) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return null;
     }
 
-    const progress = playerData?.progress ?? {};
-    const numericLevel = toNumericCurrentLevel(progress?.currentLevel);
-    if (numericLevel === null) {
+    const intValue = Math.floor(value);
+    return intValue > 0 ? intValue : null;
+  };
+
+  const syncCurrentLevelToStorage = (playerData, storageKey) => {
+    if (!playerData || typeof storageKey !== 'string' || !storageKey) {
       return;
     }
 
@@ -56,12 +59,41 @@
 
       const nextValue =
         parsed && typeof parsed === 'object' ? { ...parsed } : {};
-      if (numericLevel !== null) {
-        nextValue.currentLevel = numericLevel;
-      } else {
-        delete nextValue.currentLevel;
+
+      const storedLevel = clampToPositiveInteger(
+        toNumericCurrentLevel(nextValue.currentLevel)
+      );
+
+      const supabaseLevel = clampToPositiveInteger(
+        toNumericCurrentLevel(playerData?.progress?.currentLevel)
+      );
+
+      let levelToPersist = null;
+      if (storedLevel !== null || supabaseLevel !== null) {
+        if (storedLevel === null) {
+          levelToPersist = supabaseLevel;
+        } else if (supabaseLevel === null) {
+          levelToPersist = storedLevel;
+        } else {
+          levelToPersist = Math.max(storedLevel, supabaseLevel);
+        }
       }
 
+      if (levelToPersist === null) {
+        if ('currentLevel' in nextValue) {
+          delete nextValue.currentLevel;
+        }
+
+        if (Object.keys(nextValue).length === 0) {
+          storage.removeItem(storageKey);
+        } else {
+          storage.setItem(storageKey, JSON.stringify(nextValue));
+        }
+
+        return;
+      }
+
+      nextValue.currentLevel = levelToPersist;
       storage.setItem(storageKey, JSON.stringify(nextValue));
     } catch (error) {
       console.warn('Failed to sync current level with storage.', error);
