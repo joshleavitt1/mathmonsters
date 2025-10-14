@@ -30,6 +30,7 @@ const GEM_REWARD_HOME_ANIMATION_KEY = 'mathmonstersGemRewardAnimation';
 const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const BATTLES_PER_LEVEL = 4;
+const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -515,6 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hideMedal({ immediate: true });
   };
   let evolutionInProgress = false;
+  let heroEvolutionStartedAtInitialStage = false;
   let rewardCardDisplayTimeout = null;
   let heroSpriteReadyPromise = null;
 
@@ -630,6 +632,207 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${heroName}_evolution_${safeLevel}${extension || ''}`;
       }
     );
+  };
+
+  const HERO_PROFILE_EVOLUTION_SPRITE = sanitizeHeroSpritePath(
+    'images/hero/shellfin_evolution_2.png'
+  );
+  const HERO_PROFILE_EVOLUTION_ATTACK_SPRITE = sanitizeHeroSpritePath(
+    'images/hero/shellfin_attack_2.png'
+  );
+  const HERO_BATTLE_EVOLUTION_SPRITE = sanitizeHeroSpritePath(
+    '../images/hero/shellfin_evolution_2.png'
+  );
+  const HERO_BATTLE_EVOLUTION_ATTACK_SPRITE = sanitizeHeroSpritePath(
+    '../images/hero/shellfin_attack_2.png'
+  );
+  const HERO_EVOLUTION_ATTACK_VALUE = 2;
+
+  const readStoredPlayerProfile = () => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const storage = window.sessionStorage;
+      if (!storage) {
+        return null;
+      }
+
+      const raw = storage.getItem(PLAYER_PROFILE_STORAGE_KEY);
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (error) {
+      console.warn('Unable to read stored player profile during evolution.', error);
+      return null;
+    }
+  };
+
+  const persistPlayerProfile = (player) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const storage = window.sessionStorage;
+      if (!storage) {
+        return;
+      }
+
+      if (!player || typeof player !== 'object') {
+        storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+        return;
+      }
+
+      storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(player));
+    } catch (error) {
+      console.warn('Unable to persist evolved player profile.', error);
+    }
+  };
+
+  const clonePlayerProfile = (player) => {
+    if (!player || typeof player !== 'object') {
+      return null;
+    }
+
+    try {
+      return JSON.parse(JSON.stringify(player));
+    } catch (error) {
+      console.warn('Unable to clone player profile for persistence.', error);
+      return null;
+    }
+  };
+
+  const applyHeroSpriteUpdate = (heroEntry, options = {}) => {
+    if (!heroEntry || typeof heroEntry !== 'object') {
+      return;
+    }
+
+    const { sprite, attackSprite, attackValue } = options;
+
+    if (typeof sprite === 'string') {
+      heroEntry.sprite = sprite;
+    }
+
+    if (typeof attackSprite === 'string') {
+      heroEntry.attackSprite = attackSprite;
+
+      if (
+        heroEntry.attackSprites &&
+        typeof heroEntry.attackSprites === 'object' &&
+        heroEntry.attackSprites !== null
+      ) {
+        heroEntry.attackSprites.basic = attackSprite;
+        if (!heroEntry.attackSprites.super) {
+          heroEntry.attackSprites.super = attackSprite;
+        }
+      }
+    }
+
+    if (typeof attackValue === 'number' && Number.isFinite(attackValue)) {
+      const currentAttack = Number(heroEntry.attack);
+      if (!Number.isFinite(currentAttack) || currentAttack < attackValue) {
+        heroEntry.attack = attackValue;
+      }
+    }
+  };
+
+  const updatePlayerHeroEntries = (playerData, options = {}) => {
+    if (!playerData || typeof playerData !== 'object') {
+      return;
+    }
+
+    if (playerData.hero && typeof playerData.hero === 'object') {
+      applyHeroSpriteUpdate(playerData.hero, options);
+    }
+
+    if (
+      playerData.currentLevel &&
+      typeof playerData.currentLevel === 'object' &&
+      playerData.currentLevel !== null
+    ) {
+      Object.values(playerData.currentLevel).forEach((entry) => {
+        if (entry && typeof entry === 'object' && entry.hero) {
+          applyHeroSpriteUpdate(entry.hero, options);
+        }
+      });
+    }
+  };
+
+  const applyHeroEvolutionProfileUpdate = () => {
+    const battleOptions = {
+      sprite: HERO_BATTLE_EVOLUTION_SPRITE,
+      attackSprite: HERO_BATTLE_EVOLUTION_ATTACK_SPRITE,
+      attackValue: HERO_EVOLUTION_ATTACK_VALUE,
+    };
+    const profileOptions = {
+      sprite: HERO_PROFILE_EVOLUTION_SPRITE,
+      attackSprite: HERO_PROFILE_EVOLUTION_ATTACK_SPRITE,
+      attackValue: HERO_EVOLUTION_ATTACK_VALUE,
+    };
+
+    if (window.preloadedData && typeof window.preloadedData === 'object') {
+      updatePlayerHeroEntries(window.preloadedData.player, profileOptions);
+      updatePlayerHeroEntries(window.preloadedData.playerData, profileOptions);
+      updatePlayerHeroEntries(
+        window.preloadedData.fallbackPlayerData,
+        profileOptions
+      );
+
+      if (
+        window.preloadedData.hero &&
+        typeof window.preloadedData.hero === 'object'
+      ) {
+        applyHeroSpriteUpdate(window.preloadedData.hero, battleOptions);
+      }
+
+      if (
+        window.preloadedData.previewData &&
+        typeof window.preloadedData.previewData === 'object' &&
+        window.preloadedData.previewData !== null &&
+        window.preloadedData.previewData.hero &&
+        typeof window.preloadedData.previewData.hero === 'object'
+      ) {
+        applyHeroSpriteUpdate(
+          window.preloadedData.previewData.hero,
+          battleOptions
+        );
+      }
+    }
+
+    if (
+      window.mathMonstersBattleSnapshot &&
+      typeof window.mathMonstersBattleSnapshot === 'object'
+    ) {
+      const snapshotHero =
+        window.mathMonstersBattleSnapshot.hero &&
+        typeof window.mathMonstersBattleSnapshot.hero === 'object'
+          ? window.mathMonstersBattleSnapshot.hero
+          : {};
+      snapshotHero.sprite = HERO_BATTLE_EVOLUTION_SPRITE;
+      window.mathMonstersBattleSnapshot.hero = snapshotHero;
+    }
+
+    const storedProfile = readStoredPlayerProfile();
+    if (storedProfile) {
+      updatePlayerHeroEntries(storedProfile, profileOptions);
+      persistPlayerProfile(storedProfile);
+    } else if (
+      window.preloadedData &&
+      typeof window.preloadedData === 'object' &&
+      window.preloadedData.player &&
+      typeof window.preloadedData.player === 'object'
+    ) {
+      const clonedProfile = clonePlayerProfile(window.preloadedData.player);
+      if (clonedProfile) {
+        updatePlayerHeroEntries(clonedProfile, profileOptions);
+        persistPlayerProfile(clonedProfile);
+      }
+    }
   };
 
   const spriteElementCache =
@@ -1716,6 +1919,10 @@ document.addEventListener('DOMContentLoaded', () => {
       heroImg.classList.add('battle-shellfin--evolved');
     }
 
+    if (heroEvolutionStartedAtInitialStage) {
+      applyHeroEvolutionProfileUpdate();
+    }
+
     const finalizeEvolution = () => {
       if (evolutionFinalized) {
         return;
@@ -1742,6 +1949,8 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       markRegistrationAsRequired();
+
+      heroEvolutionStartedAtInitialStage = false;
 
       if (!overlayShown) {
         cleanupEvolutionOverlay();
@@ -1794,6 +2003,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     evolutionInProgress = true;
     clearEvolutionTimers();
+
+    heroEvolutionStartedAtInitialStage = isHeroAtInitialEvolutionStage();
 
     if (rewardCardButton) {
       rewardCardButton.disabled = true;
