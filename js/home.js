@@ -7,6 +7,174 @@ const HOME_PROGRESS_INITIAL_ANIMATION_COMPLETE_DATA_KEY =
   'progressInitialAnimationComplete';
 const HOME_PROGRESS_INITIAL_TIMEOUT_PROPERTY = '__homeInitialProgressTimeout';
 const GEM_REWARD_ANIMATION_STORAGE_KEY = 'mathmonstersGemRewardAnimation';
+const LEVEL_TWO_INTRO_STORAGE_PREFIX = 'mathmonstersLevelTwoIntroStatus';
+const LEVEL_TWO_INTRO_STATUS_ACKNOWLEDGED = 'acknowledged';
+
+const levelTwoIntroState = {
+  playerId: 'default',
+  status: null,
+  currentLevel: null,
+};
+
+const sanitizeStorageKeySegment = (value, fallback = 'default') => {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+
+  if (Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return fallback;
+};
+
+const getLevelTwoIntroStorageKey = (playerId) =>
+  `${LEVEL_TWO_INTRO_STORAGE_PREFIX}:${sanitizeStorageKeySegment(playerId)}`;
+
+const readLevelTwoIntroStatus = (playerId) => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return null;
+  }
+
+  try {
+    const key = getLevelTwoIntroStorageKey(playerId);
+    const value = window.localStorage.getItem(key);
+    return typeof value === 'string' && value ? value : null;
+  } catch (error) {
+    console.warn('Unable to read Level 2 intro status from storage.', error);
+    return null;
+  }
+};
+
+const writeLevelTwoIntroStatus = (playerId, status) => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+
+  try {
+    const key = getLevelTwoIntroStorageKey(playerId);
+    if (!status) {
+      window.localStorage.removeItem(key);
+      return;
+    }
+
+    window.localStorage.setItem(key, status);
+  } catch (error) {
+    console.warn('Unable to persist Level 2 intro status to storage.', error);
+  }
+};
+
+const resolvePlayerIdentifier = (playerData) => {
+  if (!playerData || typeof playerData !== 'object') {
+    return null;
+  }
+
+  const candidateKeys = ['id', 'playerId', 'profileId', 'userId', 'uid'];
+  for (const key of candidateKeys) {
+    const value = playerData[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return null;
+};
+
+const setElementHiddenState = (element, shouldHide) => {
+  if (!element) {
+    return;
+  }
+
+  const hidden = Boolean(shouldHide);
+  element.hidden = hidden;
+  element.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+};
+
+const setActionVisibility = (element, shouldShow) => {
+  if (!element) {
+    return;
+  }
+
+  const visible = Boolean(shouldShow);
+  element.classList.toggle('home__action--hidden', !visible);
+  element.setAttribute('aria-hidden', visible ? 'false' : 'true');
+};
+
+const applyLevelTwoHomeExperience = ({ currentLevel, playerId, statusOverride } = {}) => {
+  const numericLevel = Number(currentLevel);
+  const resolvedLevel = Number.isFinite(numericLevel) ? numericLevel : null;
+  const resolvedPlayerId = sanitizeStorageKeySegment(playerId);
+  const actionsContainer = document.querySelector('[data-home-actions]');
+  const chestAction = document.querySelector('[data-home-action="chest"]');
+  const portalAction = document.querySelector('[data-home-action="portal"]');
+  const introOverlay = document.querySelector('[data-level-two-intro]');
+  const continueButton = document.querySelector('[data-level-two-continue]');
+
+  levelTwoIntroState.playerId = resolvedPlayerId;
+  levelTwoIntroState.currentLevel = resolvedLevel;
+
+  if (continueButton && continueButton.dataset.levelTwoIntroBound !== 'true') {
+    continueButton.dataset.levelTwoIntroBound = 'true';
+    continueButton.addEventListener('click', (event) => {
+      if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+      }
+
+      const activePlayerId = levelTwoIntroState.playerId;
+      writeLevelTwoIntroStatus(activePlayerId, LEVEL_TWO_INTRO_STATUS_ACKNOWLEDGED);
+      levelTwoIntroState.status = LEVEL_TWO_INTRO_STATUS_ACKNOWLEDGED;
+
+      const overlayElement = document.querySelector('[data-level-two-intro]');
+      if (overlayElement) {
+        delete overlayElement.dataset.introVisible;
+        setElementHiddenState(overlayElement, true);
+      }
+
+      const portalElement = document.querySelector('[data-home-action="portal"]');
+      if (portalElement) {
+        portalElement.classList.add('home__action--portal-glow');
+      }
+    });
+  }
+
+  const introStatus =
+    statusOverride || readLevelTwoIntroStatus(resolvedPlayerId) || null;
+  levelTwoIntroState.status = introStatus;
+
+  const isLevelTwo = resolvedLevel === 2;
+  const shouldShowIntro = isLevelTwo && introStatus !== LEVEL_TWO_INTRO_STATUS_ACKNOWLEDGED;
+  const shouldGlowPortal = isLevelTwo && introStatus === LEVEL_TWO_INTRO_STATUS_ACKNOWLEDGED;
+
+  if (actionsContainer) {
+    actionsContainer.classList.toggle('home__actions--single', Boolean(isLevelTwo));
+  }
+
+  setActionVisibility(chestAction, !isLevelTwo);
+
+  if (portalAction) {
+    portalAction.classList.toggle('home__action--portal-glow', Boolean(shouldGlowPortal));
+  }
+
+  if (introOverlay) {
+    const wasVisible = introOverlay.dataset.introVisible === 'true';
+    if (shouldShowIntro) {
+      introOverlay.dataset.introVisible = 'true';
+      setElementHiddenState(introOverlay, false);
+      if (!wasVisible && continueButton && typeof window !== 'undefined') {
+        window.setTimeout(() => {
+          try {
+            continueButton.focus();
+          } catch (error) {
+            // Ignore focus errors.
+          }
+        }, 50);
+      }
+    } else {
+      delete introOverlay.dataset.introVisible;
+      setElementHiddenState(introOverlay, true);
+    }
+  }
+};
 
 const normalizeNonNegativeInteger = (value) => {
   const numericValue = Number(value);
@@ -1154,6 +1322,10 @@ const updateHomeFromPreloadedData = () => {
   const currentLevel = levelCandidates
     .map((value) => Number(value))
     .find((value) => Number.isFinite(value) && value > 0);
+
+  const playerId = resolvePlayerIdentifier(data.player);
+  applyLevelTwoHomeExperience({ currentLevel, playerId });
+
   const heroLevelEl = document.querySelector('[data-hero-level]');
   const progressElement = document.querySelector(
     '.home__progress[data-battle-progress]'
