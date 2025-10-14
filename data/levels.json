@@ -41,7 +41,7 @@
           "level": 3,
           "name": "Level 3",
           "monster": {
-            "sprite": "/mathmonsters/images/here/shellfin_evolution_1.png"
+            "sprite": "/mathmonsters/images/hero/shellfin_evolution_1.png"
           },
           "questions": {
             "path": "questions/level_3_questions.json"
