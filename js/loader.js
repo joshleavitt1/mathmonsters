@@ -1445,7 +1445,11 @@ const syncRemoteCurrentLevel = (playerData) => {
       applyHeroLevelAssets(localPlayer);
     }
 
-    const { levels: derivedLevels, mathTypeKey } = deriveMathTypeLevels(
+    const {
+      levels: derivedLevels,
+      mathTypeKey,
+      mathTypeLabel,
+    } = deriveMathTypeLevels(
       levelsData,
       basePlayer,
       playerJson
@@ -1526,9 +1530,57 @@ const syncRemoteCurrentLevel = (playerData) => {
       delete progress.experience;
     }
 
-    const normalizedProgressCurrentLevel = normalizeCurrentLevel(
-      progress.currentLevel
-    );
+    const isPositiveLevelNumber = (value) =>
+      typeof value === 'number' &&
+      Number.isFinite(value) &&
+      Math.round(value) === value &&
+      value > 0;
+
+    const deriveMathProgressCurrentLevel = () => {
+      if (!isPlainObject(progress)) {
+        return null;
+      }
+
+      const preferredMathKeys = [];
+      const addPreferredKey = (value) => {
+        if (typeof value !== 'string') {
+          return;
+        }
+        const trimmed = value.trim();
+        if (trimmed) {
+          preferredMathKeys.push(trimmed);
+        }
+      };
+
+      addPreferredKey(mathTypeKey);
+      addPreferredKey(mathTypeLabel);
+      addPreferredKey(progress?.mathType);
+      addPreferredKey(progress?.currentMathType);
+      addPreferredKey(progress?.activeMathType);
+      addPreferredKey(progress?.selectedMathType);
+      addPreferredKey(progress?.defaultMathType);
+
+      const { entry: mathProgressEntry } = findMathProgressEntry(
+        progress,
+        preferredMathKeys
+      );
+
+      if (!mathProgressEntry) {
+        return null;
+      }
+
+      const derivedLevel = normalizeCurrentLevel(mathProgressEntry.currentLevel);
+      return isPositiveLevelNumber(derivedLevel) ? derivedLevel : null;
+    };
+
+    const normalizedProgressCurrentLevel = (() => {
+      const normalizedRoot = normalizeCurrentLevel(progress.currentLevel);
+      if (isPositiveLevelNumber(normalizedRoot)) {
+        return normalizedRoot;
+      }
+
+      return deriveMathProgressCurrentLevel();
+    })();
 
     const activeCurrentLevel =
       normalizedProgressCurrentLevel ?? levels[0]?.currentLevel ?? null;
