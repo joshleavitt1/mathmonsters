@@ -271,14 +271,6 @@ const setFieldState = (field, isDisabled) => {
   field.disabled = Boolean(isDisabled);
 };
 
-const updateSelectPlaceholderState = (select) => {
-  if (!select) {
-    return;
-  }
-  const hasValue = Boolean(readTrimmedValue(select.value));
-  select.classList.toggle('has-value', hasValue);
-};
-
 const readTrimmedValue = (value) =>
   typeof value === 'string' ? value.trim() : '';
 
@@ -286,8 +278,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const form = document.querySelector('.preloader__form');
   const emailField = document.getElementById('register-email');
   const passwordField = document.getElementById('register-password');
-  const gradeField = document.getElementById('register-grade');
-  const referralField = document.getElementById('register-referral');
   const submitButton = form?.querySelector('button[type="submit"]');
   const submitButtonLabel = submitButton?.querySelector(
     '.preloader__button-label'
@@ -321,8 +311,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const setLoading = (isLoading) => {
     setFieldState(emailField, isLoading);
     setFieldState(passwordField, isLoading);
-    setFieldState(gradeField, isLoading);
-    setFieldState(referralField, isLoading);
     if (submitButton) {
       submitButton.disabled = Boolean(isLoading);
       submitButton.classList.toggle('is-loading', Boolean(isLoading));
@@ -333,21 +321,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  if (!form || !emailField || !passwordField || !gradeField || !referralField) {
+  if (!form || !emailField || !passwordField) {
     renderErrors('The registration form could not be initialized.');
     return;
   }
-
-  updateSelectPlaceholderState(gradeField);
-  updateSelectPlaceholderState(referralField);
-
-  gradeField.addEventListener('change', () => {
-    updateSelectPlaceholderState(gradeField);
-  });
-
-  referralField.addEventListener('change', () => {
-    updateSelectPlaceholderState(referralField);
-  });
 
   if (!supabase) {
     renderErrors('Registration service is unavailable. Please try again later.');
@@ -374,8 +351,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const email = readTrimmedValue(emailField.value);
     const password = passwordField.value;
-    const gradeLevel = readTrimmedValue(gradeField.value);
-    const referralSource = readTrimmedValue(referralField.value);
 
     const validationErrors = [];
 
@@ -389,14 +364,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       validationErrors.push('Create a password.');
     } else if (password.length < 6) {
       validationErrors.push('Password must be at least 6 characters long.');
-    }
-
-    if (!gradeLevel) {
-      validationErrors.push("Select your child's grade level.");
-    }
-
-    if (!referralSource) {
-      validationErrors.push('Select where you found us.');
     }
 
     if (validationErrors.length > 0) {
@@ -414,8 +381,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         password,
         options: {
           data: {
-            gradeLevel,
-            referralSource,
             accountLevel: STARTING_LEVEL,
             playerData: startingPlayerData,
           },
