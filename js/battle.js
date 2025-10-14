@@ -134,6 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const questionBox = document.getElementById('question');
   const questionText = questionBox.querySelector('.question-text');
   const choicesEl = questionBox.querySelector('.choices');
+  const questionSpritesContainer = questionBox.querySelector(
+    '[data-question-sprites]'
+  );
   const bannerAccuracyValue = document.querySelector('[data-banner-accuracy]');
   const bannerTimeValue = document.querySelector('[data-banner-time]');
   const heroAttackVal = heroStats.querySelector('.attack .value');
@@ -447,6 +450,13 @@ document.addEventListener('DOMContentLoaded', () => {
     MAX_STREAK_GOAL
   );
 
+  const QUESTION_TYPE_CONFIG = [
+    { type: 'type1', key: 'type1_multipleChoiceMath' },
+    { type: 'type2', key: 'type2_countTheBubbles' },
+    { type: 'type3', key: 'type3_fillInTheBlank' },
+  ];
+  const QUESTION_TYPE_SEQUENCE = QUESTION_TYPE_CONFIG.map((config) => config.type);
+
   let questions = [];
   let questionIds = [];
   let questionMap = new Map();
@@ -457,6 +467,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let useIntroQuestionOrder = false;
   let introQuestionIds = [];
   let nextIntroQuestionIndex = 0;
+  let useStructuredQuestions = false;
+  let structuredQuestionPools = new Map();
+  let structuredQuestionTypeIndex = 0;
+  let levelOneStructuredSequence = [];
+  let levelOneStructuredIndex = 0;
+  let useLevelOneSequence = false;
 
   const sanitizeLevelNumber = (value) => {
     const numericValue = Number(value);
@@ -480,6 +496,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     return battleLevel;
+  };
+
+  const shuffleArray = (values) => {
+    if (!Array.isArray(values)) {
+      return [];
+    }
+
+    const copy = values.slice();
+    for (let index = copy.length - 1; index > 0; index--) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      const temp = copy[index];
+      copy[index] = copy[swapIndex];
+      copy[swapIndex] = temp;
+    }
+    return copy;
   };
   let correctAnswers = 0;
   let totalAnswers = 0;
@@ -3282,13 +3313,186 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function resetQuestionPool(loadedQuestions) {
-    questions = Array.isArray(loadedQuestions) ? loadedQuestions.slice() : [];
+    const normalizeChoices = (choices, answer) => {
+      if (!Array.isArray(choices)) {
+        return [];
+      }
+
+      const normalized = choices
+        .map((choice) => {
+          if (choice && typeof choice === 'object' && !Array.isArray(choice)) {
+            const rawName =
+              typeof choice.name === 'string'
+                ? choice.name.trim()
+                : choice.name !== undefined && choice.name !== null
+                ? String(choice.name)
+                : choice.value !== undefined && choice.value !== null
+                ? String(choice.value)
+                : '';
+            const name = rawName ||
+              (choice.value !== undefined && choice.value !== null
+                ? String(choice.value)
+                : '');
+            if (!name) {
+              return null;
+            }
+            const resolvedCorrect =
+              typeof choice.correct === 'boolean'
+                ? choice.correct
+                : choice.value === answer ||
+                  choice.name === answer ||
+                  String(choice.value) === String(answer) ||
+                  String(name) === String(answer);
+            return { name, correct: Boolean(resolvedCorrect) };
+          }
+
+          const normalizedName =
+            choice === null || choice === undefined ? '' : String(choice);
+          if (!normalizedName) {
+            return null;
+          }
+          const isCorrect =
+            choice === answer || String(choice) === String(answer);
+          return { name: normalizedName, correct: Boolean(isCorrect) };
+        })
+        .filter((choice) => choice && typeof choice.name === 'string');
+
+      if (!normalized.some((choice) => choice.correct)) {
+        return [];
+      }
+
+      return normalized;
+    };
+
+    const normalizeStructuredQuestions = (rawQuestions) => {
+      if (!rawQuestions || typeof rawQuestions !== 'object' || Array.isArray(rawQuestions)) {
+        return null;
+      }
+
+      let nextId = 1;
+      const normalizedQuestions = [];
+      const normalizedIds = [];
+      const normalizedMap = new Map();
+      const typePools = new Map();
+
+      QUESTION_TYPE_CONFIG.forEach(({ type, key }) => {
+        const entries = Array.isArray(rawQuestions[key]) ? rawQuestions[key] : [];
+        const typeIds = [];
+
+        entries.forEach((entry) => {
+          if (!entry || typeof entry !== 'object') {
+            return;
+          }
+
+          const prompt =
+            typeof entry.question === 'string'
+              ? entry.question.trim()
+              : typeof entry.q === 'string'
+              ? entry.q.trim()
+              : '';
+          if (!prompt) {
+            return;
+          }
+
+          const normalizedChoices = normalizeChoices(entry.choices, entry.answer);
+          if (!normalizedChoices.length) {
+            return;
+          }
+
+          const normalizedQuestion = {
+            id: nextId,
+            type,
+            question: prompt,
+            choices: normalizedChoices,
+            answer: entry.answer,
+          };
+
+          if (type === 'type2') {
+            const count = Number(entry.spriteCount);
+            if (Number.isFinite(count) && count > 0) {
+              normalizedQuestion.spriteCount = count;
+            }
+          }
+
+          normalizedQuestions.push(normalizedQuestion);
+          normalizedIds.push(nextId);
+          normalizedMap.set(nextId, normalizedQuestion);
+          typeIds.push(nextId);
+          nextId += 1;
+        });
+
+        if (typeIds.length > 0) {
+          typePools.set(type, { ids: typeIds, queue: [] });
+        }
+      });
+
+      if (!normalizedQuestions.length) {
+        return null;
+      }
+
+      const maxTypeLength = Math.max(
+        0,
+        ...Array.from(typePools.values(), (pool) => pool.ids.length)
+      );
+      const levelOneSequence = [];
+      for (let index = 0; index < maxTypeLength; index++) {
+        QUESTION_TYPE_SEQUENCE.forEach((type) => {
+          const pool = typePools.get(type);
+          const id = pool?.ids?.[index];
+          if (Number.isFinite(id)) {
+            levelOneSequence.push(id);
+          }
+        });
+      }
+
+      return {
+        questions: normalizedQuestions,
+        ids: normalizedIds,
+        map: normalizedMap,
+        pools: typePools,
+        levelOneSequence,
+      };
+    };
+
+    questions = [];
     questionIds = [];
     questionMap = new Map();
     currentQuestionId = null;
+    totalQuestionCount = 0;
     useIntroQuestionOrder = false;
     introQuestionIds = [];
     nextIntroQuestionIndex = 0;
+    useStructuredQuestions = false;
+    structuredQuestionPools = new Map();
+    structuredQuestionTypeIndex = 0;
+    levelOneStructuredSequence = [];
+    levelOneStructuredIndex = 0;
+    useLevelOneSequence = false;
+
+    const structured = normalizeStructuredQuestions(loadedQuestions);
+    if (structured) {
+      questions = structured.questions;
+      questionIds = structured.ids;
+      questionMap = structured.map;
+      totalQuestionCount = questions.length;
+      structuredQuestionPools = structured.pools;
+      levelOneStructuredSequence = structured.levelOneSequence;
+      useStructuredQuestions = true;
+
+      const resolvedLevel = getResolvedCurrentLevel();
+      if (
+        typeof resolvedLevel === 'number' &&
+        Number.isFinite(resolvedLevel) &&
+        levelOneStructuredSequence.length > 0 &&
+        INTRO_QUESTION_LEVELS.has(resolvedLevel)
+      ) {
+        useLevelOneSequence = true;
+      }
+
+      return;
+    }
+
+    questions = Array.isArray(loadedQuestions) ? loadedQuestions.slice() : [];
 
     questions.forEach((question) => {
       const numericId = Number(question?.id);
@@ -3316,6 +3520,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const acquireStructuredQuestion = (type) => {
+    if (!useStructuredQuestions || !structuredQuestionPools) {
+      return null;
+    }
+
+    const pool = structuredQuestionPools.get(type);
+    if (!pool || !Array.isArray(pool.ids) || pool.ids.length === 0) {
+      return null;
+    }
+
+    if (!Array.isArray(pool.queue) || pool.queue.length === 0) {
+      pool.queue = shuffleArray(pool.ids);
+    }
+
+    while (Array.isArray(pool.queue) && pool.queue.length > 0) {
+      const candidateId = pool.queue.shift();
+      if (!Number.isFinite(candidateId)) {
+        continue;
+      }
+
+      const candidateQuestion = questionMap.get(candidateId);
+      if (candidateQuestion) {
+        return { id: candidateId, question: candidateQuestion };
+      }
+    }
+
+    return null;
+  };
+
   function resolveQuestionByRoll(roll) {
     if (!Number.isFinite(roll)) {
       return null;
@@ -3341,6 +3574,44 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function chooseNextQuestion() {
+    if (useStructuredQuestions) {
+      if (useLevelOneSequence && levelOneStructuredSequence.length > 0) {
+        const sequenceLength = levelOneStructuredSequence.length;
+        const nextIndex = levelOneStructuredIndex % sequenceLength;
+        const candidateId = levelOneStructuredSequence[nextIndex];
+        levelOneStructuredIndex = (levelOneStructuredIndex + 1) % sequenceLength;
+        if (Number.isFinite(candidateId)) {
+          const candidateQuestion = questionMap.get(candidateId);
+          if (candidateQuestion) {
+            currentQuestionId = candidateId;
+            return candidateQuestion;
+          }
+        }
+      }
+
+      const typeCount = QUESTION_TYPE_SEQUENCE.length;
+      for (let attempt = 0; attempt < typeCount; attempt++) {
+        const typeIndex = (structuredQuestionTypeIndex + attempt) % typeCount;
+        const type = QUESTION_TYPE_SEQUENCE[typeIndex];
+        const result = acquireStructuredQuestion(type);
+        if (result) {
+          structuredQuestionTypeIndex = (typeIndex + 1) % typeCount;
+          currentQuestionId = result.id;
+          return result.question;
+        }
+      }
+
+      for (const id of questionIds) {
+        const fallbackQuestion = questionMap.get(id);
+        if (fallbackQuestion) {
+          currentQuestionId = id;
+          return fallbackQuestion;
+        }
+      }
+
+      return questions[0] ?? null;
+    }
+
     if (totalQuestionCount <= 0) {
       return questions[0] ?? null;
     }
@@ -4198,8 +4469,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const q = chooseNextQuestion();
     if (!q) return;
+
+    if (questionSpritesContainer) {
+      questionSpritesContainer.innerHTML = '';
+      questionSpritesContainer.setAttribute('hidden', 'hidden');
+    }
+
     questionText.textContent = q.question || q.q || '';
     choicesEl.innerHTML = '';
+
+    if (questionSpritesContainer && typeof q.type === 'string') {
+      const spriteCount = Number(q.spriteCount);
+      if (q.type === 'type2' && Number.isFinite(spriteCount) && spriteCount > 0) {
+        const resolvedCount = Math.max(0, Math.floor(spriteCount));
+        const bubblePath = resolveAssetPath('data/questions/bubble.png');
+        if (bubblePath) {
+          questionSpritesContainer.removeAttribute('hidden');
+          for (let index = 0; index < resolvedCount; index++) {
+            const img = document.createElement('img');
+            img.src = bubblePath;
+            img.alt = 'Bubble';
+            img.width = 40;
+            img.height = 40;
+            img.decoding = 'async';
+            questionSpritesContainer.appendChild(img);
+          }
+        }
+      }
+    }
 
     let choices = q.choices;
     if (!choices && q.options) {
@@ -4210,15 +4507,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const div = document.createElement('div');
       div.classList.add('choice');
       div.dataset.correct = !!choice.correct;
+      const choiceNameValue =
+        choice && Object.prototype.hasOwnProperty.call(choice, 'name')
+          ? choice.name
+          : choice?.value;
+      const choiceLabel =
+        choiceNameValue === null || choiceNameValue === undefined
+          ? ''
+          : String(choiceNameValue);
       if (choice.image) {
         const img = document.createElement('img');
         img.src = `/mathmonsters/images/questions/${choice.image}`;
-        img.alt = choice.name || '';
+        img.alt = choiceLabel;
         div.appendChild(img);
       }
       const p = document.createElement('p');
       p.classList.add('text-medium', 'text-dark');
-      p.textContent = choice.name || '';
+      p.textContent = choiceLabel;
       div.appendChild(p);
       choicesEl.appendChild(div);
     });

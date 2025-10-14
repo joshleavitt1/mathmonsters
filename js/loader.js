@@ -1913,6 +1913,11 @@ const syncRemoteCurrentLevel = (playerData) => {
               questions = questionsJson;
             } else if (Array.isArray(questionsJson?.questions)) {
               questions = questionsJson.questions;
+            } else if (
+              questionsJson &&
+              typeof questionsJson === 'object'
+            ) {
+              questions = questionsJson;
             }
           } else {
             console.warn(`Questions file not found: ${questionFile}`);
