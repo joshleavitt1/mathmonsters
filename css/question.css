@@ -73,6 +73,25 @@
   text-align: center;
 }
 
+#question .question-sprites {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+#question .question-sprites[hidden] {
+  display: none;
+}
+
+#question .question-sprites img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
 #question button {
   width: 100%;
 }

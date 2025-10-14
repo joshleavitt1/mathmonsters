@@ -24,7 +24,7 @@
             "spritePool": "standardPool"
           },
           "questions": {
-            "path": "questions/level_1_questions.json"
+            "path": "questions/questions.json"
           }
         },
         {
@@ -34,7 +34,7 @@
             "spritePool": "standardPool"
           },
           "questions": {
-            "path": "questions/level_2_questions.json"
+            "path": "questions/questions.json"
           }
         },
         {
@@ -44,7 +44,7 @@
             "sprite": "/mathmonsters/images/hero/shellfin_evolution_1.png"
           },
           "questions": {
-            "path": "questions/level_3_questions.json"
+            "path": "questions/questions.json"
           }
         },
         {
@@ -54,7 +54,7 @@
             "spritePool": "standardPool"
           },
           "questions": {
-            "path": "questions/level_4_questions.json"
+            "path": "questions/questions.json"
           }
         },
         {
@@ -64,7 +64,7 @@
             "spritePool": "standardPool"
           },
           "questions": {
-            "path": "questions/level_5_questions.json"
+            "path": "questions/questions.json"
           }
         },
         {
@@ -74,7 +74,7 @@
             "spritePool": "standardPool"
           },
           "questions": {
-            "path": "questions/level_6_questions.json"
+            "path": "questions/questions.json"
           }
         },
         {
@@ -84,7 +84,7 @@
             "spritePool": "standardPool"
           },
           "questions": {
-            "path": "questions/level_6_questions.json"
+            "path": "questions/questions.json"
           }
         },
         {
@@ -94,7 +94,7 @@
             "spritePool": "standardPool"
           },
           "questions": {
-            "path": "questions/level_6_questions.json"
+            "path": "questions/questions.json"
           }
         },
         {
@@ -104,7 +104,7 @@
             "spritePool": "standardPool"
           },
           "questions": {
-            "path": "questions/level_6_questions.json"
+            "path": "questions/questions.json"
           }
         },
         {
@@ -114,7 +114,7 @@
             "spritePool": "standardPool"
           },
           "questions": {
-            "path": "questions/level_6_questions.json"
+            "path": "questions/questions.json"
           }
         }
       ]
