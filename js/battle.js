@@ -1345,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'Try Again';
 
     return {
-      text: isWin ? 'Monster Defeated' : 'Keep Practicing',
+      text: isWin ? 'Great Job!' : 'Keep Practicing!',
       buttonText,
       imageSrc: rewardSpriteSources.gem,
       imageAlt: normalizedAmount === 1 ? 'Gem reward' : 'Gem rewards',
@@ -2510,6 +2510,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const updateNextMissionButton = (win = true, rewardAmount = null) => {
     if (!nextMissionBtn) {
+      return;
+    }
+
+    if (hasPendingLevelUpReward) {
+      nextMissionBtn.textContent = 'Claim Potion';
+      nextMissionBtn.dataset.action = 'next';
       return;
     }
 
@@ -4456,25 +4462,6 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
 
-    if (completeMonsterImg) {
-      const gemImageSrc = rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
-      completeMonsterImg.src = gemImageSrc;
-      completeMonsterImg.alt = win
-        ? 'Gem reward for defeating the monster'
-        : 'Gem reward for your effort';
-    }
-
-    const goalsAchieved = win;
-
-    if (win) {
-      setBattleCompleteTitleLines('Monster Defeated');
-      awardExperiencePoints({ scheduleProgressUpdate: false });
-    } else {
-      setBattleCompleteTitleLines('Keep Practicing');
-    }
-
-    battleGoalsMet = goalsAchieved;
-
     const resolvedCurrentLevel = resolveCurrentLevelForExperience();
     const progressState = readMathProgressState();
     const rewardCurrentLevel =
@@ -4483,9 +4470,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const rewardBattleIndex = normalizePositiveInteger(
       progressState?.currentBattle
     );
-    const gemRewardAmount = win ? GEM_REWARD_WIN_AMOUNT : GEM_REWARD_LOSS_AMOUNT;
-    const updatedGemTotal = awardGemReward(gemRewardAmount);
-    persistGemTotal(updatedGemTotal);
+    const isLevelOneBattle =
+      Number.isFinite(rewardCurrentLevel) && rewardCurrentLevel <= 1;
+
+    if (completeMonsterImg) {
+      if (isLevelOneBattle && !win) {
+        completeMonsterImg.hidden = true;
+        completeMonsterImg.setAttribute('aria-hidden', 'true');
+        completeMonsterImg.alt = '';
+      } else {
+        const imageSrc = isLevelOneBattle
+          ? rewardSpriteSources.potion || REWARD_POTION_SRC
+          : rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
+        completeMonsterImg.src = imageSrc;
+        completeMonsterImg.hidden = false;
+        completeMonsterImg.removeAttribute('aria-hidden');
+        completeMonsterImg.alt = isLevelOneBattle
+          ? 'Potion reward for leveling up'
+          : win
+          ? 'Gem reward for defeating the monster'
+          : 'Gem reward for your effort';
+      }
+    }
+
+    const goalsAchieved = win;
+
+    if (win) {
+      setBattleCompleteTitleLines('Great Job!');
+      awardExperiencePoints({ scheduleProgressUpdate: false });
+    } else {
+      setBattleCompleteTitleLines('Keep Practicing!');
+    }
+
+    battleGoalsMet = goalsAchieved;
+
+    let gemRewardAmount = 0;
+    let updatedGemTotal = null;
+    const shouldAwardGemReward = win || !isLevelOneBattle;
+
+    if (shouldAwardGemReward) {
+      gemRewardAmount = win ? GEM_REWARD_WIN_AMOUNT : GEM_REWARD_LOSS_AMOUNT;
+      updatedGemTotal = awardGemReward(gemRewardAmount);
+      persistGemTotal(updatedGemTotal);
+    }
 
     if (win) {
       const mathProgressUpdate = computeNextMathProgressOnWin();
@@ -4533,7 +4560,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentBattle: rewardBattleIndex,
         win: true,
       };
-    } else {
+    } else if (shouldAwardGemReward) {
       pendingGemReward = {
         amount: gemRewardAmount,
         totalAfter: updatedGemTotal,
@@ -4542,6 +4569,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentBattle: rewardBattleIndex,
         win: false,
       };
+    } else {
+      pendingGemReward = null;
     }
 
     if (win && !hasPendingLevelUpReward) {
@@ -4559,7 +4588,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    updateNextMissionButton(win, gemRewardAmount);
+    updateNextMissionButton(win, shouldAwardGemReward ? gemRewardAmount : null);
 
     if (!win) {
       resetRewardOverlay();
@@ -4720,7 +4749,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
-    setBattleCompleteTitleLines('Monster Defeated');
+    setBattleCompleteTitleLines('Great Job!');
     updateNextMissionButton();
     if (summaryAccuracyValue) {
       summaryAccuracyValue.classList.remove('goal-result--met', 'goal-result--missed');
