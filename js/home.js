@@ -602,18 +602,24 @@ const computeHomeBattleProgress = (data) => {
     return Math.round(numeric);
   };
 
-  const currentLevelCandidates = [
-    data.preview?.currentLevel,
-    data.progress?.currentLevel,
-    data.player?.progress?.currentLevel,
-    data.level?.currentLevel,
-    data.battle?.currentLevel,
-    mathProgressEntry?.currentLevel,
-  ];
+  const prioritizedCurrentLevelCandidates = [mathProgressEntry?.currentLevel];
 
   if (mathProgressKey && typeof mathProgressKey === 'string') {
-    currentLevelCandidates.push(mathProgressKey);
+    prioritizedCurrentLevelCandidates.push(mathProgressKey);
   }
+
+  const fallbackCurrentLevelCandidates = [
+    data.preview?.currentLevel,
+    data.level?.currentLevel,
+    data.battle?.currentLevel,
+    data.progress?.currentLevel,
+    data.player?.progress?.currentLevel,
+  ];
+
+  const currentLevelCandidates = [
+    ...prioritizedCurrentLevelCandidates,
+    ...fallbackCurrentLevelCandidates,
+  ];
 
   const resolvedCurrentLevel = currentLevelCandidates
     .map((value) => clampPositiveInteger(value))
