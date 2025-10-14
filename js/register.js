@@ -1,5 +1,6 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
+const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 const STARTING_LEVEL = 2;
 const STARTING_GEMS = 0;
@@ -290,6 +291,14 @@ const clearGuestSessionFlag = () => {
   }
 };
 
+const clearStoredPlayerProfile = () => {
+  try {
+    window.sessionStorage?.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Unable to clear stored player profile cache.', error);
+  }
+};
+
 const setElementVisibility = (element, shouldShow) => {
   if (!element) {
     return;
@@ -453,6 +462,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
           console.warn('Unable to clear stored battle progress for the new player.', error);
         }
+        clearStoredPlayerProfile();
         clearGuestSessionFlag();
         window.location.replace(HOME_PAGE_PATH);
       };
