@@ -4746,7 +4746,7 @@ document.addEventListener('DOMContentLoaded', () => {
       progressState?.currentBattle
     );
     const isLevelOneBattle =
-      Number.isFinite(rewardCurrentLevel) && rewardCurrentLevel <= 1;
+      Number.isFinite(rewardCurrentLevel) && rewardCurrentLevel === 1;
 
     if (completeMonsterImg) {
       if (isLevelOneBattle && !win) {
@@ -4850,7 +4850,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win && !hasPendingLevelUpReward) {
       const isInitialLevel =
-        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel <= 1;
+        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel === 1;
       const noExperienceRequirement = levelExperienceRequirement <= 0;
       if (
         isInitialLevel &&
