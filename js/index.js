@@ -157,8 +157,118 @@ const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 700;
 const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 220;
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
-const BATTLE_PAGE_URL = 'html/battle.html';
-const REGISTER_PAGE_URL = 'html/register.html';
+const FALLBACK_ASSET_BASE = '/mathmonsters';
+const BATTLE_PAGE_PATH = 'html/battle.html';
+const REGISTER_PAGE_PATH = 'html/register.html';
+const WELCOME_PAGE_PATH = 'html/welcome.html';
+
+const deriveBaseFromLocation = (fallbackBase) => {
+  if (typeof window === 'undefined') {
+    return typeof fallbackBase === 'string' && fallbackBase ? fallbackBase : '.';
+  }
+
+  const rawFallback = typeof fallbackBase === 'string' ? fallbackBase.trim() : '';
+  const locationPath =
+    typeof window.location?.pathname === 'string'
+      ? window.location.pathname
+      : '';
+
+  if (rawFallback) {
+    let fallbackNormalized = rawFallback;
+    if (fallbackNormalized !== '/') {
+      fallbackNormalized = fallbackNormalized.replace(/\/+$/, '');
+    }
+    if (fallbackNormalized && !fallbackNormalized.startsWith('/')) {
+      fallbackNormalized = `/${fallbackNormalized}`;
+    }
+    if (!fallbackNormalized) {
+      fallbackNormalized = '/';
+    }
+
+    const matchesFallback =
+      locationPath === fallbackNormalized ||
+      (fallbackNormalized !== '/' &&
+        locationPath.startsWith(`${fallbackNormalized}/`));
+
+    if (matchesFallback) {
+      return rawFallback || '.';
+    }
+  }
+
+  const withoutQuery = locationPath.replace(/[?#].*$/, '');
+  const trimmedPath = withoutQuery.replace(/\/+$/, '');
+  const segments = trimmedPath.split('/').filter(Boolean);
+
+  if (!segments.length) {
+    return '.';
+  }
+
+  const lastSegment = segments[segments.length - 1] || '';
+  const treatAsDirectory = lastSegment && !lastSegment.includes('.');
+  const depth = treatAsDirectory ? segments.length : segments.length - 1;
+
+  if (depth <= 0) {
+    return '.';
+  }
+
+  return Array(depth)
+    .fill('..')
+    .join('/');
+};
+
+const resolveAssetBasePath = () => {
+  if (typeof window === 'undefined') {
+    return FALLBACK_ASSET_BASE;
+  }
+
+  const cachedBase =
+    typeof window.mathMonstersAssetBase === 'string'
+      ? window.mathMonstersAssetBase.trim()
+      : '';
+
+  if (cachedBase) {
+    return cachedBase;
+  }
+
+  const derived = deriveBaseFromLocation(FALLBACK_ASSET_BASE) || '.';
+  window.mathMonstersAssetBase = derived;
+  return derived;
+};
+
+const resolveAppUrl = (path) => {
+  const trimmed = typeof path === 'string' ? path.trim() : '';
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
+  const assetBase = resolveAssetBasePath();
+
+  if (!assetBase || assetBase === '.' || assetBase === './') {
+    return trimmed;
+  }
+
+  if (/^https?:\/\//i.test(assetBase)) {
+    const normalizedBase = assetBase.replace(/\/+$/, '');
+    return `${normalizedBase}/${trimmed.replace(/^\/+/, '')}`;
+  }
+
+  if (assetBase.startsWith('/')) {
+    const normalizedBase = assetBase.replace(/\/+$/, '');
+    return `${normalizedBase}/${trimmed.replace(/^\/+/, '')}`;
+  }
+
+  const normalizedBase = assetBase.replace(/\/+$/, '');
+  const normalizedPath = trimmed.replace(/^\/+/, '');
+  return `${normalizedBase}/${normalizedPath}`;
+};
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -180,7 +290,7 @@ const playerProfileUtils =
   (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
 
 const redirectToBattle = () => {
-  window.location.href = BATTLE_PAGE_URL;
+  window.location.href = resolveAppUrl(BATTLE_PAGE_PATH);
 };
 
 const getLevelOneHeroElement = () =>
@@ -267,11 +377,11 @@ const initViewportOffsetWatcher = () => {
 initViewportOffsetWatcher();
 
 const redirectToWelcome = () => {
-  window.location.replace('html/welcome.html');
+  window.location.replace(resolveAppUrl(WELCOME_PAGE_PATH));
 };
 
 const redirectToRegister = () => {
-  window.location.replace(REGISTER_PAGE_URL);
+  window.location.replace(resolveAppUrl(REGISTER_PAGE_PATH));
 };
 
 const readGuestSessionState = () => {
