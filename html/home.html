@@ -21,7 +21,7 @@
       <section class="home__content" aria-live="polite">
         <div class="home__identity">
           <p class="home__hero-name" data-hero-name>Shellfin</p>
-          <p class="home__hero-level" data-hero-level>Level 2</p>
+          <p class="home__hero-level" data-hero-level>Level 1</p>
         </div>
 
         <div class="home__gem-box" aria-live="polite" data-hero-gem-box>
@@ -39,24 +39,20 @@
 
         <img
           class="home__hero-sprite"
-          src="../images/hero/shellfin_evolution_2.png"
-          alt="Shellfin ready for the next adventure"
+          src="../images/hero/shellfin_evolution_1.png"
+          alt="Shellfin ready for battle"
           data-hero-sprite
         />
 
-        <div class="home__actions home__actions--single" data-home-actions>
-          <div
-            class="home__action home__action--chest home__action--hidden"
-            data-home-action="chest"
-            aria-hidden="true"
-          >
+        <div class="home__actions">
+          <div class="home__action home__action--chest">
             <img
               class="home__action-image"
               src="../images/home/chest.png"
               alt="Treasure chest filled with upcoming rewards"
             />
           </div>
-          <div class="home__action home__action--portal" data-home-action="portal">
+          <div class="home__action home__action--portal">
             <img
               class="home__action-image"
               src="../images/home/portal.png"
@@ -66,37 +62,6 @@
         </div>
       </section>
     </main>
-    <div
-      class="home__level-two-intro"
-      data-level-two-intro
-      aria-hidden="true"
-      hidden
-    >
-      <section
-        class="card card--home home__level-two-intro-card"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Use the portal to find more monsters"
-      >
-        <img
-          class="home__level-two-intro-avatar"
-          src="../images/intro/doctor.png"
-          alt="Dr. Wave encourages you to find more monsters"
-          width="80"
-          height="80"
-        />
-        <p class="home__level-two-intro-message text-medium text-dark">
-          There are more monsters to battle, use the portal to find them!
-        </p>
-        <button
-          type="button"
-          class="btn-primary home__level-two-intro-button"
-          data-level-two-continue
-        >
-          Continue
-        </button>
-      </section>
-    </div>
     <script>
       window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
       window.SUPABASE_ANON_KEY =
