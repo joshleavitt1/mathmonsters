@@ -41,6 +41,76 @@ const playerProfileUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
   (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
 
+const sanitizeHeroSpritePath = (path) => {
+  if (typeof path !== 'string') {
+    return path;
+  }
+
+  return path.replace(
+    /(shellfin)_(?:level|evolution)_(\d+)((?:\.[a-z0-9]+)?)(?=[?#]|$)/gi,
+    (match, heroName, level, extension = '') => {
+      const parsedLevel = Number(level);
+      const safeLevel = Number.isFinite(parsedLevel)
+        ? Math.max(parsedLevel, 1)
+        : 1;
+
+      return `${heroName}_evolution_${safeLevel}${extension || ''}`;
+    }
+  );
+};
+
+const resolveBattleAssetBasePath = () => {
+  const globalBase =
+    typeof window?.mathMonstersAssetBase === 'string'
+      ? window.mathMonstersAssetBase.trim()
+      : '';
+
+  if (globalBase) {
+    return globalBase;
+  }
+
+  return '..';
+};
+
+function resolveBattleAssetPath(
+  path,
+  assetBasePathOverride = resolveBattleAssetBasePath()
+) {
+  if (typeof path !== 'string') {
+    return null;
+  }
+
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const sanitized = sanitizeHeroSpritePath(trimmed);
+
+  if (/^https?:\/\//i.test(sanitized) || /^data:/i.test(sanitized)) {
+    return sanitized;
+  }
+
+  if (sanitized.startsWith('../') || sanitized.startsWith('./')) {
+    return sanitized;
+  }
+
+  if (sanitized.startsWith('/')) {
+    return sanitized;
+  }
+
+  const normalizedBase = assetBasePathOverride.endsWith('/')
+    ? assetBasePathOverride.slice(0, -1)
+    : assetBasePathOverride;
+  const normalizedPath = sanitizeHeroSpritePath(sanitized.replace(/^\/+/, ''));
+
+  if (!normalizedBase || normalizedBase === '.') {
+    return normalizedPath;
+  }
+
+  return sanitizeHeroSpritePath(`${normalizedBase}/${normalizedPath}`);
+}
+
 const INTRO_QUESTION_LEVELS = new Set([1]);
 
 const MEDAL_DISPLAY_DURATION_MS = 3000;
@@ -684,27 +754,9 @@ document.addEventListener('DOMContentLoaded', () => {
     preloadRewardSpriteSource(source).catch(() => {});
   });
 
-  const sanitizeHeroSpritePath = (path) => {
-    if (typeof path !== 'string') {
-      return path;
-    }
-
-    return path.replace(
-      /(shellfin)_(?:level|evolution)_(\d+)((?:\.[a-z0-9]+)?)(?=[?#]|$)/gi,
-      (match, heroName, level, extension = '') => {
-        const parsedLevel = Number(level);
-        const safeLevel = Number.isFinite(parsedLevel)
-          ? Math.max(parsedLevel, 1)
-          : 1;
-
-        return `${heroName}_evolution_${safeLevel}${extension || ''}`;
-      }
+    const HERO_PROFILE_EVOLUTION_SPRITE = sanitizeHeroSpritePath(
+      'images/hero/shellfin_evolution_2.png'
     );
-  };
-
-  const HERO_PROFILE_EVOLUTION_SPRITE = sanitizeHeroSpritePath(
-    'images/hero/shellfin_evolution_2.png'
-  );
   const HERO_PROFILE_EVOLUTION_ATTACK_SPRITE = sanitizeHeroSpritePath(
     'images/hero/shellfin_attack_2.png'
   );
@@ -4458,6 +4510,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const battleProgress =
       data.battleVariables ?? data.player?.battleVariables ?? {};
 
+    const assetBasePath = resolveBattleAssetBasePath();
+
     const isPlainObjectValue = (value) =>
       Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -4510,7 +4564,7 @@ document.addEventListener('DOMContentLoaded', () => {
       spriteSources.forEach((source) => {
         allowedKeys.forEach((key) => {
           const spritePath = extractSpritePath(source, key);
-          const resolved = resolveAssetPath(spritePath);
+          const resolved = resolveBattleAssetPath(spritePath, assetBasePath);
           if (resolved) {
             result[key] = resolved;
           }
@@ -4593,7 +4647,7 @@ document.addEventListener('DOMContentLoaded', () => {
     delete hero.basicAttack;
     delete hero.superAttack;
 
-    const heroResolvedSprite = resolveAssetPath(heroData.sprite);
+    const heroResolvedSprite = resolveBattleAssetPath(heroData.sprite, assetBasePath);
     const heroSpriteInfo = getPreloadedSpriteInfo(
       heroData.spritePreloadKey,
       heroResolvedSprite,
@@ -4636,7 +4690,10 @@ document.addEventListener('DOMContentLoaded', () => {
     delete monster.basicAttack;
     delete monster.superAttack;
 
-    const monsterResolvedSprite = resolveAssetPath(monsterData.sprite);
+    const monsterResolvedSprite = resolveBattleAssetPath(
+      monsterData.sprite,
+      assetBasePath
+    );
     const monsterSpriteInfo = getPreloadedSpriteInfo(
       monsterData.spritePreloadKey,
       monsterResolvedSprite,
@@ -4941,7 +4998,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const spriteCount = Number(q.spriteCount);
       if (q.type === 'type2' && Number.isFinite(spriteCount) && spriteCount > 0) {
         const resolvedCount = Math.max(0, Math.floor(spriteCount));
-        const bubblePath = resolveAssetPath('data/questions/bubble.png');
+        const bubblePath = resolveBattleAssetPath(
+          'data/questions/bubble.png',
+          assetBasePath
+        );
         if (bubblePath) {
           questionSpritesContainer.removeAttribute('hidden');
           for (let index = 0; index < resolvedCount; index++) {
