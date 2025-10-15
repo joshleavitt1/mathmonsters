@@ -679,7 +679,7 @@ body.is-reward-active .reward-overlay {
   animation: reward-overlay-egg-hatch 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.reward-overlay__image--potion-pop {
+.reward-overlay__image--gem-pop {
   animation: reward-overlay-egg-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
