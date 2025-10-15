@@ -287,11 +287,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const defaultRewardCardText =
     rewardCardText && typeof rewardCardText.textContent === 'string'
       ? rewardCardText.textContent.trim()
-      : 'I made this potion from the monster. Can you guess what it does?';
+      : 'I made this gem from the monster. Can you guess what it does?';
   const defaultRewardCardButtonText =
     rewardCardButton && typeof rewardCardButton.textContent === 'string'
       ? rewardCardButton.textContent.trim()
-      : 'Use Potion';
+      : 'Use Gem';
   const defaultRewardCardImageSrc =
     rewardCardAvatar && typeof rewardCardAvatar.getAttribute === 'function'
       ? rewardCardAvatar.getAttribute('src')
@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
     '--pulsating-glow-blur',
   ];
 
-  const REWARD_POTION_SRC = '../images/complete/potion.png';
+  const REWARD_GEM_SRC = GEM_REWARD_GEM_SRC;
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
   const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
 
@@ -657,9 +657,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const rewardSpriteSources = {
-    potion: resolveRewardSpriteSource(REWARD_POTION_SRC) || REWARD_POTION_SRC,
+    gem: resolveRewardSpriteSource(REWARD_GEM_SRC) || REWARD_GEM_SRC,
     chest: resolveRewardSpriteSource(GEM_REWARD_CHEST_SRC) || GEM_REWARD_CHEST_SRC,
-    gem: resolveRewardSpriteSource(GEM_REWARD_GEM_SRC) || GEM_REWARD_GEM_SRC,
   };
 
   Object.values(rewardSpriteSources).forEach((source) => {
@@ -2066,7 +2065,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const runPrelude = async () => {
       try {
         await animateRewardCardClose();
-        const swapped = await animatePotionToHeroSprite();
+        const swapped = await animateGemToHeroSprite();
         if (swapped) {
           await wait(REWARD_SPRITE_HOLD_DURATION_MS);
         }
@@ -2308,7 +2307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardSprite.classList.remove(
       'reward-overlay__image--chest-pop',
       'reward-overlay__image--hatching',
-      'reward-overlay__image--potion-pop',
+      'reward-overlay__image--gem-pop',
       'reward-overlay__image--swap-in',
       'reward-overlay__image--swap-out',
       'reward-overlay__image--visible'
@@ -2380,7 +2379,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }, REWARD_CARD_CLOSE_DURATION_MS + 120);
     });
 
-  const animatePotionToHeroSprite = () =>
+  const animateGemToHeroSprite = () =>
     new Promise((resolve) => {
       if (!rewardSprite) {
         resolve(false);
@@ -2447,8 +2446,8 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardOverlay.classList.remove('reward-overlay--visible');
     rewardOverlay.setAttribute('aria-hidden', 'true');
     document.body?.classList.remove('is-reward-active');
-    rewardSprite.src = rewardSpriteSources.potion;
-    rewardSprite.alt = 'Potion level-up reward';
+    rewardSprite.src = rewardSpriteSources.gem;
+    rewardSprite.alt = 'Gem level-up reward';
     setRewardStage(null);
     disableRewardSpriteInteraction();
 
@@ -2507,10 +2506,10 @@ document.addEventListener('DOMContentLoaded', () => {
     rewardOverlay.setAttribute('aria-hidden', 'false');
     document.body?.classList.add('is-reward-active');
     disableRewardSpriteInteraction();
-    rewardSprite.src = rewardSpriteSources.potion;
-    rewardSprite.alt = 'Potion level-up reward';
+    rewardSprite.src = rewardSpriteSources.gem;
+    rewardSprite.alt = 'Gem level-up reward';
 
-    setRewardStage('potion');
+    setRewardStage('gem');
     void rewardSprite.offsetWidth;
     rewardSprite.classList.add('reward-overlay__image--visible');
 
@@ -2687,7 +2686,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rewardSprite.alt = 'Gem reward';
         setRewardStage('gem');
         void rewardSprite.offsetWidth;
-        rewardSprite.classList.add('reward-overlay__image--potion-pop');
+        rewardSprite.classList.add('reward-overlay__image--gem-pop');
         rewardSprite.addEventListener('animationend', handleGemPopEnd, { once: true });
       };
 
@@ -2735,7 +2734,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rewardSprite.classList.remove('reward-overlay__image--visible');
       rewardSprite.classList.remove('reward-overlay__image--chest-pop');
       rewardSprite.classList.remove('reward-overlay__image--chest-pulse');
-      rewardSprite.classList.remove('reward-overlay__image--potion-pop');
+      rewardSprite.classList.remove('reward-overlay__image--gem-pop');
 
       const beginAnimation = () => {
         rewardSprite.src = rewardSpriteSources.chest;
@@ -2775,7 +2774,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (hasPendingLevelUpReward) {
-      nextMissionBtn.textContent = 'Claim Potion';
+      nextMissionBtn.textContent = 'Claim Gem';
       nextMissionBtn.dataset.action = 'next';
       return;
     }
@@ -5062,14 +5061,12 @@ document.addEventListener('DOMContentLoaded', () => {
         completeMonsterImg.setAttribute('aria-hidden', 'true');
         completeMonsterImg.alt = '';
       } else {
-        const imageSrc = isLevelOneBattle
-          ? rewardSpriteSources.potion || REWARD_POTION_SRC
-          : rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
+        const imageSrc = rewardSpriteSources.gem || REWARD_GEM_SRC;
         completeMonsterImg.src = imageSrc;
         completeMonsterImg.hidden = false;
         completeMonsterImg.removeAttribute('aria-hidden');
         completeMonsterImg.alt = isLevelOneBattle
-          ? 'Potion reward for leveling up'
+          ? 'Gem reward for leveling up'
           : win
           ? 'Gem reward for defeating the monster'
           : 'Gem reward for your effort';
