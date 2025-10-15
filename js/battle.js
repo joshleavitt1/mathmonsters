@@ -46,7 +46,7 @@ const INTRO_QUESTION_LEVELS = new Set([1]);
 const MEDAL_DISPLAY_DURATION_MS = 3000;
 const LEVEL_ONE_FIRST_CORRECT_MEDAL_KEY = 'level-1:first-correct';
 const DEV_DAMAGE_AMOUNT = 100;
-const DEV_SKIP_TARGET_LEVEL = 4;
+const DEV_SKIP_TARGET_LEVEL = 15;
 
 if (!progressUtils) {
   throw new Error('Progress utilities are not available.');
@@ -114,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!landingVisited) {
     return;
   }
+  ensureProgressionAssetsLoaded().catch(() => {});
   const battleField = document.getElementById('battle');
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
@@ -715,6 +716,14 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   const HERO_EVOLUTION_ATTACK_VALUE = 2;
 
+  const PROGRESSION_ASSETS_URL = '../data/progression-assets.json';
+
+  let progressionAssets = null;
+  let progressionAssetsPromise = null;
+  let pendingProgressionReward = null;
+  let heroEvolutionProgressionOptions = null;
+  let nextEvolutionSpriteOverride = null;
+
   const readStoredPlayerProfile = () => {
     if (typeof window === 'undefined') {
       return null;
@@ -830,16 +839,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const applyHeroEvolutionProfileUpdate = () => {
+  const applyHeroEvolutionProfileUpdate = (options = {}) => {
+    const resolvedAttackValue =
+      typeof options.attackValue === 'number' && Number.isFinite(options.attackValue)
+        ? options.attackValue
+        : HERO_EVOLUTION_ATTACK_VALUE;
+
     const battleOptions = {
-      sprite: HERO_BATTLE_EVOLUTION_SPRITE,
-      attackSprite: HERO_BATTLE_EVOLUTION_ATTACK_SPRITE,
-      attackValue: HERO_EVOLUTION_ATTACK_VALUE,
+      sprite:
+        sanitizeHeroSpritePath(options.battleSprite ?? options.sprite) ||
+        HERO_BATTLE_EVOLUTION_SPRITE,
+      attackSprite:
+        sanitizeHeroSpritePath(options.battleAttackSprite ?? options.attackSprite) ||
+        HERO_BATTLE_EVOLUTION_ATTACK_SPRITE,
+      attackValue: resolvedAttackValue,
     };
     const profileOptions = {
-      sprite: HERO_PROFILE_EVOLUTION_SPRITE,
-      attackSprite: HERO_PROFILE_EVOLUTION_ATTACK_SPRITE,
-      attackValue: HERO_EVOLUTION_ATTACK_VALUE,
+      sprite:
+        sanitizeHeroSpritePath(options.profileSprite ?? options.sprite) ||
+        HERO_PROFILE_EVOLUTION_SPRITE,
+      attackSprite:
+        sanitizeHeroSpritePath(options.profileAttackSprite ?? options.attackSprite) ||
+        HERO_PROFILE_EVOLUTION_ATTACK_SPRITE,
+      attackValue: resolvedAttackValue,
     };
 
     if (window.preloadedData && typeof window.preloadedData === 'object') {
@@ -900,6 +922,196 @@ document.addEventListener('DOMContentLoaded', () => {
         persistPlayerProfile(clonedProfile);
       }
     }
+  };
+
+  const normalizeProfileSpritePath = (path) => {
+    if (typeof path !== 'string') {
+      return null;
+    }
+
+    const trimmed = sanitizeHeroSpritePath(path.trim());
+    if (!trimmed) {
+      return null;
+    }
+
+    if (
+      /^(?:https?:)?\/\//i.test(trimmed) ||
+      trimmed.startsWith('data:') ||
+      trimmed.startsWith('blob:')
+    ) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('/')) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('../')) {
+      return trimmed.replace(/^(?:\.{2}\/)+/, '');
+    }
+
+    if (trimmed.startsWith('./')) {
+      return trimmed.slice(2);
+    }
+
+    return trimmed;
+  };
+
+  const normalizeBattleSpritePath = (path) => {
+    if (typeof path !== 'string') {
+      return null;
+    }
+
+    const trimmed = sanitizeHeroSpritePath(path.trim());
+    if (!trimmed) {
+      return null;
+    }
+
+    if (
+      /^(?:https?:)?\/\//i.test(trimmed) ||
+      trimmed.startsWith('data:') ||
+      trimmed.startsWith('blob:')
+    ) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('/')) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('../')) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('./')) {
+      return `../${trimmed.slice(2)}`;
+    }
+
+    return `../${trimmed}`;
+  };
+
+  const normalizeProgressionAssets = (raw) => {
+    if (!raw || typeof raw !== 'object') {
+      return null;
+    }
+
+    const milestoneIntervalRaw = Number(raw.milestoneInterval);
+    const startingLevelRaw = Number(raw.startingLevel);
+    const milestonesRaw = Array.isArray(raw.milestones) ? raw.milestones : [];
+
+    const normalizedMilestones = milestonesRaw
+      .map((entry) => {
+        if (!entry || typeof entry !== 'object') {
+          return null;
+        }
+
+        const levelRaw = Number(entry.level);
+        if (!Number.isFinite(levelRaw) || levelRaw <= 0) {
+          return null;
+        }
+
+        const heroSprite =
+          typeof entry.heroSprite === 'string' ? entry.heroSprite.trim() : '';
+        const attackSprite =
+          typeof entry.attackSprite === 'string' ? entry.attackSprite.trim() : '';
+
+        return {
+          level: Math.max(1, Math.floor(levelRaw)),
+          heroSprite,
+          attackSprite,
+        };
+      })
+      .filter(Boolean);
+
+    return {
+      milestoneInterval:
+        Number.isFinite(milestoneIntervalRaw) && milestoneIntervalRaw > 0
+          ? Math.max(1, Math.floor(milestoneIntervalRaw))
+          : null,
+      startingLevel:
+        Number.isFinite(startingLevelRaw) && startingLevelRaw > 0
+          ? Math.max(1, Math.floor(startingLevelRaw))
+          : null,
+      milestones: normalizedMilestones,
+    };
+  };
+
+  const ensureProgressionAssetsLoaded = () => {
+    if (progressionAssetsPromise) {
+      return progressionAssetsPromise;
+    }
+
+    if (typeof fetch !== 'function') {
+      progressionAssetsPromise = Promise.resolve(null);
+      return progressionAssetsPromise;
+    }
+
+    progressionAssetsPromise = fetch(PROGRESSION_ASSETS_URL)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load progression assets: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        progressionAssets = normalizeProgressionAssets(data);
+        return progressionAssets;
+      })
+      .catch((error) => {
+        console.warn('Unable to load progression assets.', error);
+        progressionAssets = null;
+        return null;
+      });
+
+    return progressionAssetsPromise;
+  };
+
+  const getProgressionRewardOptions = (level) => {
+    if (!Number.isFinite(level) || level <= 0) {
+      return null;
+    }
+
+    if (!progressionAssets || typeof progressionAssets !== 'object') {
+      return null;
+    }
+
+    const normalizedLevel = Math.max(1, Math.floor(level));
+    const milestones = Array.isArray(progressionAssets.milestones)
+      ? progressionAssets.milestones
+      : [];
+
+    const match = milestones.find((entry) => entry.level === normalizedLevel);
+    if (!match) {
+      return null;
+    }
+
+    const options = {};
+
+    const heroSprite = match.heroSprite;
+    const attackSprite = match.attackSprite;
+
+    const battleHeroSprite = normalizeBattleSpritePath(heroSprite);
+    const profileHeroSprite = normalizeProfileSpritePath(heroSprite);
+    const battleAttackSprite = normalizeBattleSpritePath(attackSprite);
+    const profileAttackSprite = normalizeProfileSpritePath(attackSprite);
+
+    if (profileHeroSprite) {
+      options.profileSprite = profileHeroSprite;
+    }
+
+    if (battleHeroSprite) {
+      options.battleSprite = battleHeroSprite;
+    }
+
+    if (profileAttackSprite) {
+      options.profileAttackSprite = profileAttackSprite;
+    }
+
+    if (battleAttackSprite) {
+      options.battleAttackSprite = battleAttackSprite;
+    }
+
+    return Object.keys(options).length > 0 ? options : null;
   };
 
   const spriteElementCache =
@@ -1687,6 +1899,15 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const deriveNextHeroSprite = () => {
+    if (typeof nextEvolutionSpriteOverride === 'string') {
+      const trimmedOverride = nextEvolutionSpriteOverride.trim();
+      if (trimmedOverride) {
+        const resolvedOverride =
+          resolveAbsoluteSpritePath(trimmedOverride) || trimmedOverride;
+        return sanitizeHeroSpritePath(resolvedOverride);
+      }
+    }
+
     const currentSprite = getCurrentHeroSprite();
 
     if (typeof currentSprite === 'string' && currentSprite) {
@@ -1997,8 +2218,13 @@ document.addEventListener('DOMContentLoaded', () => {
       heroImg.classList.add('battle-shellfin--evolved');
     }
 
-    if (heroEvolutionStartedAtInitialStage) {
+    const startedAtInitialStage = heroEvolutionStartedAtInitialStage;
+    const progressionOptions = heroEvolutionProgressionOptions;
+
+    if (startedAtInitialStage) {
       applyHeroEvolutionProfileUpdate();
+    } else if (progressionOptions) {
+      applyHeroEvolutionProfileUpdate(progressionOptions);
     }
 
     const finalizeEvolution = () => {
@@ -2026,13 +2252,20 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body?.classList.remove('is-evolution-active');
       };
 
-      markRegistrationAsRequired();
+      if (startedAtInitialStage) {
+        markRegistrationAsRequired();
+      }
 
       heroEvolutionStartedAtInitialStage = false;
+      heroEvolutionProgressionOptions = null;
+      pendingProgressionReward = null;
+      nextEvolutionSpriteOverride = null;
 
       if (!overlayShown) {
         cleanupEvolutionOverlay();
-        showRegisterRewardCard();
+        if (startedAtInitialStage) {
+          showRegisterRewardCard();
+        }
         return;
       }
 
@@ -2802,13 +3035,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (hasPendingLevelUpReward) {
-      nextMissionBtn.textContent = 'Claim Gem';
+    if (hasPendingLevelUpReward || pendingProgressionReward) {
+      nextMissionBtn.textContent = 'Claim Reward';
       nextMissionBtn.dataset.action = 'next';
       return;
     }
 
     const hasPendingReward = Boolean(pendingGemReward);
+    const rewardLevelValue = Number.isFinite(Number(pendingGemReward?.currentLevel))
+      ? Math.max(1, Math.floor(Number(pendingGemReward.currentLevel)))
+      : null;
+    const isHigherLevelReward =
+      Number.isFinite(rewardLevelValue) && rewardLevelValue >= 2;
 
     const resolvedAmountRaw =
       rewardAmount ?? (hasPendingReward ? pendingGemReward.amount : null);
@@ -2816,7 +3054,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? Math.max(0, Math.round(resolvedAmountRaw))
       : null;
 
-    if (normalizedAmount) {
+    if (normalizedAmount && !isHigherLevelReward) {
       const label = `Claim ${normalizedAmount} Gem${
         normalizedAmount === 1 ? '' : 's'
       }`;
@@ -5271,8 +5509,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const rewardBattleIndex = normalizePositiveInteger(
       progressState?.currentBattle
     );
-    const isLevelOneBattle =
-      Number.isFinite(rewardCurrentLevel) && rewardCurrentLevel === 1;
+    const normalizedRewardLevel = Number.isFinite(rewardCurrentLevel)
+      ? Math.max(1, Math.floor(rewardCurrentLevel))
+      : null;
+    const isLevelOneBattle = normalizedRewardLevel === 1;
+    const isProgressionLevel =
+      Number.isFinite(normalizedRewardLevel) && normalizedRewardLevel >= 2;
+
+    if (globalProgressBar) {
+      globalProgressBar.classList.remove('progress--white');
+      if (isProgressionLevel) {
+        globalProgressBar.classList.add('progress--white');
+      }
+    }
 
     if (spriteSurface) {
       if (win) {
@@ -5290,13 +5539,19 @@ document.addEventListener('DOMContentLoaded', () => {
         completeMonsterImg.setAttribute('aria-hidden', 'true');
         completeMonsterImg.alt = '';
       } else {
-        const imageSrc = rewardSpriteSources.chest || GEM_REWARD_CHEST_SRC;
-        completeMonsterImg.src = imageSrc;
-        completeMonsterImg.hidden = false;
-        completeMonsterImg.setAttribute('aria-hidden', 'false');
-        completeMonsterImg.alt = isLevelOneBattle
-          ? 'Treasure chest reward for leveling up'
-          : 'Treasure chest reward for defeating the monster';
+        if (isLevelOneBattle) {
+          const imageSrc = rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
+          completeMonsterImg.src = imageSrc;
+          completeMonsterImg.hidden = false;
+          completeMonsterImg.setAttribute('aria-hidden', 'false');
+          completeMonsterImg.alt = 'Gem reward';
+        } else {
+          const imageSrc = rewardSpriteSources.chest || GEM_REWARD_CHEST_SRC;
+          completeMonsterImg.src = imageSrc;
+          completeMonsterImg.hidden = false;
+          completeMonsterImg.setAttribute('aria-hidden', 'false');
+          completeMonsterImg.alt = 'Treasure chest reward';
+        }
       }
     }
 
@@ -5306,8 +5561,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win) {
       setBattleCompleteTitleLines('Monster Defeated!');
-      setBattleCompleteSubtitle('Chest');
+      setBattleCompleteSubtitle('');
       awardExperiencePoints({ scheduleProgressUpdate: false });
+      if (!isProgressionLevel) {
+        latestGlobalRewardDisplay = null;
+      }
     } else {
       setBattleCompleteTitleLines('Keep Practicing!');
       setBattleCompleteSubtitle('');
@@ -5331,6 +5589,60 @@ document.addEventListener('DOMContentLoaded', () => {
       shouldAdvanceCurrentLevel = Boolean(mathProgressUpdate?.advanceLevel);
 
       const globalProgressUpdate = computeNextGlobalProgressOnWin();
+
+      pendingProgressionReward = null;
+      heroEvolutionProgressionOptions = null;
+      if (!isLevelOneBattle) {
+        nextEvolutionSpriteOverride = null;
+      }
+
+      const milestoneReached =
+        isProgressionLevel && latestGlobalRewardDisplay?.reachedMilestone === true;
+
+      if (milestoneReached) {
+        const nextLevelNumber = Number.isFinite(normalizedRewardLevel)
+          ? normalizedRewardLevel + 1
+          : null;
+
+        pendingProgressionReward = {
+          currentLevel: normalizedRewardLevel,
+          nextLevel: nextLevelNumber,
+        };
+
+        hasPendingLevelUpReward = true;
+        rewardAnimationPlayed = false;
+        pendingGemReward = null;
+
+        if (Number.isFinite(nextLevelNumber)) {
+          const progressionOptions = getProgressionRewardOptions(nextLevelNumber);
+          heroEvolutionProgressionOptions = progressionOptions;
+          const overrideSprite =
+            progressionOptions?.battleSprite ?? progressionOptions?.profileSprite ?? null;
+          nextEvolutionSpriteOverride = overrideSprite;
+
+          ensureProgressionAssetsLoaded()
+            .then(() => {
+              if (!pendingProgressionReward) {
+                return;
+              }
+              const refreshedLevel = pendingProgressionReward.nextLevel;
+              const refreshedOptions = Number.isFinite(refreshedLevel)
+                ? getProgressionRewardOptions(refreshedLevel)
+                : null;
+              if (refreshedOptions) {
+                heroEvolutionProgressionOptions = refreshedOptions;
+                const refreshedOverride =
+                  refreshedOptions.battleSprite ?? refreshedOptions.profileSprite ?? null;
+                if (refreshedOverride) {
+                  nextEvolutionSpriteOverride = refreshedOverride;
+                }
+              }
+            })
+            .catch(() => {});
+        } else {
+          ensureProgressionAssetsLoaded().catch(() => {});
+        }
+      }
 
       const updatePayload =
         globalProgressUpdate && typeof globalProgressUpdate === 'object'
@@ -5361,17 +5673,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       shouldAdvanceCurrentLevel = false;
+      pendingProgressionReward = null;
+      heroEvolutionProgressionOptions = null;
+      nextEvolutionSpriteOverride = null;
     }
 
     if (win) {
-      pendingGemReward = {
-        amount: gemRewardAmount,
-        totalAfter: updatedGemTotal,
-        isFirstGemReward: !gemRewardIntroShown,
-        currentLevel: rewardCurrentLevel,
-        currentBattle: rewardBattleIndex,
-        win: true,
-      };
+      if (pendingProgressionReward) {
+        pendingGemReward = null;
+      } else {
+        pendingGemReward = {
+          amount: gemRewardAmount,
+          totalAfter: updatedGemTotal,
+          isFirstGemReward: !gemRewardIntroShown,
+          currentLevel: rewardCurrentLevel,
+          currentBattle: rewardBattleIndex,
+          win: true,
+        };
+      }
     } else if (shouldAwardGemReward) {
       pendingGemReward = {
         amount: gemRewardAmount,
@@ -5554,6 +5873,9 @@ document.addEventListener('DOMContentLoaded', () => {
     levelUpAvailable = false;
     hasPendingLevelUpReward = false;
     rewardAnimationPlayed = false;
+    pendingProgressionReward = null;
+    heroEvolutionProgressionOptions = null;
+    nextEvolutionSpriteOverride = null;
     cancelScheduledLevelProgressDisplayUpdate();
     clearRewardAnimation();
     updateLevelProgressDisplay();
@@ -5565,7 +5887,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
     setBattleCompleteTitleLines('Monster Defeated!');
-    setBattleCompleteSubtitle('Chest');
+    setBattleCompleteSubtitle('');
     if (spriteSurface) {
       spriteSurface.hidden = false;
       spriteSurface.setAttribute('aria-hidden', 'false');
@@ -5578,6 +5900,9 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMonsterImg.alt = 'Treasure chest reward';
     }
     hideGlobalProgressDisplay();
+    if (globalProgressBar) {
+      globalProgressBar.classList.remove('progress--white');
+    }
     latestGlobalRewardDisplay = null;
     updateNextMissionButton();
     if (summaryAccuracyValue) {
