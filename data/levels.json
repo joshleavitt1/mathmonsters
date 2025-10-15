@@ -12,6 +12,10 @@
         "standardPool": [
           {
             "sprite": "/mathmonsters/images/monster/addition_monster_1.png",
+            "name": "Octomurk"
+          },
+          {
+            "sprite": "/mathmonsters/images/monster/addition_monster_2.png",
             "name": "Snapjaw"
           }
         ]
