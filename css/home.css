@@ -217,13 +217,6 @@ body.home-page {
   gap: 24px;
 }
 
-.home__actions.home__actions--single {
-  width: 100%;
-  max-width: 420px;
-  justify-content: center;
-  gap: 0;
-}
-
 .dev-signout-button {
   position: fixed;
   bottom: 16px;
@@ -245,25 +238,6 @@ body.home-page {
   opacity: 0.1;
 }
 
-.home__level-skip-button {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  width: 56px;
-  height: 56px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 1000;
-  touch-action: manipulation;
-}
-
-.home__level-skip-button:focus-visible {
-  outline: none;
-}
-
 .home__action {
   display: inline-flex;
   position: relative;
@@ -278,20 +252,6 @@ body.home-page {
   cursor: default;
   -webkit-appearance: none;
   appearance: none;
-}
-
-.home__action--hidden {
-  display: none !important;
-}
-
-.home__action--portal-glow {
-  border-radius: 50%;
-  animation: home-portal-glow 2.4s ease-in-out infinite;
-}
-
-.home__action--portal-glow .home__action-image {
-  transform-origin: center;
-  animation: home-portal-image 2.4s ease-in-out infinite;
 }
 
 .home__action[data-battle-trigger] {
@@ -310,67 +270,5 @@ body.home-page {
   object-fit: contain;
   position: relative;
   z-index: 1;
-}
-
-@keyframes home-portal-glow {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(71, 169, 255, 0.15), 0 0 0 rgba(71, 169, 255, 0.1);
-  }
-
-  50% {
-    transform: scale(1.03);
-    box-shadow: 0 0 18px rgba(71, 169, 255, 0.45), 0 0 32px rgba(71, 169, 255, 0.3);
-  }
-}
-
-@keyframes home-portal-image {
-  0%,
-  100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(71, 169, 255, 0.35));
-  }
-
-  50% {
-    transform: scale(1.05);
-    filter: drop-shadow(0 0 18px rgba(71, 169, 255, 0.6));
-  }
-}
-
-.home__level-two-intro[hidden] {
-  display: none !important;
-}
-
-.home__level-two-intro {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(0, 9, 31, 0.78);
-  backdrop-filter: blur(4px);
-  z-index: 2000;
-}
-
-.home__level-two-intro-card {
-  align-items: flex-start;
-  text-align: left;
-}
-
-.home__level-two-intro-avatar {
-  align-self: flex-start;
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-}
-
-.home__level-two-intro-message {
-  margin: 0;
-}
-
-.home__level-two-intro-button {
-  align-self: flex-start;
 }
 
