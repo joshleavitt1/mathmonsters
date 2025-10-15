@@ -281,8 +281,8 @@ body.home-page {
 
 .home__action-image {
   display: block;
-  width: 140px;
-  height: 140px;
+  width: 160px;
+  height: 160px;
   object-fit: contain;
   position: relative;
   z-index: 1;
