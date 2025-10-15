@@ -3398,34 +3398,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
   isLevelOneLanding = detectLevelOneLandingState();
   battleButton = getActiveBattleButton();
 
-  if (isLevelOneLanding) {
-    if (actionsElement) {
-      actionsElement.setAttribute('aria-hidden', 'true');
-    }
-    if (heroInfoElement) {
-      heroInfoElement.setAttribute('aria-hidden', 'true');
-    }
-    if (battleButton) {
-      setInteractiveDisabled(battleButton, true);
-      battleButton.setAttribute('aria-hidden', 'true');
-    }
-    if (monsterImage) {
-      monsterImage.setAttribute('aria-hidden', 'true');
-    }
-    battleButton = null;
-  } else {
-    if (actionsElement) {
-      actionsElement.removeAttribute('aria-hidden');
-    }
-    if (heroInfoElement) {
-      heroInfoElement.removeAttribute('aria-hidden');
-    }
-    if (battleButton) {
-      battleButton.removeAttribute('aria-hidden');
-      setInteractiveDisabled(battleButton, false);
-    }
-  }
-
   const awaitImageReady = async (image) => {
     if (!image) {
       return;
@@ -3494,6 +3466,34 @@ const initLandingInteractions = async (preloadedData = {}) => {
       redirectToBattle();
     }
   };
+
+  if (isLevelOneLanding) {
+    if (actionsElement) {
+      actionsElement.setAttribute('aria-hidden', 'true');
+    }
+    if (heroInfoElement) {
+      heroInfoElement.setAttribute('aria-hidden', 'true');
+    }
+    if (battleButton) {
+      setInteractiveDisabled(battleButton, true);
+      battleButton.setAttribute('aria-hidden', 'true');
+    }
+    if (monsterImage) {
+      monsterImage.setAttribute('aria-hidden', 'true');
+    }
+    battleButton = null;
+  } else {
+    if (actionsElement) {
+      actionsElement.removeAttribute('aria-hidden');
+    }
+    if (heroInfoElement) {
+      heroInfoElement.removeAttribute('aria-hidden');
+    }
+    if (battleButton) {
+      battleButton.removeAttribute('aria-hidden');
+      setInteractiveDisabled(battleButton, false);
+    }
+  }
 
   const battleImageTriggers = !isLevelOneLanding
     ? Array.from(
