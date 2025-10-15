@@ -33,7 +33,7 @@ const OFFLINE_ASSETS = [
   'images/monster/addition_battle_5.png',
   'images/monster/monster_attack.png',
   'images/home/medal_1.png',
-  'images/complete/sword.png',
+  'images/complete/gem.png',
   'images/questions/shield.svg',
   './data/levels.json',
   './data/player.json',
