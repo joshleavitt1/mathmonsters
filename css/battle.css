@@ -1021,6 +1021,42 @@ body.is-reward-active .reward-overlay {
   text-align: center;
 }
 
+.battle-complete-card__subtitle {
+  margin: 0;
+  text-align: center;
+}
+
+.battle-complete-card__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.battle-complete-card__progress--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.battle-complete-card__progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.battle-complete-card__progress-count {
+  font-weight: 600;
+}
+
+.battle-complete-card__progress-bar {
+  --progress-gradient-start: #5de75d;
+  --progress-gradient-end: #00c853;
+  height: 14px;
+}
+
 .battle-complete-card__sprite-surface {
   width: 100%;
   display: flex;

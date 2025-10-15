@@ -31,6 +31,8 @@ const REGISTER_PAGE_URL = './register.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const BATTLES_PER_LEVEL = 4;
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+const GLOBAL_REWARD_MILESTONE = 5;
+const GLOBAL_PROGRESS_REVEAL_DELAY_MS = 1000;
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -147,6 +149,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const completeMessage = document.getElementById('complete-message');
   const battleCompleteTitle = completeMessage?.querySelector('#battle-complete-title');
+  const battleCompleteSubtitle = completeMessage?.querySelector(
+    '[data-battle-complete-subtitle]'
+  );
+  const globalProgressContainer = completeMessage?.querySelector('[data-global-progress]');
+  const globalProgressBar = globalProgressContainer?.querySelector('[role="progressbar"]');
+  const globalProgressFill = globalProgressContainer?.querySelector(
+    '[data-global-progress-fill]'
+  );
+  const globalProgressCount = globalProgressContainer?.querySelector(
+    '[data-global-progress-count]'
+  );
   const completeMonsterImg = completeMessage?.querySelector('.monster-image');
   const monsterDefeatOverlay = completeMessage?.querySelector('[data-monster-defeat-overlay]');
   const summaryAccuracyStat = completeMessage?.querySelector('[data-goal="accuracy"]');
@@ -544,6 +557,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let evolutionGrowthFallbackTimeout = null;
   let evolutionRevealFallbackTimeout = null;
   let evolutionCardDelayTimeout = null;
+  let globalRewardProgress = {
+    milestoneSize: GLOBAL_REWARD_MILESTONE,
+    winsSinceReward: 0,
+    totalWins: 0,
+  };
+  let latestGlobalRewardDisplay = null;
+  let globalProgressRevealTimeout = null;
 
   const maybeShowFirstCorrectMedal = (resolvedLevel, correctCount) => {
     if (!medalElement) {
@@ -1379,9 +1399,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const currentLevel = findFirstPositiveInteger(levelCandidates) ?? 1;
 
-    return {
+    const nextRewardDisplay = incrementGlobalRewardProgress();
+    const update = {
       currentLevel: currentLevel + 1,
     };
+
+    if (nextRewardDisplay) {
+      update.globalRewardProgress = {
+        milestoneSize: nextRewardDisplay.milestoneSize,
+        winsSinceReward: nextRewardDisplay.winsSinceReward,
+        totalWins: nextRewardDisplay.totalWins,
+      };
+    }
+
+    return update;
   };
 
   const readCurrentGemTotal = () => {
@@ -3758,6 +3789,179 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const setBattleCompleteSubtitle = (text = '') => {
+    if (!battleCompleteSubtitle) {
+      return;
+    }
+
+    const normalized = typeof text === 'string' ? text.trim() : '';
+
+    if (!normalized) {
+      battleCompleteSubtitle.textContent = '';
+      if (!battleCompleteSubtitle.hasAttribute('hidden')) {
+        battleCompleteSubtitle.setAttribute('hidden', 'hidden');
+      }
+      battleCompleteSubtitle.setAttribute('aria-hidden', 'true');
+      return;
+    }
+
+    battleCompleteSubtitle.textContent = normalized;
+    battleCompleteSubtitle.removeAttribute('hidden');
+    battleCompleteSubtitle.removeAttribute('aria-hidden');
+  };
+
+  const createDefaultGlobalRewardProgress = () => ({
+    milestoneSize: GLOBAL_REWARD_MILESTONE,
+    winsSinceReward: 0,
+    totalWins: 0,
+  });
+
+  const sanitizeGlobalRewardProgress = (value) => {
+    const defaults = createDefaultGlobalRewardProgress();
+
+    if (!isPlainObject(value)) {
+      return { ...defaults };
+    }
+
+    const rawMilestone = Number(value.milestoneSize);
+    const milestone = Number.isFinite(rawMilestone) && rawMilestone > 0
+      ? Math.max(1, Math.round(rawMilestone))
+      : defaults.milestoneSize;
+
+    const rawWins = Number(value.winsSinceReward);
+    let winsSinceReward = Number.isFinite(rawWins)
+      ? Math.max(0, Math.round(rawWins))
+      : defaults.winsSinceReward;
+
+    if (milestone > 0) {
+      winsSinceReward = winsSinceReward % milestone;
+    }
+
+    const rawTotalWins = Number(value.totalWins);
+    const totalWins = Number.isFinite(rawTotalWins)
+      ? Math.max(0, Math.round(rawTotalWins))
+      : defaults.totalWins;
+
+    return {
+      milestoneSize: milestone,
+      winsSinceReward,
+      totalWins,
+    };
+  };
+
+  const updateGlobalRewardProgressState = (value) => {
+    globalRewardProgress = sanitizeGlobalRewardProgress(value);
+    latestGlobalRewardDisplay = null;
+  };
+
+  const clearGlobalProgressRevealTimeout = () => {
+    if (globalProgressRevealTimeout !== null) {
+      window.clearTimeout(globalProgressRevealTimeout);
+      globalProgressRevealTimeout = null;
+    }
+  };
+
+  const hideGlobalProgressDisplay = () => {
+    if (!globalProgressContainer) {
+      return;
+    }
+
+    clearGlobalProgressRevealTimeout();
+    globalProgressContainer.classList.remove('battle-complete-card__progress--visible');
+    globalProgressContainer.setAttribute('aria-hidden', 'true');
+    if (!globalProgressContainer.hasAttribute('hidden')) {
+      globalProgressContainer.setAttribute('hidden', 'hidden');
+    }
+  };
+
+  const applyGlobalProgressDisplay = (display) => {
+    if (!display || !globalProgressContainer) {
+      return;
+    }
+
+    const milestone = Math.max(
+      1,
+      Math.round(Number(display.milestoneSize) || GLOBAL_REWARD_MILESTONE)
+    );
+    const wins = Math.max(
+      0,
+      Math.min(
+        milestone,
+        Math.round(Number(display.displayWins ?? display.winsSinceReward) || 0)
+      )
+    );
+
+    if (globalProgressCount) {
+      globalProgressCount.textContent = `${wins} / ${milestone}`;
+    }
+
+    if (globalProgressBar) {
+      globalProgressBar.setAttribute('aria-valuemax', String(milestone));
+      globalProgressBar.setAttribute('aria-valuenow', String(wins));
+    }
+
+    if (globalProgressFill) {
+      const ratio = milestone > 0 ? wins / milestone : 0;
+      globalProgressFill.style.setProperty('--progress-value', ratio);
+    }
+  };
+
+  const showGlobalProgressDisplay = (display) => {
+    if (!display || !globalProgressContainer) {
+      return;
+    }
+
+    clearGlobalProgressRevealTimeout();
+    applyGlobalProgressDisplay(display);
+    globalProgressContainer.removeAttribute('hidden');
+    globalProgressContainer.setAttribute('aria-hidden', 'false');
+    globalProgressContainer.classList.remove('battle-complete-card__progress--visible');
+
+    globalProgressRevealTimeout = window.setTimeout(() => {
+      globalProgressContainer.classList.add('battle-complete-card__progress--visible');
+      globalProgressRevealTimeout = null;
+    }, Math.max(0, GLOBAL_PROGRESS_REVEAL_DELAY_MS));
+  };
+
+  const incrementGlobalRewardProgress = () => {
+    const defaults = createDefaultGlobalRewardProgress();
+    const milestone = Math.max(
+      1,
+      Math.round(Number(globalRewardProgress?.milestoneSize) || defaults.milestoneSize)
+    );
+
+    const currentWins = Math.max(
+      0,
+      Math.round(Number(globalRewardProgress?.winsSinceReward) || 0)
+    );
+    const totalWins = Math.max(
+      0,
+      Math.round(Number(globalRewardProgress?.totalWins) || 0)
+    ) + 1;
+
+    const winsAfter = currentWins + 1;
+    const reachedMilestone = winsAfter >= milestone;
+    const persistedWins = reachedMilestone ? 0 : winsAfter;
+    const displayWins = Math.min(winsAfter, milestone);
+
+    globalRewardProgress = {
+      milestoneSize: milestone,
+      winsSinceReward: persistedWins,
+      totalWins,
+    };
+
+    const display = {
+      milestoneSize: milestone,
+      winsSinceReward: persistedWins,
+      totalWins,
+      displayWins,
+      reachedMilestone,
+    };
+
+    latestGlobalRewardDisplay = display;
+    return display;
+  };
+
   const createMirroredProgressUpdate = (update) => {
     if (!isPlainObject(update)) {
       return null;
@@ -3952,6 +4156,23 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         delete data.player.progress.experience;
       }
+    }
+    updateGlobalRewardProgressState(progressData?.globalRewardProgress);
+
+    const sanitizedGlobalRewardProgress = { ...globalRewardProgress };
+
+    if (isPlainObject(data.progress)) {
+      data.progress.globalRewardProgress = { ...sanitizedGlobalRewardProgress };
+    }
+
+    if (
+      data.player &&
+      typeof data.player === 'object' &&
+      isPlainObject(data.player.progress)
+    ) {
+      data.player.progress.globalRewardProgress = {
+        ...sanitizedGlobalRewardProgress,
+      };
     }
     const battleProgress =
       data.battleVariables ?? data.player?.battleVariables ?? {};
@@ -5079,11 +5300,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const goalsAchieved = win;
 
+    hideGlobalProgressDisplay();
+
     if (win) {
-      setBattleCompleteTitleLines('Great Job!');
+      setBattleCompleteTitleLines('Win', 'Monster Defeated!');
+      setBattleCompleteSubtitle('Chest');
       awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
       setBattleCompleteTitleLines('Keep Practicing!');
+      setBattleCompleteSubtitle('');
+      latestGlobalRewardDisplay = null;
     }
 
     battleGoalsMet = goalsAchieved;
@@ -5191,6 +5417,9 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMessage.setAttribute('aria-hidden', 'false');
       if (typeof completeMessage.focus === 'function') {
         completeMessage.focus();
+      }
+      if (win && latestGlobalRewardDisplay) {
+        showGlobalProgressDisplay(latestGlobalRewardDisplay);
       }
       if (win) {
         monsterDefeatAnimationTimeout = window.setTimeout(() => {
@@ -5333,7 +5562,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
-    setBattleCompleteTitleLines('Great Job!');
+    setBattleCompleteTitleLines('Win', 'Monster Defeated!');
+    setBattleCompleteSubtitle('Chest');
+    hideGlobalProgressDisplay();
+    latestGlobalRewardDisplay = null;
     updateNextMissionButton();
     if (summaryAccuracyValue) {
       summaryAccuracyValue.classList.remove('goal-result--met', 'goal-result--missed');
