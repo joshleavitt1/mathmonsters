@@ -256,6 +256,10 @@ button:focus-visible {
   overflow: hidden;
 }
 
+.progress--white {
+  background-color: #ffffff;
+}
+
 .progress__fill {
   position: absolute;
   inset: 0;
