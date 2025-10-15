@@ -17,7 +17,12 @@
           {
             "sprite": "/mathmonsters/images/monster/addition_monster_2.png",
             "name": "Snapjaw"
+          },
+          {
+            "sprite": "/mathmonsters/images/monster/addition_monster_3.png",
+            "name": "Fangtide"
           }
+          
         ]
       },
       "levels": [
