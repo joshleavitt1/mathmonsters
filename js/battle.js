@@ -152,13 +152,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const battleCompleteSubtitle = completeMessage?.querySelector(
     '[data-battle-complete-subtitle]'
   );
+  const spriteSurface = completeMessage?.querySelector('[data-battle-complete-sprite-surface]');
   const globalProgressContainer = completeMessage?.querySelector('[data-global-progress]');
   const globalProgressBar = globalProgressContainer?.querySelector('[role="progressbar"]');
   const globalProgressFill = globalProgressContainer?.querySelector(
     '[data-global-progress-fill]'
-  );
-  const globalProgressCount = globalProgressContainer?.querySelector(
-    '[data-global-progress-count]'
   );
   const completeMonsterImg = completeMessage?.querySelector('.monster-image');
   const monsterDefeatOverlay = completeMessage?.querySelector('[data-monster-defeat-overlay]');
@@ -1624,8 +1622,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const buttonText = gemLabel
       ? `Claim ${gemLabel}`
       : isWin
-      ? 'Continue'
-      : 'Try Again';
+      ? 'Swim Home!'
+      : 'Try Again!';
 
     return {
       text: isWin ? 'Great Job!' : 'Keep Practicing!',
@@ -2828,12 +2826,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!win && !hasPendingReward) {
-      nextMissionBtn.textContent = 'Try Again';
+      nextMissionBtn.textContent = 'Try Again!';
       nextMissionBtn.dataset.action = 'retry';
       return;
     }
 
-    nextMissionBtn.textContent = win ? 'Continue' : 'Try Again';
+    nextMissionBtn.textContent = win ? 'Swim Home!' : 'Try Again!';
     nextMissionBtn.dataset.action = win ? 'next' : 'retry';
   };
 
@@ -3890,10 +3888,6 @@ document.addEventListener('DOMContentLoaded', () => {
         Math.round(Number(display.displayWins ?? display.winsSinceReward) || 0)
       )
     );
-
-    if (globalProgressCount) {
-      globalProgressCount.textContent = `${wins} / ${milestone}`;
-    }
 
     if (globalProgressBar) {
       globalProgressBar.setAttribute('aria-valuemax', String(milestone));
@@ -5280,21 +5274,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const isLevelOneBattle =
       Number.isFinite(rewardCurrentLevel) && rewardCurrentLevel === 1;
 
+    if (spriteSurface) {
+      if (win) {
+        spriteSurface.hidden = false;
+        spriteSurface.setAttribute('aria-hidden', 'false');
+      } else {
+        spriteSurface.hidden = true;
+        spriteSurface.setAttribute('aria-hidden', 'true');
+      }
+    }
+
     if (completeMonsterImg) {
-      if (isLevelOneBattle && !win) {
+      if (!win) {
         completeMonsterImg.hidden = true;
         completeMonsterImg.setAttribute('aria-hidden', 'true');
         completeMonsterImg.alt = '';
       } else {
-        const imageSrc = rewardSpriteSources.gem || REWARD_GEM_SRC;
+        const imageSrc = rewardSpriteSources.chest || GEM_REWARD_CHEST_SRC;
         completeMonsterImg.src = imageSrc;
         completeMonsterImg.hidden = false;
-        completeMonsterImg.removeAttribute('aria-hidden');
+        completeMonsterImg.setAttribute('aria-hidden', 'false');
         completeMonsterImg.alt = isLevelOneBattle
-          ? 'Gem reward for leveling up'
-          : win
-          ? 'Gem reward for defeating the monster'
-          : 'Gem reward for your effort';
+          ? 'Treasure chest reward for leveling up'
+          : 'Treasure chest reward for defeating the monster';
       }
     }
 
@@ -5303,7 +5305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hideGlobalProgressDisplay();
 
     if (win) {
-      setBattleCompleteTitleLines('Win', 'Monster Defeated!');
+      setBattleCompleteTitleLines('Monster Defeated!');
       setBattleCompleteSubtitle('Chest');
       awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
@@ -5562,8 +5564,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
-    setBattleCompleteTitleLines('Win', 'Monster Defeated!');
+    setBattleCompleteTitleLines('Monster Defeated!');
     setBattleCompleteSubtitle('Chest');
+    if (spriteSurface) {
+      spriteSurface.hidden = false;
+      spriteSurface.setAttribute('aria-hidden', 'false');
+    }
+    if (completeMonsterImg) {
+      const imageSrc = rewardSpriteSources.chest || GEM_REWARD_CHEST_SRC;
+      completeMonsterImg.src = imageSrc;
+      completeMonsterImg.hidden = false;
+      completeMonsterImg.setAttribute('aria-hidden', 'false');
+      completeMonsterImg.alt = 'Treasure chest reward';
+    }
     hideGlobalProgressDisplay();
     latestGlobalRewardDisplay = null;
     updateNextMissionButton();

@@ -1027,9 +1027,7 @@ body.is-reward-active .reward-overlay {
 }
 
 .battle-complete-card__progress {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  width: 100%;
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -1038,17 +1036,6 @@ body.is-reward-active .reward-overlay {
 .battle-complete-card__progress--visible {
   opacity: 1;
   transform: translateY(0);
-}
-
-.battle-complete-card__progress-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.battle-complete-card__progress-count {
-  font-weight: 600;
 }
 
 .battle-complete-card__progress-bar {
@@ -1060,7 +1047,10 @@ body.is-reward-active .reward-overlay {
 .battle-complete-card__sprite-surface {
   width: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
+  gap: 16px;
   padding: 24px;
   background-color: #f4f6fa;
   border-radius: 12px;
