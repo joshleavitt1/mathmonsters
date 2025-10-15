@@ -12,8 +12,6 @@ const MIN_PRELOAD_DURATION_MS = 2000;
 const DEV_RESET_TARGET_MATH_KEY = 'addition';
 const DEV_RESET_TARGET_LEVEL = 2;
 const DEV_RESET_BUTTON_SELECTOR = '[data-dev-reset-level]';
-const SECRET_LEVEL_BUTTON_SELECTOR = '[data-secret-level-two]';
-const SECRET_LEVEL_TARGET_LEVEL = DEV_RESET_TARGET_LEVEL;
 
 const HERO_TO_MONSTER_DELAY_MS_BASE = 1200;
 const MONSTER_ENTRANCE_DURATION_MS_BASE = 900;
@@ -2172,7 +2170,6 @@ const updateHomeTutorialHighlights = ({ currentLevel } = {}) => {
   };
 
   actionElements.forEach((element) => resetActionState(element));
-  actionsContainer.classList.remove('home__actions--single');
 
   const landingRoot = document.body;
   const isStandardLanding = Boolean(
@@ -2184,20 +2181,6 @@ const updateHomeTutorialHighlights = ({ currentLevel } = {}) => {
   }
 
   const resolvedLevel = normalizeBattleIndex(currentLevel);
-
-  if (resolvedLevel === 2) {
-    if (shopAction) {
-      shopAction.hidden = true;
-      shopAction.setAttribute('aria-hidden', 'true');
-    }
-
-    if (battleAction) {
-      battleAction.classList.add('home__action--glow', 'home__action--glow-sword');
-    }
-
-    actionsContainer.classList.add('home__actions--single');
-    return;
-  }
 
   if (resolvedLevel === 3) {
     if (shopAction) {
@@ -2561,51 +2544,6 @@ const setupDevResetTool = () => {
 
   devButton.dataset.devResetBound = 'true';
   devButton.addEventListener('click', handleReset);
-};
-
-const setupSecretLevelShortcut = () => {
-  const secretButton = document.querySelector(SECRET_LEVEL_BUTTON_SELECTOR);
-  if (!secretButton) {
-    return;
-  }
-
-  const handleSecret = (event) => {
-    if (event && typeof event.preventDefault === 'function') {
-      event.preventDefault();
-    }
-
-    const storedProgress = readStoredProgress();
-    const normalizedProgress = isPlainObject(storedProgress)
-      ? { ...storedProgress }
-      : {};
-
-    const mathKey = DEV_RESET_TARGET_MATH_KEY;
-    const existingMathProgress = isPlainObject(normalizedProgress[mathKey])
-      ? { ...normalizedProgress[mathKey] }
-      : {};
-
-    const updatedMathProgress = {
-      ...existingMathProgress,
-      currentLevel: SECRET_LEVEL_TARGET_LEVEL,
-    };
-
-    const updatedProgress = {
-      ...normalizedProgress,
-      battleLevel: SECRET_LEVEL_TARGET_LEVEL,
-      currentLevel: SECRET_LEVEL_TARGET_LEVEL,
-      gems: 0,
-      [mathKey]: updatedMathProgress,
-    };
-
-    storeProgressAndReload(updatedProgress, secretButton);
-  };
-
-  if (secretButton.dataset.secretLevelBound === 'true') {
-    return;
-  }
-
-  secretButton.dataset.secretLevelBound = 'true';
-  secretButton.addEventListener('click', handleSecret);
 };
 
 const readStoredPlayerProfile = () => {
@@ -3347,7 +3285,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
   setupSettingsLogout();
   setupDevSignOut();
   setupDevResetTool();
-  setupSecretLevelShortcut();
 
   updateIntroTimingForLanding({ isLevelOneLanding });
 
