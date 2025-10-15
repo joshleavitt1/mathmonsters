@@ -145,8 +145,10 @@ body.home-page {
   object-fit: contain;
   margin: 0 auto;
   transform: translate3d(0, -22px, 0);
+  animation: home-hero-swim 4.5s ease-in-out infinite;
+  will-change: transform;
   pointer-events: none;
-  padding-top: 24;
+  padding-top: 24px;
 }
 
 @keyframes home-progress-fill-slide {
@@ -215,6 +217,20 @@ body.home-page {
   align-items: center;
   justify-content: space-around;
   gap: 24px;
+}
+
+@keyframes home-hero-swim {
+  0% {
+    transform: translate3d(0, -22px, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+
+  100% {
+    transform: translate3d(0, -22px, 0);
+  }
 }
 
 .dev-signout-button {

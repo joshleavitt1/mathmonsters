@@ -83,9 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (meterIcon) {
-    const swordPath = resolveAssetPath('images/complete/sword.png');
-    if (swordPath) {
-      meterIcon.src = swordPath;
+    const meterIconPath = resolveAssetPath('images/complete/gem.png');
+    if (meterIconPath) {
+      meterIcon.src = meterIconPath;
     }
   }
 
