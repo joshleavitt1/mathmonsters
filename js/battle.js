@@ -4169,7 +4169,11 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     monster.name = monsterData.name || monster.name;
 
-    const monsterAttackSprites = normalizeAttackSprites(monster, monsterData);
+    const monsterAttackSprites = normalizeAttackSprites(
+      { basic: 'images/monster/monster_attack.png' },
+      monster,
+      monsterData
+    );
     if (Object.keys(monsterAttackSprites).length > 0) {
       monster.attackSprites = monsterAttackSprites;
     } else {
