@@ -716,6 +716,55 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   const HERO_EVOLUTION_ATTACK_VALUE = 2;
 
+  const getAssetBasePath = () => {
+    const globalBase =
+      typeof window?.mathMonstersAssetBase === 'string'
+        ? window.mathMonstersAssetBase.trim()
+        : '';
+
+    if (globalBase) {
+      return globalBase;
+    }
+
+    return '..';
+  };
+
+  const resolveAssetPath = (path, basePath = getAssetBasePath()) => {
+    if (typeof path !== 'string') {
+      return null;
+    }
+
+    const trimmed = path.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const sanitized = sanitizeHeroSpritePath(trimmed);
+
+    if (/^https?:\/\//i.test(sanitized) || /^data:/i.test(sanitized)) {
+      return sanitized;
+    }
+
+    if (sanitized.startsWith('../') || sanitized.startsWith('./')) {
+      return sanitized;
+    }
+
+    if (sanitized.startsWith('/')) {
+      return sanitized;
+    }
+
+    const normalizedBase = basePath.endsWith('/')
+      ? basePath.slice(0, -1)
+      : basePath;
+    const normalizedPath = sanitizeHeroSpritePath(sanitized.replace(/^\/+/, ''));
+
+    if (!normalizedBase || normalizedBase === '.') {
+      return normalizedPath;
+    }
+
+    return sanitizeHeroSpritePath(`${normalizedBase}/${normalizedPath}`);
+  };
+
   const PROGRESSION_ASSETS_URL = '../data/progression-assets.json';
 
   let progressionAssets = null;
@@ -4408,55 +4457,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const battleProgress =
       data.battleVariables ?? data.player?.battleVariables ?? {};
-
-    const assetBasePath = (() => {
-      const globalBase =
-        typeof window?.mathMonstersAssetBase === 'string'
-          ? window.mathMonstersAssetBase.trim()
-          : '';
-      if (globalBase) {
-        return globalBase;
-      }
-      return '..';
-    })();
-
-    const resolveAssetPath = (path) => {
-      if (typeof path !== 'string') {
-        return null;
-      }
-
-      const trimmed = path.trim();
-      if (!trimmed) {
-        return null;
-      }
-
-      const sanitized = sanitizeHeroSpritePath(trimmed);
-
-      if (/^https?:\/\//i.test(sanitized) || /^data:/i.test(sanitized)) {
-        return sanitized;
-      }
-
-      if (sanitized.startsWith('../') || sanitized.startsWith('./')) {
-        return sanitized;
-      }
-
-      if (sanitized.startsWith('/')) {
-        return sanitized;
-      }
-
-      const normalizedBase = assetBasePath.endsWith('/')
-        ? assetBasePath.slice(0, -1)
-        : assetBasePath;
-      const normalizedPath = sanitizeHeroSpritePath(
-        sanitized.replace(/^\/+/, '')
-      );
-
-      if (!normalizedBase || normalizedBase === '.') {
-        return normalizedPath;
-      }
-
-      return sanitizeHeroSpritePath(`${normalizedBase}/${normalizedPath}`);
-    };
 
     const isPlainObjectValue = (value) =>
       Boolean(value) && typeof value === 'object' && !Array.isArray(value);
