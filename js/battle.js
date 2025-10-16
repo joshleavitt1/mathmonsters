@@ -24,7 +24,6 @@ const GEM_REWARD_INITIAL_PAUSE_MS = 500;
 const GEM_REWARD_CARD_DELAY_MS = 400;
 const GEM_REWARD_PULSE_DURATION_MS = 2100;
 const GEM_REWARD_PULSE_COUNT = 1;
-const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
 const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
 const GEM_REWARD_HOME_ANIMATION_KEY = 'mathmonstersGemRewardAnimation';
 const REGISTER_PAGE_URL = './register.html';
