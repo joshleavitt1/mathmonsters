@@ -2820,7 +2820,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (shouldShowRewardButton && win) {
-      nextMissionBtn.textContent = 'Claim Reward';
+      nextMissionBtn.textContent = 'Grab Gem';
       nextMissionBtn.dataset.action = 'next';
       return;
     }
