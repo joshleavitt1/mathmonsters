@@ -2803,7 +2803,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (hasPendingLevelUpReward) {
-      nextMissionBtn.textContent = 'Claim Gem';
+      nextMissionBtn.textContent = 'Grab Gem';
       nextMissionBtn.dataset.action = 'next';
       return;
     }
