@@ -5407,7 +5407,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof completeMessage.focus === 'function') {
         completeMessage.focus();
       }
-      if (win && latestGlobalRewardDisplay) {
+      if (win && latestGlobalRewardDisplay && !isLevelOneBattle) {
         showGlobalProgressDisplay(latestGlobalRewardDisplay);
       }
       if (win) {
