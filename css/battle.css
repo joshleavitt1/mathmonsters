@@ -1036,7 +1036,7 @@ body.is-reward-active .reward-overlay {
 .battle-complete-card__progress-bar {
   --progress-gradient-start: #5de75d;
   --progress-gradient-end: #00c853;
-  height: 14px;
+  height: 16px;
 }
 
 .battle-complete-card__sprite-surface {
