@@ -2803,7 +2803,7 @@ const setupDevOverlay = () => {
     return DEV_RESET_TARGET_MATH_KEY;
   };
 
-  const applyDevLevelChange = (levelValue) => {
+  const applyDevLevelChange = async (levelValue) => {
     if (!applyButton) {
       return false;
     }
@@ -2819,16 +2819,57 @@ const setupDevOverlay = () => {
       return false;
     }
 
+    const previousDisabledState = applyButton.disabled;
+    const previousBusyValue = applyButton.getAttribute('aria-busy');
+    applyButton.disabled = true;
+    applyButton.setAttribute('aria-busy', 'true');
+
+    let reloadTriggered = false;
+
+    const restoreButtonState = () => {
+      if (reloadTriggered) {
+        return;
+      }
+
+      applyButton.disabled = previousDisabledState;
+
+      if (previousBusyValue === null) {
+        applyButton.removeAttribute('aria-busy');
+      } else {
+        applyButton.setAttribute('aria-busy', previousBusyValue);
+      }
+    };
+
     try {
       const storedProgress = readStoredProgress();
       const normalizedProgress = isPlainObject(storedProgress)
         ? { ...storedProgress }
         : {};
 
-      const mathKey = resolveActiveMathKey(normalizedProgress) || DEV_RESET_TARGET_MATH_KEY;
-      const existingMathProgress = isPlainObject(normalizedProgress[mathKey])
-        ? { ...normalizedProgress[mathKey] }
-        : {};
+      let overlayData = null;
+      try {
+        overlayData = collectDevOverlayPlayerData();
+      } catch (error) {
+        overlayData = null;
+      }
+
+      const overlayProgress = isPlainObject(overlayData?.progress)
+        ? overlayData.progress
+        : null;
+
+      const mathKey =
+        resolveActiveMathKey(overlayProgress || normalizedProgress) ||
+        DEV_RESET_TARGET_MATH_KEY;
+      const overlayMathProgress = isPlainObject(overlayProgress?.[mathKey])
+        ? overlayProgress[mathKey]
+        : null;
+      const storedMathProgress = isPlainObject(normalizedProgress[mathKey])
+        ? normalizedProgress[mathKey]
+        : null;
+      const existingMathProgress = {
+        ...(isPlainObject(overlayMathProgress) ? overlayMathProgress : {}),
+        ...(isPlainObject(storedMathProgress) ? storedMathProgress : {}),
+      };
 
       const updatedMathProgress = {
         ...existingMathProgress,
@@ -2836,17 +2877,73 @@ const setupDevOverlay = () => {
       };
 
       const updatedProgress = {
+        ...(isPlainObject(overlayProgress) ? overlayProgress : {}),
         ...normalizedProgress,
         currentLevel: numericLevel,
         battleLevel: numericLevel,
         [mathKey]: updatedMathProgress,
       };
 
+      const supabaseProgressPayload = {
+        ...updatedProgress,
+        [mathKey]: { ...updatedMathProgress },
+      };
+
+      const basePlayerData = isPlainObject(overlayData?.playerData)
+        ? overlayData.playerData
+        : isPlainObject(overlayData?.player)
+        ? overlayData.player
+        : null;
+
+      const supabasePlayerPayload = isPlainObject(basePlayerData)
+        ? {
+            ...basePlayerData,
+            progress: {
+              ...(isPlainObject(basePlayerData.progress)
+                ? basePlayerData.progress
+                : {}),
+              ...supabaseProgressPayload,
+            },
+          }
+        : null;
+
+      const syncFn = playerProfileUtils?.syncPlayerDataWithSupabase;
+      if (
+        typeof syncFn === 'function' &&
+        supabasePlayerPayload &&
+        supabaseProgressPayload
+      ) {
+        setFeedback('Syncing level with Supabase…');
+        let syncSucceeded = false;
+        try {
+          const result = await syncFn(
+            supabasePlayerPayload,
+            supabaseProgressPayload
+          );
+          syncSucceeded = Boolean(result);
+        } catch (error) {
+          console.warn('Unable to sync level change with Supabase.', error);
+          syncSucceeded = false;
+        }
+
+        if (!syncSucceeded) {
+          setFeedback(
+            'Unable to sync level with Supabase. Please try again.',
+            'error'
+          );
+          restoreButtonState();
+          return false;
+        }
+      }
+
       const success = storeProgressAndReload(updatedProgress, applyButton);
       if (!success) {
         setFeedback('Unable to apply level change. Please try again.', 'error');
+        restoreButtonState();
         return false;
       }
+
+      reloadTriggered = true;
 
       if (levelSelect) {
         levelSelect.value = String(numericLevel);
@@ -2858,6 +2955,7 @@ const setupDevOverlay = () => {
     } catch (error) {
       console.warn('Unable to apply developer level change.', error);
       setFeedback('Unable to apply level change. Please try again.', 'error');
+      restoreButtonState();
       return false;
     }
   };
@@ -2948,12 +3046,12 @@ const setupDevOverlay = () => {
   }
 
   if (applyButton && levelSelect) {
-    applyButton.addEventListener('click', (event) => {
+    applyButton.addEventListener('click', async (event) => {
       if (event && typeof event.preventDefault === 'function') {
         event.preventDefault();
       }
 
-      applyDevLevelChange(levelSelect.value);
+      await applyDevLevelChange(levelSelect.value);
     });
   }
 };
