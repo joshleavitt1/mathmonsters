@@ -1620,7 +1620,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const buttonText = gemLabel
       ? `Claim ${gemLabel}`
       : isWin
-      ? 'Swim Home!'
+      ? 'Swim Home'
       : 'Try Again!';
 
     return {
@@ -2795,6 +2795,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }, totalFallbackDuration);
     });
 
+  const isEvolutionMilestoneLevel = (level) => {
+    const numericLevel = Number(level);
+    if (!Number.isFinite(numericLevel)) {
+      return false;
+    }
+
+    const normalizedLevel = Math.max(1, Math.round(numericLevel));
+    if (normalizedLevel < 6) {
+      return false;
+    }
+
+    return (normalizedLevel - 6) % 5 === 0;
+  };
+
   const updateNextMissionButton = (win = true, rewardAmount = null) => {
     if (!nextMissionBtn) {
       return;
@@ -2829,7 +2843,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    nextMissionBtn.textContent = win ? 'Swim Home!' : 'Try Again!';
+    nextMissionBtn.textContent = win ? 'Swim Home' : 'Try Again!';
     nextMissionBtn.dataset.action = win ? 'next' : 'retry';
   };
 
@@ -5260,6 +5274,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const rewardBattleIndex = normalizePositiveInteger(
       progressState?.currentBattle
     );
+    const rewardBattleTotal = normalizePositiveInteger(
+      progressState?.battleCount ?? progressState?.currentLevelTotal
+    );
     const isLevelOneBattle =
       Number.isFinite(rewardCurrentLevel) && rewardCurrentLevel === 1;
 
@@ -5372,7 +5389,18 @@ document.addEventListener('DOMContentLoaded', () => {
       pendingGemReward = null;
     }
 
-    if (win && !hasPendingLevelUpReward) {
+    const milestoneWin =
+      win &&
+      isEvolutionMilestoneLevel(rewardCurrentLevel) &&
+      Number.isFinite(rewardBattleIndex) &&
+      (Number.isFinite(rewardBattleTotal)
+        ? rewardBattleIndex >= rewardBattleTotal
+        : rewardBattleIndex % BATTLES_PER_LEVEL === 0);
+
+    if (milestoneWin) {
+      hasPendingLevelUpReward = true;
+      rewardAnimationPlayed = false;
+    } else if (win && !hasPendingLevelUpReward) {
       const isInitialLevel =
         Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel === 1;
       const noExperienceRequirement = levelExperienceRequirement <= 0;
