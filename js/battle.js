@@ -149,9 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const completeMessage = document.getElementById('complete-message');
   const battleCompleteTitle = completeMessage?.querySelector('#battle-complete-title');
-  const battleCompleteSubtitle = completeMessage?.querySelector(
-    '[data-battle-complete-subtitle]'
-  );
   const spriteSurface = completeMessage?.querySelector('[data-battle-complete-sprite-surface]');
   const globalProgressContainer = completeMessage?.querySelector('[data-global-progress]');
   const globalProgressBar = globalProgressContainer?.querySelector('[role="progressbar"]');
@@ -562,6 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   let latestGlobalRewardDisplay = null;
   let globalProgressRevealTimeout = null;
+  let pendingGlobalProgressValue = 0;
 
   const maybeShowFirstCorrectMedal = (resolvedLevel, correctCount) => {
     if (!medalElement) {
@@ -3787,27 +3785,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const setBattleCompleteSubtitle = (text = '') => {
-    if (!battleCompleteSubtitle) {
-      return;
-    }
-
-    const normalized = typeof text === 'string' ? text.trim() : '';
-
-    if (!normalized) {
-      battleCompleteSubtitle.textContent = '';
-      if (!battleCompleteSubtitle.hasAttribute('hidden')) {
-        battleCompleteSubtitle.setAttribute('hidden', 'hidden');
-      }
-      battleCompleteSubtitle.setAttribute('aria-hidden', 'true');
-      return;
-    }
-
-    battleCompleteSubtitle.textContent = normalized;
-    battleCompleteSubtitle.removeAttribute('hidden');
-    battleCompleteSubtitle.removeAttribute('aria-hidden');
-  };
-
   const createDefaultGlobalRewardProgress = () => ({
     milestoneSize: GLOBAL_REWARD_MILESTONE,
     winsSinceReward: 0,
@@ -3870,6 +3847,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!globalProgressContainer.hasAttribute('hidden')) {
       globalProgressContainer.setAttribute('hidden', 'hidden');
     }
+    pendingGlobalProgressValue = 0;
+    if (globalProgressFill) {
+      globalProgressFill.style.setProperty('--progress-value', '0');
+    }
   };
 
   const applyGlobalProgressDisplay = (display) => {
@@ -3894,9 +3875,11 @@ document.addEventListener('DOMContentLoaded', () => {
       globalProgressBar.setAttribute('aria-valuenow', String(wins));
     }
 
+    const ratio = milestone > 0 ? wins / milestone : 0;
+
+    pendingGlobalProgressValue = ratio;
     if (globalProgressFill) {
-      const ratio = milestone > 0 ? wins / milestone : 0;
-      globalProgressFill.style.setProperty('--progress-value', ratio);
+      globalProgressFill.style.setProperty('--progress-value', '0');
     }
   };
 
@@ -3913,6 +3896,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     globalProgressRevealTimeout = window.setTimeout(() => {
       globalProgressContainer.classList.add('battle-complete-card__progress--visible');
+      if (globalProgressFill) {
+        const clampedValue = Number.isFinite(pendingGlobalProgressValue)
+          ? Math.max(0, Math.min(1, pendingGlobalProgressValue))
+          : 0;
+        globalProgressFill.style.setProperty('--progress-value', `${clampedValue}`);
+      }
       globalProgressRevealTimeout = null;
     }, Math.max(0, GLOBAL_PROGRESS_REVEAL_DELAY_MS));
   };
@@ -5290,13 +5279,13 @@ document.addEventListener('DOMContentLoaded', () => {
         completeMonsterImg.setAttribute('aria-hidden', 'true');
         completeMonsterImg.alt = '';
       } else {
-        const imageSrc = rewardSpriteSources.chest || GEM_REWARD_CHEST_SRC;
+        const imageSrc = rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
         completeMonsterImg.src = imageSrc;
         completeMonsterImg.hidden = false;
         completeMonsterImg.setAttribute('aria-hidden', 'false');
         completeMonsterImg.alt = isLevelOneBattle
-          ? 'Treasure chest reward for leveling up'
-          : 'Treasure chest reward for defeating the monster';
+          ? 'Gem reward for leveling up'
+          : 'Gem reward for defeating the monster';
       }
     }
 
@@ -5306,11 +5295,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win) {
       setBattleCompleteTitleLines('Monster Defeated!');
-      setBattleCompleteSubtitle('Chest');
       awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
       setBattleCompleteTitleLines('Keep Practicing!');
-      setBattleCompleteSubtitle('');
       latestGlobalRewardDisplay = null;
     }
 
@@ -5565,17 +5552,16 @@ document.addEventListener('DOMContentLoaded', () => {
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
     setBattleCompleteTitleLines('Monster Defeated!');
-    setBattleCompleteSubtitle('Chest');
     if (spriteSurface) {
       spriteSurface.hidden = false;
       spriteSurface.setAttribute('aria-hidden', 'false');
     }
     if (completeMonsterImg) {
-      const imageSrc = rewardSpriteSources.chest || GEM_REWARD_CHEST_SRC;
+      const imageSrc = rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
       completeMonsterImg.src = imageSrc;
       completeMonsterImg.hidden = false;
       completeMonsterImg.setAttribute('aria-hidden', 'false');
-      completeMonsterImg.alt = 'Treasure chest reward';
+      completeMonsterImg.alt = 'Gem reward';
     }
     hideGlobalProgressDisplay();
     latestGlobalRewardDisplay = null;

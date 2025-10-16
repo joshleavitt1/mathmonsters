@@ -1021,11 +1021,6 @@ body.is-reward-active .reward-overlay {
   text-align: center;
 }
 
-.battle-complete-card__subtitle {
-  margin: 0;
-  text-align: center;
-}
-
 .battle-complete-card__progress {
   width: 100%;
   opacity: 0;
