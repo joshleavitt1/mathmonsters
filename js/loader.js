@@ -146,6 +146,25 @@ const toSpriteCacheKey = (path) => {
   return absolute || trimmed;
 };
 
+const setSpriteBaseSource = (image, source) => {
+  if (!image || !source) {
+    return;
+  }
+
+  const trimmedSource = String(source).trim();
+  if (!trimmedSource) {
+    return;
+  }
+
+  if (typeof image.dataset === 'object' && image.dataset !== null) {
+    if (!image.dataset.mathMonstersSpriteBase) {
+      image.dataset.mathMonstersSpriteBase = trimmedSource;
+    }
+  } else if (!image.mathMonstersSpriteBase) {
+    image.mathMonstersSpriteBase = trimmedSource;
+  }
+};
+
 const registerSpriteElement = (path, image) => {
   if (!image) {
     return;
@@ -156,6 +175,7 @@ const registerSpriteElement = (path, image) => {
     return;
   }
 
+  setSpriteBaseSource(image, cacheKey);
   spriteElementCache.set(cacheKey, image);
 
   if (typeof window !== 'undefined') {

@@ -950,9 +950,23 @@ document.addEventListener('DOMContentLoaded', () => {
       if (spriteElementCache.has(absolute)) {
         const cached = spriteElementCache.get(absolute);
         if (cached) {
+          const baseSrc = (() => {
+            const datasetBase = cached.dataset?.mathMonstersSpriteBase;
+            if (typeof datasetBase === 'string' && datasetBase.trim()) {
+              return datasetBase.trim();
+            }
+
+            const propertyBase = cached.mathMonstersSpriteBase;
+            if (typeof propertyBase === 'string' && propertyBase.trim()) {
+              return propertyBase.trim();
+            }
+
+            return null;
+          })();
           const currentSrc = cached.currentSrc || cached.src || absolute;
+          const resolvedSrc = baseSrc || absolute || currentSrc;
           return {
-            src: currentSrc,
+            src: resolvedSrc,
             key: absolute,
             image: cached,
           };
