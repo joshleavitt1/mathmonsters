@@ -2671,7 +2671,7 @@ const setupDevOverlay = () => {
   const feedback = overlay.querySelector('[data-dev-level-feedback]');
 
   const MIN_DEV_LEVEL = 1;
-  const MAX_DEV_LEVEL = 5;
+  const MAX_DEV_LEVEL = 15;
 
   const isValidDevLevel = (value) =>
     Number.isInteger(value) && value >= MIN_DEV_LEVEL && value <= MAX_DEV_LEVEL;
