@@ -201,83 +201,6 @@ const getActiveHeroElement = () => {
   return getLevelOneHeroElement() ?? getStandardHeroElement();
 };
 
-const HERO_FLOAT_MIN_RANGE_PX = 12;
-const HERO_FLOAT_MAX_RANGE_PX = 48;
-const HERO_FLOAT_MIN_DURATION_MS = 2200;
-const HERO_FLOAT_MAX_DURATION_MS = 5200;
-
-const updateHeroFloat = () => {
-  const heroImage = getActiveHeroElement();
-  if (!heroImage) {
-    return;
-  }
-
-  const prefersReducedMotion = (() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return false;
-    }
-
-    try {
-      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    } catch (error) {
-      console.warn('Unable to evaluate reduced-motion preference for hero float.', error);
-      return false;
-    }
-  })();
-
-  const applyFloatStyles = () => {
-    if (!heroImage) {
-      return;
-    }
-
-    if (prefersReducedMotion) {
-      heroImage.style.setProperty('--hero-float-range', '0px');
-      heroImage.style.setProperty('--hero-float-duration', '0s');
-      heroImage.style.setProperty('--hero-float-offset', '0px');
-      return;
-    }
-
-    const heroHeight =
-      Number.isFinite(heroImage.naturalHeight) && heroImage.naturalHeight > 0
-        ? heroImage.naturalHeight
-        : heroImage.clientHeight;
-
-    if (!heroHeight) {
-      heroImage.style.removeProperty('--hero-float-range');
-      heroImage.style.removeProperty('--hero-float-duration');
-      heroImage.style.removeProperty('--hero-float-offset');
-      return;
-    }
-
-    const range = Math.max(
-      HERO_FLOAT_MIN_RANGE_PX,
-      Math.min(HERO_FLOAT_MAX_RANGE_PX, Math.round(heroHeight * 0.12))
-    );
-    heroImage.style.setProperty('--hero-float-range', `${range}px`);
-    heroImage.style.setProperty('--hero-float-offset', `${-range}px`);
-
-    const durationMs = Math.max(
-      HERO_FLOAT_MIN_DURATION_MS,
-      Math.min(HERO_FLOAT_MAX_DURATION_MS, Math.round(range * 120))
-    );
-    const durationSeconds = (durationMs / 1000).toFixed(2).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
-    heroImage.style.setProperty('--hero-float-duration', `${durationSeconds}s`);
-  };
-
-  if (heroImage.complete && heroImage.naturalHeight > 0) {
-    applyFloatStyles();
-    return;
-  }
-
-  const handleLoad = () => {
-    heroImage.removeEventListener('load', handleLoad);
-    applyFloatStyles();
-  };
-
-  heroImage.addEventListener('load', handleLoad, { once: true });
-  applyFloatStyles();
-};
-
 const getActiveBattleButton = () => {
   if (document.body.classList.contains('is-standard-landing')) {
     return document.querySelector('[data-standard-landing] [data-battle-button]');
@@ -2748,7 +2671,7 @@ const setupDevOverlay = () => {
   const feedback = overlay.querySelector('[data-dev-level-feedback]');
 
   const MIN_DEV_LEVEL = 1;
-  const MAX_DEV_LEVEL = 15;
+  const MAX_DEV_LEVEL = 5;
 
   const isValidDevLevel = (value) =>
     Number.isInteger(value) && value >= MIN_DEV_LEVEL && value <= MAX_DEV_LEVEL;

@@ -1033,10 +1033,6 @@ body.is-reward-active .reward-overlay {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.battle-complete-card__progress .progress {
-  background-color: #ffffff;
-}
-
 .battle-complete-card__progress--visible {
   opacity: 1;
   transform: translateY(0);
