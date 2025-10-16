@@ -2795,7 +2795,33 @@ document.addEventListener('DOMContentLoaded', () => {
       }, totalFallbackDuration);
     });
 
-  const updateNextMissionButton = (win = true, rewardAmount = null) => {
+  const isGemMilestoneReward = (reward) => {
+    if (!reward || reward.win !== true) {
+      return false;
+    }
+
+    const rawLevel = Number(reward.currentLevel);
+
+    if (!Number.isFinite(rawLevel)) {
+      return false;
+    }
+
+    const normalizedLevel = Math.max(1, Math.round(rawLevel));
+
+    if (normalizedLevel < 6) {
+      return false;
+    }
+
+    const milestoneSize = Math.max(1, Math.round(GLOBAL_REWARD_MILESTONE));
+
+    if (milestoneSize <= 0) {
+      return false;
+    }
+
+    return (normalizedLevel - 6) % milestoneSize === 0;
+  };
+
+  const updateNextMissionButton = (win = true) => {
     if (!nextMissionBtn) {
       return;
     }
@@ -2807,18 +2833,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const hasPendingReward = Boolean(pendingGemReward);
+    const isMilestoneReward =
+      hasPendingReward && isGemMilestoneReward(pendingGemReward);
 
-    const resolvedAmountRaw =
-      rewardAmount ?? (hasPendingReward ? pendingGemReward.amount : null);
-    const normalizedAmount = Number.isFinite(resolvedAmountRaw)
-      ? Math.max(0, Math.round(resolvedAmountRaw))
-      : null;
-
-    if (normalizedAmount) {
-      const label = `Claim ${normalizedAmount} Gem${
-        normalizedAmount === 1 ? '' : 's'
-      }`;
-      nextMissionBtn.textContent = label;
+    if (win && isMilestoneReward) {
+      nextMissionBtn.textContent = 'Grab Gem';
       nextMissionBtn.dataset.action = 'next';
       return;
     }
@@ -5387,7 +5406,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    updateNextMissionButton(win, shouldAwardGemReward ? gemRewardAmount : null);
+    updateNextMissionButton(win);
 
     if (!win) {
       resetRewardOverlay();
@@ -5448,7 +5467,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (pendingGemReward) {
         const rewardLevel = Number(pendingGemReward.currentLevel);
-        const skipGemAnimation = Number.isFinite(rewardLevel) && rewardLevel >= 2;
+        const skipGemAnimation =
+          Number.isFinite(rewardLevel) &&
+          rewardLevel >= 2 &&
+          !isGemMilestoneReward(pendingGemReward);
 
         if (skipGemAnimation) {
           nextMissionProcessing = true;
