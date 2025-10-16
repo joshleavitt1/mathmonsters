@@ -125,6 +125,56 @@
           "questions": {
             "path": "questions/questions.json"
           }
+        },
+        {
+          "level": 11,
+          "name": "Level 11",
+          "monster": {
+            "spritePool": "standardPool"
+          },
+          "questions": {
+            "path": "questions/questions.json"
+          }
+        },
+        {
+          "level": 12,
+          "name": "Level 12",
+          "monster": {
+            "spritePool": "standardPool"
+          },
+          "questions": {
+            "path": "questions/questions.json"
+          }
+        },
+        {
+          "level": 13,
+          "name": "Level 13",
+          "monster": {
+            "spritePool": "standardPool"
+          },
+          "questions": {
+            "path": "questions/questions.json"
+          }
+        },
+        {
+          "level": 14,
+          "name": "Level 14",
+          "monster": {
+            "spritePool": "standardPool"
+          },
+          "questions": {
+            "path": "questions/questions.json"
+          }
+        },
+        {
+          "level": 15,
+          "name": "Level 15",
+          "monster": {
+            "spritePool": "standardPool"
+          },
+          "questions": {
+            "path": "questions/questions.json"
+          }
         }
       ]
     }

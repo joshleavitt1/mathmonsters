@@ -2797,37 +2797,31 @@ document.addEventListener('DOMContentLoaded', () => {
       }, totalFallbackDuration);
     });
 
-  const updateNextMissionButton = (win = true, rewardAmount = null) => {
+  const updateNextMissionButton = (win = true, options = {}) => {
     if (!nextMissionBtn) {
       return;
     }
 
-    if (hasPendingLevelUpReward) {
-      nextMissionBtn.textContent = 'Claim Gem';
-      nextMissionBtn.dataset.action = 'next';
-      return;
-    }
-
-    const hasPendingReward = Boolean(pendingGemReward);
-
-    const resolvedAmountRaw =
-      rewardAmount ?? (hasPendingReward ? pendingGemReward.amount : null);
-    const normalizedAmount = Number.isFinite(resolvedAmountRaw)
-      ? Math.max(0, Math.round(resolvedAmountRaw))
+    const resolvedLevel = Number.isFinite(options?.currentLevel)
+      ? Math.max(1, Math.round(options.currentLevel))
       : null;
-
-    if (normalizedAmount) {
-      const label = `Claim ${normalizedAmount} Gem${
-        normalizedAmount === 1 ? '' : 's'
-      }`;
-      nextMissionBtn.textContent = label;
-      nextMissionBtn.dataset.action = 'next';
-      return;
-    }
+    const isLevelOneContext = resolvedLevel === 1;
+    const milestoneReached = options?.milestoneReached === true;
+    const hasPendingReward = Boolean(pendingGemReward);
+    const showLevelOneReward = isLevelOneContext && hasPendingReward;
+    const showMilestoneReward = milestoneReached && hasPendingReward;
+    const shouldShowRewardButton =
+      hasPendingLevelUpReward || showLevelOneReward || showMilestoneReward;
 
     if (!win && !hasPendingReward) {
       nextMissionBtn.textContent = 'Try Again!';
       nextMissionBtn.dataset.action = 'retry';
+      return;
+    }
+
+    if (shouldShowRewardButton && win) {
+      nextMissionBtn.textContent = 'Claim Reward';
+      nextMissionBtn.dataset.action = 'next';
       return;
     }
 
@@ -5290,12 +5284,14 @@ document.addEventListener('DOMContentLoaded', () => {
         completeMonsterImg.setAttribute('aria-hidden', 'true');
         completeMonsterImg.alt = '';
       } else {
-        const imageSrc = rewardSpriteSources.chest || GEM_REWARD_CHEST_SRC;
+        const imageSrc = isLevelOneBattle
+          ? rewardSpriteSources.gem || GEM_REWARD_GEM_SRC
+          : rewardSpriteSources.chest || GEM_REWARD_CHEST_SRC;
         completeMonsterImg.src = imageSrc;
         completeMonsterImg.hidden = false;
         completeMonsterImg.setAttribute('aria-hidden', 'false');
         completeMonsterImg.alt = isLevelOneBattle
-          ? 'Treasure chest reward for leveling up'
+          ? 'Gem reward for leveling up'
           : 'Treasure chest reward for defeating the monster';
       }
     }
@@ -5306,7 +5302,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (win) {
       setBattleCompleteTitleLines('Monster Defeated!');
-      setBattleCompleteSubtitle('Chest');
+      setBattleCompleteSubtitle('');
       awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
       setBattleCompleteTitleLines('Keep Practicing!');
@@ -5385,6 +5381,18 @@ document.addEventListener('DOMContentLoaded', () => {
       pendingGemReward = null;
     }
 
+    const milestoneReached = Boolean(latestGlobalRewardDisplay?.reachedMilestone);
+
+    if (pendingGemReward) {
+      const normalizedLevel = Number.isFinite(rewardCurrentLevel)
+        ? Math.max(1, Math.round(rewardCurrentLevel))
+        : null;
+      const forceAnimation =
+        normalizedLevel === 1 || milestoneReached || pendingGemReward.forceAnimation === true;
+      pendingGemReward.forceAnimation = forceAnimation;
+      pendingGemReward.milestoneReward = milestoneReached;
+    }
+
     if (win && !hasPendingLevelUpReward) {
       const isInitialLevel =
         Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel === 1;
@@ -5400,7 +5408,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    updateNextMissionButton(win, shouldAwardGemReward ? gemRewardAmount : null);
+    const resolvedCurrentLevelForButton = Number.isFinite(rewardCurrentLevel)
+      ? Math.max(1, Math.round(rewardCurrentLevel))
+      : null;
+
+    updateNextMissionButton(win, {
+      currentLevel: resolvedCurrentLevelForButton,
+      milestoneReached,
+    });
 
     if (!win) {
       resetRewardOverlay();
@@ -5420,7 +5435,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof completeMessage.focus === 'function') {
         completeMessage.focus();
       }
-      if (win && latestGlobalRewardDisplay) {
+      if (win && latestGlobalRewardDisplay && !isLevelOneBattle) {
         showGlobalProgressDisplay(latestGlobalRewardDisplay);
       }
       if (win) {
@@ -5461,7 +5476,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (pendingGemReward) {
         const rewardLevel = Number(pendingGemReward.currentLevel);
-        const skipGemAnimation = Number.isFinite(rewardLevel) && rewardLevel >= 2;
+        const forceAnimation = pendingGemReward.forceAnimation === true;
+        const skipGemAnimation =
+          !forceAnimation && Number.isFinite(rewardLevel) && rewardLevel >= 2;
 
         if (skipGemAnimation) {
           nextMissionProcessing = true;
@@ -5565,7 +5582,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
     setBattleCompleteTitleLines('Monster Defeated!');
-    setBattleCompleteSubtitle('Chest');
+    setBattleCompleteSubtitle('');
     if (spriteSurface) {
       spriteSurface.hidden = false;
       spriteSurface.setAttribute('aria-hidden', 'false');
