@@ -582,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hideMedal({ immediate: true });
   };
   let evolutionInProgress = false;
-  let heroEvolutionStartedAtInitialStage = false;
+  let heroEvolutionStartingStage = null;
   let rewardCardDisplayTimeout = null;
   let heroSpriteReadyPromise = null;
 
@@ -605,8 +605,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const REWARD_GEM_SRC = GEM_REWARD_GEM_SRC;
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
   const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
+  const HERO_LEVEL_3_SRC = '../images/hero/shellfin_evolution_3.png';
 
   const rewardSpritePreloadCache = new Map();
+  const heroEvolutionSpritePreloadCache = new Map();
+
+  const HERO_EVOLUTION_STAGE = {
+    INITIAL: 1,
+    SECOND: 2,
+    THIRD: 3,
+  };
+
+  const HERO_EVOLUTION_STAGE_ASSETS = {
+    [HERO_EVOLUTION_STAGE.SECOND]: {
+      profileSprite: sanitizeHeroSpritePath('images/hero/shellfin_evolution_2.png'),
+      profileAttackSprite: sanitizeHeroSpritePath('images/hero/shellfin_attack_2.png'),
+      battleSprite: sanitizeHeroSpritePath('../images/hero/shellfin_evolution_2.png'),
+      battleAttackSprite: sanitizeHeroSpritePath('../images/hero/shellfin_attack_2.png'),
+      attackValue: 2,
+    },
+    [HERO_EVOLUTION_STAGE.THIRD]: {
+      profileSprite: sanitizeHeroSpritePath('images/hero/shellfin_evolution_3.png'),
+      profileAttackSprite: sanitizeHeroSpritePath('images/hero/shellfin_attack_3.png'),
+      battleSprite: sanitizeHeroSpritePath('../images/hero/shellfin_evolution_3.png'),
+      battleAttackSprite: sanitizeHeroSpritePath('../images/hero/shellfin_attack_3.png'),
+      attackValue: 3,
+    },
+  };
+
+  const HERO_EVOLUTION_STAGE_ORDER = Object.keys(HERO_EVOLUTION_STAGE_ASSETS)
+    .map((stage) => Number(stage))
+    .filter((stage) => Number.isFinite(stage))
+    .sort((a, b) => a - b);
 
   const resolveRewardSpriteSource = (src) => {
     if (typeof src !== 'string') {
@@ -698,20 +728,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     );
   };
-
-  const HERO_PROFILE_EVOLUTION_SPRITE = sanitizeHeroSpritePath(
-    'images/hero/shellfin_evolution_2.png'
-  );
-  const HERO_PROFILE_EVOLUTION_ATTACK_SPRITE = sanitizeHeroSpritePath(
-    'images/hero/shellfin_attack_2.png'
-  );
-  const HERO_BATTLE_EVOLUTION_SPRITE = sanitizeHeroSpritePath(
-    '../images/hero/shellfin_evolution_2.png'
-  );
-  const HERO_BATTLE_EVOLUTION_ATTACK_SPRITE = sanitizeHeroSpritePath(
-    '../images/hero/shellfin_attack_2.png'
-  );
-  const HERO_EVOLUTION_ATTACK_VALUE = 2;
 
   const readStoredPlayerProfile = () => {
     if (typeof window === 'undefined') {
@@ -828,16 +844,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const applyHeroEvolutionProfileUpdate = () => {
+  const applyHeroEvolutionProfileUpdate = (
+    stageAssetsMap = HERO_EVOLUTION_STAGE_ASSETS,
+    options = {}
+  ) => {
+    if (!stageAssetsMap || typeof stageAssetsMap !== 'object') {
+      return false;
+    }
+
+    const { startingStage = heroEvolutionStartingStage } = options;
+    const parsedStartingStage = Number(startingStage);
+    const baseStage = Number.isFinite(parsedStartingStage)
+      ? parsedStartingStage
+      : getHeroEvolutionStage();
+
+    const availableStages = HERO_EVOLUTION_STAGE_ORDER;
+    if (!Array.isArray(availableStages) || availableStages.length === 0) {
+      return false;
+    }
+
+    const targetStage = availableStages.find((stage) => stage > baseStage);
+    const resolvedStage =
+      Number.isFinite(targetStage) && targetStage
+        ? targetStage
+        : availableStages[availableStages.length - 1];
+
+    const stageAssets = stageAssetsMap[resolvedStage];
+    if (!stageAssets || typeof stageAssets !== 'object') {
+      return false;
+    }
+
     const battleOptions = {
-      sprite: HERO_BATTLE_EVOLUTION_SPRITE,
-      attackSprite: HERO_BATTLE_EVOLUTION_ATTACK_SPRITE,
-      attackValue: HERO_EVOLUTION_ATTACK_VALUE,
+      sprite: stageAssets.battleSprite,
+      attackSprite: stageAssets.battleAttackSprite,
+      attackValue: stageAssets.attackValue,
     };
     const profileOptions = {
-      sprite: HERO_PROFILE_EVOLUTION_SPRITE,
-      attackSprite: HERO_PROFILE_EVOLUTION_ATTACK_SPRITE,
-      attackValue: HERO_EVOLUTION_ATTACK_VALUE,
+      sprite: stageAssets.profileSprite,
+      attackSprite: stageAssets.profileAttackSprite,
+      attackValue: stageAssets.attackValue,
     };
 
     if (window.preloadedData && typeof window.preloadedData === 'object') {
@@ -878,7 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
         typeof window.mathMonstersBattleSnapshot.hero === 'object'
           ? window.mathMonstersBattleSnapshot.hero
           : {};
-      snapshotHero.sprite = HERO_BATTLE_EVOLUTION_SPRITE;
+      applyHeroSpriteUpdate(snapshotHero, battleOptions);
       window.mathMonstersBattleSnapshot.hero = snapshotHero;
     }
 
@@ -898,6 +943,8 @@ document.addEventListener('DOMContentLoaded', () => {
         persistPlayerProfile(clonedProfile);
       }
     }
+
+    return true;
   };
 
   const spriteElementCache =
@@ -1660,6 +1707,86 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const preloadHeroEvolutionSprite = (src) => {
+    if (typeof src !== 'string') {
+      return Promise.resolve(null);
+    }
+
+    const resolved = resolveAbsoluteSpritePath(src) || src;
+    if (!resolved) {
+      return Promise.resolve(null);
+    }
+
+    if (heroEvolutionSpritePreloadCache.has(resolved)) {
+      return heroEvolutionSpritePreloadCache.get(resolved);
+    }
+
+    const preloadPromise = new Promise((resolve) => {
+      const image = new Image();
+      let settled = false;
+
+      const finalize = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+
+        if (spriteElementCache) {
+          spriteElementCache.set(resolved, image);
+        }
+
+        resolve(resolved);
+      };
+
+      image.addEventListener('error', finalize, { once: true });
+      image.addEventListener(
+        'load',
+        () => {
+          if (typeof image.decode === 'function') {
+            image
+              .decode()
+              .then(finalize)
+              .catch(finalize);
+            return;
+          }
+
+          finalize();
+        },
+        { once: true }
+      );
+
+      image.decoding = 'async';
+      image.src = resolved;
+    });
+
+    heroEvolutionSpritePreloadCache.set(resolved, preloadPromise);
+    return preloadPromise;
+  };
+
+  const preloadHeroEvolutionAssets = (assets) => {
+    if (!assets || typeof assets !== 'object') {
+      return;
+    }
+
+    const spriteKeys = [
+      'profileSprite',
+      'profileAttackSprite',
+      'battleSprite',
+      'battleAttackSprite',
+    ];
+
+    spriteKeys.forEach((key) => {
+      const spriteSrc = assets[key];
+      if (typeof spriteSrc === 'string' && spriteSrc) {
+        preloadHeroEvolutionSprite(spriteSrc).catch(() => {});
+      }
+    });
+  };
+
+  Object.values(HERO_EVOLUTION_STAGE_ASSETS).forEach((assets) => {
+    preloadHeroEvolutionAssets(assets);
+  });
+
   const normalizeSpritePath = (path) => {
     if (typeof path !== 'string') {
       return '';
@@ -1684,51 +1811,95 @@ document.addEventListener('DOMContentLoaded', () => {
     return sanitizeHeroSpritePath(fallback);
   };
 
+  const HERO_STAGE_NORMALIZED_SPRITES = {
+    [HERO_EVOLUTION_STAGE.INITIAL]: normalizeSpritePath(
+      resolveAbsoluteSpritePath(HERO_LEVEL_1_SRC) || HERO_LEVEL_1_SRC
+    ),
+    [HERO_EVOLUTION_STAGE.SECOND]: normalizeSpritePath(
+      resolveAbsoluteSpritePath(HERO_LEVEL_2_SRC) || HERO_LEVEL_2_SRC
+    ),
+    [HERO_EVOLUTION_STAGE.THIRD]: normalizeSpritePath(
+      resolveAbsoluteSpritePath(HERO_LEVEL_3_SRC) || HERO_LEVEL_3_SRC
+    ),
+  };
+
+  const HERO_EVOLUTION_STAGE_PATTERNS = {
+    [HERO_EVOLUTION_STAGE.SECOND]: /_(?:level|evolution)_2(?:[^0-9]|$)/,
+    [HERO_EVOLUTION_STAGE.THIRD]: /_(?:level|evolution)_3(?:[^0-9]|$)/,
+  };
+
+  const getHeroEvolutionStage = (sprite = getCurrentHeroSprite()) => {
+    const normalized = normalizeSpritePath(sprite);
+    if (!normalized) {
+      return HERO_EVOLUTION_STAGE.INITIAL;
+    }
+
+    if (
+      HERO_STAGE_NORMALIZED_SPRITES[HERO_EVOLUTION_STAGE.THIRD] &&
+      normalized ===
+        HERO_STAGE_NORMALIZED_SPRITES[HERO_EVOLUTION_STAGE.THIRD]
+    ) {
+      return HERO_EVOLUTION_STAGE.THIRD;
+    }
+
+    if (
+      HERO_STAGE_NORMALIZED_SPRITES[HERO_EVOLUTION_STAGE.SECOND] &&
+      normalized ===
+        HERO_STAGE_NORMALIZED_SPRITES[HERO_EVOLUTION_STAGE.SECOND]
+    ) {
+      return HERO_EVOLUTION_STAGE.SECOND;
+    }
+
+    if (HERO_EVOLUTION_STAGE_PATTERNS[HERO_EVOLUTION_STAGE.THIRD].test(normalized)) {
+      return HERO_EVOLUTION_STAGE.THIRD;
+    }
+
+    if (HERO_EVOLUTION_STAGE_PATTERNS[HERO_EVOLUTION_STAGE.SECOND].test(normalized)) {
+      return HERO_EVOLUTION_STAGE.SECOND;
+    }
+
+    return HERO_EVOLUTION_STAGE.INITIAL;
+  };
+
+  const isHeroAtInitialEvolutionStage = (sprite = getCurrentHeroSprite()) =>
+    getHeroEvolutionStage(sprite) === HERO_EVOLUTION_STAGE.INITIAL;
+
+  const isHeroAtSecondEvolutionStage = (sprite = getCurrentHeroSprite()) =>
+    getHeroEvolutionStage(sprite) === HERO_EVOLUTION_STAGE.SECOND;
+
+  const isHeroAtThirdEvolutionStage = (sprite = getCurrentHeroSprite()) =>
+    getHeroEvolutionStage(sprite) === HERO_EVOLUTION_STAGE.THIRD;
+
   const deriveNextHeroSprite = () => {
     const currentSprite = getCurrentHeroSprite();
 
     if (typeof currentSprite === 'string' && currentSprite) {
-      const levelReplaced = currentSprite.replace(
-        /_level_(\d+)(\.[a-z0-9]+)$/i,
-        (match, level, extension) => {
-          const parsedLevel = Number(level);
-          if (Number.isFinite(parsedLevel)) {
-            return `_level_${Math.max(parsedLevel + 1, 1)}${extension}`;
-          }
-          return `_level_2${extension}`;
+      const incremented = currentSprite.replace(
+        /_(level|evolution)_(\d+)((?:\.[a-z0-9]+)?)(?=[?#]|$)/gi,
+        (match, label, stage, extension = '') => {
+          const parsedStage = Number(stage);
+          const nextStage = Number.isFinite(parsedStage)
+            ? Math.max(parsedStage + 1, 1)
+            : 2;
+          return `_${label}_${nextStage}${extension || ''}`;
         }
       );
 
-      if (levelReplaced !== currentSprite) {
-        return levelReplaced;
-      }
-
-      if (currentSprite.includes('level_1')) {
-        return currentSprite.replace('level_1', 'level_2');
+      if (incremented !== currentSprite) {
+        return incremented;
       }
     }
 
+    const useThirdStageFallback =
+      isHeroAtSecondEvolutionStage(currentSprite) ||
+      isHeroAtThirdEvolutionStage(currentSprite);
+    const fallbackSource = useThirdStageFallback
+      ? HERO_LEVEL_3_SRC
+      : HERO_LEVEL_2_SRC;
     const fallback =
-      resolveAbsoluteSpritePath(HERO_LEVEL_2_SRC) || HERO_LEVEL_2_SRC;
+      resolveAbsoluteSpritePath(fallbackSource) || fallbackSource;
 
     return sanitizeHeroSpritePath(fallback);
-  };
-
-  const isHeroAtInitialEvolutionStage = () => {
-    const currentSprite = normalizeSpritePath(getCurrentHeroSprite());
-    if (!currentSprite) {
-      return false;
-    }
-
-    const baseSprite = normalizeSpritePath(
-      resolveAbsoluteSpritePath(HERO_LEVEL_1_SRC) || HERO_LEVEL_1_SRC
-    );
-
-    if (baseSprite && currentSprite === baseSprite) {
-      return true;
-    }
-
-    return /_evolution_1(?:[^0-9]|$)/.test(currentSprite);
   };
 
   const clearEvolutionTimers = () => {
@@ -1988,6 +2159,25 @@ document.addEventListener('DOMContentLoaded', () => {
     let spriteReadyPromise = heroSpriteReadyPromise;
     let evolutionFinalized = false;
 
+    const evolutionStartStage = Number(heroEvolutionStartingStage);
+    let resolvedStartStage = Number.isFinite(evolutionStartStage)
+      ? evolutionStartStage
+      : getHeroEvolutionStage();
+
+    if (!Number.isFinite(resolvedStartStage)) {
+      resolvedStartStage = null;
+    }
+
+    if (resolvedStartStage === null && typeof nextSpriteSrc === 'string') {
+      const targetStage = getHeroEvolutionStage(nextSpriteSrc);
+      if (Number.isFinite(targetStage)) {
+        resolvedStartStage = Math.max(
+          targetStage - 1,
+          HERO_EVOLUTION_STAGE.INITIAL
+        );
+      }
+    }
+
     if (heroImg && typeof nextSpriteSrc === 'string') {
       heroImg.src = nextSpriteSrc;
       heroSpriteReadyPromise = updateHeroSpriteCustomProperties();
@@ -1995,8 +2185,14 @@ document.addEventListener('DOMContentLoaded', () => {
       heroImg.classList.add('battle-shellfin--evolved');
     }
 
-    if (heroEvolutionStartedAtInitialStage) {
-      applyHeroEvolutionProfileUpdate();
+    if (
+      resolvedStartStage !== null &&
+      resolvedStartStage >= HERO_EVOLUTION_STAGE.INITIAL &&
+      resolvedStartStage < HERO_EVOLUTION_STAGE.THIRD
+    ) {
+      applyHeroEvolutionProfileUpdate(undefined, {
+        startingStage: resolvedStartStage,
+      });
     }
 
     const finalizeEvolution = () => {
@@ -2026,7 +2222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       markRegistrationAsRequired();
 
-      heroEvolutionStartedAtInitialStage = false;
+      heroEvolutionStartingStage = null;
 
       if (!overlayShown) {
         cleanupEvolutionOverlay();
@@ -2080,7 +2276,19 @@ document.addEventListener('DOMContentLoaded', () => {
     evolutionInProgress = true;
     clearEvolutionTimers();
 
-    heroEvolutionStartedAtInitialStage = isHeroAtInitialEvolutionStage();
+    heroEvolutionStartingStage = getHeroEvolutionStage();
+
+    const nextEvolutionStage = HERO_EVOLUTION_STAGE_ORDER.find(
+      (stage) => stage > heroEvolutionStartingStage
+    );
+    if (
+      Number.isFinite(nextEvolutionStage) &&
+      HERO_EVOLUTION_STAGE_ASSETS[nextEvolutionStage]
+    ) {
+      preloadHeroEvolutionAssets(
+        HERO_EVOLUTION_STAGE_ASSETS[nextEvolutionStage]
+      );
+    }
 
     if (rewardCardButton) {
       rewardCardButton.disabled = true;
