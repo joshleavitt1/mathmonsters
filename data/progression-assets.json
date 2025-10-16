@@ -4,8 +4,8 @@
   "milestones": [
     {
       "level": 7,
-      "heroSprite": "images/hero/shellfin_evolution_3.png",
-      "attackSprite": "images/hero/shellfin_attack_3.png",
+      "heroSprite": "",
+      "attackSprite": "",
       "notes": "First milestone after the intro sequence."
     },
     {
