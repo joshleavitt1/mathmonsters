@@ -162,10 +162,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const GLOBAL_PROGRESS_DIM_CLASS = 'battle-complete-card__reward-progress--dim';
   const GLOBAL_PROGRESS_HEADING_TEXT = 'Reward Meter';
   const completeMonsterImg = completeMessage?.querySelector('.monster-image');
-  const isStaticCompleteSprite =
-    completeMonsterImg?.dataset?.staticSprite === 'true';
-  const staticCompleteSpriteAlt =
-    (completeMonsterImg?.dataset?.staticAlt ?? '').trim() || null;
+  const COMPLETE_MONSTER_REWARD_SRC = GEM_REWARD_CHEST_SRC;
+  const COMPLETE_MONSTER_REWARD_ALT = 'Treasure chest reward';
   const monsterDefeatOverlay = completeMessage?.querySelector('[data-monster-defeat-overlay]');
   const summaryAccuracyStat = completeMessage?.querySelector('[data-goal="accuracy"]');
   const summaryTimeStat = completeMessage?.querySelector('[data-goal="time"]');
@@ -690,6 +688,23 @@ document.addEventListener('DOMContentLoaded', () => {
   Object.values(rewardSpriteSources).forEach((source) => {
     preloadRewardSpriteSource(source).catch(() => {});
   });
+
+  const COMPLETE_MONSTER_REWARD_SRC_RESOLVED =
+    resolveRewardSpriteSource(COMPLETE_MONSTER_REWARD_SRC) ||
+    COMPLETE_MONSTER_REWARD_SRC;
+
+  if (completeMonsterImg) {
+    completeMonsterImg.src = COMPLETE_MONSTER_REWARD_SRC_RESOLVED;
+    completeMonsterImg.alt = COMPLETE_MONSTER_REWARD_ALT;
+
+    if (completeMonsterImg.dataset) {
+      completeMonsterImg.dataset.staticSprite = 'true';
+      completeMonsterImg.dataset.staticAlt = COMPLETE_MONSTER_REWARD_ALT;
+    } else {
+      completeMonsterImg.setAttribute('data-static-sprite', 'true');
+      completeMonsterImg.setAttribute('data-static-alt', COMPLETE_MONSTER_REWARD_ALT);
+    }
+  }
 
   const sanitizeHeroSpritePath = (path) => {
     if (typeof path !== 'string') {
@@ -4521,14 +4536,6 @@ document.addEventListener('DOMContentLoaded', () => {
         monsterImg.alt = '';
       }
     }
-    if (completeMonsterImg && !isStaticCompleteSprite) {
-      applySpriteSource(
-        completeMonsterImg,
-        monsterSpriteInfo,
-        monsterSprite || monsterResolvedSprite
-      );
-    }
-
     updateHeroAttackDisplay();
     updateHeroHealthDisplay();
     if (monsterAttackVal) monsterAttackVal.textContent = monster.attack;
@@ -4542,23 +4549,9 @@ document.addEventListener('DOMContentLoaded', () => {
       monsterHpBar.setAttribute('aria-label', `${monster.name} health`);
     }
     if (completeMonsterImg) {
-      if (!isStaticCompleteSprite && monster.name) {
-        completeMonsterImg.alt = `${monster.name} ready for battle`;
-      } else if (isStaticCompleteSprite && staticCompleteSpriteAlt) {
-        completeMonsterImg.alt = staticCompleteSpriteAlt;
-      }
-
-      if (isStaticCompleteSprite) {
-        completeMonsterImg.hidden = false;
-        completeMonsterImg.setAttribute('aria-hidden', 'false');
-      } else if (monster.sprite || monsterResolvedSprite) {
-        completeMonsterImg.hidden = false;
-        completeMonsterImg.setAttribute('aria-hidden', 'false');
-      } else {
-        completeMonsterImg.hidden = true;
-        completeMonsterImg.setAttribute('aria-hidden', 'true');
-        completeMonsterImg.alt = '';
-      }
+      completeMonsterImg.hidden = true;
+      completeMonsterImg.setAttribute('aria-hidden', 'true');
+      completeMonsterImg.alt = COMPLETE_MONSTER_REWARD_ALT;
     }
 
     const rawQuestions = data.questions;
@@ -5407,26 +5400,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (completeMonsterImg) {
-      if (!win) {
-        completeMonsterImg.hidden = true;
-        completeMonsterImg.setAttribute('aria-hidden', 'true');
-        if (!isStaticCompleteSprite) {
-          completeMonsterImg.alt = '';
-        }
-      } else {
+      if (win) {
         completeMonsterImg.hidden = false;
         completeMonsterImg.setAttribute('aria-hidden', 'false');
-        if (isStaticCompleteSprite) {
-          if (staticCompleteSpriteAlt) {
-            completeMonsterImg.alt = staticCompleteSpriteAlt;
-          }
-        } else {
-          const defeatedAlt = monster?.name
-            ? `${monster.name} defeated`
-            : 'Defeated monster';
-          completeMonsterImg.alt = defeatedAlt;
-        }
+      } else {
+        completeMonsterImg.hidden = true;
+        completeMonsterImg.setAttribute('aria-hidden', 'true');
       }
+      completeMonsterImg.src = COMPLETE_MONSTER_REWARD_SRC_RESOLVED;
+      completeMonsterImg.alt = COMPLETE_MONSTER_REWARD_ALT;
     }
 
     const goalsAchieved = win;
@@ -5729,9 +5711,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (completeMonsterImg) {
       completeMonsterImg.hidden = true;
       completeMonsterImg.setAttribute('aria-hidden', 'true');
-      if (!isStaticCompleteSprite) {
-        completeMonsterImg.alt = '';
-      }
+      completeMonsterImg.src = COMPLETE_MONSTER_REWARD_SRC_RESOLVED;
+      completeMonsterImg.alt = COMPLETE_MONSTER_REWARD_ALT;
     }
     hideGlobalProgressDisplay();
     resetGlobalProgressText();
