@@ -16,6 +16,16 @@ const HERO_APPEARANCE_BY_LEVEL = [
     sprite: 'images/hero/shellfin_evolution_2.png',
     attackSprite: 'images/hero/shellfin_attack_2.png',
   }),
+  Object.freeze({
+    level: 7,
+    sprite: 'images/hero/shellfin_evolution_3.png',
+    attackSprite: 'images/hero/shellfin_attack_3.png',
+  }),
+  Object.freeze({
+    level: 12,
+    sprite: 'images/hero/shellfin_evolution_4.png',
+    attackSprite: 'images/hero/shellfin_attack_4.png',
+  }),
 ];
 
 const DEFAULT_HERO_SPRITE = HERO_APPEARANCE_BY_LEVEL[0].sprite;
