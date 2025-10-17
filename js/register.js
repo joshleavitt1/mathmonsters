@@ -2,7 +2,7 @@ const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
-const STARTING_LEVEL = 1;
+const STARTING_LEVEL = 2;
 const STARTING_GEMS = 0;
 const HOME_PAGE_PATH = '../index.html';
 const HERO_APPEARANCE_BY_LEVEL = [
@@ -217,25 +217,22 @@ const applyStartingCurrentLevel = (playerData) => {
     clonedData.currentLevel = {};
   }
 
-  const ensureLevelHero = (levelKey) => {
+  const ensureLevelHero = (levelKey, heroTemplate) => {
     const levelEntry = isPlainObject(clonedData.currentLevel[levelKey])
       ? clonedData.currentLevel[levelKey]
       : (clonedData.currentLevel[levelKey] = {});
     const numericLevel = Number(levelKey);
     const appearanceLevel = Number.isFinite(numericLevel) ? numericLevel : undefined;
-    const fallbackHero =
-      Number.isFinite(appearanceLevel) && appearanceLevel > 1
+    const heroSource = heroTemplate ??
+      (Number.isFinite(appearanceLevel) && appearanceLevel > 1
         ? heroForStartingLevel
-        : heroForLevelOne;
-    levelEntry.hero = cloneHeroForLevel(
-      levelEntry.hero ?? fallbackHero,
-      appearanceLevel,
-    );
+        : heroForLevelOne);
+    levelEntry.hero = cloneHeroForLevel(heroSource, appearanceLevel);
   };
 
-  ensureLevelHero(1);
+  ensureLevelHero(1, heroForLevelOne);
   if (STARTING_LEVEL !== 1) {
-    ensureLevelHero(STARTING_LEVEL);
+    ensureLevelHero(STARTING_LEVEL, heroForStartingLevel);
   }
 
   return clonedData;
