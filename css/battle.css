@@ -1045,11 +1045,23 @@ body.is-reward-active .reward-overlay {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  padding: 24px;
+  gap: 12px;
+  padding: 24px 16px;
   background-color: #f4f6fa;
   border-radius: 12px;
   box-sizing: border-box;
+}
+
+.battle-complete-card__reward-heading,
+.battle-complete-card__reward-progress {
+  margin: 0;
+  width: 100%;
+  text-align: center;
+  color: #000;
+}
+
+.battle-complete-card__reward-progress {
+  opacity: 0.5;
 }
 
 .battle-complete-card__sprite-frame {

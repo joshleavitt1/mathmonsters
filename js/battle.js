@@ -156,6 +156,10 @@ document.addEventListener('DOMContentLoaded', () => {
     '[data-global-progress-fill]'
   );
   const completeMonsterImg = completeMessage?.querySelector('.monster-image');
+  const isStaticCompleteSprite =
+    completeMonsterImg?.dataset?.staticSprite === 'true';
+  const staticCompleteSpriteAlt =
+    (completeMonsterImg?.dataset?.staticAlt ?? '').trim() || null;
   const monsterDefeatOverlay = completeMessage?.querySelector('[data-monster-defeat-overlay]');
   const summaryAccuracyStat = completeMessage?.querySelector('[data-goal="accuracy"]');
   const summaryTimeStat = completeMessage?.querySelector('[data-goal="time"]');
@@ -4445,7 +4449,7 @@ document.addEventListener('DOMContentLoaded', () => {
         monsterImg.alt = '';
       }
     }
-    if (completeMonsterImg) {
+    if (completeMonsterImg && !isStaticCompleteSprite) {
       applySpriteSource(
         completeMonsterImg,
         monsterSpriteInfo,
@@ -4465,12 +4469,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (monsterHpBar && monster.name) {
       monsterHpBar.setAttribute('aria-label', `${monster.name} health`);
     }
-    if (completeMonsterImg && monster.name) {
-      completeMonsterImg.alt = `${monster.name} ready for battle`;
-    }
-    if (completeMonsterImg && (monster.sprite || monsterResolvedSprite)) {
-      completeMonsterImg.hidden = false;
-      completeMonsterImg.setAttribute('aria-hidden', 'false');
+    if (completeMonsterImg) {
+      if (!isStaticCompleteSprite && monster.name) {
+        completeMonsterImg.alt = `${monster.name} ready for battle`;
+      } else if (isStaticCompleteSprite && staticCompleteSpriteAlt) {
+        completeMonsterImg.alt = staticCompleteSpriteAlt;
+      }
+
+      if (isStaticCompleteSprite) {
+        completeMonsterImg.hidden = false;
+        completeMonsterImg.setAttribute('aria-hidden', 'false');
+      } else if (monster.sprite || monsterResolvedSprite) {
+        completeMonsterImg.hidden = false;
+        completeMonsterImg.setAttribute('aria-hidden', 'false');
+      } else {
+        completeMonsterImg.hidden = true;
+        completeMonsterImg.setAttribute('aria-hidden', 'true');
+        completeMonsterImg.alt = '';
+      }
     }
 
     const rawQuestions = data.questions;
@@ -5322,14 +5338,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!win) {
         completeMonsterImg.hidden = true;
         completeMonsterImg.setAttribute('aria-hidden', 'true');
-        completeMonsterImg.alt = '';
+        if (!isStaticCompleteSprite) {
+          completeMonsterImg.alt = '';
+        }
       } else {
         completeMonsterImg.hidden = false;
         completeMonsterImg.setAttribute('aria-hidden', 'false');
-        const defeatedAlt = monster?.name
-          ? `${monster.name} defeated`
-          : 'Defeated monster';
-        completeMonsterImg.alt = defeatedAlt;
+        if (isStaticCompleteSprite) {
+          if (staticCompleteSpriteAlt) {
+            completeMonsterImg.alt = staticCompleteSpriteAlt;
+          }
+        } else {
+          const defeatedAlt = monster?.name
+            ? `${monster.name} defeated`
+            : 'Defeated monster';
+          completeMonsterImg.alt = defeatedAlt;
+        }
       }
     }
 
@@ -5611,7 +5635,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (completeMonsterImg) {
       completeMonsterImg.hidden = true;
       completeMonsterImg.setAttribute('aria-hidden', 'true');
-      completeMonsterImg.alt = '';
+      if (!isStaticCompleteSprite) {
+        completeMonsterImg.alt = '';
+      }
     }
     hideGlobalProgressDisplay();
     latestGlobalRewardDisplay = null;
