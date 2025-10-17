@@ -155,6 +155,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const globalProgressFill = globalProgressContainer?.querySelector(
     '[data-global-progress-fill]'
   );
+  const globalProgressHeading = completeMessage?.querySelector(
+    '[data-global-progress-heading]'
+  );
+  const globalProgressCount = completeMessage?.querySelector('[data-global-progress-count]');
+  const GLOBAL_PROGRESS_DIM_CLASS = 'battle-complete-card__reward-progress--dim';
+  const GLOBAL_PROGRESS_HEADING_TEXT = 'Reward Meter';
   const completeMonsterImg = completeMessage?.querySelector('.monster-image');
   const isStaticCompleteSprite =
     completeMonsterImg?.dataset?.staticSprite === 'true';
@@ -2841,7 +2847,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (hasPendingLevelUpReward) {
-      nextMissionBtn.textContent = 'Grab Gem';
+      nextMissionBtn.textContent = 'Claim Reward';
       nextMissionBtn.dataset.action = 'next';
       return;
     }
@@ -2851,19 +2857,19 @@ document.addEventListener('DOMContentLoaded', () => {
       hasPendingReward && isGemMilestoneReward(pendingGemReward);
 
     if (win && isMilestoneReward) {
-      nextMissionBtn.textContent = 'Grab Gem';
+      nextMissionBtn.textContent = 'Claim Reward';
       nextMissionBtn.dataset.action = 'next';
       return;
     }
 
-    if (!win && !hasPendingReward) {
-      nextMissionBtn.textContent = 'Try Again!';
+    if (!win) {
+      nextMissionBtn.textContent = 'Try Again';
       nextMissionBtn.dataset.action = 'retry';
       return;
     }
 
-    nextMissionBtn.textContent = win ? 'Swim Home!' : 'Try Again!';
-    nextMissionBtn.dataset.action = win ? 'next' : 'retry';
+    nextMissionBtn.textContent = 'Back Home';
+    nextMissionBtn.dataset.action = 'next';
   };
 
   const updateLevelProgressDisplay = () => {
@@ -3869,6 +3875,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const setElementVisibility = (element, visible) => {
+    if (!element) {
+      return;
+    }
+
+    if (visible) {
+      element.removeAttribute('hidden');
+      element.removeAttribute('aria-hidden');
+      return;
+    }
+
+    if (!element.hasAttribute('hidden')) {
+      element.setAttribute('hidden', 'hidden');
+    }
+
+    element.setAttribute('aria-hidden', 'true');
+  };
+
+  const setGlobalProgressTextVisibility = (visible) => {
+    setElementVisibility(globalProgressHeading, visible);
+    setElementVisibility(globalProgressCount, visible);
+  };
+
+  const setGlobalProgressCountDisplay = (wins, milestone) => {
+    if (!globalProgressCount) {
+      return;
+    }
+
+    const normalizedMilestone = (() => {
+      const numericMilestone = Number(milestone);
+      if (Number.isFinite(numericMilestone) && numericMilestone > 0) {
+        return Math.max(1, Math.round(numericMilestone));
+      }
+      return GLOBAL_REWARD_MILESTONE;
+    })();
+
+    const normalizedWins = (() => {
+      const numericWins = Number(wins);
+      if (Number.isFinite(numericWins) && numericWins >= 0) {
+        return Math.max(0, Math.min(normalizedMilestone, Math.round(numericWins)));
+      }
+      return 0;
+    })();
+
+    globalProgressCount.textContent = `${normalizedWins}/${normalizedMilestone}`;
+
+    if (normalizedWins <= 0) {
+      globalProgressCount.classList.add(GLOBAL_PROGRESS_DIM_CLASS);
+    } else {
+      globalProgressCount.classList.remove(GLOBAL_PROGRESS_DIM_CLASS);
+    }
+  };
+
+  const resetGlobalProgressText = () => {
+    if (globalProgressHeading) {
+      globalProgressHeading.textContent = GLOBAL_PROGRESS_HEADING_TEXT;
+    }
+
+    setGlobalProgressCountDisplay(0, GLOBAL_REWARD_MILESTONE);
+    setGlobalProgressTextVisibility(true);
+  };
+
   const hideGlobalProgressDisplay = () => {
     if (!globalProgressContainer) {
       return;
@@ -3902,6 +3970,12 @@ document.addEventListener('DOMContentLoaded', () => {
         Math.round(Number(display.displayWins ?? display.winsSinceReward) || 0)
       )
     );
+
+    if (globalProgressHeading) {
+      globalProgressHeading.textContent = GLOBAL_PROGRESS_HEADING_TEXT;
+    }
+
+    setGlobalProgressCountDisplay(wins, milestone);
 
     if (globalProgressBar) {
       globalProgressBar.setAttribute('aria-valuemax', String(milestone));
@@ -5419,6 +5493,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (win) {
+      if (isLevelOneBattle) {
+        setGlobalProgressTextVisibility(false);
+        if (latestGlobalRewardDisplay) {
+          const milestoneOverride = Math.max(
+            1,
+            Math.round(
+              Number(latestGlobalRewardDisplay.milestoneSize) || GLOBAL_REWARD_MILESTONE
+            )
+          );
+          latestGlobalRewardDisplay = {
+            ...latestGlobalRewardDisplay,
+            displayWins: milestoneOverride,
+          };
+        }
+      } else {
+        setGlobalProgressTextVisibility(true);
+      }
+    } else {
+      setGlobalProgressTextVisibility(true);
+    }
+
+    if (win) {
       pendingGemReward = {
         amount: gemRewardAmount,
         totalAfter: updatedGemTotal,
@@ -5640,6 +5736,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     hideGlobalProgressDisplay();
+    resetGlobalProgressText();
     latestGlobalRewardDisplay = null;
     updateNextMissionButton();
     if (summaryAccuracyValue) {
