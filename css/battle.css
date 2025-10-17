@@ -1061,6 +1061,10 @@ body.is-reward-active .reward-overlay {
 }
 
 .battle-complete-card__reward-progress {
+  opacity: 1;
+}
+
+.battle-complete-card__reward-progress--dim {
   opacity: 0.5;
 }
 
