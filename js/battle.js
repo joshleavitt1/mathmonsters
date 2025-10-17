@@ -700,18 +700,18 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const HERO_PROFILE_EVOLUTION_SPRITE = sanitizeHeroSpritePath(
-    'images/hero/shellfin_evolution_2.png'
+    'images/hero/shellfin_evolution_3.png'
   );
   const HERO_PROFILE_EVOLUTION_ATTACK_SPRITE = sanitizeHeroSpritePath(
-    'images/hero/shellfin_attack_2.png'
+    'images/hero/shellfin_attack_3.png'
   );
   const HERO_BATTLE_EVOLUTION_SPRITE = sanitizeHeroSpritePath(
-    '../images/hero/shellfin_evolution_2.png'
+    '../images/hero/shellfin_evolution_3.png'
   );
   const HERO_BATTLE_EVOLUTION_ATTACK_SPRITE = sanitizeHeroSpritePath(
-    '../images/hero/shellfin_attack_2.png'
+    '../images/hero/shellfin_attack_3.png'
   );
-  const HERO_EVOLUTION_ATTACK_VALUE = 2;
+  const HERO_EVOLUTION_ATTACK_VALUE = 3;
 
   const readStoredPlayerProfile = () => {
     if (typeof window === 'undefined') {
@@ -1688,19 +1688,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentSprite = getCurrentHeroSprite();
 
     if (typeof currentSprite === 'string' && currentSprite) {
-      const levelReplaced = currentSprite.replace(
-        /_level_(\d+)(\.[a-z0-9]+)$/i,
+      const stageReplaced = currentSprite.replace(
+        /_(?:level|evolution)_(\d+)(\.[a-z0-9]+)$/i,
         (match, level, extension) => {
           const parsedLevel = Number(level);
-          if (Number.isFinite(parsedLevel)) {
-            return `_level_${Math.max(parsedLevel + 1, 1)}${extension}`;
-          }
-          return `_level_2${extension}`;
+          const nextLevel = Number.isFinite(parsedLevel)
+            ? Math.min(Math.max(parsedLevel + 1, 1), 3)
+            : 2;
+          const normalizedPrefix = match.toLowerCase().startsWith('_level_')
+            ? '_level_'
+            : '_evolution_';
+          return `${normalizedPrefix}${nextLevel}${extension}`;
         }
       );
 
-      if (levelReplaced !== currentSprite) {
-        return levelReplaced;
+      if (stageReplaced !== currentSprite) {
+        return sanitizeHeroSpritePath(stageReplaced);
+      }
+
+      if (/_evolution_2(?:[^0-9]|$)/i.test(currentSprite)) {
+        const stageThree =
+          resolveAbsoluteSpritePath(HERO_BATTLE_EVOLUTION_SPRITE) ||
+          HERO_BATTLE_EVOLUTION_SPRITE;
+        return sanitizeHeroSpritePath(stageThree);
       }
 
       if (currentSprite.includes('level_1')) {
@@ -1708,10 +1718,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    const fallback =
+    const fallbackStageTwo =
       resolveAbsoluteSpritePath(HERO_LEVEL_2_SRC) || HERO_LEVEL_2_SRC;
 
-    return sanitizeHeroSpritePath(fallback);
+    return sanitizeHeroSpritePath(fallbackStageTwo);
   };
 
   const isHeroAtInitialEvolutionStage = () => {
