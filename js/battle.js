@@ -4430,8 +4430,20 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       delete monster.sprite;
     }
-    if (monsterImg && monster.name) {
-      monsterImg.alt = `${monster.name} ready for battle`;
+    if (monsterImg) {
+      if (monster.sprite || monsterResolvedSprite) {
+        monsterImg.hidden = false;
+        monsterImg.setAttribute('aria-hidden', 'false');
+        if (monster.name) {
+          monsterImg.alt = `${monster.name} ready for battle`;
+        } else {
+          monsterImg.alt = 'Monster ready for battle';
+        }
+      } else {
+        monsterImg.hidden = true;
+        monsterImg.setAttribute('aria-hidden', 'true');
+        monsterImg.alt = '';
+      }
     }
     if (completeMonsterImg) {
       applySpriteSource(
@@ -4455,6 +4467,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (completeMonsterImg && monster.name) {
       completeMonsterImg.alt = `${monster.name} ready for battle`;
+    }
+    if (completeMonsterImg && (monster.sprite || monsterResolvedSprite)) {
+      completeMonsterImg.hidden = false;
+      completeMonsterImg.setAttribute('aria-hidden', 'false');
     }
 
     const rawQuestions = data.questions;
@@ -5308,13 +5324,12 @@ document.addEventListener('DOMContentLoaded', () => {
         completeMonsterImg.setAttribute('aria-hidden', 'true');
         completeMonsterImg.alt = '';
       } else {
-        const imageSrc = rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
-        completeMonsterImg.src = imageSrc;
         completeMonsterImg.hidden = false;
         completeMonsterImg.setAttribute('aria-hidden', 'false');
-        completeMonsterImg.alt = isLevelOneBattle
-          ? 'Gem reward for leveling up'
-          : 'Gem reward for defeating the monster';
+        const defeatedAlt = monster?.name
+          ? `${monster.name} defeated`
+          : 'Defeated monster';
+        completeMonsterImg.alt = defeatedAlt;
       }
     }
 
@@ -5588,12 +5603,15 @@ document.addEventListener('DOMContentLoaded', () => {
       spriteSurface.hidden = false;
       spriteSurface.setAttribute('aria-hidden', 'false');
     }
+    if (monsterImg) {
+      monsterImg.hidden = true;
+      monsterImg.setAttribute('aria-hidden', 'true');
+      monsterImg.alt = '';
+    }
     if (completeMonsterImg) {
-      const imageSrc = rewardSpriteSources.gem || GEM_REWARD_GEM_SRC;
-      completeMonsterImg.src = imageSrc;
-      completeMonsterImg.hidden = false;
-      completeMonsterImg.setAttribute('aria-hidden', 'false');
-      completeMonsterImg.alt = 'Gem reward';
+      completeMonsterImg.hidden = true;
+      completeMonsterImg.setAttribute('aria-hidden', 'true');
+      completeMonsterImg.alt = '';
     }
     hideGlobalProgressDisplay();
     latestGlobalRewardDisplay = null;
