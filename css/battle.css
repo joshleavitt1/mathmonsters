@@ -1053,6 +1053,10 @@ body.is-reward-active .reward-overlay {
   box-sizing: border-box;
 }
 
+.battle-complete-card__sprite-surface--hidden {
+  display: none !important;
+}
+
 .battle-complete-card__reward-heading,
 .battle-complete-card__reward-progress {
   margin: 0;
