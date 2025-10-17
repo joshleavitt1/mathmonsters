@@ -2,7 +2,7 @@ const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
-const STARTING_LEVEL = 2;
+const STARTING_LEVEL = 1;
 const STARTING_GEMS = 0;
 const HOME_PAGE_PATH = '../index.html';
 const HERO_APPEARANCE_BY_LEVEL = [
@@ -163,22 +163,28 @@ const applyStartingCurrentLevel = (playerData) => {
   const heroForLevelOne = cloneHeroForLevel(baseHeroSource, 1);
 
   if (!isPlainObject(clonedData)) {
+    const startingHero = cloneHeroForLevel(heroForStartingLevel, STARTING_LEVEL);
+    const levelEntries = {
+      1: {
+        hero: cloneHeroForLevel(heroForLevelOne, 1),
+      },
+    };
+
+    if (STARTING_LEVEL !== 1) {
+      levelEntries[STARTING_LEVEL] = {
+        hero: cloneHeroForLevel(startingHero, STARTING_LEVEL),
+      };
+    }
+
     const seededPlayer = applyStartingGems({
-      hero: cloneHeroForLevel(heroForStartingLevel, STARTING_LEVEL),
+      hero: startingHero,
       progress: {
         currentLevel: STARTING_LEVEL,
       },
       battleVariables: {
         timeRemainingSeconds: null,
       },
-      currentLevel: {
-        1: {
-          hero: cloneHeroForLevel(heroForLevelOne, 1),
-        },
-        [STARTING_LEVEL]: {
-          hero: cloneHeroForLevel(heroForStartingLevel, STARTING_LEVEL),
-        },
-      },
+      currentLevel: levelEntries,
     });
 
     if (isPlainObject(seededPlayer?.progress)) {
@@ -228,7 +234,9 @@ const applyStartingCurrentLevel = (playerData) => {
   };
 
   ensureLevelHero(1);
-  ensureLevelHero(STARTING_LEVEL);
+  if (STARTING_LEVEL !== 1) {
+    ensureLevelHero(STARTING_LEVEL);
+  }
 
   return clonedData;
 };
