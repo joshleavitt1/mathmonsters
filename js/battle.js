@@ -3923,8 +3923,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (normalizedWins <= 0) {
       globalProgressCount.classList.add(GLOBAL_PROGRESS_DIM_CLASS);
-    } else {
-      globalProgressCount.classList.remove(GLOBAL_PROGRESS_DIM_CLASS);
     }
   };
 
