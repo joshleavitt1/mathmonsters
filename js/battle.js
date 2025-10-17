@@ -150,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const completeMessage = document.getElementById('complete-message');
   const battleCompleteTitle = completeMessage?.querySelector('#battle-complete-title');
   const spriteSurface = completeMessage?.querySelector('[data-battle-complete-sprite-surface]');
+  const SPRITE_SURFACE_HIDDEN_CLASS = 'battle-complete-card__sprite-surface--hidden';
   const globalProgressContainer = completeMessage?.querySelector('[data-global-progress]');
   const globalProgressBar = globalProgressContainer?.querySelector('[role="progressbar"]');
   const globalProgressFill = globalProgressContainer?.querySelector(
@@ -5392,9 +5393,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (spriteSurface) {
       if (win) {
         spriteSurface.hidden = false;
+        spriteSurface.classList.remove(SPRITE_SURFACE_HIDDEN_CLASS);
         spriteSurface.setAttribute('aria-hidden', 'false');
       } else {
         spriteSurface.hidden = true;
+        spriteSurface.classList.add(SPRITE_SURFACE_HIDDEN_CLASS);
         spriteSurface.setAttribute('aria-hidden', 'true');
       }
     }
@@ -5701,6 +5704,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setBattleCompleteTitleLines('Monster Defeated!');
     if (spriteSurface) {
       spriteSurface.hidden = false;
+      spriteSurface.classList.remove(SPRITE_SURFACE_HIDDEN_CLASS);
       spriteSurface.setAttribute('aria-hidden', 'false');
     }
     if (monsterImg) {
