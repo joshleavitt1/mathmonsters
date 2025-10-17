@@ -76,7 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
       : () => {};
   let pendingMeterFrame = null;
   let pendingMeterFillFrame = null;
-  let isMeterDisabled = false;
+  const isSuperAttackHidden = true;
+  let isMeterDisabled = isSuperAttackHidden;
 
   if (!choicesContainer || !button) {
     return;
@@ -449,7 +450,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('question-opened', (event) => {
     const levelDetail = Number(event?.detail?.currentLevel);
-    isMeterDisabled = !Number.isFinite(levelDetail) || levelDetail < 5;
+    const superAttackEnabled =
+      !isSuperAttackHidden && Number.isFinite(levelDetail) && levelDetail >= 5;
+    isMeterDisabled = !superAttackEnabled;
     syncMeterDisabledAttribute();
     button.classList.remove('result', 'correct', 'incorrect');
     button.textContent = 'Submit';
@@ -466,6 +469,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('streak-meter-update', (event) => {
+    if (isSuperAttackHidden) {
+      hideMeter();
+      return;
+    }
+
     if (!meter || !meterProgress || !meterFill) {
       return;
     }
