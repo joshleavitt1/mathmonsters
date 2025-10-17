@@ -590,7 +590,7 @@ button:focus-visible {
   );
   width: min(420px, calc(100% - 32px));
   margin: 0;
-  padding: 24px 28px 28px;
+  padding: var(--surface-padding, 24px);
   gap: 20px;
   z-index: 6;
 }
