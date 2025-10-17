@@ -1006,7 +1006,8 @@ body.is-reward-active .reward-overlay {
   }
 }
 
-.battle-complete-card { 
+.battle-complete-card {
+  --surface-padding: 24px;
   gap: 24px;
   align-items: stretch;
 }
@@ -1058,6 +1059,14 @@ body.is-reward-active .reward-overlay {
   width: 100%;
   text-align: center;
   color: #272b34;
+}
+
+.battle-complete-card__reward-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .battle-complete-card__reward-progress {
