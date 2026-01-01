@@ -19,7 +19,7 @@ const SESSION_STORAGE_KEYS_TO_CLEAR = Object.freeze([
   HOME_PROGRESS_STORAGE_KEY,
 ]);
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
-const REGISTER_PAGE_URL = 'register.html';
+const REGISTER_PAGE_URL = '../index.html';
 
 const createDefaultProgress = () => ({
   currentLevel: 1,
@@ -129,10 +129,14 @@ const isRegistrationRequiredForGuest = () => {
       return false;
     }
 
-    return (
+    if (
       storage.getItem(GUEST_SESSION_KEY) ===
       GUEST_SESSION_REGISTRATION_REQUIRED_VALUE
-    );
+    ) {
+      storage.setItem(GUEST_SESSION_KEY, GUEST_SESSION_ACTIVE_VALUE);
+    }
+
+    return false;
   } catch (error) {
     console.warn('Guest session lookup failed.', error);
     return false;
