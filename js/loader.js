@@ -5,6 +5,16 @@ const FALLBACK_ASSET_BASE = '/mathmonsters';
 const PRELOADED_SPRITES_STORAGE_KEY = 'mathmonstersPreloadedSprites';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 
+const saveUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersSave) ||
+  (typeof window !== 'undefined' ? window.mathMonstersSave : null);
+
+if (!saveUtils) {
+  throw new Error('Save utilities are not available.');
+}
+
+saveUtils.migrateLegacySave();
+
 const deriveBaseFromLocation = (fallbackBase) => {
   if (typeof window === 'undefined') {
     return fallbackBase || '.';
@@ -1497,7 +1507,26 @@ const syncRemoteCurrentLevel = (playerData) => {
 
     const storedPlayerProfile = readStoredPlayerProfile();
 
+    const saveState = saveUtils.loadSave();
     let basePlayer = extractPlayerData(localPlayerData);
+    if (saveState && typeof saveState === 'object') {
+      const { player } = saveState;
+      if (basePlayer && typeof basePlayer === 'object') {
+        basePlayer = {
+          ...basePlayer,
+          grade: player?.grade ?? basePlayer.grade,
+          creatureId: player?.creatureId ?? basePlayer.creatureId,
+          xp: player?.xp ?? basePlayer.xp,
+        };
+        if (
+          basePlayer.hero &&
+          typeof basePlayer.hero === 'object' &&
+          typeof player?.creatureId === 'string'
+        ) {
+          basePlayer.hero.id = player.creatureId;
+        }
+      }
+    }
     basePlayer = mergePlayerWithStoredProfile(basePlayer, storedPlayerProfile);
 
     try {
@@ -2202,6 +2231,7 @@ const syncRemoteCurrentLevel = (playerData) => {
     persistNextBattleSnapshot(nextBattleSnapshot);
 
     window.preloadedData = {
+      saveState,
       player: {
         ...basePlayer,
         progress,
@@ -2209,6 +2239,7 @@ const syncRemoteCurrentLevel = (playerData) => {
       },
       progress,
       battleVariables,
+      skillState: saveState?.skillState,
       levels,
       level: currentLevel,
       battle,

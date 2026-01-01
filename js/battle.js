@@ -53,6 +53,20 @@ if (!progressUtils) {
   throw new Error('Progress utilities are not available.');
 }
 
+const saveUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersSave) ||
+  (typeof window !== 'undefined' ? window.mathMonstersSave : null);
+const questionUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersQuestions) ||
+  (typeof window !== 'undefined' ? window.mathMonstersQuestions : null);
+
+if (!saveUtils || !questionUtils) {
+  throw new Error('Save or question utilities are not available.');
+}
+
+const ACTIVE_SKILL_KEY = questionUtils.DEFAULT_SKILL || 'math.addition';
+const QUESTION_CAP = 10;
+
 const {
   isPlainObject,
   normalizeExperienceMap,
@@ -491,6 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let levelOneStructuredSequence = [];
   let levelOneStructuredIndex = 0;
   let useLevelOneSequence = false;
+  let useGeneratedQuestions = false;
+  let questionCapReached = false;
 
   const sanitizeLevelNumber = (value) => {
     const numericValue = Number(value);
@@ -1030,6 +1046,21 @@ document.addEventListener('DOMContentLoaded', () => {
     attackSprites: {},
   };
 
+  let currentGrade = 2;
+  let currentDifficulty = 1;
+  let activeSkillState = saveUtils.defaultSkillState();
+  let activeSkillKey = ACTIVE_SKILL_KEY;
+  let activeSession = null;
+
+  const createBattleSession = () => ({
+    id: `${Date.now()}-${Math.random()}`,
+    enemyId: monster?.name ?? null,
+    playerHP: hero.health,
+    enemyHP: monster.health,
+    questionCount: 0,
+    currentQuestion: null,
+  });
+
   const toFiniteNumber = (value, fallback = 0) => {
     const parsed = Number(value);
     if (Number.isFinite(parsed)) {
@@ -1055,6 +1086,87 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const resolvedDamage = toFiniteNumber(damage, 0);
     return resolvedDamage >= resolvedHealth;
+  };
+
+  const syncSessionHealth = () => {
+    if (!activeSession) {
+      return;
+    }
+    activeSession.playerHP = Math.max(0, toFiniteNumber(hero.health, 0) - toFiniteNumber(hero.damage, 0));
+    activeSession.enemyHP = Math.max(0, toFiniteNumber(monster.health, 0) - toFiniteNumber(monster.damage, 0));
+  };
+
+  const updateDifficultyDisplay = () => {
+    document.dispatchEvent(
+      new CustomEvent('question-difficulty-changed', {
+        detail: { difficulty: currentDifficulty },
+      })
+    );
+  };
+
+  const applyAnswerOutcomeToDifficulty = (wasCorrect) => {
+    if (!activeSkillState) {
+      activeSkillState = saveUtils.defaultSkillState();
+    }
+
+    if (wasCorrect) {
+      activeSkillState.correctStreak += 1;
+      activeSkillState.incorrectStreak = 0;
+      if (activeSkillState.correctStreak >= 3) {
+        activeSkillState.correctStreak = 0;
+        activeSkillState.incorrectStreak = 0;
+        activeSkillState.difficulty = saveUtils.clampDifficulty(
+          (activeSkillState.difficulty || 1) + 1
+        );
+      }
+    } else {
+      activeSkillState.incorrectStreak += 1;
+      activeSkillState.correctStreak = 0;
+      if (activeSkillState.incorrectStreak >= 2) {
+        activeSkillState.correctStreak = 0;
+        activeSkillState.incorrectStreak = 0;
+        activeSkillState.difficulty = saveUtils.clampDifficulty(
+          (activeSkillState.difficulty || 1) - 1
+        );
+      }
+    }
+
+    currentDifficulty = saveUtils.clampDifficulty(activeSkillState.difficulty || 1);
+    updateDifficultyDisplay();
+  };
+
+  const resolveCapOutcome = () => {
+    const heroDefeated = hasEntityBeenDefeated(hero.health, hero.damage);
+    const monsterDefeated = hasEntityBeenDefeated(monster.health, monster.damage);
+    if (monsterDefeated) {
+      return true;
+    }
+    if (heroDefeated) {
+      return false;
+    }
+    return true;
+  };
+
+  const persistBattleResult = () => {
+    const battleSkillState = { ...activeSkillState };
+    const battleSkillKey = activeSkillKey || ACTIVE_SKILL_KEY;
+    saveUtils.updateSave((state) => {
+      const next = state && typeof state === 'object' ? { ...state } : saveUtils.loadSave();
+      if (!next.skillState || typeof next.skillState !== 'object') {
+        next.skillState = {};
+      }
+      next.skillState[battleSkillKey] = {
+        difficulty: saveUtils.clampDifficulty(battleSkillState.difficulty || 1),
+        correctStreak: Math.max(0, battleSkillState.correctStreak || 0),
+        incorrectStreak: Math.max(0, battleSkillState.incorrectStreak || 0),
+      };
+      if (!next.player) {
+        next.player = {};
+      }
+      const currentXp = Math.max(0, Number(next.player.xp) || 0);
+      next.player.xp = currentXp + 1;
+      return next;
+    });
   };
 
   const clearTimeoutSafe = (timeoutId) => {
@@ -3087,42 +3199,8 @@ document.addEventListener('DOMContentLoaded', () => {
     delayProgressUpdateMs = 0,
     scheduleProgressUpdate = true,
   } = {}) => {
-    const maybeScheduleProgressUpdate = () => {
-      if (!scheduleProgressUpdate) {
-        return;
-      }
-      scheduleLevelProgressDisplayUpdate(delayProgressUpdateMs);
-    };
-
-    const points = resolveExperiencePointsForMonster();
-    const level = resolveCurrentLevelForExperience();
-    const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
-    const wasComplete =
-      levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
-
-    if (!Number.isFinite(level)) {
-      levelExperienceEarned = sanitizedEarned;
-      maybeScheduleProgressUpdate();
-      hasPendingLevelUpReward = false;
-      rewardAnimationPlayed = false;
-      return;
-    }
-
-    if (points <= 0) {
-      levelExperienceEarned = sanitizedEarned;
-      maybeScheduleProgressUpdate();
-      hasPendingLevelUpReward = false;
-      rewardAnimationPlayed = false;
-      return;
-    }
-
-    const nextTotal = sanitizedEarned + points;
-    const levelKey = String(Math.max(1, Math.round(level)));
-
-    persistProgress({ experience: { [levelKey]: nextTotal } });
-    levelExperienceEarned = nextTotal;
-    maybeScheduleProgressUpdate();
-
+    levelExperienceEarned = 0;
+    levelExperienceRequirement = 0;
     hasPendingLevelUpReward = false;
     rewardAnimationPlayed = false;
   };
@@ -3389,6 +3467,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function resetQuestionPool(loadedQuestions) {
+    useGeneratedQuestions = true;
+    questions = [];
+    questionIds = [];
+    questionMap = new Map();
+    currentQuestionId = null;
+    totalQuestionCount = 0;
+    useIntroQuestionOrder = false;
+    introQuestionIds = [];
+    nextIntroQuestionIndex = 0;
+    useStructuredQuestions = false;
+    structuredQuestionPools = new Map();
+    structuredQuestionTypeIndex = 0;
+    levelOneStructuredSequence = [];
+    levelOneStructuredIndex = 0;
+    useLevelOneSequence = false;
+
+    return;
+
     const normalizeChoices = (choices, answer) => {
       if (!Array.isArray(choices)) {
         return [];
@@ -3650,6 +3746,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function chooseNextQuestion() {
+    if (useGeneratedQuestions && questionUtils) {
+      const generated = questionUtils.generateQuestion({
+        skill: activeSkillKey,
+        grade: currentGrade,
+        difficulty: currentDifficulty,
+      });
+      if (generated) {
+        currentQuestionId = generated.id ?? null;
+        if (activeSession) {
+          activeSession.currentQuestion = currentQuestionId;
+        }
+        updateDifficultyDisplay();
+        return generated;
+      }
+    }
     if (useStructuredQuestions) {
       if (useLevelOneSequence && levelOneStructuredSequence.length > 0) {
         const sequenceLength = levelOneStructuredSequence.length;
@@ -4275,6 +4386,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const battleProgress =
       data.battleVariables ?? data.player?.battleVariables ?? {};
+    const saveState = data.saveState ?? saveUtils.loadSave();
+    activeSkillKey = ACTIVE_SKILL_KEY;
+    const savedSkillState = saveState?.skillState?.[activeSkillKey];
+    activeSkillState =
+      savedSkillState && typeof savedSkillState === 'object'
+        ? {
+            difficulty: saveUtils.clampDifficulty(savedSkillState.difficulty),
+            correctStreak: Math.max(0, Number(savedSkillState.correctStreak) || 0),
+            incorrectStreak: Math.max(0, Number(savedSkillState.incorrectStreak) || 0),
+          }
+        : saveUtils.defaultSkillState();
+    const isFirstBattle =
+      !Number.isFinite(saveState?.player?.xp) ||
+      Number(saveState?.player?.xp) === 0;
+    if (isFirstBattle) {
+      activeSkillState.difficulty = 1;
+      activeSkillState.correctStreak = 0;
+      activeSkillState.incorrectStreak = 0;
+    }
+    currentDifficulty = saveUtils.clampDifficulty(activeSkillState.difficulty || 1);
+    const resolvedGrade = saveState?.player?.grade;
+    currentGrade = saveUtils.clampGrade(resolvedGrade);
 
     const assetBasePath = (() => {
       const globalBase =
@@ -4559,6 +4692,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetQuestionPool(loadedQuestions);
 
     updateHealthBars();
+    syncSessionHealth();
     updateBattleTimeDisplay();
     updateLevelProgressDisplay();
   }
@@ -4799,6 +4933,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (battleEnded) {
       return;
     }
+    if (questionCapReached) {
+      endBattle(resolveCapOutcome(), { reason: 'question-cap' });
+      return;
+    }
     const q = chooseNextQuestion();
     if (!q) return;
 
@@ -4991,6 +5129,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (hasEntityBeenDefeated(monster.health, monster.damage)) {
               endBattle(true, { waitForHpDrain: monsterHpFill });
             } else {
+              if (questionCapReached) {
+                endBattle(resolveCapOutcome(), { reason: 'question-cap' });
+                return;
+              }
               showQuestion();
             }
           }, POST_ATTACK_RESUME_DELAY_MS);
@@ -5018,6 +5160,7 @@ document.addEventListener('DOMContentLoaded', () => {
           );
           monster.damage = updatedDamage;
           updateHealthBars();
+          syncSessionHealth();
           if (useSuperAttack) {
             streak = 0;
             streakMaxed = false;
@@ -5169,6 +5312,10 @@ document.addEventListener('DOMContentLoaded', () => {
           } else {
             window.setTimeout(() => {
               if (!battleEnded) {
+                if (questionCapReached) {
+                  endBattle(resolveCapOutcome(), { reason: 'question-cap' });
+                  return;
+                }
                 showQuestion();
               }
             }, POST_ATTACK_RESUME_DELAY_MS);
@@ -5193,6 +5340,7 @@ document.addEventListener('DOMContentLoaded', () => {
           );
           hero.damage = updatedDamage;
           updateHealthBars();
+          syncSessionHealth();
 
           if (ATTACK_SHAKE_DURATION_MS > 0) {
             window.setTimeout(finishAttack, ATTACK_SHAKE_DURATION_MS);
@@ -5292,6 +5440,16 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       wrongAnswers++;
     }
+    if (activeSession) {
+      const nextCount = Math.max(
+        0,
+        Math.round((Number(activeSession.questionCount) || 0) + 1)
+      );
+      activeSession.questionCount = nextCount;
+      questionCapReached = questionCapReached || nextCount >= QUESTION_CAP;
+    }
+    applyAnswerOutcomeToDifficulty(Boolean(correct));
+    syncSessionHealth();
     updateAccuracyDisplays();
     if (correct) {
       maybeShowFirstCorrectMedal(resolvedLevel, correctAnswers);
@@ -5355,6 +5513,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const timeDisplay = `${elapsedSeconds}s`;
     const timeGoalMet =
       timeGoalSeconds > 0 ? elapsedSeconds <= timeGoalSeconds : true;
+
+    persistBattleResult();
 
     if (summaryAccuracyValue && summaryAccuracyText) {
       applyGoalResult(
@@ -5561,6 +5721,8 @@ document.addEventListener('DOMContentLoaded', () => {
     streak = 0;
     streakMaxed = false;
     resetSuperAttackBoost();
+    questionCapReached = false;
+    activeSession = createBattleSession();
     questions = [];
     questionIds = [];
     questionMap = new Map();
@@ -5618,6 +5780,7 @@ document.addEventListener('DOMContentLoaded', () => {
     heroSpriteEntrance?.prepareForEntrance();
     monsterSpriteEntrance?.prepareForEntrance();
     loadData();
+    updateDifficultyDisplay();
     heroSpriteEntrance?.playEntrance();
     monsterSpriteEntrance?.playEntrance();
     updateAccuracyDisplays();
