@@ -1046,6 +1046,12 @@ const updateHomeFromPreloadedData = () => {
     return;
   }
 
+  const saveState =
+    data.saveState ||
+    (typeof window !== 'undefined' && window.mathMonstersSave
+      ? window.mathMonstersSave.loadSave()
+      : null);
+
   const heroSource =
     (data.hero && typeof data.hero === 'object' ? data.hero : null) ||
     (data.player?.hero && typeof data.player.hero === 'object' ? data.player.hero : null);
@@ -1062,6 +1068,25 @@ const updateHomeFromPreloadedData = () => {
   }
   if (heroNameEl && hero?.name) {
     heroNameEl.textContent = hero.name;
+  }
+
+  const difficultyEl = document.querySelector('[data-home-difficulty]');
+  const xpEl = document.querySelector('[data-home-xp]');
+  if (saveState) {
+    const xp = Math.max(0, Number(saveState?.player?.xp) || 0);
+    const creatureLevel = Math.floor(xp / 5) + 1;
+    const skillKey = 'math.addition';
+    const difficulty = saveState?.skillState?.[skillKey]?.difficulty ?? 1;
+    if (difficultyEl) {
+      const normalizedDifficulty = Math.max(
+        1,
+        Math.min(5, Math.round(Number(difficulty) || 1))
+      );
+      difficultyEl.textContent = `Difficulty ${normalizedDifficulty}`;
+    }
+    if (xpEl) {
+      xpEl.textContent = `XP ${xp} | Creature Lv. ${creatureLevel}`;
+    }
   }
 
   const gemValueEl = document.querySelector('[data-hero-gems]');
