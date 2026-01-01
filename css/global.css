@@ -24,11 +24,16 @@
   --space-md: clamp(16px, 2.5vw, 24px);
   --space-lg: clamp(24px, 3.5vw, 32px);
   --space-xl: clamp(32px, 5vw, 48px);
+  --app-background-color: #0026ac;
+  --app-background-image: linear-gradient(180deg, #2675ff 0%, #0026ac 100%);
 }
 
 html {
   height: 100%;
-  background-color: #001b41;
+  background-color: var(--app-background-color);
+  background-image: var(--app-background-image);
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 body {
@@ -37,7 +42,10 @@ body {
   min-height: 100dvh;
   font-family: var(--font-family-rounded);
   color: #272b34;
-  background-color: #001b41;
+  background-color: var(--app-background-color);
+  background-image: var(--app-background-image);
+  background-repeat: no-repeat;
+  background-size: cover;
   padding: 0;
   box-sizing: border-box;
 }
