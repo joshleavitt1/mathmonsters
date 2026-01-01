@@ -7,7 +7,10 @@ body.home-page {
   flex-direction: column;
   overflow: hidden;
   color: var(--text-color-light);
-  background: #001b41 url('../images/background/background.png') no-repeat center/cover;
+  background-color: var(--app-background-color);
+  background-image: var(--app-background-image);
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .home {
@@ -287,4 +290,3 @@ body.home-page {
   position: relative;
   z-index: 1;
 }
-
