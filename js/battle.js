@@ -2529,6 +2529,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body?.classList.remove('is-post-evolution-active');
   };
 
+  const clearRewardState = () => {
+    pendingGemReward = null;
+    hasPendingLevelUpReward = false;
+    rewardAnimationPlayed = false;
+    resetRewardOverlay();
+  };
+
   const showRegisterRewardCard = () => {
     window.location.assign(REGISTER_PAGE_URL);
   };
@@ -2874,22 +2881,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (hasPendingLevelUpReward) {
-      nextMissionBtn.textContent = 'Claim Reward';
-      nextMissionBtn.dataset.action = 'next';
-      return;
-    }
-
-    const hasPendingReward = Boolean(pendingGemReward);
-    const isMilestoneReward =
-      hasPendingReward && isGemMilestoneReward(pendingGemReward);
-
-    if (win && isMilestoneReward) {
-      nextMissionBtn.textContent = 'Claim Reward';
-      nextMissionBtn.dataset.action = 'next';
-      return;
-    }
-
     if (!win) {
       nextMissionBtn.textContent = 'Try Again';
       nextMissionBtn.dataset.action = 'retry';
@@ -3112,20 +3103,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!Number.isFinite(level)) {
       levelExperienceEarned = sanitizedEarned;
       maybeScheduleProgressUpdate();
-      hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
-      if (hasPendingLevelUpReward) {
-        rewardAnimationPlayed = false;
-      }
+      hasPendingLevelUpReward = false;
+      rewardAnimationPlayed = false;
       return;
     }
 
     if (points <= 0) {
       levelExperienceEarned = sanitizedEarned;
       maybeScheduleProgressUpdate();
-      hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
-      if (hasPendingLevelUpReward) {
-        rewardAnimationPlayed = false;
-      }
+      hasPendingLevelUpReward = false;
+      rewardAnimationPlayed = false;
       return;
     }
 
@@ -3136,12 +3123,8 @@ document.addEventListener('DOMContentLoaded', () => {
     levelExperienceEarned = nextTotal;
     maybeScheduleProgressUpdate();
 
-    const requirementMetWithUpdate =
-      levelExperienceRequirement > 0 && nextTotal >= levelExperienceRequirement;
-    hasPendingLevelUpReward = requirementMetWithUpdate && !wasComplete;
-    if (hasPendingLevelUpReward) {
-      rewardAnimationPlayed = false;
-    }
+    hasPendingLevelUpReward = false;
+    rewardAnimationPlayed = false;
   };
 
   const markBattleReady = (img) => {
@@ -5429,6 +5412,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const goalsAchieved = win;
 
     hideGlobalProgressDisplay();
+    clearRewardState();
 
     if (win) {
       setBattleCompleteTitleLines('Monster Defeated!');
@@ -5509,48 +5493,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setGlobalProgressTextVisibility(true);
     }
 
-    if (win) {
-      pendingGemReward = {
-        amount: gemRewardAmount,
-        totalAfter: updatedGemTotal,
-        isFirstGemReward: !gemRewardIntroShown,
-        currentLevel: rewardCurrentLevel,
-        currentBattle: rewardBattleIndex,
-        win: true,
-      };
-    } else if (shouldAwardGemReward) {
-      pendingGemReward = {
-        amount: gemRewardAmount,
-        totalAfter: updatedGemTotal,
-        isFirstGemReward: false,
-        currentLevel: rewardCurrentLevel,
-        currentBattle: rewardBattleIndex,
-        win: false,
-      };
-    } else {
-      pendingGemReward = null;
-    }
-
-    if (win && !hasPendingLevelUpReward) {
-      const isInitialLevel =
-        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel === 1;
-      const noExperienceRequirement = levelExperienceRequirement <= 0;
-      if (
-        isInitialLevel &&
-        noExperienceRequirement &&
-        !rewardAnimationPlayed &&
-        isHeroAtInitialEvolutionStage()
-      ) {
-        hasPendingLevelUpReward = true;
-        rewardAnimationPlayed = false;
-      }
-    }
-
     updateNextMissionButton(win);
-
-    if (!win) {
-      resetRewardOverlay();
-    }
 
     const showCompleteMessage = () => {
       const progressDelay = win
@@ -5596,20 +5539,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (nextMissionProcessing) {
         return;
       }
-
-      if (hasPendingLevelUpReward && !rewardAnimationPlayed) {
-        rewardAnimationPlayed = true;
-        hasPendingLevelUpReward = false;
-        updateNextMissionButton(true);
-        pendingGemReward = null;
-        startEvolutionSequence({ skipRewardFlow: true });
-        return;
-      }
-
-      if (pendingGemReward) {
-        handleGemRewardWithoutAnimation();
-        return;
-      }
+      nextMissionProcessing = true;
+      nextMissionBtn.setAttribute('aria-busy', 'true');
 
       const action = nextMissionBtn.dataset.action;
       if (action === 'retry') {
@@ -5620,7 +5551,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
         advanceCurrentLevel();
       }
-      resetRewardOverlay();
+      clearRewardState();
       window.location.href = '../index.html';
     });
   }
@@ -5656,7 +5587,7 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMessage.setAttribute('aria-hidden', 'true');
     }
     resetMonsterDefeatAnimation();
-    resetRewardOverlay();
+    clearRewardState();
     setBattleCompleteTitleLines('Monster Defeated!');
     if (spriteSurface) {
       spriteSurface.hidden = false;
