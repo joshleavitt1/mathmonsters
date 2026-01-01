@@ -2,6 +2,7 @@ const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const VISITED_VALUE = 'true';
 const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
+const GUEST_SESSION_ACTIVE_VALUE = 'true';
 
 const MONSTER_DEFEAT_ANIMATION_DELAY = 1000;
 const VICTORY_PROGRESS_UPDATE_DELAY = MONSTER_DEFEAT_ANIMATION_DELAY + 1000;
@@ -27,7 +28,7 @@ const GEM_REWARD_PULSE_COUNT = 1;
 const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
 const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
 const GEM_REWARD_HOME_ANIMATION_KEY = 'mathmonstersGemRewardAnimation';
-const REGISTER_PAGE_URL = './register.html';
+const REGISTER_PAGE_URL = '../index.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const BATTLES_PER_LEVEL = 4;
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
@@ -1835,10 +1836,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      storage.setItem(
-        GUEST_SESSION_KEY,
-        GUEST_SESSION_REGISTRATION_REQUIRED_VALUE
-      );
+      storage.setItem(GUEST_SESSION_KEY, GUEST_SESSION_ACTIVE_VALUE);
     } catch (error) {
       console.warn('Unable to require registration for the guest player.', error);
     }
@@ -2108,7 +2106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, HERO_EVOLUTION_CARD_REVEAL_DELAY_MS);
   };
 
-  const startEvolutionSequence = () => {
+  const startEvolutionSequence = ({ skipRewardFlow = false } = {}) => {
     if (evolutionInProgress) {
       return;
     }
@@ -2125,6 +2123,122 @@ document.addEventListener('DOMContentLoaded', () => {
     disableRewardSpriteInteraction();
     clearRewardCardDisplayTimeout();
 
+    const startEvolutionOverlay = () => {
+      hideRewardCard();
+      clearRewardAnimation();
+      hideRewardOverlayInstantly();
+
+      const currentSpriteSrc = getCurrentHeroSprite();
+      const nextSpriteSrc = deriveNextHeroSprite();
+
+      if (!evolutionOverlay || !evolutionCurrentSprite || !evolutionNextSprite) {
+        finishEvolutionSequence(nextSpriteSrc, { skipDelays: true });
+        return;
+      }
+
+      evolutionCurrentSprite.src = currentSpriteSrc;
+      evolutionNextSprite.src = nextSpriteSrc;
+
+      evolutionCurrentSprite.classList.remove(
+        'evolution-overlay__sprite--hidden',
+        'evolution-overlay__sprite--growth',
+        'evolution-overlay__sprite--visible'
+      );
+      evolutionNextSprite.classList.remove(
+        'evolution-overlay__sprite--hidden',
+        'evolution-overlay__sprite--reveal',
+        'evolution-overlay__sprite--visible'
+      );
+      evolutionNextSprite.classList.add('evolution-overlay__sprite--hidden');
+
+      evolutionOverlay.setAttribute('aria-hidden', 'false');
+      evolutionOverlay.classList.add('evolution-overlay--visible');
+
+      document.body?.classList.add('is-evolution-active');
+
+      if (heroImg) {
+        heroImg.classList.remove('battle-shellfin--evolved');
+      }
+
+      let growthHandled = false;
+
+      const handleGrowthComplete = () => {
+        if (growthHandled) {
+          return;
+        }
+        growthHandled = true;
+
+        evolutionGrowthFallbackTimeout = clearTimeoutSafe(
+          evolutionGrowthFallbackTimeout
+        );
+
+        evolutionCurrentSprite.classList.remove(
+          'evolution-overlay__sprite--growth',
+          'evolution-overlay__sprite--visible'
+        );
+        evolutionCurrentSprite.classList.add('evolution-overlay__sprite--hidden');
+
+        const handleRevealComplete = () => {
+          evolutionNextSprite.removeEventListener(
+            'animationend',
+            handleRevealComplete
+          );
+          evolutionRevealFallbackTimeout = clearTimeoutSafe(
+            evolutionRevealFallbackTimeout
+          );
+          finishEvolutionSequence(nextSpriteSrc);
+        };
+
+        evolutionNextSprite.classList.remove('evolution-overlay__sprite--hidden');
+        evolutionNextSprite.classList.add('evolution-overlay__sprite--visible');
+        void evolutionNextSprite.offsetWidth;
+        evolutionNextSprite.classList.add('evolution-overlay__sprite--reveal');
+        evolutionNextSprite.addEventListener('animationend', handleRevealComplete, {
+          once: true,
+        });
+
+        evolutionRevealFallbackTimeout = window.setTimeout(() => {
+          evolutionRevealFallbackTimeout = null;
+          handleRevealComplete();
+        }, HERO_EVOLUTION_REVEAL_DURATION_MS + 400);
+      };
+
+      const beginGrowth = () => {
+        void evolutionCurrentSprite.offsetWidth;
+        evolutionCurrentSprite.classList.add('evolution-overlay__sprite--growth');
+
+        evolutionGrowthFallbackTimeout = window.setTimeout(() => {
+          evolutionGrowthFallbackTimeout = null;
+          handleGrowthComplete();
+        },
+        HERO_EVOLUTION_GROWTH_DURATION_MS * HERO_EVOLUTION_GROWTH_ITERATIONS + 400);
+      };
+
+      evolutionCurrentSprite.addEventListener(
+        'animationend',
+        handleGrowthComplete,
+        {
+          once: true,
+        }
+      );
+
+      evolutionCurrentSprite.classList.add('evolution-overlay__sprite--visible');
+
+      if (HERO_EVOLUTION_GROWTH_START_DELAY_MS > 0) {
+        evolutionGrowthStartTimeout = window.setTimeout(() => {
+          evolutionGrowthStartTimeout = null;
+          beginGrowth();
+        }, HERO_EVOLUTION_GROWTH_START_DELAY_MS);
+      } else {
+        beginGrowth();
+      }
+    };
+
+    if (skipRewardFlow) {
+      startEvolutionOverlay();
+      return;
+    }
+
     const runPrelude = async () => {
       try {
         await animateRewardCardClose();
@@ -2133,114 +2247,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await wait(REWARD_SPRITE_HOLD_DURATION_MS);
         }
       } finally {
-        hideRewardCard();
-        clearRewardAnimation();
-        hideRewardOverlayInstantly();
-
-        const currentSpriteSrc = getCurrentHeroSprite();
-        const nextSpriteSrc = deriveNextHeroSprite();
-
-        if (!evolutionOverlay || !evolutionCurrentSprite || !evolutionNextSprite) {
-          finishEvolutionSequence(nextSpriteSrc, { skipDelays: true });
-          return;
-        }
-
-        evolutionCurrentSprite.src = currentSpriteSrc;
-        evolutionNextSprite.src = nextSpriteSrc;
-
-        evolutionCurrentSprite.classList.remove(
-          'evolution-overlay__sprite--hidden',
-          'evolution-overlay__sprite--growth',
-          'evolution-overlay__sprite--visible'
-        );
-        evolutionNextSprite.classList.remove(
-          'evolution-overlay__sprite--hidden',
-          'evolution-overlay__sprite--reveal',
-          'evolution-overlay__sprite--visible'
-        );
-        evolutionNextSprite.classList.add('evolution-overlay__sprite--hidden');
-
-        evolutionOverlay.setAttribute('aria-hidden', 'false');
-        evolutionOverlay.classList.add('evolution-overlay--visible');
-
-        document.body?.classList.add('is-evolution-active');
-
-        if (heroImg) {
-          heroImg.classList.remove('battle-shellfin--evolved');
-        }
-
-        let growthHandled = false;
-
-        const handleGrowthComplete = () => {
-          if (growthHandled) {
-            return;
-          }
-          growthHandled = true;
-
-          evolutionGrowthFallbackTimeout = clearTimeoutSafe(
-            evolutionGrowthFallbackTimeout
-          );
-
-          evolutionCurrentSprite.classList.remove(
-            'evolution-overlay__sprite--growth',
-            'evolution-overlay__sprite--visible'
-          );
-          evolutionCurrentSprite.classList.add('evolution-overlay__sprite--hidden');
-
-          const handleRevealComplete = () => {
-            evolutionNextSprite.removeEventListener(
-              'animationend',
-              handleRevealComplete
-            );
-            evolutionRevealFallbackTimeout = clearTimeoutSafe(
-              evolutionRevealFallbackTimeout
-            );
-            finishEvolutionSequence(nextSpriteSrc);
-          };
-
-          evolutionNextSprite.classList.remove('evolution-overlay__sprite--hidden');
-          evolutionNextSprite.classList.add('evolution-overlay__sprite--visible');
-          void evolutionNextSprite.offsetWidth;
-          evolutionNextSprite.classList.add('evolution-overlay__sprite--reveal');
-          evolutionNextSprite.addEventListener('animationend', handleRevealComplete, {
-            once: true,
-          });
-
-          evolutionRevealFallbackTimeout = window.setTimeout(() => {
-            evolutionRevealFallbackTimeout = null;
-            handleRevealComplete();
-          }, HERO_EVOLUTION_REVEAL_DURATION_MS + 400);
-        };
-
-        const beginGrowth = () => {
-          void evolutionCurrentSprite.offsetWidth;
-          evolutionCurrentSprite.classList.add('evolution-overlay__sprite--growth');
-
-          evolutionGrowthFallbackTimeout = window.setTimeout(() => {
-            evolutionGrowthFallbackTimeout = null;
-            handleGrowthComplete();
-          },
-          HERO_EVOLUTION_GROWTH_DURATION_MS * HERO_EVOLUTION_GROWTH_ITERATIONS + 400);
-        };
-
-        evolutionCurrentSprite.addEventListener(
-          'animationend',
-          handleGrowthComplete,
-          {
-            once: true,
-          }
-        );
-
-        evolutionCurrentSprite.classList.add('evolution-overlay__sprite--visible');
-
-        if (HERO_EVOLUTION_GROWTH_START_DELAY_MS > 0) {
-          evolutionGrowthStartTimeout = window.setTimeout(() => {
-            evolutionGrowthStartTimeout = null;
-            beginGrowth();
-          }, HERO_EVOLUTION_GROWTH_START_DELAY_MS);
-        } else {
-          beginGrowth();
-        }
+        startEvolutionOverlay();
       }
     };
 
@@ -2523,37 +2530,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const showRegisterRewardCard = () => {
-    if (!rewardOverlay) {
-      window.location.assign(REGISTER_PAGE_URL);
-      return;
-    }
-
-    clearRewardCardDisplayTimeout();
-    clearRewardAnimation();
-
-    rewardOverlay.classList.add('reward-overlay--visible');
-    rewardOverlay.setAttribute('aria-hidden', 'false');
-    document.body?.classList.add('is-reward-active');
-    disableRewardSpriteInteraction();
-
-    if (rewardSprite) {
-      rewardSprite.classList.remove('reward-overlay__image--visible');
-      rewardSprite.style.opacity = '0';
-    }
-
-    setRewardStage('register');
-
-    const displayed = displayRewardCard({
-      text: REGISTER_REWARD_CARD_TEXT,
-      buttonText: REGISTER_REWARD_CARD_BUTTON_TEXT,
-      onClick: () => {
-        window.location.assign(REGISTER_PAGE_URL);
-      },
-    });
-
-    if (!displayed) {
-      window.location.assign(REGISTER_PAGE_URL);
-    }
+    window.location.assign(REGISTER_PAGE_URL);
   };
 
   const playLevelUpRewardAnimation = () => {
@@ -2830,6 +2807,41 @@ document.addEventListener('DOMContentLoaded', () => {
         triggerFallback();
       }, totalFallbackDuration);
     });
+
+  const handleGemRewardWithoutAnimation = () => {
+    nextMissionProcessing = true;
+    if (nextMissionBtn) {
+      nextMissionBtn.setAttribute('aria-busy', 'true');
+    }
+
+    const rewardTotal = normalizeNonNegativeInteger(pendingGemReward?.totalAfter);
+    const rewardAmount = normalizeNonNegativeInteger(pendingGemReward?.amount);
+    const startTotal =
+      rewardTotal !== null && rewardAmount !== null
+        ? Math.max(0, rewardTotal - rewardAmount)
+        : null;
+
+    if (pendingGemReward?.isFirstGemReward) {
+      markGemRewardIntroSeen();
+    }
+
+    if (rewardTotal !== null) {
+      storeGemRewardHomeAnimation({
+        start: startTotal,
+        end: rewardTotal,
+        amount: rewardAmount,
+        duration: 900,
+      });
+    }
+
+    pendingGemReward = null;
+
+    if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
+      advanceCurrentLevel();
+    }
+    resetRewardOverlay();
+    window.location.href = '../index.html';
+  };
 
   const isGemMilestoneReward = (reward) => {
     if (!reward || reward.win !== true) {
@@ -5589,69 +5601,13 @@ document.addEventListener('DOMContentLoaded', () => {
         rewardAnimationPlayed = true;
         hasPendingLevelUpReward = false;
         updateNextMissionButton(true);
-        playLevelUpRewardAnimation();
+        pendingGemReward = null;
+        startEvolutionSequence({ skipRewardFlow: true });
         return;
       }
 
       if (pendingGemReward) {
-        const rewardLevel = Number(pendingGemReward.currentLevel);
-        const skipGemAnimation =
-          Number.isFinite(rewardLevel) &&
-          rewardLevel >= 2 &&
-          !isGemMilestoneReward(pendingGemReward);
-
-        if (skipGemAnimation) {
-          nextMissionProcessing = true;
-          nextMissionBtn.setAttribute('aria-busy', 'true');
-          const rewardTotal = normalizeNonNegativeInteger(
-            pendingGemReward.totalAfter
-          );
-          const rewardAmount = normalizeNonNegativeInteger(
-            pendingGemReward.amount
-          );
-          const startTotal =
-            rewardTotal !== null && rewardAmount !== null
-              ? Math.max(0, rewardTotal - rewardAmount)
-              : null;
-
-          if (pendingGemReward.isFirstGemReward) {
-            markGemRewardIntroSeen();
-          }
-
-          if (rewardTotal !== null) {
-            storeGemRewardHomeAnimation({
-              start: startTotal,
-              end: rewardTotal,
-              amount: rewardAmount,
-              duration: 900,
-            });
-          }
-
-          pendingGemReward = null;
-
-          if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
-            advanceCurrentLevel();
-          }
-          resetRewardOverlay();
-          window.location.href = '../index.html';
-          return;
-        }
-
-        nextMissionProcessing = true;
-        nextMissionBtn.setAttribute('aria-busy', 'true');
-        playGemRewardAnimation(pendingGemReward)
-          .catch((error) => {
-            console.warn('Gem reward animation failed, falling back to navigation.', error);
-            resetRewardOverlay();
-            if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
-              advanceCurrentLevel();
-            }
-            window.location.href = '../index.html';
-          })
-          .finally(() => {
-            nextMissionBtn.removeAttribute('aria-busy');
-            nextMissionProcessing = false;
-          });
+        handleGemRewardWithoutAnimation();
         return;
       }
 

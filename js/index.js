@@ -158,7 +158,7 @@ const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 220;
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
 const BATTLE_PAGE_URL = 'html/battle.html';
-const REGISTER_PAGE_URL = 'html/register.html';
+const REGISTER_PAGE_URL = 'index.html';
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -478,8 +478,12 @@ const ensureAuthenticated = async () => {
   const guestSessionState = readGuestSessionState();
 
   if (isRegistrationRequiredForGuest(guestSessionState)) {
-    redirectToRegister();
-    return false;
+    try {
+      window.localStorage?.setItem(GUEST_SESSION_KEY, GUEST_SESSION_ACTIVE_VALUE);
+    } catch (error) {
+      console.warn('Unable to normalize guest registration state.', error);
+    }
+    guestSessionState = GUEST_SESSION_ACTIVE_VALUE;
   }
 
   if (isGuestModeActive(guestSessionState)) {
