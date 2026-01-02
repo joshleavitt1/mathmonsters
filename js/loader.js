@@ -1697,7 +1697,7 @@ const fetchPlayerProfile = async () => {
   }
 };
 
-(async function () {
+const performBattleDataLoad = async () => {
   try {
     const [playerRes, levelsRes, heroSpritesRes] = await Promise.all([
       fetch(resolveDataPath('player.json')),
@@ -2451,11 +2451,31 @@ const fetchPlayerProfile = async () => {
     }
 
     document.dispatchEvent(new Event('data-loaded'));
+    return window.preloadedData;
   } catch (e) {
     console.error('Failed to load data', e);
     persistNextBattleSnapshot(null);
     window.preloadedData = {};
     document.dispatchEvent(new Event('data-loaded'));
+    return window.preloadedData;
   }
-})();
+};
+
+let loadPromise = null;
+
+const loadBattleData = () => {
+  if (!loadPromise) {
+    loadPromise = performBattleDataLoad();
+  }
+  return loadPromise;
+};
+
+if (typeof window !== 'undefined') {
+  window.mathMonstersBattleLoader = {
+    load: loadBattleData,
+    reset: () => {
+      loadPromise = null;
+    },
+  };
+}
 })();

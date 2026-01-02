@@ -156,7 +156,6 @@ const LEVEL_ONE_INTRO_HERO_REVEAL_DELAY_MS = 700;
 const LEVEL_ONE_INTRO_EGG_REMOVAL_DELAY_MS = 220;
 const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
-const BATTLE_PAGE_URL = 'html/battle.html';
 const REGISTER_PAGE_URL = 'index.html';
 
 const progressUtils =
@@ -184,10 +183,6 @@ const saveStateUtils =
   (typeof window !== 'undefined' ? window.mathMonstersSaveState : null);
 
 const { readSaveState, writeSaveState } = saveStateUtils || {};
-
-const redirectToBattle = () => {
-  window.location.href = BATTLE_PAGE_URL;
-};
 
 const getLevelOneHeroElement = () =>
   document.querySelector('[data-level-one-landing] [data-hero-sprite]');
@@ -444,6 +439,160 @@ const attachInteractiveHandler = (element, handler) => {
     }
   });
 };
+
+const battleViewController = (() => {
+  let battleSection = null;
+  let landingRoot = null;
+  let introOverlay = null;
+  let lastTrigger = null;
+  let questionFocusHandler = null;
+  let activationInProgress = false;
+
+  const ensureElements = () => {
+    if (!landingRoot) {
+      landingRoot = document.querySelector('main.landing');
+    }
+
+    if (!battleSection) {
+      battleSection = document.querySelector('[data-battle-section]');
+    }
+
+    if (!introOverlay) {
+      introOverlay = document.querySelector('[data-level-one-intro]');
+    }
+  };
+
+  const setLandingVisibility = (hidden) => {
+    ensureElements();
+    if (landingRoot) {
+      landingRoot.hidden = hidden;
+      landingRoot.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    }
+
+    if (introOverlay) {
+      if (hidden) {
+        introOverlay.setAttribute('aria-hidden', 'true');
+        introOverlay.setAttribute('hidden', 'hidden');
+      } else {
+        introOverlay.removeAttribute('hidden');
+      }
+    }
+  };
+
+  const focusBattleEntry = () => {
+    ensureElements();
+    const questionButton = battleSection?.querySelector('#question button');
+    const questionCard = battleSection?.querySelector('#question .card');
+    const focusTarget = questionButton || questionCard || battleSection;
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      focusTarget.focus({ preventScroll: true });
+    }
+  };
+
+  const attachQuestionFocus = () => {
+    if (questionFocusHandler) {
+      return;
+    }
+    questionFocusHandler = () => {
+      focusBattleEntry();
+    };
+    document.addEventListener('question-opened', questionFocusHandler);
+  };
+
+  const detachQuestionFocus = () => {
+    if (!questionFocusHandler) {
+      return;
+    }
+
+    document.removeEventListener('question-opened', questionFocusHandler);
+    questionFocusHandler = null;
+  };
+
+  const handleBattleExit = () => {
+    ensureElements();
+    detachQuestionFocus();
+    activationInProgress = false;
+
+    if (battleSection) {
+      battleSection.hidden = true;
+      battleSection.setAttribute('aria-hidden', 'true');
+    }
+
+    setLandingVisibility(false);
+    document.body.classList.remove('is-battle-active');
+
+    if (lastTrigger) {
+      setInteractiveDisabled(lastTrigger, false);
+      lastTrigger.removeAttribute('aria-busy');
+      if (typeof lastTrigger.focus === 'function') {
+        lastTrigger.focus({ preventScroll: true });
+      }
+      lastTrigger = null;
+    }
+  };
+
+  const startBattleRuntime = async () => {
+    const startFn = window.mathMonstersBattle?.start;
+    if (typeof startFn !== 'function') {
+      console.warn('Battle runtime is not available.');
+      handleBattleExit();
+      return;
+    }
+
+    await startFn({
+      onExit: handleBattleExit,
+      onRestart: startBattleRuntime,
+    });
+  };
+
+  const activate = async ({ triggerButton } = {}) => {
+    if (activationInProgress) {
+      return;
+    }
+
+    activationInProgress = true;
+    ensureElements();
+    if (!battleSection) {
+      console.warn('Battle section is not available.');
+      activationInProgress = false;
+      return;
+    }
+
+    lastTrigger = triggerButton || lastTrigger;
+
+    if (triggerButton) {
+      setInteractiveDisabled(triggerButton, true);
+      triggerButton.setAttribute('aria-busy', 'true');
+    }
+
+    setLandingVisibility(true);
+    battleSection.hidden = false;
+    battleSection.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('is-battle-active');
+    attachQuestionFocus();
+
+    try {
+      await startBattleRuntime();
+      focusBattleEntry();
+    } catch (error) {
+      console.error('Failed to start embedded battle.', error);
+      handleBattleExit();
+    } finally {
+      activationInProgress = false;
+      if (triggerButton) {
+        triggerButton.removeAttribute('aria-busy');
+      }
+    }
+  };
+
+  return {
+    activate,
+    exit: handleBattleExit,
+  };
+})();
+
+const redirectToBattle = (options = {}) =>
+  battleViewController.activate(options);
 
 const logoutAndRedirect = async () => {
   const supabase = window.supabaseClient;
@@ -3979,8 +4128,18 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
       });
     } catch (error) {
       console.warn('Battle intro sequence failed.', error);
+    }
+
+    try {
+      await redirectToBattle({ triggerButton: buttonToDisable });
+    } catch (error) {
+      console.error('Unable to activate battle view.', error);
+      if (buttonToDisable) {
+        setInteractiveDisabled(buttonToDisable, false);
+        buttonToDisable.removeAttribute('aria-busy');
+      }
     } finally {
-      redirectToBattle();
+      isLaunchingBattle = false;
     }
   };
 
