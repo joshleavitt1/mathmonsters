@@ -4574,7 +4574,7 @@ document.addEventListener('DOMContentLoaded', () => {
     monster.name = monsterData.name || monster.name;
 
     const monsterAttackSprites = normalizeAttackSprites(
-      { basic: 'images/monster/monster_attack.png' },
+      { basic: 'images/monster/monster_attack_1.png' },
       monster,
       monsterData
     );

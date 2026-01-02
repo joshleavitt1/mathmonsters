@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `mathmonsters-cache-${CACHE_VERSION}`;
 const OFFLINE_ASSETS = [
   './',
@@ -25,16 +25,9 @@ const OFFLINE_ASSETS = [
   'images/hero/shellfin_evolution_2.png',
   'images/hero/shellfin_attack_1.png',
   'images/hero/shellfin_attack_2.png',
-  'images/battle/battle_time.png',
-  'images/monster/addition_battle_1.png',
-  'images/monster/addition_battle_2.png',
-  'images/monster/addition_battle_3.png',
-  'images/monster/addition_battle_4.png',
-  'images/monster/addition_battle_5.png',
-  'images/monster/monster_attack.png',
-  'images/home/medal_1.png',
+  'images/monster/monster_sprite_1.png',
+  'images/monster/monster_attack_1.png',
   'images/complete/gem.png',
-  'images/questions/shield.svg',
   './data/levels.json',
   './data/player.json',
   './data/questions/level_1_questions.json',
