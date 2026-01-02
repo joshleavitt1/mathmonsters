@@ -1,10 +1,8 @@
 (() => {
-const STORAGE_KEY_PROGRESS = 'mathmonstersProgress';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
 const PRELOADED_SPRITES_STORAGE_KEY = 'mathmonstersPreloadedSprites';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
-const DIFFICULTY_STATE_STORAGE_KEY = 'mathmonstersDifficultyState';
 
 const DEFAULT_DIFFICULTY_STATE = {
   difficulty: 1,
@@ -261,18 +259,18 @@ const writePreloadedSpriteSet = (spriteSet) => {
   }
 };
 
+const saveStateUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersSaveState) ||
+  (typeof window !== 'undefined' ? window.mathMonstersSaveState : null);
+
 const readStoredDifficultyState = () => {
-  if (typeof sessionStorage === 'undefined') {
+  if (!saveStateUtils) {
     return sanitizeDifficultyState(null);
   }
 
   try {
-    const raw = sessionStorage.getItem(DIFFICULTY_STATE_STORAGE_KEY);
-    if (!raw) {
-      return sanitizeDifficultyState(null);
-    }
-    const parsed = JSON.parse(raw);
-    return sanitizeDifficultyState(parsed);
+    const saveState = saveStateUtils.readSaveState();
+    return sanitizeDifficultyState(saveState);
   } catch (error) {
     console.warn('Unable to read stored difficulty state.', error);
     return sanitizeDifficultyState(null);
@@ -286,17 +284,12 @@ const writeStoredDifficultyState = (state) => {
     window.mathMonstersDifficultyState = sanitized;
   }
 
-  if (typeof sessionStorage === 'undefined') {
-    return sanitized;
-  }
-
-  try {
-    sessionStorage.setItem(
-      DIFFICULTY_STATE_STORAGE_KEY,
-      JSON.stringify(sanitized)
-    );
-  } catch (error) {
-    console.warn('Unable to write stored difficulty state.', error);
+  if (saveStateUtils && typeof saveStateUtils.writeSaveState === 'function') {
+    saveStateUtils.writeSaveState({
+      difficulty: sanitized.difficulty,
+      correctStreak: sanitized.correctStreak,
+      incorrectStreak: sanitized.incorrectStreak,
+    });
   }
 
   return sanitized;
@@ -1689,24 +1682,6 @@ const deriveMathTypeLevels = (levelsData, ...playerSources) => {
   };
 };
 
-const readStoredProgress = () => {
-  try {
-    const storage = window.localStorage;
-    if (!storage) {
-      return null;
-    }
-    const raw = storage.getItem(STORAGE_KEY_PROGRESS);
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : null;
-  } catch (error) {
-    console.warn('Stored progress could not be read.', error);
-    return null;
-  }
-};
-
 const fetchPlayerProfile = async () => {
   const fetchFn = playerProfileUtils?.fetchPlayerProfile;
   if (typeof fetchFn !== 'function') {
@@ -1719,23 +1694,6 @@ const fetchPlayerProfile = async () => {
   } catch (error) {
     console.warn('Failed to fetch remote player profile in loader.', error);
     return null;
-  }
-};
-
-const syncRemoteCurrentLevel = (playerData) => {
-  if (!playerData) {
-    return;
-  }
-
-  const syncFn = playerProfileUtils?.syncCurrentLevelToStorage;
-  if (typeof syncFn !== 'function') {
-    return;
-  }
-
-  try {
-    syncFn(playerData, STORAGE_KEY_PROGRESS);
-  } catch (error) {
-    console.warn('Failed to sync remote current level in loader.', error);
   }
 };
 
@@ -1768,7 +1726,6 @@ const syncRemoteCurrentLevel = (playerData) => {
     try {
       const remotePlayerData = await fetchPlayerProfile();
       if (remotePlayerData) {
-        syncRemoteCurrentLevel(remotePlayerData);
         const extractedRemotePlayer = extractPlayerData(remotePlayerData);
         const mergedRemotePlayer = mergePlayerData(
           basePlayer,
@@ -1793,7 +1750,10 @@ const syncRemoteCurrentLevel = (playerData) => {
       playerJson
     );
     const levels = Array.isArray(derivedLevels) ? derivedLevels : [];
-    const storedProgress = readStoredProgress();
+    const saveState =
+      saveStateUtils && typeof saveStateUtils.readSaveState === 'function'
+        ? saveStateUtils.readSaveState()
+        : {};
     const baseProgress =
       basePlayer && typeof basePlayer.progress === 'object'
         ? basePlayer.progress
@@ -1802,8 +1762,13 @@ const syncRemoteCurrentLevel = (playerData) => {
       basePlayer && typeof basePlayer.battleVariables === 'object'
         ? basePlayer.battleVariables
         : {};
-    const progress = mergeProgressState(baseProgress, storedProgress);
+    const progress = mergeProgressState(baseProgress, {});
     const battleVariables = { ...baseBattleVariables };
+    let difficultyState = writeStoredDifficultyState({
+      difficulty: saveState?.difficulty,
+      correctStreak: saveState?.correctStreak,
+      incorrectStreak: saveState?.incorrectStreak,
+    });
     const sanitizeGemValue = (value) => {
       const numericValue = Number(value);
       if (!Number.isFinite(numericValue)) {
@@ -1812,26 +1777,13 @@ const syncRemoteCurrentLevel = (playerData) => {
       return Math.max(0, Math.round(numericValue));
     };
 
-    let experienceMap = normalizeExperienceMap(progress?.experience);
-
-    if (storedProgress && typeof storedProgress === 'object') {
-      const storedCurrentLevel = normalizeCurrentLevel(
-        storedProgress.currentLevel
-      );
-      if (storedCurrentLevel !== null) {
-        progress.currentLevel = storedCurrentLevel;
-      }
-
-      if (typeof storedProgress.timeRemainingSeconds === 'number') {
-        battleVariables.timeRemainingSeconds =
-          storedProgress.timeRemainingSeconds;
-      }
-    }
+    let experienceMap = normalizeExperienceMap(
+      typeof saveState?.xpTotal === 'number' ? saveState.xpTotal : progress?.experience
+    );
 
     const gemCandidates = [
       sanitizeGemValue(progress?.gems),
-      sanitizeGemValue(storedProgress?.gems),
-      sanitizeGemValue(storedProgress?.progress?.gems),
+      sanitizeGemValue(saveState?.gems),
       sanitizeGemValue(basePlayer?.gems),
     ].filter((value) => value !== null);
 
@@ -1847,7 +1799,6 @@ const syncRemoteCurrentLevel = (playerData) => {
 
     const gemsAwardedCandidates = [
       sanitizeGemValue(progress?.gemsAwarded),
-      sanitizeGemValue(storedProgress?.gemsAwarded),
     ].filter((value) => value !== null);
 
     if (gemsAwardedCandidates.length > 0) {
@@ -1864,10 +1815,11 @@ const syncRemoteCurrentLevel = (playerData) => {
     experienceMap = normalizeExperienceMap(experienceMap);
     const totalExperience = readTotalExperience(experienceMap);
     const normalizedExperience = normalizeExperienceMap({ total: totalExperience });
-    const experienceTier = computeExperienceTier(
-      totalExperience,
-      EXPERIENCE_MILESTONE_SIZE
-    );
+    const savedSpriteTier = Number(saveState?.spriteTier);
+    const experienceTier =
+      Number.isFinite(savedSpriteTier) && savedSpriteTier > 0
+        ? Math.max(1, Math.round(savedSpriteTier))
+        : computeExperienceTier(totalExperience, EXPERIENCE_MILESTONE_SIZE);
 
     if (Object.keys(normalizedExperience).length > 0) {
       progress.experience = normalizedExperience;
@@ -1880,6 +1832,11 @@ const syncRemoteCurrentLevel = (playerData) => {
 
     applyHeroTierAssets(basePlayer, heroSpritesData, totalExperience);
     applyHeroLevelAssets(basePlayer);
+
+    const savedDifficultyLevel = normalizeCurrentLevel(difficultyState?.difficulty);
+    if (savedDifficultyLevel !== null) {
+      progress.currentLevel = savedDifficultyLevel;
+    }
 
     const isPositiveLevelNumber = (value) =>
       typeof value === 'number' &&
@@ -2334,6 +2291,23 @@ const syncRemoteCurrentLevel = (playerData) => {
     const primaryMonster =
       normalizedMonsters[primaryMonsterIndex] || normalizedMonsters[0] || {};
 
+    difficultyState = writeStoredDifficultyState({
+      ...difficultyState,
+      difficulty:
+        normalizeCurrentLevel(progress.currentLevel) ?? difficultyState.difficulty,
+    });
+
+    if (saveStateUtils && typeof saveStateUtils.writeSaveState === 'function') {
+      saveStateUtils.writeSaveState({
+        xpTotal: totalExperience,
+        spriteTier: experienceTier,
+        difficulty: difficultyState.difficulty,
+        correctStreak: difficultyState.correctStreak,
+        incorrectStreak: difficultyState.incorrectStreak,
+        gems: progress?.gems ?? 0,
+      });
+    }
+
     const battle = {
       ...levelBattle,
       hero,
@@ -2402,9 +2376,7 @@ const syncRemoteCurrentLevel = (playerData) => {
       writePreloadedSpriteSet(preloadedSpriteSet);
     }
 
-    const difficultyState = writeStoredDifficultyState(
-      readStoredDifficultyState()
-    );
+    difficultyState = writeStoredDifficultyState(difficultyState);
 
     const nextBattleSnapshot = {
       currentLevel: Number.isFinite(activeCurrentLevel) ? activeCurrentLevel : null,

@@ -1,29 +1,27 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
-const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 const PRELOADED_SPRITES_STORAGE_KEY = 'mathmonstersPreloadedSprites';
-const HOME_PROGRESS_STORAGE_KEY = 'mathmonstersHomeProgressState';
 const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const LEGACY_PROGRESS_STORAGE_KEYS = Object.freeze(['reefRangersProgress']);
+const saveStateUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersSaveState) ||
+  (typeof window !== 'undefined' ? window.mathMonstersSaveState : null);
+const { resetSaveState, writeSaveState } = saveStateUtils || {};
+const SAVE_STATE_STORAGE_KEY = saveStateUtils?.STORAGE_KEY || 'mathMonstersSave_v1';
 const LOCAL_STORAGE_KEYS_TO_CLEAR = Object.freeze([
   PLAYER_PROFILE_STORAGE_KEY,
   NEXT_BATTLE_SNAPSHOT_STORAGE_KEY,
-  HOME_PROGRESS_STORAGE_KEY,
+  SAVE_STATE_STORAGE_KEY,
 ]);
 const SESSION_STORAGE_KEYS_TO_CLEAR = Object.freeze([
   PLAYER_PROFILE_STORAGE_KEY,
   NEXT_BATTLE_SNAPSHOT_STORAGE_KEY,
   PRELOADED_SPRITES_STORAGE_KEY,
-  HOME_PROGRESS_STORAGE_KEY,
 ]);
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const REGISTER_PAGE_URL = '../index.html';
-
-const createDefaultProgress = () => ({
-  currentLevel: 1,
-});
 
 const clearLandingVisitState = (localStorageRef) => {
   try {
@@ -89,10 +87,21 @@ const persistGuestSession = () => {
 
   try {
     storage.setItem(GUEST_SESSION_KEY, GUEST_SESSION_ACTIVE_VALUE);
-    storage.setItem(
-      PROGRESS_STORAGE_KEY,
-      JSON.stringify(createDefaultProgress())
-    );
+
+    if (typeof resetSaveState === 'function') {
+      resetSaveState();
+    } else if (typeof writeSaveState === 'function') {
+      writeSaveState({
+        difficulty: 1,
+        correctStreak: 0,
+        incorrectStreak: 0,
+        xpTotal: 0,
+        spriteTier: 1,
+        gems: 0,
+        lastSeenDifficulty: 1,
+        lastSeenSpriteTier: 1,
+      });
+    }
 
     LEGACY_PROGRESS_STORAGE_KEYS.forEach((key) => {
       try {

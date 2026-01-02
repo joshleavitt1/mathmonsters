@@ -1,6 +1,5 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
-const HOME_PROGRESS_STORAGE_KEY = 'mathmonstersHomeProgressState';
 const HOME_PROGRESS_INITIAL_ANIMATION_DELAY_MS = 1000;
 const HOME_PROGRESS_INITIAL_ANIMATION_COMPLETE_DATA_KEY =
   'progressInitialAnimationComplete';
@@ -11,12 +10,18 @@ const EXPERIENCE_MILESTONE_SIZE = 10;
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
 
+const saveStateUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersSaveState) ||
+  (typeof window !== 'undefined' ? window.mathMonstersSaveState : null);
+
 const {
   normalizeExperienceMap,
   readTotalExperience,
   computeExperienceTier,
   computeExperienceMilestoneProgress,
 } = progressUtils || {};
+
+const { readSaveState, writeSaveState } = saveStateUtils || {};
 
 const normalizeNonNegativeInteger = (value) => {
   const numericValue = Number(value);
@@ -175,48 +180,6 @@ const sanitizeBattleProgressState = (state) => {
     milestoneTotal: milestoneTotal ?? null,
     timestamp: Number.isFinite(state.timestamp) ? state.timestamp : Date.now(),
   };
-};
-
-const readStoredHomeBattleProgress = () => {
-  if (typeof sessionStorage === 'undefined') {
-    return null;
-  }
-
-  try {
-    const raw = sessionStorage.getItem(HOME_PROGRESS_STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw);
-    return sanitizeBattleProgressState(parsed);
-  } catch (error) {
-    console.warn('Unable to read stored home battle progress.', error);
-    return null;
-  }
-};
-
-const writeStoredHomeBattleProgress = (state) => {
-  if (typeof sessionStorage === 'undefined') {
-    return;
-  }
-
-  try {
-    if (!state) {
-      sessionStorage.removeItem(HOME_PROGRESS_STORAGE_KEY);
-      return;
-    }
-
-    const sanitized = sanitizeBattleProgressState({ ...state, timestamp: Date.now() });
-    if (!sanitized) {
-      sessionStorage.removeItem(HOME_PROGRESS_STORAGE_KEY);
-      return;
-    }
-
-    sessionStorage.setItem(HOME_PROGRESS_STORAGE_KEY, JSON.stringify(sanitized));
-  } catch (error) {
-    console.warn('Unable to store home battle progress.', error);
-  }
 };
 
 const takePendingGemRewardAnimation = () => {
@@ -1154,7 +1117,16 @@ const updateHomeFromPreloadedData = () => {
     '.home__progress[data-battle-progress]'
   );
 
-  const previousProgressState = readStoredHomeBattleProgress();
+  const saveState = typeof readSaveState === 'function' ? readSaveState() : null;
+  const previousSpriteTier = Number(
+    saveState?.lastSeenSpriteTier ?? saveState?.spriteTier
+  );
+  const previousProgressState = Number.isFinite(previousSpriteTier)
+    ? {
+        currentLevel: previousSpriteTier,
+        levelLabel: `XP Tier ${previousSpriteTier}`,
+      }
+    : null;
   const progressState = computeHomeBattleProgress(data);
   const hasProgressState = isPlainObject(progressState);
   const currentLevel = clampDifficultyValue(progressState?.currentLevel);
@@ -1303,7 +1275,12 @@ const updateHomeFromPreloadedData = () => {
     progressElement.setAttribute('aria-valuemin', '0');
   }
 
-  writeStoredHomeBattleProgress(progressState);
+  if (typeof writeSaveState === 'function' && hasProgressState) {
+    writeSaveState({
+      lastSeenDifficulty: currentLevel ?? saveState?.difficulty,
+      lastSeenSpriteTier: progressState.currentLevel ?? saveState?.spriteTier,
+    });
+  }
 
   storeBattleSnapshot({
     currentLevel: Number.isFinite(currentLevel) ? currentLevel : null,
