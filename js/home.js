@@ -672,58 +672,21 @@ const computeHomeBattleProgress = (data) => {
     }
   }
 
-  const clampPositiveInteger = (value) => {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric) || numeric <= 0) {
-      return null;
-    }
+  const currentDifficulty =
+    clampDifficultyValue(data.difficultyState?.difficulty) ??
+    clampDifficultyValue(mathProgressEntry?.difficulty) ??
+    clampDifficultyValue(mathProgressEntry?.currentLevel) ??
+    clampDifficultyValue(mathProgressKey) ??
+    clampDifficultyValue(data.progress?.currentLevel) ??
+    clampDifficultyValue(data.player?.progress?.currentLevel) ??
+    clampDifficultyValue(1);
 
-    return Math.round(numeric);
-  };
-
-  const prioritizedCurrentLevelCandidates = [];
-
-  const mathProgressCurrentLevel = clampPositiveInteger(
-    mathProgressEntry?.currentLevel
-  );
-
-  if (mathProgressEntry) {
-    if (Number.isFinite(mathProgressCurrentLevel)) {
-      prioritizedCurrentLevelCandidates.push(mathProgressCurrentLevel);
-    } else {
-      prioritizedCurrentLevelCandidates.push(mathProgressEntry.currentLevel);
-    }
-  }
-
-  if (mathProgressKey && typeof mathProgressKey === 'string') {
-    prioritizedCurrentLevelCandidates.push(mathProgressKey);
-  }
-
-  const fallbackCurrentLevelCandidates = [
-    data.preview?.currentLevel,
-    data.level?.currentLevel,
-    data.battle?.currentLevel,
-    data.progress?.currentLevel,
-    data.player?.progress?.currentLevel,
-  ];
-
-  const currentLevelCandidates = [
-    ...prioritizedCurrentLevelCandidates,
-    ...fallbackCurrentLevelCandidates,
-  ];
-
-  const resolvedCurrentLevel = currentLevelCandidates
-    .map((value) => clampPositiveInteger(value))
-    .find((value) => Number.isFinite(value));
-
-  const normalizedCurrentLevel = Number.isFinite(resolvedCurrentLevel)
-    ? Math.max(1, Math.round(resolvedCurrentLevel))
-    : null;
-
-  const levelLabel = normalizedCurrentLevel ? `Level ${normalizedCurrentLevel}` : '';
+  const levelLabel = currentDifficulty
+    ? `Difficulty ${currentDifficulty}`
+    : '';
 
   return {
-    currentLevel: normalizedCurrentLevel,
+    currentLevel: currentDifficulty,
     levelLabel,
     currentBattle: null,
     totalBattles: null,
@@ -779,7 +742,7 @@ const applyBattleProgressAttributes = (progressElement, state) => {
   progressElement.setAttribute('aria-valuenow', `${ratio}`);
 
   if (resolvedLevel) {
-    progressElement.setAttribute('aria-valuetext', `Level ${resolvedLevel}`);
+    progressElement.setAttribute('aria-valuetext', `Difficulty ${resolvedLevel}`);
   } else {
     progressElement.removeAttribute('aria-valuetext');
   }
@@ -1146,14 +1109,7 @@ const updateHomeFromPreloadedData = () => {
     }
   }
 
-  const levelCandidates = [
-    data.progress?.currentLevel,
-    data.level?.currentLevel,
-    data.player?.progress?.currentLevel,
-  ];
-  const currentLevel = levelCandidates
-    .map((value) => Number(value))
-    .find((value) => Number.isFinite(value) && value > 0);
+  const currentLevel = clampDifficultyValue(progressState?.currentLevel);
 
   const heroLevelEl = document.querySelector('[data-hero-level]');
   const progressElement = document.querySelector(

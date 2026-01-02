@@ -4,6 +4,41 @@ const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
 const PRELOADED_SPRITES_STORAGE_KEY = 'mathmonstersPreloadedSprites';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
+const DIFFICULTY_STATE_STORAGE_KEY = 'mathmonstersDifficultyState';
+
+const DEFAULT_DIFFICULTY_STATE = {
+  difficulty: 1,
+  correctStreak: 0,
+  incorrectStreak: 0,
+};
+
+const clampDifficulty = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return DEFAULT_DIFFICULTY_STATE.difficulty;
+  }
+  return Math.min(5, Math.max(1, Math.round(numeric)));
+};
+
+const clampStreakValue = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return 0;
+  }
+  return Math.round(numeric);
+};
+
+const sanitizeDifficultyState = (state) => {
+  if (!state || typeof state !== 'object') {
+    return { ...DEFAULT_DIFFICULTY_STATE };
+  }
+
+  return {
+    difficulty: clampDifficulty(state.difficulty),
+    correctStreak: clampStreakValue(state.correctStreak),
+    incorrectStreak: clampStreakValue(state.incorrectStreak),
+  };
+};
 
 const deriveBaseFromLocation = (fallbackBase) => {
   if (typeof window === 'undefined') {
@@ -222,6 +257,47 @@ const writePreloadedSpriteSet = (spriteSet) => {
   } catch (error) {
     console.warn('Unable to persist preloaded sprite list.', error);
   }
+};
+
+const readStoredDifficultyState = () => {
+  if (typeof sessionStorage === 'undefined') {
+    return sanitizeDifficultyState(null);
+  }
+
+  try {
+    const raw = sessionStorage.getItem(DIFFICULTY_STATE_STORAGE_KEY);
+    if (!raw) {
+      return sanitizeDifficultyState(null);
+    }
+    const parsed = JSON.parse(raw);
+    return sanitizeDifficultyState(parsed);
+  } catch (error) {
+    console.warn('Unable to read stored difficulty state.', error);
+    return sanitizeDifficultyState(null);
+  }
+};
+
+const writeStoredDifficultyState = (state) => {
+  const sanitized = sanitizeDifficultyState(state);
+
+  if (typeof window !== 'undefined') {
+    window.mathMonstersDifficultyState = sanitized;
+  }
+
+  if (typeof sessionStorage === 'undefined') {
+    return sanitized;
+  }
+
+  try {
+    sessionStorage.setItem(
+      DIFFICULTY_STATE_STORAGE_KEY,
+      JSON.stringify(sanitized)
+    );
+  } catch (error) {
+    console.warn('Unable to write stored difficulty state.', error);
+  }
+
+  return sanitized;
 };
 
 const persistNextBattleSnapshot = (snapshot) => {
@@ -1876,29 +1952,42 @@ const syncRemoteCurrentLevel = (playerData) => {
     let questions = [];
     const questionReference = levelBattle?.questionReference;
     const questionsConfig = levelBattle?.questions;
+    const resolveQuestionFileForDifficulty = (difficulty) => {
+      const normalizedDifficulty = clampDifficulty(difficulty);
+      return `questions/level_${normalizedDifficulty}_questions.json`;
+    };
     const questionFile = (() => {
+      const difficultyState = readStoredDifficultyState();
+      const difficultyPath = resolveQuestionFileForDifficulty(
+        difficultyState.difficulty
+      );
+      const difficultyCandidates = [difficultyPath];
+      const fallbackCandidates = [];
       if (typeof questionReference === 'string') {
-        return questionReference;
+        fallbackCandidates.push(questionReference);
       }
       if (typeof questionReference?.file === 'string') {
-        return questionReference.file;
+        fallbackCandidates.push(questionReference.file);
       }
       if (typeof questionsConfig === 'string') {
-        return questionsConfig;
+        fallbackCandidates.push(questionsConfig);
       }
       if (typeof questionsConfig?.file === 'string') {
-        return questionsConfig.file;
+        fallbackCandidates.push(questionsConfig.file);
       }
       if (typeof questionsConfig?.path === 'string') {
-        return questionsConfig.path;
+        fallbackCandidates.push(questionsConfig.path);
       }
       if (typeof questionsConfig?.url === 'string') {
-        return questionsConfig.url;
+        fallbackCandidates.push(questionsConfig.url);
       }
       if (typeof questionsConfig?.source === 'string') {
-        return questionsConfig.source;
+        fallbackCandidates.push(questionsConfig.source);
       }
-      return null;
+
+      const candidates = [...difficultyCandidates, ...fallbackCandidates];
+      const chosen = candidates.find((candidate) => typeof candidate === 'string' && candidate.trim());
+      return chosen || null;
     })();
     if (questionFile) {
       try {
@@ -2183,6 +2272,10 @@ const syncRemoteCurrentLevel = (playerData) => {
       writePreloadedSpriteSet(preloadedSpriteSet);
     }
 
+    const difficultyState = writeStoredDifficultyState(
+      readStoredDifficultyState()
+    );
+
     const nextBattleSnapshot = {
       currentLevel: Number.isFinite(activeCurrentLevel) ? activeCurrentLevel : null,
       hero: hero
@@ -2197,6 +2290,7 @@ const syncRemoteCurrentLevel = (playerData) => {
             sprite: typeof battle.monster.sprite === 'string' ? battle.monster.sprite : null,
           }
         : null,
+      difficultyState,
     };
 
     persistNextBattleSnapshot(nextBattleSnapshot);
@@ -2216,6 +2310,7 @@ const syncRemoteCurrentLevel = (playerData) => {
       monster: battle.monster,
       charactersByLevel: levelCharacters,
       questions,
+      difficultyState,
     };
 
     if (typeof document !== 'undefined') {

@@ -2071,6 +2071,23 @@ const determineBattlePreview = (levelsData, playerData) => {
     typeof monsterData?.name === 'string' ? monsterData.name.trim() : '';
   const monsterAlt = monsterName ? `${monsterName} ready for battle` : 'Monster ready for battle';
 
+  const difficultyValue = (() => {
+    const candidates = [
+      preloadedData?.difficultyState?.difficulty,
+      player?.progress?.currentLevel,
+      activeLevel?.currentLevel,
+      1,
+    ];
+    const numericCandidate = candidates
+      .map((value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      })
+      .find((value) => value !== null);
+    const numeric = Number.isFinite(numericCandidate) ? numericCandidate : 1;
+    return Math.min(5, Math.max(1, Math.round(numeric)));
+  })();
+
   const levelName = typeof activeLevel?.name === 'string' ? activeLevel.name.trim() : '';
   const battleTitleLabel =
     levelName ||
@@ -2078,13 +2095,13 @@ const determineBattlePreview = (levelsData, playerData) => {
       ? `Battle ${activeLevel.currentLevel}`
       : 'Upcoming Battle');
   const heroLevelLabel =
-    typeof activeLevel?.currentLevel === 'number'
-      ? `Level ${activeLevel.currentLevel}`
-      : 'Level';
+    typeof difficultyValue === 'number'
+      ? `Difficulty ${difficultyValue}`
+      : 'Difficulty';
   const experienceMap = normalizeExperienceMap(player?.progress?.experience);
   const earnedExperience = readExperienceForLevel(
     experienceMap,
-    activeLevel?.currentLevel
+    difficultyValue
   );
   const levelUpRequirement = Number(battle?.levelUp);
   const experienceProgress = computeExperienceProgress(
@@ -2104,7 +2121,7 @@ const determineBattlePreview = (levelsData, playerData) => {
     player,
     preview: {
       activeLevel,
-      currentLevel: activeLevel?.currentLevel ?? null,
+      currentLevel: difficultyValue,
       mathLabel,
       battleTitleLabel,
       hero: { ...heroData, sprite: heroSprite },
@@ -2286,7 +2303,7 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
     ) {
       return previewData.battleTitleLabel.trim();
     }
-    return 'Level';
+    return 'Difficulty';
   })();
 
   heroLevelElements.forEach((element) => {

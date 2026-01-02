@@ -32,8 +32,15 @@ const REGISTER_PAGE_URL = '../index.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const BATTLES_PER_LEVEL = 4;
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+const DIFFICULTY_STATE_STORAGE_KEY = 'mathmonstersDifficultyState';
 const GLOBAL_REWARD_MILESTONE = 5;
 const GLOBAL_PROGRESS_REVEAL_DELAY_MS = 1000;
+
+const DEFAULT_DIFFICULTY_STATE = {
+  difficulty: 1,
+  correctStreak: 0,
+  incorrectStreak: 0,
+};
 
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
@@ -106,6 +113,75 @@ const hasVisitedLanding = () => {
 };
 
 const landingVisited = hasVisitedLanding();
+
+const clampDifficulty = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return DEFAULT_DIFFICULTY_STATE.difficulty;
+  }
+  return Math.min(5, Math.max(1, Math.round(numeric)));
+};
+
+const clampStreakValue = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return 0;
+  }
+  return Math.round(numeric);
+};
+
+const sanitizeDifficultyState = (state) => {
+  if (!state || typeof state !== 'object') {
+    return { ...DEFAULT_DIFFICULTY_STATE };
+  }
+
+  return {
+    difficulty: clampDifficulty(state.difficulty),
+    correctStreak: clampStreakValue(state.correctStreak),
+    incorrectStreak: clampStreakValue(state.incorrectStreak),
+  };
+};
+
+const readDifficultyState = () => {
+  if (typeof sessionStorage === 'undefined') {
+    return sanitizeDifficultyState(null);
+  }
+
+  try {
+    const raw = sessionStorage.getItem(DIFFICULTY_STATE_STORAGE_KEY);
+    if (!raw) {
+      return sanitizeDifficultyState(null);
+    }
+    const parsed = JSON.parse(raw);
+    return sanitizeDifficultyState(parsed);
+  } catch (error) {
+    console.warn('Unable to read stored difficulty state.', error);
+    return sanitizeDifficultyState(null);
+  }
+};
+
+const persistDifficultyState = (state) => {
+  const sanitized = sanitizeDifficultyState(state);
+
+  if (typeof window !== 'undefined') {
+    window.mathMonstersDifficultyState = sanitized;
+  }
+
+  if (typeof sessionStorage === 'undefined') {
+    return sanitized;
+  }
+
+  try {
+    sessionStorage.setItem(
+      DIFFICULTY_STATE_STORAGE_KEY,
+      JSON.stringify(sanitized)
+    );
+  } catch (error) {
+    console.warn('Unable to write difficulty state.', error);
+  }
+
+  return sanitized;
+};
 
 if (!landingVisited) {
   window.location.replace('../index.html');
@@ -491,30 +567,81 @@ document.addEventListener('DOMContentLoaded', () => {
   let levelOneStructuredSequence = [];
   let levelOneStructuredIndex = 0;
   let useLevelOneSequence = false;
+  const questionCache = new Map();
 
-  const sanitizeLevelNumber = (value) => {
-    const numericValue = Number(value);
-    if (!Number.isFinite(numericValue) || numericValue <= 0) {
-      return null;
-    }
-
-    return Math.max(1, Math.floor(numericValue));
+  const resolveQuestionPathForDifficulty = (difficulty) => {
+    const normalized = clampDifficulty(difficulty);
+    return `../data/questions/level_${normalized}_questions.json`;
   };
 
-  const getResolvedCurrentLevel = () => {
-    const storedLevel = sanitizeLevelNumber(currentCurrentLevel);
-    const battleLevel = sanitizeLevelNumber(window.preloadedData?.level?.currentLevel);
-
-    if (battleLevel !== null && (storedLevel === null || battleLevel > storedLevel)) {
-      return battleLevel;
+  const loadQuestionsForDifficulty = async (difficulty) => {
+    const normalized = clampDifficulty(difficulty);
+    if (questionCache.has(normalized)) {
+      return questionCache.get(normalized);
     }
 
-    if (storedLevel !== null) {
-      return storedLevel;
+    const path = resolveQuestionPathForDifficulty(normalized);
+    try {
+      const response = await fetch(path);
+      if (response.ok) {
+        const payload = await response.json();
+        questionCache.set(normalized, payload);
+        return payload;
+      }
+    } catch (error) {
+      console.warn('Unable to fetch questions for difficulty.', error);
     }
 
-    return battleLevel;
+    return null;
   };
+
+  const ensureQuestionPoolForDifficulty = async (difficulty) => {
+    const normalized = clampDifficulty(difficulty);
+    if (currentDifficultyQuestionSource === normalized) {
+      return;
+    }
+
+    const loaded = await loadQuestionsForDifficulty(normalized);
+    if (loaded) {
+      resetQuestionPool(loaded);
+      currentDifficultyQuestionSource = normalized;
+    }
+  };
+
+  const updateDifficultyForAnswer = async (wasCorrect) => {
+    let { difficulty, correctStreak, incorrectStreak } = difficultyState;
+    if (wasCorrect) {
+      correctStreak += 1;
+      incorrectStreak = 0;
+      if (correctStreak >= 3) {
+        difficulty = clampDifficulty(difficulty + 1);
+        correctStreak = 0;
+      }
+    } else {
+      incorrectStreak += 1;
+      correctStreak = 0;
+      if (incorrectStreak >= 2) {
+        difficulty = clampDifficulty(difficulty - 1);
+        incorrectStreak = 0;
+      }
+    }
+
+    difficultyState = persistDifficultyState({
+      difficulty,
+      correctStreak,
+      incorrectStreak,
+    });
+    currentDifficulty = difficultyState.difficulty;
+    await ensureQuestionPoolForDifficulty(currentDifficulty);
+  };
+
+  let difficultyState = persistDifficultyState(
+    window.preloadedData?.difficultyState
+  );
+  let currentDifficulty = difficultyState.difficulty;
+  let currentDifficultyQuestionSource = currentDifficulty;
+
+  const getResolvedCurrentDifficulty = () => clampDifficulty(currentDifficulty);
 
   const shuffleArray = (values) => {
     if (!Array.isArray(values)) {
@@ -540,7 +667,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let battleTimerDeadline = null;
   let battleTimerInterval = null;
   let battleEnded = false;
-  let currentCurrentLevel = null;
   let battleStartTime = null;
   let currentLevelAdvanced = false;
   let battleGoalsMet = false;
@@ -1273,10 +1399,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const preloaded = typeof window !== 'undefined' ? window.preloadedData : null;
 
     const fallbackLevelCandidates = [
-      getResolvedCurrentLevel(),
-      numericOrNull(progressRoot?.currentLevel),
-      numericOrNull(progressRoot?.level),
-      numericOrNull(preloaded?.level?.currentLevel),
+      getResolvedCurrentDifficulty(),
+      numericOrNull(progressRoot?.difficulty),
+      numericOrNull(preloaded?.difficultyState?.difficulty),
     ];
 
     if (typeof mathKey === 'string') {
@@ -3072,16 +3197,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const resolveCurrentLevelForExperience = () => {
-    const resolvedLevel = getResolvedCurrentLevel();
-    if (resolvedLevel === null) {
-      return null;
-    }
-
-    if (currentCurrentLevel === null || resolvedLevel > currentCurrentLevel) {
-      currentCurrentLevel = resolvedLevel;
-    }
-
-    return resolvedLevel;
+    const resolvedDifficulty = getResolvedCurrentDifficulty();
+    currentDifficulty = resolvedDifficulty;
+    return resolvedDifficulty;
   };
 
   const resolveExperiencePointsForMonster = () => {
@@ -3572,7 +3690,7 @@ document.addEventListener('DOMContentLoaded', () => {
       levelOneStructuredSequence = structured.levelOneSequence;
       useStructuredQuestions = true;
 
-      const resolvedLevel = getResolvedCurrentLevel();
+      const resolvedLevel = getResolvedCurrentDifficulty();
       if (
         typeof resolvedLevel === 'number' &&
         Number.isFinite(resolvedLevel) &&
@@ -3601,7 +3719,7 @@ document.addEventListener('DOMContentLoaded', () => {
     questionIds.sort((a, b) => a - b);
     totalQuestionCount = questionIds.length;
 
-    const resolvedLevel = getResolvedCurrentLevel();
+    const resolvedLevel = getResolvedCurrentDifficulty();
     if (
       typeof resolvedLevel === 'number' &&
       Number.isFinite(resolvedLevel) &&
@@ -4106,7 +4224,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const previousLevelRaw = getResolvedCurrentLevel();
+    const previousLevelRaw = getResolvedCurrentDifficulty();
     const previousLevelValue = Number.isFinite(previousLevelRaw)
       ? Math.max(1, Math.floor(previousLevelRaw))
       : null;
@@ -4142,7 +4260,11 @@ document.addEventListener('DOMContentLoaded', () => {
         ) {
           leveledUp = true;
         }
-        currentCurrentLevel = normalizedMergedLevel;
+        currentDifficulty = clampDifficulty(normalizedMergedLevel);
+        difficultyState = persistDifficultyState({
+          ...difficultyState,
+          difficulty: currentDifficulty,
+        });
       }
 
       if (
@@ -4231,16 +4353,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function advanceCurrentLevel() {
     if (currentLevelAdvanced) {
       return;
-    }
-
-    const progress =
-      window.preloadedData?.progress ?? window.preloadedData?.player?.progress ?? {};
-    const resolvedLevel = Number(
-      progress?.currentLevel ?? progress?.level
-    );
-
-    if (Number.isFinite(resolvedLevel)) {
-      currentCurrentLevel = Math.max(1, Math.floor(resolvedLevel));
     }
 
     currentLevelAdvanced = true;
@@ -4408,28 +4520,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return result;
     };
 
-    const storedProgressLevel = sanitizeLevelNumber(progressData?.currentLevel);
-    const legacyProgressLevel = sanitizeLevelNumber(progressData?.level);
-    const providedLevel = sanitizeLevelNumber(data.level?.currentLevel);
-
-    let initialResolvedLevel = storedProgressLevel;
-    if (legacyProgressLevel !== null && (initialResolvedLevel === null || legacyProgressLevel > initialResolvedLevel)) {
-      initialResolvedLevel = legacyProgressLevel;
-    }
-    if (providedLevel !== null && (initialResolvedLevel === null || providedLevel > initialResolvedLevel)) {
-      initialResolvedLevel = providedLevel;
-    }
-
-    currentCurrentLevel = initialResolvedLevel;
-
-    levelExperienceEarned = readExperienceForLevel(
-      experienceMap,
-      currentCurrentLevel
+    const providedDifficulty = clampDifficulty(
+      data.difficultyState?.difficulty ??
+        progressData?.currentLevel ??
+        progressData?.level
     );
-    const levelUpValue = Number(battleData.levelUp);
-    levelExperienceRequirement = Number.isFinite(levelUpValue)
-      ? Math.max(0, Math.round(levelUpValue))
-      : 0;
+    currentDifficulty = providedDifficulty;
+    difficultyState = persistDifficultyState({
+      ...difficultyState,
+      difficulty: currentDifficulty,
+    });
+
+    levelExperienceEarned = 0;
+    levelExperienceRequirement = 0;
 
     accuracyGoal =
       typeof battleData.accuracyGoal === 'number' &&
@@ -4574,6 +4677,8 @@ document.addEventListener('DOMContentLoaded', () => {
       ? { ...rawQuestions }
       : [];
     resetQuestionPool(loadedQuestions);
+    questionCache.set(getResolvedCurrentDifficulty(), loadedQuestions);
+    currentDifficultyQuestionSource = getResolvedCurrentDifficulty();
 
     updateHealthBars();
     updateBattleTimeDisplay();
@@ -4652,21 +4757,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function skipToCurrentLevel(targetLevel) {
-    const numericLevel = Number(targetLevel);
-    if (!Number.isFinite(numericLevel)) {
-      return;
-    }
-
-    const sanitizedLevel = Math.max(1, Math.floor(numericLevel));
-    const resolvedCurrentLevel = getResolvedCurrentLevel();
+    const sanitizedLevel = clampDifficulty(targetLevel);
+    const resolvedCurrentLevel = getResolvedCurrentDifficulty();
     if (resolvedCurrentLevel === sanitizedLevel) {
       return;
     }
 
-    persistProgress({
-      currentLevel: sanitizedLevel,
+    difficultyState = persistDifficultyState({
+      difficulty: sanitizedLevel,
+      correctStreak: 0,
+      incorrectStreak: 0,
     });
-    currentCurrentLevel = sanitizedLevel;
+    currentDifficulty = sanitizedLevel;
+    currentDifficultyQuestionSource = sanitizedLevel;
     currentLevelAdvanced = false;
 
     window.setTimeout(() => {
@@ -4878,11 +4981,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     questionBox.classList.add('show');
 
-    const resolvedCurrentLevel = getResolvedCurrentLevel();
+    const resolvedCurrentLevel = getResolvedCurrentDifficulty();
 
     document.dispatchEvent(
       new CustomEvent('question-opened', {
-        detail: { currentLevel: resolvedCurrentLevel },
+        detail: { currentLevel: resolvedCurrentLevel, difficulty: resolvedCurrentLevel },
       })
     );
   }
@@ -5297,12 +5400,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }, PRE_ATTACK_DELAY_MS + POST_CLOSE_ATTACK_DELAY_MS);
   };
 
-  document.addEventListener('answer-submitted', (e) => {
+  document.addEventListener('answer-submitted', async (e) => {
     if (battleEnded) {
       return;
     }
     const correct = e.detail.correct;
-    const resolvedLevel = getResolvedCurrentLevel();
+    const resolvedLevel = getResolvedCurrentDifficulty();
     totalAnswers++;
     if (correct) {
       correctAnswers++;
@@ -5327,6 +5430,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       dispatchStreakMeterUpdate(true);
 
+      await updateDifficultyForAnswer(true);
+
       scheduleQuestionClose(() => {
         if (incEl && incText) {
           showIncrease(incEl, incText);
@@ -5337,6 +5442,7 @@ document.addEventListener('DOMContentLoaded', () => {
       streak = 0;
       streakMaxed = false;
       dispatchStreakMeterUpdate(false);
+      await updateDifficultyForAnswer(false);
       scheduleQuestionClose(() => {
         scheduleAttack(monsterAttack);
       });
