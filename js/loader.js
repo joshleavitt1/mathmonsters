@@ -1949,73 +1949,7 @@ const syncRemoteCurrentLevel = (playerData) => {
         img.src = cacheKey || path;
       });
 
-    let questions = [];
-    const questionReference = levelBattle?.questionReference;
-    const questionsConfig = levelBattle?.questions;
-    const resolveQuestionFileForDifficulty = (difficulty) => {
-      const normalizedDifficulty = clampDifficulty(difficulty);
-      return `questions/level_${normalizedDifficulty}_questions.json`;
-    };
-    const questionFile = (() => {
-      const difficultyState = readStoredDifficultyState();
-      const difficultyPath = resolveQuestionFileForDifficulty(
-        difficultyState.difficulty
-      );
-      const difficultyCandidates = [difficultyPath];
-      const fallbackCandidates = [];
-      if (typeof questionReference === 'string') {
-        fallbackCandidates.push(questionReference);
-      }
-      if (typeof questionReference?.file === 'string') {
-        fallbackCandidates.push(questionReference.file);
-      }
-      if (typeof questionsConfig === 'string') {
-        fallbackCandidates.push(questionsConfig);
-      }
-      if (typeof questionsConfig?.file === 'string') {
-        fallbackCandidates.push(questionsConfig.file);
-      }
-      if (typeof questionsConfig?.path === 'string') {
-        fallbackCandidates.push(questionsConfig.path);
-      }
-      if (typeof questionsConfig?.url === 'string') {
-        fallbackCandidates.push(questionsConfig.url);
-      }
-      if (typeof questionsConfig?.source === 'string') {
-        fallbackCandidates.push(questionsConfig.source);
-      }
-
-      const candidates = [...difficultyCandidates, ...fallbackCandidates];
-      const chosen = candidates.find((candidate) => typeof candidate === 'string' && candidate.trim());
-      return chosen || null;
-    })();
-    if (questionFile) {
-      try {
-        const questionPath = resolveDataPath(questionFile);
-        if (!questionPath) {
-          console.warn(`Questions file not found: ${questionFile}`);
-        } else {
-          const questionsRes = await fetch(questionPath);
-          if (questionsRes.ok) {
-            const questionsJson = await questionsRes.json();
-            if (Array.isArray(questionsJson)) {
-              questions = questionsJson;
-            } else if (Array.isArray(questionsJson?.questions)) {
-              questions = questionsJson.questions;
-            } else if (
-              questionsJson &&
-              typeof questionsJson === 'object'
-            ) {
-              questions = questionsJson;
-            }
-          } else {
-            console.warn(`Questions file not found: ${questionFile}`);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load questions data', error);
-      }
-    }
+    const questions = [];
 
     const resolvePlayerLevelData = (level) => {
       if (!basePlayer || typeof basePlayer !== 'object') {
