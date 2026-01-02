@@ -1,42 +1,50 @@
-const resolveAssetPath = (path) => {
-  if (typeof path !== 'string') {
-    return null;
+const setupQuestionModule = () => {
+  if (typeof window !== 'undefined' && window.mathMonstersQuestionInitialized) {
+    return;
   }
 
-  const trimmed = path.trim();
-  if (!trimmed) {
-    return null;
+  if (typeof window !== 'undefined') {
+    window.mathMonstersQuestionInitialized = true;
   }
 
-  if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) {
-    return trimmed;
-  }
+  const resolveAssetPath = (path) => {
+    if (typeof path !== 'string') {
+      return null;
+    }
 
-  if (trimmed.startsWith('../') || trimmed.startsWith('./')) {
-    return trimmed;
-  }
+    const trimmed = path.trim();
+    if (!trimmed) {
+      return null;
+    }
 
-  if (trimmed.startsWith('/')) {
-    return trimmed;
-  }
+    if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) {
+      return trimmed;
+    }
 
-  const globalBase =
-    typeof window !== 'undefined' &&
-    typeof window.mathMonstersAssetBase === 'string'
-      ? window.mathMonstersAssetBase.trim()
-      : '';
-  const base = globalBase || '..';
-  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
-  const normalizedPath = trimmed.replace(/^\/+/, '');
+    if (trimmed.startsWith('../') || trimmed.startsWith('./')) {
+      return trimmed;
+    }
 
-  if (!normalizedBase || normalizedBase === '.') {
-    return normalizedPath;
-  }
+    if (trimmed.startsWith('/')) {
+      return trimmed;
+    }
 
-  return `${normalizedBase}/${normalizedPath}`;
-};
+    const globalBase =
+      typeof window !== 'undefined' &&
+      typeof window.mathMonstersAssetBase === 'string'
+        ? window.mathMonstersAssetBase.trim()
+        : '';
+    const base = globalBase || '.';
+    const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+    const normalizedPath = trimmed.replace(/^\/+/, '');
 
-document.addEventListener('DOMContentLoaded', () => {
+    if (!normalizedBase || normalizedBase === '.') {
+      return normalizedPath;
+    }
+
+    return `${normalizedBase}/${normalizedPath}`;
+  };
+
   const questionBox = document.getElementById('question');
   if (!questionBox) {
     return;
@@ -523,4 +531,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   hideMeter();
-});
+};
+
+if (typeof window !== 'undefined') {
+  window.mathMonstersQuestion = {
+    init: () => {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupQuestionModule, {
+          once: true,
+        });
+        return;
+      }
+
+      setupQuestionModule();
+    },
+  };
+}

@@ -24,10 +24,9 @@ const GEM_REWARD_INITIAL_PAUSE_MS = 500;
 const GEM_REWARD_CARD_DELAY_MS = 400;
 const GEM_REWARD_PULSE_DURATION_MS = 2100;
 const GEM_REWARD_PULSE_COUNT = 1;
-const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
-const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
+const GEM_REWARD_CHEST_SRC = './images/complete/chest.png';
+const GEM_REWARD_GEM_SRC = './images/complete/gem.png';
 const GEM_REWARD_HOME_ANIMATION_KEY = 'mathmonstersGemRewardAnimation';
-const REGISTER_PAGE_URL = '../index.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const BATTLES_PER_LEVEL = 4;
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
@@ -185,14 +184,7 @@ const persistDifficultyState = (state) => {
   return sanitized;
 };
 
-if (!landingVisited) {
-  window.location.replace('../index.html');
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  if (!landingVisited) {
-    return;
-  }
   const battleField = document.getElementById('battle');
   const monsterImg = document.getElementById('battle-monster');
   const heroImg = document.getElementById('battle-shellfin');
@@ -758,6 +750,44 @@ document.addEventListener('DOMContentLoaded', () => {
   let latestGlobalRewardDisplay = null;
   let globalProgressRevealTimeout = null;
   let pendingGlobalProgressValue = 0;
+  let rewardCardDisplayTimeout = null;
+  let battleExitHandler = null;
+  let battleRestartHandler = null;
+
+  const resetBattleTimeouts = () => {
+    medalHideTimeoutId = clearTimeoutSafe(medalHideTimeoutId);
+    medalFinalizeTimeoutId = clearTimeoutSafe(medalFinalizeTimeoutId);
+    monsterDefeatAnimationTimeout = clearTimeoutSafe(monsterDefeatAnimationTimeout);
+    levelProgressUpdateTimeout = clearTimeoutSafe(levelProgressUpdateTimeout);
+    levelProgressAnimationTimeout = clearTimeoutSafe(levelProgressAnimationTimeout);
+    evolutionGrowthStartTimeout = clearTimeoutSafe(evolutionGrowthStartTimeout);
+    evolutionGrowthFallbackTimeout = clearTimeoutSafe(evolutionGrowthFallbackTimeout);
+    evolutionRevealFallbackTimeout = clearTimeoutSafe(evolutionRevealFallbackTimeout);
+    evolutionCardDelayTimeout = clearTimeoutSafe(evolutionCardDelayTimeout);
+    globalProgressRevealTimeout = clearTimeoutSafe(globalProgressRevealTimeout);
+    rewardCardDisplayTimeout = clearTimeoutSafe(rewardCardDisplayTimeout);
+  };
+
+  const requestBattleRestart = () => {
+    resetBattleTimeouts();
+    if (typeof battleRestartHandler === 'function') {
+      battleRestartHandler();
+    } else {
+      initBattle();
+    }
+  };
+
+  const requestBattleExit = (detail = {}) => {
+    if (document && document.body) {
+      document.body.classList.remove('is-reward-active', 'is-post-evolution-active');
+    }
+    resetBattleTimeouts();
+    resetRewardOverlay();
+    hideMedal({ immediate: true });
+    if (typeof battleExitHandler === 'function') {
+      battleExitHandler(detail);
+    }
+  };
 
   const maybeShowFirstCorrectMedal = (resolvedLevel, correctCount) => {
     if (!medalElement) {
@@ -781,8 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   let evolutionInProgress = false;
   let heroEvolutionStartedAtInitialStage = false;
-  let rewardCardDisplayTimeout = null;
-  let heroSpriteReadyPromise = null;
+let heroSpriteReadyPromise = null;
 
   if (heroImg) {
     heroSpriteReadyPromise = updateHeroSpriteCustomProperties();
@@ -801,8 +830,8 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   const REWARD_GEM_SRC = GEM_REWARD_GEM_SRC;
-  const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
-  const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
+  const HERO_LEVEL_1_SRC = './images/hero/shellfin_evolution_1.png';
+  const HERO_LEVEL_2_SRC = './images/hero/shellfin_evolution_2.png';
 
   const rewardSpritePreloadCache = new Map();
 
@@ -921,10 +950,10 @@ document.addEventListener('DOMContentLoaded', () => {
     'images/hero/shellfin_attack_3.png'
   );
   const HERO_BATTLE_EVOLUTION_SPRITE = sanitizeHeroSpritePath(
-    '../images/hero/shellfin_evolution_3.png'
+    './images/hero/shellfin_evolution_3.png'
   );
   const HERO_BATTLE_EVOLUTION_ATTACK_SPRITE = sanitizeHeroSpritePath(
-    '../images/hero/shellfin_attack_3.png'
+    './images/hero/shellfin_attack_3.png'
   );
   const HERO_EVOLUTION_ATTACK_VALUE = 3;
 
@@ -2180,7 +2209,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (evolutionCompleteButton) {
     evolutionCompleteButton.addEventListener('click', () => {
-      window.location.assign(REGISTER_PAGE_URL);
+      requestBattleExit({ reason: 'register' });
     });
   }
 
@@ -2701,7 +2730,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const showRegisterRewardCard = () => {
-    window.location.assign(REGISTER_PAGE_URL);
+    requestBattleExit({ reason: 'register' });
   };
 
   const playLevelUpRewardAnimation = () => {
@@ -2741,7 +2770,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recordHomeGemAnimation();
         resetRewardOverlay();
         resolve();
-        window.location.href = '../index.html';
+        requestBattleExit({ reason: 'reward' });
       };
 
       if (!rewardOverlay || !rewardSprite || !rewardCard || !rewardCardButton) {
@@ -2834,7 +2863,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recordHomeGemAnimation();
         resetRewardOverlay();
         finish();
-        window.location.href = '../index.html';
+        requestBattleExit({ reason: 'reward' });
       };
 
       const handleDevSkipClick = (event) => {
@@ -3011,7 +3040,7 @@ document.addEventListener('DOMContentLoaded', () => {
       advanceCurrentLevel();
     }
     resetRewardOverlay();
-    window.location.href = '../index.html';
+    requestBattleExit({ reason: 'reward' });
   };
 
   const isGemMilestoneReward = (reward) => {
@@ -4734,7 +4763,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentLevelAdvanced = false;
 
     window.setTimeout(() => {
-      window.location.reload();
+      requestBattleRestart();
     }, 0);
   }
 
@@ -5656,7 +5685,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const action = nextMissionBtn.dataset.action;
       if (action === 'retry') {
-        window.location.reload();
+        requestBattleRestart();
         return;
       }
 
@@ -5664,7 +5693,7 @@ document.addEventListener('DOMContentLoaded', () => {
         advanceCurrentLevel();
       }
       resetRewardOverlay();
-      window.location.href = '../index.html';
+      requestBattleExit({ reason: 'complete' });
     });
   }
 
@@ -5762,9 +5791,98 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (window.preloadedData) {
-    initBattle();
-  } else {
-    document.addEventListener('data-loaded', initBattle, { once: true });
+  const STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
+
+  const readBattleSnapshot = () => {
+    if (window.mathMonstersBattleSnapshot && typeof window.mathMonstersBattleSnapshot === 'object') {
+      return window.mathMonstersBattleSnapshot;
+    }
+
+    if (typeof sessionStorage === 'undefined') {
+      return null;
+    }
+
+    try {
+      const stored = sessionStorage.getItem(STORAGE_KEY);
+      if (!stored) {
+        return null;
+      }
+      const parsed = JSON.parse(stored);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (error) {
+      console.warn('Unable to read stored battle snapshot.', error);
+      return null;
+    }
+  };
+
+  const applySnapshotImage = (selector, entry, fallbackSrc, fallbackAlt) => {
+    const img = typeof selector === 'string' ? document.querySelector(selector) : null;
+    if (!img) {
+      return;
+    }
+
+    const sprite = typeof entry?.sprite === 'string' ? entry.sprite.trim() : '';
+    const name = typeof entry?.name === 'string' ? entry.name.trim() : '';
+    const resolvedSrc = sprite || fallbackSrc;
+    if (resolvedSrc) {
+      img.src = resolvedSrc;
+    }
+    const resolvedAlt = name ? `${name} ready for battle` : fallbackAlt;
+    if (resolvedAlt) {
+      img.alt = resolvedAlt;
+    }
+  };
+
+  const applySnapshotImages = () => {
+    const snapshot = readBattleSnapshot();
+    const monsterFallback = './images/monster/monster_sprite_1.png';
+    const heroFallback = './images/hero/shellfin_evolution_1.png';
+
+    applySnapshotImage('#battle-monster', snapshot?.monster, monsterFallback, 'Monster ready for battle');
+    applySnapshotImage('#battle-shellfin', snapshot?.hero, heroFallback, 'Hero ready for battle');
+    applySnapshotImage(
+      '#complete-message .monster-image',
+      snapshot?.monster,
+      './images/complete/chest.png',
+      'Treasure chest reward'
+    );
+  };
+
+  const startBattle = async (options = {}) => {
+    battleExitHandler = typeof options.onExit === 'function' ? options.onExit : null;
+    battleRestartHandler = typeof options.onRestart === 'function' ? options.onRestart : null;
+
+    applySnapshotImages();
+
+    if (window.mathMonstersBattleLoader?.load) {
+      try {
+        await window.mathMonstersBattleLoader.load();
+      } catch (error) {
+        console.warn('Battle data load failed; continuing with available data.', error);
+      }
+    }
+
+    if (window.mathMonstersQuestion?.init) {
+      window.mathMonstersQuestion.init();
+    }
+
+    resetBattleTimeouts();
+
+    if (window.preloadedData) {
+      initBattle();
+      return;
+    }
+
+    const handleDataLoaded = () => {
+      initBattle();
+    };
+
+    document.addEventListener('data-loaded', handleDataLoaded, { once: true });
+  };
+
+  if (typeof window !== 'undefined') {
+    window.mathMonstersBattle = {
+      start: startBattle,
+    };
   }
 });
