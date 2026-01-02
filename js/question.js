@@ -198,6 +198,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const updateDifficultyMeter = (difficulty) => {
+    if (!meterHeading || !meter) {
+      return;
+    }
+    isMeterDisabled = false;
+    const clampedDifficulty = Math.max(1, Math.min(5, Math.round(Number(difficulty) || 1)));
+    meterHeading.textContent = `Difficulty ${clampedDifficulty}`;
+    if (meterProgress) {
+      meterProgress.setAttribute('aria-valuemax', '5');
+      meterProgress.setAttribute('aria-valuenow', `${clampedDifficulty}`);
+      meterProgress.setAttribute('aria-valuetext', `${clampedDifficulty} of 5`);
+    }
+    if (meterFill) {
+      resetMeterAnimation();
+      const width = (clampedDifficulty / 5) * 100;
+      meterFill.style.transition = '';
+      meterFill.style.width = `${width}%`;
+    }
+    showMeter();
+  };
+
+  document.addEventListener('question-difficulty-changed', (event) => {
+    const nextDifficulty = event?.detail?.difficulty ?? 1;
+    updateDifficultyMeter(nextDifficulty);
+  });
+
   const clearChoiceSelections = () => {
     choicesContainer
       .querySelectorAll('.choice')
