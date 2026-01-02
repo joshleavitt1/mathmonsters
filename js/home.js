@@ -1,12 +1,22 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 const HOME_PROGRESS_STORAGE_KEY = 'mathmonstersHomeProgressState';
-const HOME_PROGRESS_FALLBACK_BATTLES = 5;
 const HOME_PROGRESS_INITIAL_ANIMATION_DELAY_MS = 1000;
 const HOME_PROGRESS_INITIAL_ANIMATION_COMPLETE_DATA_KEY =
   'progressInitialAnimationComplete';
 const HOME_PROGRESS_INITIAL_TIMEOUT_PROPERTY = '__homeInitialProgressTimeout';
 const GEM_REWARD_ANIMATION_STORAGE_KEY = 'mathmonstersGemRewardAnimation';
+const EXPERIENCE_MILESTONE_SIZE = 10;
+
+const progressUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
+
+const {
+  normalizeExperienceMap,
+  readTotalExperience,
+  computeExperienceTier,
+  computeExperienceMilestoneProgress,
+} = progressUtils || {};
 
 const normalizeNonNegativeInteger = (value) => {
   const numericValue = Number(value);
@@ -116,6 +126,14 @@ const sanitizeSnapshotEntry = (entry) => {
 
 const isPlainObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
+const clampDifficultyValue = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return null;
+  }
+  return Math.max(1, Math.round(numeric));
+};
+
 const sanitizeBattleProgressState = (state) => {
   if (!isPlainObject(state)) {
     return null;
@@ -124,6 +142,14 @@ const sanitizeBattleProgressState = (state) => {
   const clampPositiveInteger = (value) => {
     const numeric = Number(value);
     if (!Number.isFinite(numeric) || numeric <= 0) {
+      return null;
+    }
+    return Math.round(numeric);
+  };
+
+  const clampNonNegativeInteger = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric < 0) {
       return null;
     }
     return Math.round(numeric);
@@ -138,10 +164,15 @@ const sanitizeBattleProgressState = (state) => {
   const ratio =
     typeof state.ratio === 'number' ? Math.max(0, Math.min(1, state.ratio)) : 0;
 
+  const milestoneEarned = clampNonNegativeInteger(state.milestoneEarned);
+  const milestoneTotal = clampPositiveInteger(state.milestoneTotal);
+
   return {
     currentLevel: currentLevel ?? null,
     levelLabel,
     ratio,
+    milestoneEarned: milestoneEarned ?? null,
+    milestoneTotal: milestoneTotal ?? null,
     timestamp: Number.isFinite(state.timestamp) ? state.timestamp : Date.now(),
   };
 };
@@ -629,7 +660,6 @@ const computeHomeBattleProgress = (data) => {
     return null;
   }
 
-  const mathTypeCandidates = Array.from(collectMathTypeCandidates(data));
   const progressSources = [];
 
   if (isPlainObject(data.progress)) {
@@ -644,53 +674,58 @@ const computeHomeBattleProgress = (data) => {
     progressSources.push(data.preview.progress);
   }
 
-  let mathProgressEntry = null;
-  let mathProgressKey = null;
-
+  let experienceSource = null;
   for (const source of progressSources) {
-    const { key, entry } = findMathProgressEntry(source, mathTypeCandidates);
-    if (!mathProgressKey && key) {
-      mathProgressKey = key;
-    }
-    if (entry) {
-      mathProgressEntry = entry;
-      mathProgressKey = key;
+    if (isPlainObject(source.experience)) {
+      experienceSource = source.experience;
       break;
     }
   }
 
-  if (!mathProgressEntry) {
-    for (const source of progressSources) {
-      const fallback = Object.entries(source).find(([, value]) =>
-        isPlainObject(value) && value.currentLevel !== undefined
-      );
-      if (fallback) {
-        mathProgressKey = fallback[0];
-        mathProgressEntry = fallback[1];
-        break;
-      }
-    }
-  }
+  const normalizedExperience =
+    typeof normalizeExperienceMap === 'function'
+      ? normalizeExperienceMap(experienceSource)
+      : {};
+  const totalExperience =
+    typeof readTotalExperience === 'function'
+      ? readTotalExperience(normalizedExperience)
+      : 0;
 
-  const currentDifficulty =
-    clampDifficultyValue(data.difficultyState?.difficulty) ??
-    clampDifficultyValue(mathProgressEntry?.difficulty) ??
-    clampDifficultyValue(mathProgressEntry?.currentLevel) ??
-    clampDifficultyValue(mathProgressKey) ??
-    clampDifficultyValue(data.progress?.currentLevel) ??
-    clampDifficultyValue(data.player?.progress?.currentLevel) ??
-    clampDifficultyValue(1);
+  const experienceTier =
+    typeof computeExperienceTier === 'function'
+      ? computeExperienceTier(totalExperience, EXPERIENCE_MILESTONE_SIZE)
+      : 1;
 
-  const levelLabel = currentDifficulty
-    ? `Difficulty ${currentDifficulty}`
-    : '';
+  const milestoneProgress =
+    typeof computeExperienceMilestoneProgress === 'function'
+      ? computeExperienceMilestoneProgress(totalExperience, EXPERIENCE_MILESTONE_SIZE)
+      : {
+          ratio: 0,
+          earned: 0,
+          total: EXPERIENCE_MILESTONE_SIZE,
+          earnedDisplay: 0,
+          totalDisplay: EXPERIENCE_MILESTONE_SIZE,
+        };
+
+  const levelLabel = `XP Tier ${experienceTier}`;
+  const milestoneEarned =
+    milestoneProgress.earnedDisplay ??
+    milestoneProgress.earned ??
+    milestoneProgress.progress ??
+    0;
+  const milestoneTotal =
+    milestoneProgress.totalDisplay ??
+    milestoneProgress.total ??
+    EXPERIENCE_MILESTONE_SIZE;
 
   return {
-    currentLevel: currentDifficulty,
+    currentLevel: experienceTier,
     levelLabel,
     currentBattle: null,
-    totalBattles: null,
-    ratio: 0,
+    totalBattles: milestoneTotal,
+    ratio: milestoneProgress.ratio ?? 0,
+    milestoneEarned,
+    milestoneTotal,
   };
 };
 
@@ -699,20 +734,26 @@ const applyBattleProgressAttributes = (progressElement, state) => {
     return;
   }
 
-  const clampPositiveInteger = (value) => {
+  const clampPositiveInteger = (value, { allowZero = false } = {}) => {
     const numeric = Number(value);
-    if (!Number.isFinite(numeric) || numeric <= 0) {
+    if (!Number.isFinite(numeric)) {
+      return null;
+    }
+    if (!allowZero && numeric <= 0) {
+      return null;
+    }
+    if (allowZero && numeric < 0) {
       return null;
     }
     return Math.round(numeric);
   };
 
+  const milestoneTotal = clampPositiveInteger(state.milestoneTotal);
+  const milestoneEarned = clampPositiveInteger(state.milestoneEarned, { allowZero: true });
   const totalBattles = clampPositiveInteger(state.totalBattles);
-  const currentBattle = clampPositiveInteger(state.currentBattle);
-  const resolvedTotal = totalBattles ?? (currentBattle ?? null);
-  const resolvedCurrent = currentBattle
-    ? Math.min(currentBattle, resolvedTotal ?? currentBattle)
-    : resolvedTotal;
+  const currentBattle = clampPositiveInteger(state.currentBattle, { allowZero: true });
+  const resolvedTotal = milestoneTotal ?? totalBattles ?? (currentBattle ?? null);
+  const resolvedCurrent = milestoneEarned ?? currentBattle ?? resolvedTotal;
 
   const resolvedLevel = clampPositiveInteger(state.currentLevel);
 
@@ -722,29 +763,28 @@ const applyBattleProgressAttributes = (progressElement, state) => {
     progressElement.setAttribute('aria-valuemax', `${resolvedTotal}`);
   }
 
-  if (resolvedCurrent) {
-    progressElement.setAttribute('aria-valuenow', `${resolvedCurrent}`);
-  }
-
-  if (resolvedTotal && resolvedCurrent) {
+  if (resolvedTotal !== null && resolvedCurrent !== null) {
     progressElement.setAttribute(
       'aria-valuetext',
-      `Battle ${resolvedCurrent} of ${resolvedTotal}`
+      `Experience ${resolvedCurrent} of ${resolvedTotal}`
     );
-    return;
-  }
-
-  if (!resolvedTotal) {
-    progressElement.setAttribute('aria-valuemax', '1');
-  }
-
-  const ratio = typeof state.ratio === 'number' ? Math.max(0, Math.min(1, state.ratio)) : 0;
-  progressElement.setAttribute('aria-valuenow', `${ratio}`);
-
-  if (resolvedLevel) {
-    progressElement.setAttribute('aria-valuetext', `Difficulty ${resolvedLevel}`);
+  } else if (resolvedLevel) {
+    progressElement.setAttribute('aria-valuetext', `XP Tier ${resolvedLevel}`);
   } else {
     progressElement.removeAttribute('aria-valuetext');
+  }
+
+  const ratio =
+    typeof state.ratio === 'number'
+      ? Math.max(0, Math.min(1, state.ratio))
+      : resolvedTotal && resolvedCurrent
+      ? Math.max(0, Math.min(1, resolvedCurrent / resolvedTotal))
+      : 0;
+
+  if (resolvedCurrent !== null) {
+    progressElement.setAttribute('aria-valuenow', `${resolvedCurrent}`);
+  } else {
+    progressElement.setAttribute('aria-valuenow', `${ratio}`);
   }
 };
 
@@ -1109,8 +1149,6 @@ const updateHomeFromPreloadedData = () => {
     }
   }
 
-  const currentLevel = clampDifficultyValue(progressState?.currentLevel);
-
   const heroLevelEl = document.querySelector('[data-hero-level]');
   const progressElement = document.querySelector(
     '.home__progress[data-battle-progress]'
@@ -1119,6 +1157,7 @@ const updateHomeFromPreloadedData = () => {
   const previousProgressState = readStoredHomeBattleProgress();
   const progressState = computeHomeBattleProgress(data);
   const hasProgressState = isPlainObject(progressState);
+  const currentLevel = clampDifficultyValue(progressState?.currentLevel);
   const shouldAnimateLevelUp = shouldPlayLevelCompletionSequence(
     previousProgressState,
     progressState

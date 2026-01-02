@@ -171,8 +171,9 @@ const {
   isPlainObject,
   normalizeExperienceMap,
   mergeExperienceMaps,
-  readExperienceForLevel,
-  computeExperienceProgress,
+  readTotalExperience,
+  computeExperienceTier,
+  computeExperienceMilestoneProgress,
 } = progressUtils;
 
 const playerProfileUtils =
@@ -2094,21 +2095,12 @@ const determineBattlePreview = (levelsData, playerData) => {
     (typeof activeLevel?.currentLevel === 'number'
       ? `Battle ${activeLevel.currentLevel}`
       : 'Upcoming Battle');
-  const heroLevelLabel =
-    typeof difficultyValue === 'number'
-      ? `Difficulty ${difficultyValue}`
-      : 'Difficulty';
   const experienceMap = normalizeExperienceMap(player?.progress?.experience);
-  const earnedExperience = readExperienceForLevel(
-    experienceMap,
-    difficultyValue
-  );
-  const levelUpRequirement = Number(battle?.levelUp);
-  const experienceProgress = computeExperienceProgress(
-    earnedExperience,
-    levelUpRequirement
-  );
-  const progressText = experienceProgress.text;
+  const totalExperience = readTotalExperience(experienceMap);
+  const experienceTier = computeExperienceTier(totalExperience);
+  const milestoneProgress = computeExperienceMilestoneProgress(totalExperience);
+  const heroLevelLabel = `XP Tier ${experienceTier}`;
+  const progressText = milestoneProgress.text;
   const playerGems = readPlayerGemCount(player);
 
   const { key: mathProgressKey, entry: mathProgressEntry } = findMathProgressEntry(
@@ -2131,9 +2123,9 @@ const determineBattlePreview = (levelsData, playerData) => {
       monsterAlt,
       mathTypeKey: typeof mathTypeKey === 'string' ? mathTypeKey : mathProgressKey,
       progressMathKey: mathProgressKey,
-      progressExperience: experienceProgress.ratio,
-      progressExperienceEarned: experienceProgress.earned,
-      progressExperienceTotal: experienceProgress.total,
+      progressExperience: milestoneProgress.ratio,
+      progressExperienceEarned: milestoneProgress.earned,
+      progressExperienceTotal: milestoneProgress.total,
       progressExperienceText: progressText,
       playerGems,
     },

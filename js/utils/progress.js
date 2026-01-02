@@ -11,19 +11,42 @@
   const isPlainObject = (value) =>
     Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
+  const normalizeExperienceValue = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return null;
+    }
+
+    return Math.max(0, Math.round(numericValue));
+  };
+
+  const existing =
+    (globalScope && typeof globalScope.mathMonstersProgress === 'object'
+      ? globalScope.mathMonstersProgress
+      : null) || {};
+
   const normalizeExperienceMap = (source) => {
+    const normalized = {};
+
+    if (Number.isFinite(Number(source))) {
+      const normalizedValue = normalizeExperienceValue(source);
+      if (normalizedValue !== null) {
+        normalized.total = normalizedValue;
+      }
+      return normalized;
+    }
+
     if (!isPlainObject(source)) {
       return {};
     }
 
-    const normalized = {};
     Object.entries(source).forEach(([key, value]) => {
       const levelKey = String(key).trim();
-      const numericValue = Number(value);
-      if (!levelKey || !Number.isFinite(numericValue)) {
+      const normalizedValue = normalizeExperienceValue(value);
+      if (!levelKey || normalizedValue === null) {
         return;
       }
-      normalized[levelKey] = Math.max(0, Math.round(numericValue));
+      normalized[levelKey] = normalizedValue;
     });
     return normalized;
   };
@@ -60,6 +83,34 @@
     return Number.isFinite(value) ? Math.max(0, value) : 0;
   };
 
+  const readTotalExperience = (experienceMap) => {
+    const normalized = normalizeExperienceMap(experienceMap);
+    if (!normalized || typeof normalized !== 'object') {
+      return 0;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(normalized, 'total')) {
+      const direct = normalizeExperienceValue(normalized.total);
+      if (direct !== null) {
+        return direct;
+      }
+    }
+
+    let hasValue = false;
+    let sum = 0;
+
+    Object.values(normalized).forEach((value) => {
+      const normalizedValue = normalizeExperienceValue(value);
+      if (normalizedValue === null) {
+        return;
+      }
+      sum += normalizedValue;
+      hasValue = true;
+    });
+
+    return hasValue ? sum : 0;
+  };
+
   const computeExperienceProgress = (earned, requirement) => {
     const safeEarned = Number.isFinite(earned) ? Math.max(0, Math.round(earned)) : 0;
     const safeRequirement = Number.isFinite(requirement)
@@ -80,17 +131,30 @@
     };
   };
 
-  const existing =
-    (globalScope && typeof globalScope.mathMonstersProgress === 'object'
-      ? globalScope.mathMonstersProgress
-      : null) || {};
+  const computeExperienceTier = (totalExperience, tierSize = 10) => {
+    const milestoneSize = Number.isFinite(tierSize) && tierSize > 0 ? tierSize : 10;
+    const normalizedTotal = normalizeExperienceValue(totalExperience) ?? 0;
+    return Math.floor(normalizedTotal / milestoneSize) + 1;
+  };
+
+  const computeExperienceMilestoneProgress = (totalExperience, tierSize = 10) => {
+    const milestoneSize = Number.isFinite(tierSize) && tierSize > 0 ? tierSize : 10;
+    const normalizedTotal = normalizeExperienceValue(totalExperience) ?? 0;
+    const earnedTowardTier = normalizedTotal % milestoneSize;
+
+    return computeExperienceProgress(earnedTowardTier, milestoneSize);
+  };
 
   const progressUtils = Object.freeze({
     ...existing,
     isPlainObject,
+    normalizeExperienceValue,
     normalizeExperienceMap,
     mergeExperienceMaps,
     readExperienceForLevel,
+    readTotalExperience,
+    computeExperienceTier,
+    computeExperienceMilestoneProgress,
     computeExperienceProgress,
   });
 
