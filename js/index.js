@@ -3533,6 +3533,18 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
   return results;
 };
 
+const applyLandingBodyClasses = (isLevelOneLanding) => {
+  const landingRoot = typeof document !== 'undefined' ? document.body : null;
+
+  if (!landingRoot) {
+    return;
+  }
+
+  const isLevelOne = Boolean(isLevelOneLanding);
+  landingRoot.classList.toggle('is-level-one-landing', isLevelOne);
+  landingRoot.classList.toggle('is-standard-landing', !isLevelOne);
+};
+
 const initLandingInteractions = async (preloadedData = {}) => {
   const landingVisited =
     typeof preloadedData?.landingVisited === 'boolean'
@@ -3557,6 +3569,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   setupDevSignOut();
   setupDevResetTool();
 
+  applyLandingBodyClasses(isLevelOneLanding);
   updateIntroTimingForLanding({ isLevelOneLanding });
 
   const loadBattlePreview = async () => {
@@ -3666,6 +3679,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
         applyBattlePreview(previewData, resolvedLevels);
         isLevelOneLanding = detectLevelOneLandingState();
         battleButton = getActiveBattleButton();
+        applyLandingBodyClasses(isLevelOneLanding);
       }
 
       persistPlayerProfile(playerData);
@@ -3677,6 +3691,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   await loadBattlePreview();
   isLevelOneLanding = detectLevelOneLandingState();
   battleButton = getActiveBattleButton();
+  applyLandingBodyClasses(isLevelOneLanding);
 
   if (isLevelOneLanding) {
     if (actionsElement) {
