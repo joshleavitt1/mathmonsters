@@ -1099,3 +1099,155 @@ body.is-reward-active .reward-overlay {
   object-fit: contain;
   transition: none;
 }
+
+/* Simplified battle layout */
+.battle-page {
+  margin: 0;
+  padding: 24px;
+  color: #fff;
+  background-color: var(--app-background-color);
+  background-image: var(--app-background-image);
+}
+
+.battle {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.battle__header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.battle__name {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 400;
+  color: #fff;
+}
+
+.battle__level {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.battle__pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.battle__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 16px;
+}
+
+.battle__pill--xp {
+  background: rgba(0, 200, 255, 0.2);
+  border-color: rgba(0, 200, 255, 0.4);
+}
+
+.battle__progress {
+  --progress-gradient-start: #2bf542;
+  --progress-gradient-end: #0ea631;
+  width: 100%;
+  max-width: 320px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.battle__progress-fill {
+  transform-origin: left center;
+  transform: scaleX(var(--progress-value, 0));
+}
+
+.battle__arena {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.battle__entity {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.battle__entity--monster {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.battle__sprite {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.35));
+}
+
+.battle__stat {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.battle__health {
+  --progress-gradient-start: #ffbf00;
+  --progress-gradient-end: #ff6a00;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.battle__health-fill--hero {
+  --progress-gradient-start: #2bf542;
+  --progress-gradient-end: #0ea631;
+}
+
+.battle__question {
+  border-radius: 16px;
+  background: #fff;
+  color: #272b34;
+}
+
+.battle__prompt {
+  margin-top: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.battle__choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.battle__choice {
+  width: 100%;
+  min-height: 52px;
+}
+
+.battle__feedback {
+  min-height: 24px;
+  margin: 8px 0 0;
+  font-weight: 600;
+  color: #0062ff;
+}
+
+.battle__next {
+  margin-top: 12px;
+}
