@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#001b41" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>MathMonsters</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" sizes="300x300" href="./images/brand/logo.png" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/index.css" />
+  <link rel="stylesheet" href="css/home.css" />
+</head>
+<body class="is-preloading">
+  <button
+    type="button"
+    class="dev-overlay__trigger"
+    data-dev-overlay-trigger
+    aria-label="Toggle player data developer overlay"
+    aria-controls="player-data-dev-overlay"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+  ></button>
+  <div
+    class="dev-overlay"
+    id="player-data-dev-overlay"
+    data-dev-overlay
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="player-data-dev-overlay-title"
+    aria-hidden="true"
+    hidden
+  >
+    <div class="dev-overlay__backdrop" data-dev-overlay-backdrop></div>
+    <div class="dev-overlay__dialog" data-dev-overlay-panel tabindex="-1">
+      <header class="dev-overlay__header">
+        <h2 class="dev-overlay__title" id="player-data-dev-overlay-title">
+          Player Data
+        </h2>
+        <button
+          type="button"
+          class="dev-overlay__close"
+          data-dev-overlay-close
+          aria-label="Close player data overlay"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </header>
+      <pre class="dev-overlay__body" data-dev-overlay-body>Loading player data…</pre>
+      <div class="dev-overlay__controls" data-dev-overlay-controls>
+        <div class="dev-overlay__field">
+          <label for="dev-overlay-level-select">Set player level</label>
+          <select
+            id="dev-overlay-level-select"
+            class="dev-overlay__select"
+            data-dev-level-select
+          >
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+            <option value="5">Level 5</option>
+          </select>
+        </div>
+        <button
+          type="button"
+          class="dev-overlay__apply"
+          data-dev-level-apply
+        >
+          Apply
+        </button>
+        <p
+          class="dev-overlay__feedback"
+          data-dev-level-feedback
+          role="status"
+          aria-live="polite"
+        ></p>
+      </div>
+    </div>
+  </div>
+  <div
+    class="preloader app-safe-area"
+    data-preloader
+    role="status"
+    aria-live="polite"
+  >
+    <img
+      class="preloader__logo"
+      src="./images/brand/logo.png"
+      alt="MathMonsters logo"
+      width="200"
+      height="200"
+    />
+    <p class="preloader__text text-large text-white">Loading</p>
+    <div class="preloader__spinner" aria-hidden="true"></div>
+  </div>
+  <main class="landing">
+    <div class="bubbles" aria-hidden="true">
+      <span
+        class="bubble"
+        style="--size: 18px; --duration: 6.5s; --delay: -1.8s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 24px; --duration: 7.2s; --delay: -3.1s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 14px; --duration: 6s; --delay: -0.9s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 20px; --duration: 6.8s; --delay: -2.6s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 26px; --duration: 7.5s; --delay: -4.4s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 16px; --duration: 6.2s; --delay: -1.4s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 22px; --duration: 7s; --delay: -3.7s;"
+      ></span>
+      <span
+        class="bubble"
+        style="--size: 18px; --duration: 6.4s; --delay: -0.6s;"
+      ></span>
+    </div>
+
+    <div data-level-one-landing>
+      <section class="landing__hero-info" aria-live="polite">
+        <p class="landing__hero-name text-large text-white" data-hero-name>
+          Shellfin
+        </p>
+        <p class="landing__hero-level text-small text-white" data-hero-level>
+          Level 1
+        </p>
+        <div
+          class="progress landing__hero-progress"
+          role="progressbar"
+          aria-label="Level progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          aria-valuetext="0 of 0 experience"
+          data-battle-progress
+        >
+          <div class="progress__fill" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <img
+        class="hero"
+        src="./images/hero/shellfin_evolution_1.png"
+        alt="Shellfin ready for battle"
+        data-hero-sprite
+      />
+
+      <div class="landing__actions">
+        <button class="landing__battle-button" type="button" data-battle-button>
+          Battle
+        </button>
+      </div>
+
+      <img
+        class="monster"
+        data-monster
+        src="./images/monster/addition_battle_1.png"
+        alt="Monster ready for battle"
+        width="300"
+        height="300"
+        aria-hidden="true"
+      />
+    </div>
+
+    <div
+      class="landing__standard home app-safe-area"
+      data-standard-landing
+      aria-live="polite"
+    >
+      <section class="home__content" aria-live="polite">
+        <div class="home__identity">
+          <p class="home__hero-name" data-hero-name>Shellfin</p>
+          <p class="home__hero-level" data-hero-level>Level 1</p>
+        </div>
+        <img
+          class="home__hero-sprite"
+          src="./images/hero/shellfin_evolution_1.png"
+          alt="Shellfin ready for battle"
+          data-hero-sprite
+        />
+        <div class="home__actions">
+          <a
+            class="home__action home__action--portal"
+            href="html/battle.html"
+            data-battle-trigger
+            data-levels-link="true"
+            aria-label="Enter the next battle"
+          >
+            <img
+              class="home__action-image"
+              src="./images/home/sword.png"
+              alt="Sword pointing toward the next battle"
+              width="160"
+              height="160"
+            />
+          </a>
+        </div>
+      </section>
+    </div>
+
+  </main>
+  <div class="level-one-intro" data-level-one-intro aria-hidden="true">
+    <button
+      class="level-one-intro__egg-button"
+      type="button"
+      data-level-one-egg-button
+      aria-label="Inspect the mysterious egg"
+      disabled
+    >
+      <img
+        class="level-one-intro__egg-image"
+        src="./images/intro/egg.png"
+        alt="Mysterious egg"
+        width="250"
+        height="250"
+        data-level-one-egg-image
+      />
+    </button>
+
+    <div
+      class="card card--home level-one-intro__card"
+      data-level-one-card="welcome"
+      aria-hidden="true"
+    >
+      <img
+        class="level-one-intro__card-avatar"
+        src="./images/intro/doctor.png"
+        alt="Dr. Wave"
+        width="80"
+        height="80"
+      />
+      <p class="level-one-intro__card-text">
+        Hi! I’m Dr. Wave. I study math monsters. I think this egg is about to hatch!
+      </p>
+      <button
+        class="btn-primary"
+        type="button"
+        data-level-one-card-continue
+      >
+        Next
+      </button>
+    </div>
+
+    <div
+      class="card card--home level-one-intro__card"
+      data-level-one-card="battle"
+      aria-hidden="true"
+    >
+      <img
+        class="level-one-intro__card-avatar"
+        src="./images/intro/doctor.png"
+        alt="Dr. Wave"
+        width="80"
+        height="80"
+      />
+      <p class="level-one-intro__card-text">
+        Whoa! This isn’t a monster — it’s a math hero. Use your math power to help him in battle!
+      </p>
+      <button
+        class="btn-primary"
+        type="button"
+        data-level-one-card-battle
+      >
+        Battle
+      </button>
+    </div>
+  </div>
+  <button
+    type="button"
+    class="dev-signout-button"
+    data-dev-signout
+    aria-label="Sign out"
+  ></button>
+  <script>
+    window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bHhwdW1jb2loZmFwbXJzYXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjE3MDcsImV4cCI6MjA3Mjk5NzcwN30.PJiDPZ_Dqli_42isJexeYgsf0ebWbCSOwHtR7lsQTN0';
+  </script>
+  <script src="js/pwa.js" defer data-pwa-root="."></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="js/supabaseClient.js" defer></script>
+  <script src="js/utils/progress.js" defer></script>
+  <script src="js/utils/playerProfile.js" defer></script>
+  <script src="js/index.js" defer></script>
+</body>
+</html>

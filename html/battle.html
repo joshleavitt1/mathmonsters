@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0a3d62" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Battle</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+  <link rel="apple-touch-icon" sizes="300x300" href="../images/brand/logo.png" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/question.css" />
+    <link rel="stylesheet" href="../css/battle.css" />
+  </head>
+  <body>
+    <button
+      type="button"
+      id="dev-hero-damage-button"
+      class="dev-button dev-button--top-left"
+      aria-label="Deal 100 damage to the hero"
+    ></button>
+    <button
+      type="button"
+      id="dev-monster-damage-button"
+      class="dev-button dev-button--top-right"
+      aria-label="Deal 100 damage to the monster"
+    ></button>
+    <button
+      type="button"
+      id="dev-skip-battle-button"
+      class="dev-button dev-button--bottom-left"
+      aria-label="Skip to Battle 4 of the current level"
+    ></button>
+    <section
+      class="card medal"
+      data-medal
+      hidden
+    aria-hidden="true"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="medal__content">
+      <span class="medal__pill">Medal</span>
+      <p class="medal__title text-medium text-dark">Math Explorer</p>
+      <p class="medal__description text-small">
+        First correct answer
+      </p>
+    </div>
+    <img
+      class="medal__sprite"
+      src="../images/home/medal_1.png"
+      alt="Medal"
+      decoding="async"
+    />
+  </section>
+  <div id="battle">
+    <img
+      id="battle-monster"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+      alt="Monster ready for battle"
+    />
+    <img
+      id="battle-shellfin"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+      alt="Hero ready for battle"
+    />
+    <img
+      id="monster-attack-effect"
+      class="attack-effect"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+    />
+    <img
+      id="hero-attack-effect"
+      class="attack-effect"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+    />
+    <div id="monster-stats" class="stat-box">
+      <div class="name text-small text-white"></div>
+      <div
+        class="progress progress--orange battle-health"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="100"
+        aria-label="Monster health"
+        style="--progress-value: 1"
+      >
+        <span class="progress__fill" aria-hidden="true"></span>
+      </div>
+    </div>
+    <div id="shellfin-stats" class="stat-box">
+      <div class="name text-small text-white"></div>
+      <div
+        class="progress progress--orange battle-health"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="100"
+        aria-label="Hero health"
+        style="--progress-value: 1"
+      >
+        <span class="progress__fill" aria-hidden="true"></span>
+      </div>
+    </div>
+  </div>
+    <script>
+      (() => {
+        const STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
+        const globalScope = typeof window !== 'undefined' ? window : {};
+
+        const sanitizeEntry = (entry) => {
+          if (!entry || typeof entry !== 'object') {
+            return null;
+          }
+
+          const name = typeof entry.name === 'string' ? entry.name.trim() : '';
+          const sprite = typeof entry.sprite === 'string' ? entry.sprite.trim() : '';
+
+          if (!name && !sprite) {
+            return null;
+          }
+
+          return {
+            name: name || null,
+            sprite: sprite || null,
+          };
+        };
+
+        const readSnapshot = () => {
+          if (
+            globalScope.mathMonstersBattleSnapshot &&
+            typeof globalScope.mathMonstersBattleSnapshot === 'object'
+          ) {
+            return globalScope.mathMonstersBattleSnapshot;
+          }
+
+          if (typeof sessionStorage === 'undefined') {
+            return null;
+          }
+
+          try {
+            const raw = sessionStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+              return null;
+            }
+
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') {
+              return null;
+            }
+
+            const snapshot = {
+              currentLevel: Number.isFinite(parsed.currentLevel) ? parsed.currentLevel : null,
+              hero: sanitizeEntry(parsed.hero),
+              monster: sanitizeEntry(parsed.monster),
+              timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),
+            };
+
+            globalScope.mathMonstersBattleSnapshot = snapshot;
+            return snapshot;
+          } catch (error) {
+            console.warn('Unable to read stored battle snapshot before battle.', error);
+            return null;
+          }
+        };
+
+        const snapshot = readSnapshot();
+
+        const applyImage = (selector, entry, fallbackSrc, fallbackAlt) => {
+          const img = typeof selector === 'string' ? document.querySelector(selector) : null;
+          if (!img) {
+            return;
+          }
+
+          const sprite =
+            entry && typeof entry === 'object' && typeof entry.sprite === 'string'
+              ? entry.sprite.trim()
+              : '';
+          const name =
+            entry && typeof entry === 'object' && typeof entry.name === 'string'
+              ? entry.name.trim()
+              : '';
+
+          const resolvedSrc = sprite || fallbackSrc;
+          if (resolvedSrc) {
+            img.src = resolvedSrc;
+          }
+
+          const resolvedAlt = name ? `${name} ready for battle` : fallbackAlt;
+          if (resolvedAlt) {
+            img.alt = resolvedAlt;
+          }
+        };
+
+        const monsterFallback = '../images/monster/addition_mini_1.png';
+        const heroFallback = '../images/hero/shellfin_evolution_1.png';
+
+        applyImage(
+          '#battle-monster',
+          snapshot ? snapshot.monster : null,
+          monsterFallback,
+          'Monster ready for battle'
+        );
+        applyImage(
+          '#battle-shellfin',
+          snapshot ? snapshot.hero : null,
+          heroFallback,
+          'Hero ready for battle'
+        );
+
+        const applyCompleteSprite = () => {
+          applyImage(
+            '#complete-message .monster-image',
+            snapshot ? snapshot.monster : null,
+            monsterFallback,
+            'Monster ready for battle'
+          );
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', applyCompleteSprite);
+        } else {
+          applyCompleteSprite();
+        }
+      })();
+    </script>
+    <div id="question">
+      <div class="question__content">
+        <section class="card card--question">
+          <p class="title question-text text-large text-dark"></p>
+          <div class="question-sprites" data-question-sprites hidden></div>
+          <div class="choices"></div>
+          <div class="meter" data-meter aria-hidden="true">
+            <img
+              class="meter__icon"
+              src="../images/complete/gem.png"
+              data-meter-icon
+              alt=""
+              aria-hidden="true"
+            />
+            <p class="meter__heading text-small text-dark" data-meter-heading></p>
+            <div
+              class="progress meter__progress"
+              data-meter-progress
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="0"
+              aria-valuenow="0"
+              aria-valuetext="0 of 0"
+            >
+              <span class="progress__fill" aria-hidden="true"></span>
+            </div>
+          </div>
+          <button type="button" disabled aria-disabled="true">Submit</button>
+        </section>
+      </div>
+    </div>
+    <div
+      id="complete-message"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="battle-complete-title"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <section class="card card--home card--pop battle-complete-card">
+        <h2 id="battle-complete-title" class="battle-complete-card__title battle-title">
+          Monster Defeated!
+        </h2>
+        <div class="battle-complete-card__sprite-surface" data-battle-complete-sprite-surface>
+          <div class="battle-complete-card__sprite-frame">
+            <img
+              class="monster-image battle-complete-card__monster"
+              src="../images/complete/chest.png"
+              alt="Treasure chest reward"
+              width="120"
+              height="120"
+              data-static-sprite="true"
+              data-static-alt="Treasure chest reward"
+            />
+          </div>
+          <div class="battle-complete-card__reward-group">
+            <p
+              class="battle-complete-card__reward-heading text-small text-dark"
+              data-global-progress-heading
+            >
+              Reward Meter
+            </p>
+            <p
+              class="battle-complete-card__reward-progress text-small text-dark battle-complete-card__reward-progress--dim"
+              data-global-progress-count
+            >
+              0/5
+            </p>
+          </div>
+          <div
+            class="battle-complete-card__progress"
+            data-global-progress
+            hidden
+            aria-hidden="true"
+          >
+            <div
+              class="progress battle-complete-card__progress-bar"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="5"
+              aria-valuenow="0"
+              aria-label="Wins until next reward"
+            >
+              <span
+                class="progress__fill"
+                data-global-progress-fill
+                style="--progress-value: 0"
+              ></span>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-primary next-mission-btn" data-action="next">Back Home</button>
+      </section>
+    </div>
+    <div class="reward-overlay" data-reward-overlay aria-hidden="true">
+      <img
+        class="reward-overlay__image"
+        src="../images/complete/gem.png"
+        alt="Gem level-up reward"
+        data-reward-sprite
+      />
+      <section
+        class="card card--home reward-overlay__card"
+        data-reward-card
+        aria-hidden="true"
+        hidden
+      >
+        <img
+          class="reward-overlay__card-avatar"
+          src="../images/intro/doctor.png"
+          alt="Dr. Wave"
+          width="80"
+          height="80"
+          data-reward-card-avatar
+        />
+        <p class="reward-overlay__card-text text-medium text-dark">
+          Cool monster gem. My research says it might make your hero evolve!
+        </p>
+        <button
+          type="button"
+          class="btn-primary reward-overlay__card-button"
+          data-reward-card-button
+        >
+          Next
+        </button>
+      </section>
+      <button
+        type="button"
+        class="reward-overlay__dev-skip"
+        data-reward-dev-skip
+        aria-hidden="true"
+        tabindex="-1"
+      >
+        Skip reward
+      </button>
+    </div>
+    <div class="evolution-overlay" data-evolution-overlay aria-hidden="true">
+      <img
+        class="evolution-overlay__sprite evolution-overlay__sprite--current"
+        src="../images/hero/shellfin_evolution_1.png"
+        alt="Shellfin begins to evolve"
+        data-evolution-current
+      />
+      <img
+        class="evolution-overlay__sprite evolution-overlay__sprite--next"
+        src="../images/hero/shellfin_evolution_2.png"
+        alt="Shellfin evolved"
+        data-evolution-next
+      />
+    </div>
+    <div
+      class="post-evolution-overlay"
+      data-evolution-complete-overlay
+      aria-hidden="true"
+    >
+      <div class="post-evolution-overlay__content">
+        <img
+          class="post-evolution-overlay__sprite"
+          src="../images/hero/shellfin_evolution_2.png"
+          alt="Shellfin evolved"
+          data-evolution-complete-sprite
+        />
+        <section
+          class="card card--home card--pop reward-overlay__card post-evolution-overlay__card"
+        >
+          <img
+            class="reward-overlay__card-avatar post-evolution-overlay__card-avatar"
+            src="../images/intro/doctor.png"
+            alt="Dr. Wave"
+            width="80"
+            height="80"
+          />
+          <p class="reward-overlay__card-text post-evolution-overlay__card-text text-medium text-dark">
+            Your creature just evolved! It’s stronger now and ready for new adventures!
+          </p>
+          <button
+            type="button"
+            class="btn-primary reward-overlay__card-button post-evolution-overlay__card-button"
+            data-evolution-complete-button
+          >
+            Let’s Go!
+          </button>
+        </section>
+      </div>
+    </div>
+    <div id="battle-message">
+      <div class="content">
+        <p></p>
+        <button type="button" class="btn-primary">Try Again</button>
+      </div>
+    </div>
+    <script src="../js/pwa.js" defer data-pwa-root=".."></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../js/supabaseClient.js" defer></script>
+    <script src="../js/utils/progress.js" defer></script>
+    <script src="../js/utils/playerProfile.js" defer></script>
+    <script src="../js/loader.js" defer></script>
+    <script src="../js/battle.js" defer></script>
+    <script src="../js/question.js" defer></script>
+  </body>
+</html>

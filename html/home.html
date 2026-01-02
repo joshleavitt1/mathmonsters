@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#001b41" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Home | MathMonsters</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="300x300" href="../images/brand/logo.png" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/home.css" />
+  </head>
+  <body class="home-page">
+    <main class="home app-safe-area">
+      <section class="home__content" aria-live="polite">
+        <div class="home__identity">
+          <p class="home__hero-name" data-hero-name>Shellfin</p>
+          <p class="home__hero-level" data-hero-level>Level 1</p>
+        </div>
+
+        <img
+          class="home__hero-sprite"
+          src="../images/hero/shellfin_evolution_1.png"
+          alt="Shellfin ready for battle"
+          data-hero-sprite
+        />
+
+        <div class="home__actions">
+          <div class="home__action home__action--portal" data-battle-trigger>
+            <img
+              class="home__action-image"
+              src="../images/home/sword.png"
+              alt="Portal to new battles"
+            />
+          </div>
+        </div>
+      </section>
+    </main>
+    <script>
+      window.SUPABASE_URL = 'https://jxlxpumcoihfapmrsaqd.supabase.co';
+      window.SUPABASE_ANON_KEY =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bHhwdW1jb2loZmFwbXJzYXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0MjE3MDcsImV4cCI6MjA3Mjk5NzcwN30.PJiDPZ_Dqli_42isJexeYgsf0ebWbCSOwHtR7lsQTN0';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="../js/supabaseClient.js" defer></script>
+    <script src="../js/utils/progress.js" defer></script>
+    <script src="../js/utils/playerProfile.js" defer></script>
+    <script src="../js/loader.js" defer></script>
+    <script src="../js/home.js" defer></script>
+  </body>
+</html>
