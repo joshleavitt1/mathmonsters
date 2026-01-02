@@ -35,6 +35,8 @@ const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const DIFFICULTY_STATE_STORAGE_KEY = 'mathmonstersDifficultyState';
 const GLOBAL_REWARD_MILESTONE = 5;
 const GLOBAL_PROGRESS_REVEAL_DELAY_MS = 1000;
+const EXPERIENCE_PER_BATTLE = 1;
+const EXPERIENCE_MILESTONE_SIZE = 10;
 
 const DEFAULT_DIFFICULTY_STATE = {
   difficulty: 1,
@@ -68,7 +70,10 @@ const {
   isPlainObject,
   normalizeExperienceMap,
   mergeExperienceMaps,
-  readExperienceForLevel,
+  normalizeExperienceValue,
+  readTotalExperience,
+  computeExperienceTier,
+  computeExperienceMilestoneProgress,
   computeExperienceProgress,
 } = progressUtils;
 
@@ -737,11 +742,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let battleGoalsMet = false;
   let heroSuperAttackBase = null;
   let monsterDefeatAnimationTimeout = null;
+  let totalExperience = 0;
+  let experienceTier = 1;
   let levelExperienceEarned = 0;
-  let levelExperienceRequirement = 0;
-  let levelUpAvailable = false;
-  let hasPendingLevelUpReward = false;
-  let rewardAnimationPlayed = false;
+  let levelExperienceRequirement = EXPERIENCE_MILESTONE_SIZE;
   let pendingGemReward = null;
   let gemRewardIntroShown = false;
   let shouldAdvanceCurrentLevel = false;
@@ -3064,12 +3068,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (hasPendingLevelUpReward) {
-      nextMissionBtn.textContent = 'Claim Reward';
-      nextMissionBtn.dataset.action = 'next';
-      return;
-    }
-
     const hasPendingReward = Boolean(pendingGemReward);
     const isMilestoneReward =
       hasPendingReward && isGemMilestoneReward(pendingGemReward);
@@ -3091,15 +3089,13 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const updateLevelProgressDisplay = () => {
-    const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
-    if (sanitizedEarned !== levelExperienceEarned) {
-      levelExperienceEarned = sanitizedEarned;
-    }
-
-    const progress = computeExperienceProgress(
-      sanitizedEarned,
-      levelExperienceRequirement
+    const milestoneProgress = computeExperienceMilestoneProgress(
+      totalExperience,
+      levelExperienceRequirement || EXPERIENCE_MILESTONE_SIZE
     );
+    levelExperienceEarned = milestoneProgress.earnedDisplay;
+    levelExperienceRequirement = milestoneProgress.totalDisplay;
+    const progress = milestoneProgress;
 
     const clampedRatio = Math.max(0, Math.min(1, Number(progress.ratio) || 0));
     const targetWidth = `${clampedRatio * 100}%`;
@@ -3170,17 +3166,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     scheduleProgressAnimation();
-
-
-    const hasExperienceRequirement = levelExperienceRequirement > 0;
-    const requirementMet =
-      hasExperienceRequirement && sanitizedEarned >= levelExperienceRequirement;
-    levelUpAvailable = requirementMet;
-
-    if (!requirementMet && hasExperienceRequirement) {
-      hasPendingLevelUpReward = false;
-      rewardAnimationPlayed = false;
-    }
   };
 
   const cancelScheduledLevelProgressDisplayUpdate = () => {
@@ -3261,20 +3246,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return result;
   };
 
-  const resolveCurrentLevelForExperience = () => {
-    const resolvedDifficulty = getResolvedCurrentDifficulty();
-    currentDifficulty = resolvedDifficulty;
-    return resolvedDifficulty;
-  };
-
-  const resolveExperiencePointsForMonster = () => {
-    const monsterXp = Number(window.preloadedData?.battle?.monster?.experiencePoints);
-    if (!Number.isFinite(monsterXp)) {
-      return 0;
-    }
-    return Math.max(0, Math.round(monsterXp));
-  };
-
   const awardExperiencePoints = ({
     delayProgressUpdateMs = 0,
     scheduleProgressUpdate = true,
@@ -3286,45 +3257,20 @@ document.addEventListener('DOMContentLoaded', () => {
       scheduleLevelProgressDisplayUpdate(delayProgressUpdateMs);
     };
 
-    const points = resolveExperiencePointsForMonster();
-    const level = resolveCurrentLevelForExperience();
-    const sanitizedEarned = Math.max(0, Math.round(levelExperienceEarned));
-    const wasComplete =
-      levelExperienceRequirement > 0 && sanitizedEarned >= levelExperienceRequirement;
+    const previousTotal = normalizeExperienceValue(totalExperience) ?? 0;
+    const nextTotal = previousTotal + EXPERIENCE_PER_BATTLE;
+    const previousTier = computeExperienceTier(
+      previousTotal,
+      EXPERIENCE_MILESTONE_SIZE
+    );
+    const nextTier = computeExperienceTier(nextTotal, EXPERIENCE_MILESTONE_SIZE);
 
-    if (!Number.isFinite(level)) {
-      levelExperienceEarned = sanitizedEarned;
-      maybeScheduleProgressUpdate();
-      hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
-      if (hasPendingLevelUpReward) {
-        rewardAnimationPlayed = false;
-      }
-      return;
-    }
+    totalExperience = nextTotal;
+    experienceTier = nextTier;
+    levelExperienceEarned = nextTotal % EXPERIENCE_MILESTONE_SIZE;
 
-    if (points <= 0) {
-      levelExperienceEarned = sanitizedEarned;
-      maybeScheduleProgressUpdate();
-      hasPendingLevelUpReward = levelUpAvailable && !wasComplete;
-      if (hasPendingLevelUpReward) {
-        rewardAnimationPlayed = false;
-      }
-      return;
-    }
-
-    const nextTotal = sanitizedEarned + points;
-    const levelKey = String(Math.max(1, Math.round(level)));
-
-    persistProgress({ experience: { [levelKey]: nextTotal } });
-    levelExperienceEarned = nextTotal;
+    persistProgress({ experience: { total: nextTotal } });
     maybeScheduleProgressUpdate();
-
-    const requirementMetWithUpdate =
-      levelExperienceRequirement > 0 && nextTotal >= levelExperienceRequirement;
-    hasPendingLevelUpReward = requirementMetWithUpdate && !wasComplete;
-    if (hasPendingLevelUpReward) {
-      rewardAnimationPlayed = false;
-    }
   };
 
   const markBattleReady = (img) => {
@@ -4596,8 +4542,13 @@ document.addEventListener('DOMContentLoaded', () => {
       difficulty: currentDifficulty,
     });
 
-    levelExperienceEarned = 0;
-    levelExperienceRequirement = 0;
+    totalExperience = readTotalExperience(progressData?.experience);
+    experienceTier = computeExperienceTier(
+      totalExperience,
+      EXPERIENCE_MILESTONE_SIZE
+    );
+    levelExperienceRequirement = EXPERIENCE_MILESTONE_SIZE;
+    levelExperienceEarned = totalExperience % EXPERIENCE_MILESTONE_SIZE;
 
     accuracyGoal =
       typeof battleData.accuracyGoal === 'number' &&
@@ -5559,11 +5510,10 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
 
-    const resolvedCurrentLevel = resolveCurrentLevelForExperience();
     const progressState = readMathProgressState();
     const rewardCurrentLevel =
-      normalizePositiveInteger(progressState?.currentLevelNumber) ??
-      normalizePositiveInteger(resolvedCurrentLevel);
+      normalizePositiveInteger(experienceTier) ??
+      normalizePositiveInteger(progressState?.currentLevelNumber);
     const rewardBattleIndex = normalizePositiveInteger(
       progressState?.currentBattle
     );
@@ -5598,9 +5548,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     hideGlobalProgressDisplay();
 
+    awardExperiencePoints({ scheduleProgressUpdate: false });
+
     if (win) {
       setBattleCompleteTitleLines('Monster Defeated!');
-      awardExperiencePoints({ scheduleProgressUpdate: false });
     } else {
       setBattleCompleteTitleLines('Keep Practicing!');
       latestGlobalRewardDisplay = null;
@@ -5699,21 +5650,6 @@ document.addEventListener('DOMContentLoaded', () => {
       pendingGemReward = null;
     }
 
-    if (win && !hasPendingLevelUpReward) {
-      const isInitialLevel =
-        Number.isFinite(resolvedCurrentLevel) && resolvedCurrentLevel === 1;
-      const noExperienceRequirement = levelExperienceRequirement <= 0;
-      if (
-        isInitialLevel &&
-        noExperienceRequirement &&
-        !rewardAnimationPlayed &&
-        isHeroAtInitialEvolutionStage()
-      ) {
-        hasPendingLevelUpReward = true;
-        rewardAnimationPlayed = false;
-      }
-    }
-
     updateNextMissionButton(win);
 
     if (!win) {
@@ -5765,15 +5701,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (hasPendingLevelUpReward && !rewardAnimationPlayed) {
-        rewardAnimationPlayed = true;
-        hasPendingLevelUpReward = false;
-        updateNextMissionButton(true);
-        pendingGemReward = null;
-        startEvolutionSequence({ skipRewardFlow: true });
-        return;
-      }
-
       if (pendingGemReward) {
         handleGemRewardWithoutAnimation();
         return;
@@ -5810,11 +5737,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initialTimeRemaining = 0;
     currentLevelAdvanced = false;
     battleGoalsMet = false;
-    levelExperienceEarned = 0;
-    levelExperienceRequirement = 0;
-    levelUpAvailable = false;
-    hasPendingLevelUpReward = false;
-    rewardAnimationPlayed = false;
+    levelExperienceRequirement = EXPERIENCE_MILESTONE_SIZE;
+    levelExperienceEarned = totalExperience % EXPERIENCE_MILESTONE_SIZE;
     cancelScheduledLevelProgressDisplayUpdate();
     clearRewardAnimation();
     updateLevelProgressDisplay();

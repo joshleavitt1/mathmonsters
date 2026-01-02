@@ -12,6 +12,8 @@ const DEFAULT_DIFFICULTY_STATE = {
   incorrectStreak: 0,
 };
 
+const EXPERIENCE_MILESTONE_SIZE = 10;
+
 const clampDifficulty = (value) => {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
@@ -366,8 +368,13 @@ if (!progressUtils) {
   throw new Error('Progress utilities are not available.');
 }
 
-const { isPlainObject, normalizeExperienceMap, mergeExperienceMaps } =
-  progressUtils;
+const {
+  isPlainObject,
+  normalizeExperienceMap,
+  mergeExperienceMaps,
+  readTotalExperience,
+  computeExperienceTier,
+} = progressUtils;
 
 const readStoredPlayerProfile = () => {
   if (typeof window === 'undefined') {
@@ -686,6 +693,186 @@ const normalizeCurrentLevel = (value) => {
   }
 
   return null;
+};
+
+const normalizeTierAttackSprites = (...spriteSources) => {
+  const allowedKeys = ['basic', 'super'];
+  const result = {};
+
+  const extractSpritePath = (source, key) => {
+    if (!source) {
+      return null;
+    }
+
+    if (typeof source === 'string') {
+      return key === 'basic' ? source : null;
+    }
+
+    if (!isPlainObject(source)) {
+      return null;
+    }
+
+    if (typeof source[key] === 'string') {
+      return source[key];
+    }
+
+    const legacyKey = `${key}Attack`;
+    if (typeof source[legacyKey] === 'string') {
+      return source[legacyKey];
+    }
+
+    if (isPlainObject(source.attackSprites)) {
+      if (typeof source.attackSprites[key] === 'string') {
+        return source.attackSprites[key];
+      }
+    }
+
+    if (typeof source.attackSprite === 'string') {
+      return key === 'basic' ? source.attackSprite : null;
+    }
+
+    return null;
+  };
+
+  spriteSources.forEach((source) => {
+    allowedKeys.forEach((key) => {
+      const spritePath = extractSpritePath(source, key);
+      if (typeof spritePath === 'string' && spritePath.trim()) {
+        result[key] = spritePath.trim();
+      }
+    });
+  });
+
+  if (!result.super && result.basic) {
+    result.super = result.basic;
+  }
+
+  return result;
+};
+
+const resolveHeroTierConfig = (heroId, tier, heroSprites) => {
+  if (!isPlainObject(heroSprites)) {
+    return null;
+  }
+
+  const normalizedId =
+    typeof heroId === 'string' && heroId.trim() ? heroId.trim() : null;
+
+  const heroConfig =
+    (normalizedId && heroSprites[normalizedId]) || heroSprites.default || null;
+
+  if (!heroConfig || !isPlainObject(heroConfig.tiers)) {
+    return null;
+  }
+
+  const entries = Object.entries(heroConfig.tiers)
+    .map(([key, value]) => ({ tier: Number(key), value }))
+    .filter(
+      ({ tier: tierNumber, value }) =>
+        Number.isFinite(tierNumber) && isPlainObject(value)
+    );
+
+  if (!entries.length) {
+    return null;
+  }
+
+  const sorted = entries.sort((a, b) => a.tier - b.tier);
+  const defaultTier = Number.isFinite(heroConfig.defaultTier)
+    ? heroConfig.defaultTier
+    : sorted[0].tier;
+  const requestedTier = Number.isFinite(tier) ? tier : defaultTier;
+
+  const selected =
+    sorted.find((entry) => requestedTier >= entry.tier) ||
+    sorted[sorted.length - 1];
+
+  return selected ? { ...selected.value, tier: selected.tier } : null;
+};
+
+const applyHeroTierSprites = (
+  hero,
+  heroSprites,
+  experienceTier,
+  resolveAssetPath = normalizeAssetPath
+) => {
+  if (!isPlainObject(hero)) {
+    return;
+  }
+
+  const tierConfig = resolveHeroTierConfig(hero.id, experienceTier, heroSprites);
+  if (!tierConfig) {
+    return;
+  }
+
+  const resolveSpritePath = (path) => {
+    if (typeof path !== 'string') {
+      return null;
+    }
+    const sanitized = sanitizeHeroSpritePath(path);
+    const resolved =
+      typeof resolveAssetPath === 'function' ? resolveAssetPath(sanitized) : sanitized;
+    return resolved || sanitized || null;
+  };
+
+  if (typeof tierConfig.sprite === 'string') {
+    const resolvedSprite = resolveSpritePath(tierConfig.sprite);
+    if (resolvedSprite) {
+      hero.sprite = resolvedSprite;
+    }
+  }
+
+  const attackSprites = normalizeTierAttackSprites(
+    tierConfig.attackSprites,
+    hero.attackSprites,
+    hero.attackSprite
+  );
+
+  if (Object.keys(attackSprites).length > 0) {
+    Object.keys(attackSprites).forEach((key) => {
+      const resolved = resolveSpritePath(attackSprites[key]);
+      if (resolved) {
+        attackSprites[key] = resolved;
+      }
+    });
+    hero.attackSprites = attackSprites;
+  } else if (hero.attackSprites) {
+    delete hero.attackSprites;
+  }
+};
+
+const applyHeroTierAssets = (
+  player,
+  heroSprites,
+  totalExperience,
+  resolveAssetPath = normalizeAssetPath
+) => {
+  if (!isPlainObject(player)) {
+    return;
+  }
+
+  const experienceTier = computeExperienceTier(
+    totalExperience,
+    EXPERIENCE_MILESTONE_SIZE
+  );
+
+  if (isPlainObject(player.hero)) {
+    applyHeroTierSprites(player.hero, heroSprites, experienceTier, resolveAssetPath);
+  }
+
+  if (!isPlainObject(player.currentLevel)) {
+    return;
+  }
+
+  Object.values(player.currentLevel).forEach((levelData) => {
+    if (isPlainObject(levelData?.hero)) {
+      applyHeroTierSprites(
+        levelData.hero,
+        heroSprites,
+        experienceTier,
+        resolveAssetPath
+      );
+    }
+  });
 };
 
 const updateHeroAssetForLevel = (path) => {
@@ -1554,18 +1741,20 @@ const syncRemoteCurrentLevel = (playerData) => {
 
 (async function () {
   try {
-    const [playerRes, levelsRes] = await Promise.all([
+    const [playerRes, levelsRes, heroSpritesRes] = await Promise.all([
       fetch(resolveDataPath('player.json')),
       fetch(resolveDataPath('levels.json')),
+      fetch(resolveDataPath('hero-sprites.json')),
     ]);
 
     if (!playerRes.ok || !levelsRes.ok) {
       throw new Error('Failed to fetch required configuration data.');
     }
 
-    const [playerJson, levelsData] = await Promise.all([
+    const [playerJson, levelsData, heroSpritesData] = await Promise.all([
       playerRes.json(),
       levelsRes.json(),
+      heroSpritesRes?.ok ? heroSpritesRes.json() : {},
     ]);
 
     const localPlayerData =
@@ -1592,12 +1781,6 @@ const syncRemoteCurrentLevel = (playerData) => {
       }
     } catch (error) {
       console.warn('Unable to load remote player profile for battle.', error);
-    }
-
-    applyHeroLevelAssets(basePlayer);
-    const localPlayer = extractPlayerData(localPlayerData);
-    if (localPlayer) {
-      applyHeroLevelAssets(localPlayer);
     }
 
     const {
@@ -1679,11 +1862,24 @@ const syncRemoteCurrentLevel = (playerData) => {
     }
 
     experienceMap = normalizeExperienceMap(experienceMap);
-    if (Object.keys(experienceMap).length > 0) {
-      progress.experience = experienceMap;
+    const totalExperience = readTotalExperience(experienceMap);
+    const normalizedExperience = normalizeExperienceMap({ total: totalExperience });
+    const experienceTier = computeExperienceTier(
+      totalExperience,
+      EXPERIENCE_MILESTONE_SIZE
+    );
+
+    if (Object.keys(normalizedExperience).length > 0) {
+      progress.experience = normalizedExperience;
+      experienceMap = normalizedExperience;
+      progress.experienceTier = experienceTier;
     } else {
       delete progress.experience;
+      experienceMap = {};
     }
+
+    applyHeroTierAssets(basePlayer, heroSpritesData, totalExperience);
+    applyHeroLevelAssets(basePlayer);
 
     const isPositiveLevelNumber = (value) =>
       typeof value === 'number' &&
@@ -2245,6 +2441,7 @@ const syncRemoteCurrentLevel = (playerData) => {
       charactersByLevel: levelCharacters,
       questions,
       difficultyState,
+      heroSprites: heroSpritesData,
     };
 
     if (typeof document !== 'undefined') {

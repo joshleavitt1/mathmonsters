@@ -49,6 +49,7 @@ const createLoaderSandbox = ({
   storedProgress,
   playerData,
   levelsData,
+  heroSpritesData = {},
 }) => {
   const sessionStorage = createStorage();
   const localStorage = createStorage();
@@ -69,6 +70,9 @@ const createLoaderSandbox = ({
     }
     if (url.endsWith('levels.json')) {
       return createResponse(levelsData);
+    }
+    if (url.endsWith('hero-sprites.json')) {
+      return createResponse(heroSpritesData || {});
     }
     throw new Error(`Unexpected fetch request: ${url}`);
   };
