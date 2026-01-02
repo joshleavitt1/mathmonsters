@@ -3526,8 +3526,6 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     }
   } catch (error) {
     console.error('Failed to preload landing assets.', error);
-  } finally {
-    await finishPreloader();
   }
 
   return results;
@@ -3881,9 +3879,27 @@ const bootstrapLanding = async () => {
 
   try {
     const preloadedData = await preloadLandingAssets(landingEntryState);
-    await initLandingInteractions({ ...preloadedData, ...landingEntryState });
+    const mergedLandingData = { ...preloadedData, ...landingEntryState };
+    const deferPreloaderFinish = Boolean(mergedLandingData.forceLevelOneLanding);
+
+    if (!deferPreloaderFinish) {
+      await finishPreloader();
+    }
+
+    try {
+      await initLandingInteractions(mergedLandingData);
+    } catch (error) {
+      console.error('Failed to initialize the landing experience; retrying with defaults.', error);
+      try {
+        await initLandingInteractions({ ...landingEntryState });
+      } catch (fallbackError) {
+        console.error('Fallback landing initialization failed.', fallbackError);
+      }
+    }
+
+    await finishPreloader();
   } catch (error) {
-    console.error('Failed to initialize the landing experience.', error);
+    console.error('Failed to preload landing assets.', error);
     await finishPreloader();
     await initLandingInteractions({ ...landingEntryState });
   }
