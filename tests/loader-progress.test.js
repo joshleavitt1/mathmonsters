@@ -26,31 +26,6 @@ const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 
 const deepClone = (value) => JSON.parse(JSON.stringify(value));
 
-const SAMPLE_QUESTIONS_DATA = {
-  type1_multipleChoiceMath: [
-    {
-      question: 'What is 1 + 1?',
-      choices: [1, 2, 3],
-      answer: 2,
-    },
-  ],
-  type2_countTheBubbles: [
-    {
-      question: 'Count the bubbles.',
-      spriteCount: 1,
-      choices: [1, 2, 3],
-      answer: 1,
-    },
-  ],
-  type3_fillInTheBlank: [
-    {
-      question: '_ + 1 = 2',
-      choices: [1, 2, 3],
-      answer: 1,
-    },
-  ],
-};
-
 const createStorage = () => {
   const store = new Map();
   return {
@@ -94,12 +69,6 @@ const createLoaderSandbox = ({
     }
     if (url.endsWith('levels.json')) {
       return createResponse(levelsData);
-    }
-    if (
-      url.endsWith('questions/questions.json') ||
-      url.endsWith('data/questions/questions.json')
-    ) {
-      return createResponse(SAMPLE_QUESTIONS_DATA);
     }
     throw new Error(`Unexpected fetch request: ${url}`);
   };

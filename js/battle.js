@@ -49,6 +49,10 @@ const playerProfileUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
   (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
 
+const questionGenerator =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersQuestionGenerator) ||
+  (typeof window !== 'undefined' ? window.mathMonstersQuestionGenerator : null);
+
 const INTRO_QUESTION_LEVELS = new Set([1]);
 
 const MEDAL_DISPLAY_DURATION_MS = 3000;
@@ -568,10 +572,83 @@ document.addEventListener('DOMContentLoaded', () => {
   let levelOneStructuredIndex = 0;
   let useLevelOneSequence = false;
   const questionCache = new Map();
+  const GENERATED_QUESTIONS_PER_DIFFICULTY = 12;
 
-  const resolveQuestionPathForDifficulty = (difficulty) => {
+  const createFallbackQuestionSet = (difficulty) => {
     const normalized = clampDifficulty(difficulty);
-    return `../data/questions/level_${normalized}_questions.json`;
+    const first = Math.max(0, normalized - 1);
+    const second = normalized + 1;
+    const answer = first + second;
+
+    return {
+      type1_multipleChoiceMath: [
+        {
+          question: `What is ${first} + ${second}?`,
+          choices: [answer, answer + 1, Math.max(0, answer - 1), answer + 2],
+          answer,
+        },
+      ],
+    };
+  };
+
+  const generateQuestionSetForDifficulty = (difficulty) => {
+    const generatorFn = questionGenerator?.generateAdditionQuestion;
+    const normalizedDifficulty = clampDifficulty(difficulty);
+    const generatedQuestions = [];
+
+    if (typeof generatorFn === 'function') {
+      for (let index = 0; index < GENERATED_QUESTIONS_PER_DIFFICULTY; index++) {
+        const generated = generatorFn(normalizedDifficulty);
+        const prompt =
+          typeof generated?.question === 'string'
+            ? generated.question.trim()
+            : typeof generated?.prompt === 'string'
+            ? generated.prompt.trim()
+            : '';
+        if (!prompt) {
+          continue;
+        }
+
+        const answer = generated?.answer;
+        const choicesSource = Array.isArray(generated?.choices)
+          ? generated.choices
+          : Array.isArray(generated?.options)
+          ? generated.options
+          : [];
+        const normalizedChoices = choicesSource
+          .map((choice) =>
+            choice && typeof choice === 'object'
+              ? choice.value ?? choice.name ?? choice
+              : choice
+          )
+          .filter(
+            (choice) =>
+              choice !== null &&
+              choice !== undefined &&
+              (typeof choice === 'number' || String(choice).trim())
+          );
+
+        if (answer !== undefined && !normalizedChoices.includes(answer)) {
+          normalizedChoices.push(answer);
+        }
+
+        if (!normalizedChoices.length) {
+          normalizedChoices.push(0);
+        }
+
+        generatedQuestions.push({
+          question: prompt,
+          choices: normalizedChoices,
+          answer,
+        });
+      }
+    }
+
+    if (generatedQuestions.length === 0) {
+      return createFallbackQuestionSet(normalizedDifficulty);
+    }
+
+    return { type1_multipleChoiceMath: generatedQuestions };
   };
 
   const loadQuestionsForDifficulty = async (difficulty) => {
@@ -580,19 +657,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return questionCache.get(normalized);
     }
 
-    const path = resolveQuestionPathForDifficulty(normalized);
-    try {
-      const response = await fetch(path);
-      if (response.ok) {
-        const payload = await response.json();
-        questionCache.set(normalized, payload);
-        return payload;
-      }
-    } catch (error) {
-      console.warn('Unable to fetch questions for difficulty.', error);
-    }
-
-    return null;
+    const generated = generateQuestionSetForDifficulty(normalized);
+    questionCache.set(normalized, generated);
+    return generated;
   };
 
   const ensureQuestionPoolForDifficulty = async (difficulty) => {
@@ -602,10 +669,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const loaded = await loadQuestionsForDifficulty(normalized);
-    if (loaded) {
-      resetQuestionPool(loaded);
-      currentDifficultyQuestionSource = normalized;
-    }
+    resetQuestionPool(loaded || createFallbackQuestionSet(normalized));
+    currentDifficultyQuestionSource = normalized;
   };
 
   const updateDifficultyForAnswer = async (wasCorrect) => {
@@ -4670,14 +4735,11 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMonsterImg.alt = COMPLETE_MONSTER_REWARD_ALT;
     }
 
-    const rawQuestions = data.questions;
-    const loadedQuestions = Array.isArray(rawQuestions)
-      ? rawQuestions.slice()
-      : isPlainObjectValue(rawQuestions)
-      ? { ...rawQuestions }
-      : [];
-    resetQuestionPool(loadedQuestions);
-    questionCache.set(getResolvedCurrentDifficulty(), loadedQuestions);
+    const initialQuestions = generateQuestionSetForDifficulty(
+      getResolvedCurrentDifficulty()
+    );
+    resetQuestionPool(initialQuestions);
+    questionCache.set(getResolvedCurrentDifficulty(), initialQuestions);
     currentDifficultyQuestionSource = getResolvedCurrentDifficulty();
 
     updateHealthBars();
