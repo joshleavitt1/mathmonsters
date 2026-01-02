@@ -1325,6 +1325,36 @@ const readPlayerGemCount = (player) => {
   return resolvedGemCount ?? 0;
 };
 
+const readPlayerExperienceTotal = (player) => {
+  if (!player || typeof player !== 'object') {
+    return 0;
+  }
+
+  const normalizeExperienceTotal = (candidate) => {
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+      const normalized = normalizeExperienceMap(candidate);
+      return readTotalExperience(normalized);
+    }
+
+    const numeric = Number(candidate);
+    return Number.isFinite(numeric) ? Math.max(0, Math.round(numeric)) : 0;
+  };
+
+  const experienceCandidates = [
+    normalizeExperienceTotal(player?.progress?.experience),
+    normalizeExperienceTotal(player?.progress?.experienceTotal),
+    normalizeExperienceTotal(player?.experience),
+    normalizeExperienceTotal(player?.experienceTotal),
+    normalizeExperienceTotal(player?.xpTotal),
+  ].filter((value) => Number.isFinite(value));
+
+  if (!experienceCandidates.length) {
+    return 0;
+  }
+
+  return Math.max(...experienceCandidates);
+};
+
 const normalizeCurrentLevel = (value) => {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : null;
@@ -3127,20 +3157,41 @@ const markLandingVisited = () => {
   setVisitedFlag(localStorage, 'Local');
 };
 
-const hasIntroProgress = () => {
+const clearLandingVisitedFlag = () => {
+  try {
+    sessionStorage?.removeItem(LANDING_VISITED_KEY);
+  } catch (error) {
+    console.warn('Unable to clear session landing visit flag.', error);
+  }
+
+  try {
+    localStorage?.removeItem(LANDING_VISITED_KEY);
+  } catch (error) {
+    console.warn('Unable to clear local landing visit flag.', error);
+  }
+};
+
+const resolveStoredExperienceTotal = () => {
   if (typeof readSaveState !== 'function') {
-    return false;
+    return 0;
   }
 
   try {
     const saveState = readSaveState();
-    const xpTotal = Number(saveState?.xpTotal);
-    return Number.isFinite(xpTotal) && xpTotal > 0;
+    const experienceTotal = saveState?.xpTotal;
+    if (experienceTotal && typeof experienceTotal === 'object') {
+      const experienceMap = normalizeExperienceMap(experienceTotal);
+      return readTotalExperience(experienceMap);
+    }
+    const xpTotal = Number(experienceTotal);
+    return Number.isFinite(xpTotal) ? Math.max(0, Math.round(xpTotal)) : 0;
   } catch (error) {
     console.warn('Unable to read intro progress.', error);
-    return false;
+    return 0;
   }
 };
+
+const hasIntroProgress = () => resolveStoredExperienceTotal() > 0;
 
 const hasVisitedLanding = () => {
   if (typeof window === 'undefined') {
@@ -3213,7 +3264,8 @@ const resetLandingSaveState = () => {
 
 const resolveLandingEntryState = async () => {
   let landingVisited = hasVisitedLanding();
-  const hasIntroProgressFlag = hasIntroProgress();
+  const storedExperienceTotal = resolveStoredExperienceTotal();
+  const hasIntroProgressFlag = storedExperienceTotal > 0;
   const guestSessionState = readGuestSessionState();
   const hasGuestSession =
     isGuestModeActive(guestSessionState) ||
@@ -3229,6 +3281,11 @@ const resolveLandingEntryState = async () => {
 
   const hasUserSession = hasSupabaseSession || hasGuestSession;
 
+  if (!hasIntroProgressFlag && landingVisited) {
+    clearLandingVisitedFlag();
+    landingVisited = false;
+  }
+
   if (!landingVisited && hasIntroProgressFlag) {
     markLandingVisited();
     landingVisited = true;
@@ -3238,26 +3295,53 @@ const resolveLandingEntryState = async () => {
     resetLandingSaveState();
   }
 
-  return { landingVisited, hasUserSession, hasIntroProgress: hasIntroProgressFlag };
+  const requiresLevelOneIntro = !hasIntroProgressFlag;
+
+  return {
+    landingVisited,
+    hasUserSession,
+    hasIntroProgress: hasIntroProgressFlag,
+    requiresLevelOneIntro,
+    experienceTotal: storedExperienceTotal,
+  };
 };
 
 const preloadLandingAssets = async (landingEntryState = {}) => {
-  const landingVisited =
+  let landingVisited =
     typeof landingEntryState?.landingVisited === 'boolean'
       ? landingEntryState.landingVisited
       : hasVisitedLanding();
-  const hasIntroProgressFlag = Boolean(landingEntryState?.hasIntroProgress);
-  const forceLevelOneLanding = !landingVisited && !hasIntroProgressFlag;
+  const storedExperienceTotal = Number(landingEntryState?.experienceTotal);
+  const resolvedExperienceTotal = Number.isFinite(storedExperienceTotal)
+    ? storedExperienceTotal
+    : resolveStoredExperienceTotal();
+  let hasIntroProgressFlag =
+    typeof landingEntryState?.hasIntroProgress === 'boolean'
+      ? landingEntryState.hasIntroProgress
+      : resolvedExperienceTotal > 0;
+  let requiresLevelOneIntro =
+    typeof landingEntryState?.requiresLevelOneIntro === 'boolean'
+      ? landingEntryState.requiresLevelOneIntro
+      : resolvedExperienceTotal <= 0;
+
+  if (requiresLevelOneIntro && landingVisited) {
+    clearLandingVisitedFlag();
+    landingVisited = false;
+  }
+
+  let forceLevelOneLanding = requiresLevelOneIntro || (!landingVisited && !hasIntroProgressFlag);
   const hasUserSession = Boolean(landingEntryState?.hasUserSession);
 
   const results = {
     levelsData: null,
     playerData: null,
     previewData: null,
-    landingVisited,
+    landingVisited: forceLevelOneLanding ? false : landingVisited,
     forceLevelOneLanding,
     hasUserSession,
     hasIntroProgress: hasIntroProgressFlag,
+    requiresLevelOneIntro,
+    experienceTotal: resolvedExperienceTotal,
   };
   const imageAssets = new Set([
     '../images/background/background.png',
@@ -3399,14 +3483,31 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
       ? combinedPlayer
       : remotePlayerData || fallbackPlayerData || storedPlayerProfile;
 
-    const playerInput = forceLevelOneLanding
-      ? coercePlayerProgressToLevelOne(chosenPlayerData)
-      : chosenPlayerData;
+    const playerInput = chosenPlayerData;
 
-    const { levels, player, preview } = determineBattlePreview(
-      levelsData,
-      playerInput
-    );
+    const { levels, player, preview } = determineBattlePreview(levelsData, playerInput);
+
+    const playerExperienceTotal = readPlayerExperienceTotal(player);
+
+    results.experienceTotal = Number.isFinite(playerExperienceTotal)
+      ? playerExperienceTotal
+      : results.experienceTotal;
+
+    if (Number.isFinite(playerExperienceTotal) && playerExperienceTotal <= 0) {
+      requiresLevelOneIntro = true;
+      forceLevelOneLanding = true;
+      hasIntroProgressFlag = false;
+      landingVisited = false;
+      clearLandingVisitedFlag();
+    } else if (Number.isFinite(playerExperienceTotal) && playerExperienceTotal > 0) {
+      requiresLevelOneIntro = false;
+      hasIntroProgressFlag = true;
+      if (!landingVisited) {
+        markLandingVisited();
+        landingVisited = true;
+      }
+      forceLevelOneLanding = false;
+    }
 
     const normalizedPlayer = forceLevelOneLanding
       ? coercePlayerProgressToLevelOne(player)
@@ -3415,6 +3516,11 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     const normalizedPreview = forceLevelOneLanding
       ? enforceLevelOnePreview(preview, levels)
       : preview;
+
+    results.requiresLevelOneIntro = requiresLevelOneIntro;
+    results.hasIntroProgress = hasIntroProgressFlag;
+    results.landingVisited = landingVisited;
+    results.forceLevelOneLanding = forceLevelOneLanding;
 
     results.levelsData =
       levelsData && typeof levelsData === 'object'
@@ -3571,11 +3677,21 @@ const initLandingInteractions = async (preloadedData = {}) => {
     typeof preloadedData?.landingVisited === 'boolean'
       ? preloadedData.landingVisited
       : hasVisitedLanding();
-  const forceLevelOneLanding =
+  let requiresLevelOneIntro =
+    typeof preloadedData?.requiresLevelOneIntro === 'boolean'
+      ? preloadedData.requiresLevelOneIntro
+      : Number.isFinite(preloadedData?.experienceTotal)
+      ? preloadedData.experienceTotal <= 0
+      : !hasIntroProgress();
+  let forceLevelOneLanding =
     typeof preloadedData?.forceLevelOneLanding === 'boolean'
       ? preloadedData.forceLevelOneLanding
       : !landingVisited;
-  markLandingVisited();
+  let shouldForceLevelOneLanding = requiresLevelOneIntro || forceLevelOneLanding;
+
+  if (!requiresLevelOneIntro) {
+    markLandingVisited();
+  }
   const levelOneHeroImage = getLevelOneHeroElement();
   const standardHeroImage = getStandardHeroElement();
   const heroImages = [levelOneHeroImage, standardHeroImage].filter(Boolean);
@@ -3583,7 +3699,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   let battleButton = getActiveBattleButton();
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
-  let isLevelOneLanding = forceLevelOneLanding || detectLevelOneLandingState();
+  let isLevelOneLanding = shouldForceLevelOneLanding || detectLevelOneLandingState();
   let fallbackPlayerData = preloadedData?.fallbackPlayerData ?? null;
 
   setupSettingsLogout();
@@ -3683,7 +3799,18 @@ const initLandingInteractions = async (preloadedData = {}) => {
         resolvedLevels = levelsData.levels;
       }
 
-      if (forceLevelOneLanding) {
+      const resolvedExperienceTotal = readPlayerExperienceTotal(playerData);
+      if (Number.isFinite(resolvedExperienceTotal)) {
+        requiresLevelOneIntro = resolvedExperienceTotal <= 0;
+        if (!requiresLevelOneIntro && !landingVisited) {
+          markLandingVisited();
+          landingVisited = true;
+        }
+        forceLevelOneLanding = requiresLevelOneIntro;
+        shouldForceLevelOneLanding = requiresLevelOneIntro || forceLevelOneLanding;
+      }
+
+      if (shouldForceLevelOneLanding) {
         playerData = coercePlayerProgressToLevelOne(playerData);
         previewData = enforceLevelOnePreview(previewData, resolvedLevels);
       }
@@ -3692,13 +3819,14 @@ const initLandingInteractions = async (preloadedData = {}) => {
         preloadedData.levelsData = levelsData;
         preloadedData.playerData = playerData;
         preloadedData.previewData = previewData;
-        preloadedData.forceLevelOneLanding = forceLevelOneLanding;
+        preloadedData.forceLevelOneLanding = shouldForceLevelOneLanding;
+        preloadedData.requiresLevelOneIntro = requiresLevelOneIntro;
         preloadedData.landingVisited = landingVisited;
       }
 
       if (previewData) {
         applyBattlePreview(previewData, resolvedLevels);
-        isLevelOneLanding = detectLevelOneLandingState();
+        isLevelOneLanding = shouldForceLevelOneLanding || detectLevelOneLandingState();
         battleButton = getActiveBattleButton();
         applyLandingBodyClasses(isLevelOneLanding);
       }
@@ -3710,7 +3838,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   };
 
   await loadBattlePreview();
-  isLevelOneLanding = detectLevelOneLandingState();
+  isLevelOneLanding = shouldForceLevelOneLanding || detectLevelOneLandingState();
   battleButton = getActiveBattleButton();
   applyLandingBodyClasses(isLevelOneLanding);
 
@@ -3903,7 +4031,9 @@ const bootstrapLanding = async () => {
   try {
     const preloadedData = await preloadLandingAssets(landingEntryState);
     const mergedLandingData = { ...preloadedData, ...landingEntryState };
-    const deferPreloaderFinish = Boolean(mergedLandingData.forceLevelOneLanding);
+    const deferPreloaderFinish = Boolean(
+      mergedLandingData.forceLevelOneLanding || mergedLandingData.requiresLevelOneIntro
+    );
 
     if (!deferPreloaderFinish) {
       await finishPreloader();
