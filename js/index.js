@@ -481,7 +481,14 @@ const setupDevSignOut = () => {
 };
 
 const ensureAuthenticated = async () => {
-  const guestSessionState = readGuestSessionState();
+  const isRegistrationFlowPaused = true;
+
+  if (isRegistrationFlowPaused) {
+    console.info('Registration flow is paused; allowing access without auth.');
+    return true;
+  }
+
+  let guestSessionState = readGuestSessionState();
 
   if (isRegistrationRequiredForGuest(guestSessionState)) {
     try {
