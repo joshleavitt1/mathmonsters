@@ -280,6 +280,37 @@ const redirectToRegister = () => {
   window.location.replace(REGISTER_PAGE_URL);
 };
 
+let cachedAuthSession = null;
+let authSessionResolved = false;
+
+const readAuthSession = async () => {
+  if (authSessionResolved) {
+    return cachedAuthSession;
+  }
+
+  const supabase = window.supabaseClient;
+  if (!supabase || typeof supabase.auth?.getSession !== 'function') {
+    authSessionResolved = true;
+    cachedAuthSession = null;
+    return cachedAuthSession;
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn('Authentication session lookup failed', error);
+    }
+    cachedAuthSession = data?.session ?? null;
+  } catch (error) {
+    console.warn('Authentication session lookup failed', error);
+    cachedAuthSession = null;
+  } finally {
+    authSessionResolved = true;
+  }
+
+  return cachedAuthSession;
+};
+
 const readGuestSessionState = () => {
   try {
     const storage = window.localStorage;
@@ -483,6 +514,8 @@ const setupDevSignOut = () => {
 const ensureAuthenticated = async () => {
   const isRegistrationFlowPaused = true;
 
+  const supabaseSession = await readAuthSession();
+
   if (isRegistrationFlowPaused) {
     console.info('Registration flow is paused; allowing access without auth.');
     return true;
@@ -503,29 +536,19 @@ const ensureAuthenticated = async () => {
     return true;
   }
 
+  if (supabaseSession) {
+    clearGuestMode();
+    return true;
+  }
+
   const supabase = window.supabaseClient;
   if (!supabase) {
     redirectToWelcome();
     return false;
   }
 
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.warn('Authentication session lookup failed', error);
-    }
-
-    if (!data?.session) {
-      redirectToWelcome();
-      return false;
-    }
-    clearGuestMode();
-    return true;
-  } catch (error) {
-    console.warn('Unexpected authentication error', error);
-    redirectToWelcome();
-    return false;
-  }
+  redirectToWelcome();
+  return false;
 };
 
 const fetchPlayerProfile = async () => {
@@ -2127,6 +2150,89 @@ const determineBattlePreview = (levelsData, playerData) => {
   };
 };
 
+const coercePlayerProgressToLevelOne = (playerData) => {
+  const player =
+    playerData && typeof playerData === 'object' && !Array.isArray(playerData)
+      ? { ...playerData }
+      : {};
+
+  const normalizedProgress =
+    player.progress && typeof player.progress === 'object'
+      ? { ...player.progress }
+      : {};
+
+  normalizedProgress.currentLevel = 1;
+  normalizedProgress.level = 1;
+  normalizedProgress.battleLevel = 1;
+  player.progress = normalizedProgress;
+
+  if (typeof player.level === 'number') {
+    player.level = 1;
+  }
+
+  const progressMap =
+    player.currentLevel && typeof player.currentLevel === 'object'
+      ? { ...player.currentLevel }
+      : null;
+
+  if (progressMap) {
+    Object.keys(progressMap).forEach((key) => {
+      const entry = progressMap[key];
+      if (entry && typeof entry === 'object') {
+        progressMap[key] = {
+          ...entry,
+          currentLevel: 1,
+          level: 1,
+        };
+      }
+    });
+    player.currentLevel = progressMap;
+  }
+
+  return player;
+};
+
+const enforceLevelOnePreview = (previewData, levels = []) => {
+  const normalizedPreview =
+    previewData && typeof previewData === 'object' && !Array.isArray(previewData)
+      ? { ...previewData }
+      : {};
+
+  normalizedPreview.currentLevel = 1;
+
+  const resolveLevelSource = () => {
+    if (normalizedPreview.activeLevel && typeof normalizedPreview.activeLevel === 'object') {
+      return normalizedPreview.activeLevel;
+    }
+
+    if (Array.isArray(levels)) {
+      const levelOneMatch = levels.find(
+        (level) => normalizeCurrentLevel(level?.currentLevel) === 1
+      );
+      if (levelOneMatch && typeof levelOneMatch === 'object') {
+        return levelOneMatch;
+      }
+      const firstLevel = levels.find((level) => level && typeof level === 'object');
+      if (firstLevel) {
+        return firstLevel;
+      }
+    }
+
+    return null;
+  };
+
+  const levelSource = resolveLevelSource();
+  if (levelSource) {
+    normalizedPreview.activeLevel = {
+      ...levelSource,
+      currentLevel: 1,
+      level: 1,
+    };
+  }
+
+  return normalizedPreview;
+};
+
 const normalizeBattleIndex = (value) => {
   const normalized = normalizeCurrentLevel(value);
   if (typeof normalized !== 'number' || !Number.isFinite(normalized)) {
@@ -3021,8 +3127,115 @@ const markLandingVisited = () => {
   setVisitedFlag(localStorage, 'Local');
 };
 
-const preloadLandingAssets = async () => {
-  const results = { levelsData: null, playerData: null, previewData: null };
+const hasVisitedLanding = () => {
+  if (typeof window === 'undefined') {
+    return true;
+  }
+
+  const readVisitedFlag = (storage) => {
+    if (!storage) {
+      return false;
+    }
+    try {
+      return storage.getItem(LANDING_VISITED_KEY) === VISITED_VALUE;
+    } catch (error) {
+      console.warn('Unable to read landing visit flag.', error);
+      return false;
+    }
+  };
+
+  return readVisitedFlag(window.sessionStorage) || readVisitedFlag(window.localStorage);
+};
+
+const resetLandingSaveState = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const saveStateStorageKey =
+    (saveStateUtils && typeof saveStateUtils.STORAGE_KEY === 'string'
+      ? saveStateUtils.STORAGE_KEY
+      : 'mathMonstersSave_v1');
+
+  try {
+    window.localStorage?.removeItem(saveStateStorageKey);
+  } catch (error) {
+    console.warn('Unable to clear saved progress state.', error);
+  }
+
+  try {
+    window.localStorage?.removeItem('mathmonstersProgress');
+    window.localStorage?.removeItem('mathmonstersHomeProgressState');
+  } catch (error) {
+    console.warn('Unable to clear legacy local storage state.', error);
+  }
+
+  try {
+    window.sessionStorage?.removeItem('mathmonstersHomeProgressState');
+    window.sessionStorage?.removeItem('mathmonstersDifficultyState');
+  } catch (error) {
+    console.warn('Unable to clear legacy session storage state.', error);
+  }
+
+  try {
+    window.sessionStorage?.removeItem(NEXT_BATTLE_SNAPSHOT_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Unable to clear stored battle snapshot.', error);
+  }
+
+  try {
+    window.sessionStorage?.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Unable to clear stored player profile.', error);
+  }
+
+  try {
+    window.sessionStorage?.removeItem(PRELOADED_SPRITES_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Unable to clear preloaded sprite cache.', error);
+  }
+};
+
+const resolveLandingEntryState = async () => {
+  const landingVisited = hasVisitedLanding();
+  const guestSessionState = readGuestSessionState();
+  const hasGuestSession =
+    isGuestModeActive(guestSessionState) ||
+    isRegistrationRequiredForGuest(guestSessionState);
+
+  let hasSupabaseSession = false;
+  try {
+    hasSupabaseSession = Boolean(await readAuthSession());
+  } catch (error) {
+    console.warn('Unable to determine authentication session state.', error);
+    hasSupabaseSession = false;
+  }
+
+  const hasUserSession = hasSupabaseSession || hasGuestSession;
+
+  if (!landingVisited && !hasUserSession) {
+    resetLandingSaveState();
+  }
+
+  return { landingVisited, hasUserSession };
+};
+
+const preloadLandingAssets = async (landingEntryState = {}) => {
+  const landingVisited =
+    typeof landingEntryState?.landingVisited === 'boolean'
+      ? landingEntryState.landingVisited
+      : hasVisitedLanding();
+  const forceLevelOneLanding = !landingVisited;
+  const hasUserSession = Boolean(landingEntryState?.hasUserSession);
+
+  const results = {
+    levelsData: null,
+    playerData: null,
+    previewData: null,
+    landingVisited,
+    forceLevelOneLanding,
+    hasUserSession,
+  };
   const imageAssets = new Set([
     '../images/background/background.png',
     '../images/battle/battle_time.png',
@@ -3163,20 +3376,32 @@ const preloadLandingAssets = async () => {
       ? combinedPlayer
       : remotePlayerData || fallbackPlayerData || storedPlayerProfile;
 
+    const playerInput = forceLevelOneLanding
+      ? coercePlayerProgressToLevelOne(chosenPlayerData)
+      : chosenPlayerData;
+
     const { levels, player, preview } = determineBattlePreview(
       levelsData,
-      chosenPlayerData
+      playerInput
     );
+
+    const normalizedPlayer = forceLevelOneLanding
+      ? coercePlayerProgressToLevelOne(player)
+      : player;
+
+    const normalizedPreview = forceLevelOneLanding
+      ? enforceLevelOnePreview(preview, levels)
+      : preview;
 
     results.levelsData =
       levelsData && typeof levelsData === 'object'
         ? { ...levelsData, levels }
         : { levels };
-    results.playerData = player;
-    results.previewData = preview;
+    results.playerData = normalizedPlayer;
+    results.previewData = normalizedPreview;
     results.fallbackPlayerData = fallbackPlayer;
 
-    persistPlayerProfile(player);
+    persistPlayerProfile(normalizedPlayer);
 
     if (levels.length) {
       levels.forEach((level) => {
@@ -3209,15 +3434,15 @@ const preloadLandingAssets = async () => {
       });
     }
 
-    collectCharacterSprites(preview?.hero);
-    collectCharacterSprites(preview?.monster);
-    if (Array.isArray(preview?.monsters)) {
-      preview.monsters.forEach((monster) => collectCharacterSprites(monster));
+    collectCharacterSprites(normalizedPreview?.hero);
+    collectCharacterSprites(normalizedPreview?.monster);
+    if (Array.isArray(normalizedPreview?.monsters)) {
+      normalizedPreview.monsters.forEach((monster) => collectCharacterSprites(monster));
     }
 
     const mathTypeKey =
-      typeof preview?.mathTypeKey === 'string'
-        ? preview.mathTypeKey
+      typeof normalizedPreview?.mathTypeKey === 'string'
+        ? normalizedPreview.mathTypeKey
         : typeof results.playerData?.currentMathType === 'string'
         ? results.playerData.currentMathType
         : typeof results.playerData?.mathType === 'string'
@@ -3250,9 +3475,12 @@ const preloadLandingAssets = async () => {
     }
 
     const prioritizedImages = [];
-    const heroSprite = sanitizeAssetPath(preview?.hero?.sprite) || preview?.hero?.sprite;
+    const heroSprite =
+      sanitizeAssetPath(normalizedPreview?.hero?.sprite) ||
+      normalizedPreview?.hero?.sprite;
     const monsterSprite =
-      sanitizeAssetPath(preview?.monster?.sprite) || preview?.monster?.sprite;
+      sanitizeAssetPath(normalizedPreview?.monster?.sprite) ||
+      normalizedPreview?.monster?.sprite;
 
     if (heroSprite) {
       prioritizedImages.push(heroSprite);
@@ -3293,8 +3521,8 @@ const preloadLandingAssets = async () => {
     );
     storePreloadedSprites(successfullyLoaded);
 
-    if (preview) {
-      applyBattlePreview(preview, levels);
+    if (normalizedPreview) {
+      applyBattlePreview(normalizedPreview, levels);
     }
   } catch (error) {
     console.error('Failed to preload landing assets.', error);
@@ -3306,6 +3534,14 @@ const preloadLandingAssets = async () => {
 };
 
 const initLandingInteractions = async (preloadedData = {}) => {
+  const landingVisited =
+    typeof preloadedData?.landingVisited === 'boolean'
+      ? preloadedData.landingVisited
+      : hasVisitedLanding();
+  const forceLevelOneLanding =
+    typeof preloadedData?.forceLevelOneLanding === 'boolean'
+      ? preloadedData.forceLevelOneLanding
+      : !landingVisited;
   markLandingVisited();
   const levelOneHeroImage = getLevelOneHeroElement();
   const standardHeroImage = getStandardHeroElement();
@@ -3314,7 +3550,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   let battleButton = getActiveBattleButton();
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
-  let isLevelOneLanding = detectLevelOneLandingState();
+  let isLevelOneLanding = forceLevelOneLanding || detectLevelOneLandingState();
   let fallbackPlayerData = preloadedData?.fallbackPlayerData ?? null;
 
   setupSettingsLogout();
@@ -3411,6 +3647,19 @@ const initLandingInteractions = async (preloadedData = {}) => {
         }
       } else if (!resolvedLevels.length && Array.isArray(levelsData?.levels)) {
         resolvedLevels = levelsData.levels;
+      }
+
+      if (forceLevelOneLanding) {
+        playerData = coercePlayerProgressToLevelOne(playerData);
+        previewData = enforceLevelOnePreview(previewData, resolvedLevels);
+      }
+
+      if (preloadedData && typeof preloadedData === 'object') {
+        preloadedData.levelsData = levelsData;
+        preloadedData.playerData = playerData;
+        preloadedData.previewData = previewData;
+        preloadedData.forceLevelOneLanding = forceLevelOneLanding;
+        preloadedData.landingVisited = landingVisited;
       }
 
       if (previewData) {
@@ -3607,13 +3856,21 @@ const initLandingInteractions = async (preloadedData = {}) => {
 };
 
 const bootstrapLanding = async () => {
+  let landingEntryState = {};
   try {
-    const preloadedData = await preloadLandingAssets();
-    await initLandingInteractions(preloadedData);
+    landingEntryState = await resolveLandingEntryState();
+  } catch (error) {
+    console.warn('Unable to resolve landing entry state; continuing with defaults.', error);
+    landingEntryState = {};
+  }
+
+  try {
+    const preloadedData = await preloadLandingAssets(landingEntryState);
+    await initLandingInteractions({ ...preloadedData, ...landingEntryState });
   } catch (error) {
     console.error('Failed to initialize the landing experience.', error);
     await finishPreloader();
-    await initLandingInteractions({});
+    await initLandingInteractions({ ...landingEntryState });
   }
 };
 
