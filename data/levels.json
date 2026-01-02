@@ -11,18 +11,9 @@
         "uniquePerLevel": true,
         "standardPool": [
           {
-            "sprite": "/mathmonsters/images/monster/addition_monster_1.png",
+            "sprite": "/mathmonsters/images/monster/monster_sprite_1.png",
             "name": "Octomurk"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_monster_2.png",
-            "name": "Snapjaw"
-          },
-          {
-            "sprite": "/mathmonsters/images/monster/addition_monster_3.png",
-            "name": "Fangtide"
           }
-          
         ]
       },
       "levels": [

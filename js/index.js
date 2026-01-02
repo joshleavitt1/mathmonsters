@@ -3261,7 +3261,6 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
   };
   const imageAssets = new Set([
     '../images/background/background.png',
-    '../images/battle/battle_time.png',
   ]);
 
   const addImageAsset = (path) => {
