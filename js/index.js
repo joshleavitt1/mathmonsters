@@ -2191,7 +2191,77 @@ const resolveProgressLevel = (progress) => {
   );
 };
 
-const determineBattlePreview = (levelsData, playerData) => {
+const clampDifficultyLevel = (value) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+
+  const rounded = Math.round(numericValue);
+  if (!Number.isFinite(rounded) || rounded <= 0) {
+    return null;
+  }
+
+  return Math.min(5, Math.max(1, rounded));
+};
+
+const clampNonNegativeInteger = (value) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue < 0) {
+    return 0;
+  }
+  return Math.round(numericValue);
+};
+
+const normalizeDifficultyState = (state) => {
+  if (!state || typeof state !== 'object') {
+    return null;
+  }
+
+  const difficulty = clampDifficultyLevel(state.difficulty ?? state.currentLevel);
+  if (difficulty === null) {
+    return null;
+  }
+
+  return {
+    difficulty,
+    correctStreak: clampNonNegativeInteger(state.correctStreak),
+    incorrectStreak: clampNonNegativeInteger(state.incorrectStreak),
+  };
+};
+
+const readStoredDifficultyState = () => {
+  if (typeof readSaveState !== 'function') {
+    return null;
+  }
+
+  try {
+    const saveState = readSaveState();
+    return normalizeDifficultyState(saveState);
+  } catch (error) {
+    console.warn('Unable to read saved difficulty state.', error);
+    return null;
+  }
+};
+
+const determineBattlePreview = (levelsData, playerData, options = {}) => {
+  const scopedPreloadedData =
+    (options && typeof options.preloadedData === 'object'
+      ? options.preloadedData
+      : null) ||
+    (typeof window !== 'undefined' &&
+    typeof window.preloadedData === 'object'
+      ? window.preloadedData
+      : null) ||
+    (typeof globalThis !== 'undefined' &&
+    typeof globalThis.preloadedData === 'object'
+      ? globalThis.preloadedData
+      : null);
+
+  const providedDifficultyState =
+    normalizeDifficultyState(options?.difficultyState) ??
+    normalizeDifficultyState(scopedPreloadedData?.difficultyState) ??
+    readStoredDifficultyState();
   const player = mergePlayerWithProgress(playerData);
   const { levels, mathTypeLabel, mathTypeKey } = deriveMathTypeLevels(
     levelsData,
@@ -2298,15 +2368,15 @@ const determineBattlePreview = (levelsData, playerData) => {
 
   const difficultyValue = (() => {
     const candidates = [
-      preloadedData?.difficultyState?.difficulty,
+      providedDifficultyState?.difficulty,
       player?.progress?.currentLevel,
       activeLevel?.currentLevel,
       1,
     ];
     const numericCandidate = candidates
       .map((value) => {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : null;
+        const parsed = clampDifficultyLevel(value);
+        return parsed === null ? null : parsed;
       })
       .find((value) => value !== null);
     const numeric = Number.isFinite(numericCandidate) ? numericCandidate : 1;
@@ -3499,6 +3569,9 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     typeof landingEntryState?.requiresLevelOneIntro === 'boolean'
       ? landingEntryState.requiresLevelOneIntro
       : resolvedExperienceTotal <= 0;
+  const storedDifficultyState = normalizeDifficultyState(
+    landingEntryState?.difficultyState
+  ) ?? readStoredDifficultyState();
 
   if (requiresLevelOneIntro && landingVisited) {
     clearLandingVisitedFlag();
@@ -3518,6 +3591,7 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     hasIntroProgress: hasIntroProgressFlag,
     requiresLevelOneIntro,
     experienceTotal: resolvedExperienceTotal,
+    difficultyState: storedDifficultyState,
   };
   const imageAssets = new Set([
     '../images/background/background.png',
@@ -3660,7 +3734,11 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
 
     const playerInput = chosenPlayerData;
 
-    const { levels, player, preview } = determineBattlePreview(levelsData, playerInput);
+    const { levels, player, preview } = determineBattlePreview(
+      levelsData,
+      playerInput,
+      { difficultyState: storedDifficultyState }
+    );
 
     const playerExperienceTotal = readPlayerExperienceTotal(player);
 
@@ -3964,6 +4042,10 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
         }
       }
 
+      const resolvedDifficultyState =
+        normalizeDifficultyState(preloadedData?.difficultyState) ??
+        readStoredDifficultyState();
+
       if (!previewData) {
         const mergedPlayerSource = mergePlayerData(
           extractPlayerData(fallbackPlayerData),
@@ -3973,7 +4055,8 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
           levelsData,
           Object.keys(mergedPlayerSource).length
             ? mergedPlayerSource
-            : playerData
+            : playerData,
+          { difficultyState: resolvedDifficultyState, preloadedData }
         );
         levelsData =
           levelsData && typeof levelsData === 'object'
@@ -3987,6 +4070,7 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
           preloadedData.levelsData = levelsData;
           preloadedData.playerData = playerData;
           preloadedData.previewData = previewData;
+          preloadedData.difficultyState = resolvedDifficultyState;
         }
       } else if (!resolvedLevels.length && Array.isArray(levelsData?.levels)) {
         resolvedLevels = levelsData.levels;
@@ -4015,6 +4099,8 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
         preloadedData.forceLevelOneLanding = shouldForceLevelOneLanding;
         preloadedData.requiresLevelOneIntro = requiresLevelOneIntro;
         preloadedData.landingVisited = landingVisited;
+        preloadedData.difficultyState =
+          resolvedDifficultyState ?? preloadedData.difficultyState ?? null;
       }
 
       if (previewData) {
