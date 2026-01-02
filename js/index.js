@@ -655,7 +655,12 @@ const runBattleIntroSequence = async (options = {}) => {
   return true;
 };
 
-const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
+const setupLevelOneIntro = ({
+  heroImage,
+  beginBattle,
+  onBeforeBattleStart,
+  awaitIntroReady,
+} = {}) => {
   const introRoot = document.querySelector('[data-level-one-intro]');
   const eggButton = introRoot?.querySelector('[data-level-one-egg-button]');
   const eggImage = introRoot?.querySelector('[data-level-one-egg-image]');
@@ -677,6 +682,14 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     !battleCard ||
     !battleButton
   ) {
+    if (typeof onBeforeBattleStart === 'function') {
+      try {
+        onBeforeBattleStart();
+      } catch (error) {
+        console.warn('Unable to record landing visit before battle.', error);
+      }
+    }
+
     if (typeof beginBattle === 'function') {
       beginBattle({ showIntroImmediately: true }).catch((error) => {
         console.warn('Level one intro fallback failed.', error);
@@ -835,6 +848,13 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
     }
     hasStartedBattle = true;
     clearEggAutoHatchTimeout();
+    if (typeof onBeforeBattleStart === 'function') {
+      try {
+        onBeforeBattleStart();
+      } catch (error) {
+        console.warn('Unable to record landing visit before battle.', error);
+      }
+    }
     await hideCard(battleCard);
     introRoot.classList.remove('is-active');
     introRoot.setAttribute('aria-hidden', 'true');
@@ -859,6 +879,13 @@ const setupLevelOneIntro = ({ heroImage, beginBattle } = {}) => {
   battleButton.addEventListener('click', handleBattleClick);
 
   (async () => {
+    if (typeof awaitIntroReady === 'function') {
+      try {
+        await awaitIntroReady();
+      } catch (error) {
+        console.warn('Level one intro ready check failed.', error);
+      }
+    }
     introRoot.classList.add('is-active');
     introRoot.setAttribute('aria-hidden', 'false');
     disableEgg();
@@ -3671,8 +3698,19 @@ const applyLandingBodyClasses = (isLevelOneLanding) => {
   landingRoot.classList.toggle('is-standard-landing', !isLevelOne);
 };
 
-const initLandingInteractions = async (preloadedData = {}) => {
-  const landingVisited =
+const initLandingInteractions = async (preloadedData = {}, options = {}) => {
+  const preloaderReadyPromise = options?.preloaderReadyPromise;
+  const awaitPreloaderReady = async () => {
+    if (!preloaderReadyPromise || typeof preloaderReadyPromise.then !== 'function') {
+      return;
+    }
+    try {
+      await preloaderReadyPromise;
+    } catch (error) {
+      console.warn('Preloader did not finish cleanly before intro.', error);
+    }
+  };
+  let landingVisited =
     typeof preloadedData?.landingVisited === 'boolean'
       ? preloadedData.landingVisited
       : hasVisitedLanding();
@@ -3707,6 +3745,13 @@ const initLandingInteractions = async (preloadedData = {}) => {
 
   applyLandingBodyClasses(isLevelOneLanding);
   updateIntroTimingForLanding({ isLevelOneLanding });
+  const markLevelOneLandingVisit = () => {
+    if (landingVisited || !isLevelOneLanding) {
+      return;
+    }
+    markLandingVisited();
+    landingVisited = true;
+  };
 
   const loadBattlePreview = async () => {
     try {
@@ -3898,6 +3943,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
       return;
     }
     isLaunchingBattle = true;
+    markLevelOneLandingVisit();
 
     const buttonToDisable = triggerButton || battleButton;
     if (buttonToDisable) {
@@ -3981,7 +4027,12 @@ const initLandingInteractions = async (preloadedData = {}) => {
   }
 
   if (isLevelOneLanding) {
-    setupLevelOneIntro({ heroImage: levelOneHeroImage, beginBattle });
+    setupLevelOneIntro({
+      heroImage: levelOneHeroImage,
+      beginBattle,
+      onBeforeBattleStart: markLevelOneLandingVisit,
+      awaitIntroReady: awaitPreloaderReady,
+    });
     return;
   }
 
@@ -4033,27 +4084,29 @@ const bootstrapLanding = async () => {
     const deferPreloaderFinish = Boolean(
       mergedLandingData.forceLevelOneLanding || mergedLandingData.requiresLevelOneIntro
     );
+    const preloaderReadyPromise = finishPreloader();
 
     if (!deferPreloaderFinish) {
-      await finishPreloader();
+      await preloaderReadyPromise;
     }
 
     try {
-      await initLandingInteractions(mergedLandingData);
+      await initLandingInteractions(mergedLandingData, { preloaderReadyPromise });
     } catch (error) {
       console.error('Failed to initialize the landing experience; retrying with defaults.', error);
       try {
-        await initLandingInteractions({ ...landingEntryState });
+        await initLandingInteractions({ ...landingEntryState }, { preloaderReadyPromise });
       } catch (fallbackError) {
         console.error('Fallback landing initialization failed.', fallbackError);
       }
     }
 
-    await finishPreloader();
+    await preloaderReadyPromise;
   } catch (error) {
     console.error('Failed to preload landing assets.', error);
-    await finishPreloader();
-    await initLandingInteractions({ ...landingEntryState });
+    const preloaderReadyPromise = finishPreloader();
+    await preloaderReadyPromise;
+    await initLandingInteractions({ ...landingEntryState }, { preloaderReadyPromise });
   }
 };
 
