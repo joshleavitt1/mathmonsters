@@ -1,5 +1,4 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
-const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 const STARTING_LEVEL = 2;
@@ -30,6 +29,12 @@ const HERO_APPEARANCE_BY_LEVEL = [
 
 const DEFAULT_HERO_SPRITE = HERO_APPEARANCE_BY_LEVEL[0].sprite;
 const DEFAULT_HERO_ATTACK_SPRITE = HERO_APPEARANCE_BY_LEVEL[0].attackSprite;
+
+const saveStateUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersSaveState) ||
+  (typeof window !== 'undefined' ? window.mathMonstersSaveState : null);
+
+const { resetSaveState, writeSaveState } = saveStateUtils || {};
 
 const isPlainObject = (value) =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -473,9 +478,24 @@ document.addEventListener('DOMContentLoaded', async () => {
           );
         }
         try {
-          window.localStorage?.removeItem(PROGRESS_STORAGE_KEY);
+          const saveStatePayload = {
+            difficulty: STARTING_LEVEL,
+            correctStreak: 0,
+            incorrectStreak: 0,
+            xpTotal: 0,
+            spriteTier: 1,
+            gems: STARTING_GEMS,
+            lastSeenDifficulty: STARTING_LEVEL,
+            lastSeenSpriteTier: 1,
+          };
+
+          if (typeof resetSaveState === 'function') {
+            resetSaveState(saveStatePayload);
+          } else if (typeof writeSaveState === 'function') {
+            writeSaveState(saveStatePayload);
+          }
         } catch (error) {
-          console.warn('Unable to clear stored battle progress for the new player.', error);
+          console.warn('Unable to reset saved progress for the new player.', error);
         }
         clearStoredPlayerProfile();
         clearGuestSessionFlag();

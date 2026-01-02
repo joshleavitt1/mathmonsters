@@ -1,7 +1,6 @@
 const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 
 const VISITED_VALUE = 'true';
-const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
@@ -179,6 +178,12 @@ const {
 const playerProfileUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
   (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
+
+const saveStateUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersSaveState) ||
+  (typeof window !== 'undefined' ? window.mathMonstersSaveState : null);
+
+const { readSaveState, writeSaveState } = saveStateUtils || {};
 
 const redirectToBattle = () => {
   window.location.href = BATTLE_PAGE_URL;
@@ -532,23 +537,6 @@ const fetchPlayerProfile = async () => {
   } catch (error) {
     console.warn('Failed to fetch remote player profile.', error);
     return null;
-  }
-};
-
-const syncRemoteCurrentLevel = (playerData) => {
-  if (!playerData) {
-    return;
-  }
-
-  const syncFn = playerProfileUtils?.syncCurrentLevelToStorage;
-  if (typeof syncFn !== 'function') {
-    return;
-  }
-
-  try {
-    syncFn(playerData, PROGRESS_STORAGE_KEY);
-  } catch (error) {
-    console.warn('Failed to sync remote current level with storage.', error);
   }
 };
 
@@ -2462,17 +2450,29 @@ const finishPreloader = () => {
 };
 
 const readStoredProgress = () => {
+  if (typeof readSaveState !== 'function') {
+    return null;
+  }
+
   try {
-    const storage = window.localStorage;
-    if (!storage) {
-      return null;
+    const saveState = readSaveState();
+    const experienceMap = normalizeExperienceMap(saveState?.xpTotal ?? {});
+    const totalExperience = readTotalExperience(experienceMap);
+    const spriteTier = Number.isFinite(saveState?.spriteTier)
+      ? Math.max(1, Math.round(saveState.spriteTier))
+      : computeExperienceTier(totalExperience);
+    const difficultyLevel = normalizeCurrentLevel(saveState?.difficulty);
+
+    const progress = {};
+    if (Number.isFinite(difficultyLevel)) {
+      progress.currentLevel = Math.max(1, Math.round(difficultyLevel));
     }
-    const raw = storage.getItem(PROGRESS_STORAGE_KEY);
-    if (!raw) {
-      return null;
+    if (Object.keys(experienceMap).length > 0) {
+      progress.experience = { total: totalExperience };
+      progress.experienceTier = spriteTier;
     }
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : null;
+
+    return Object.keys(progress).length > 0 ? progress : null;
   } catch (error) {
     console.warn('Stored progress unavailable.', error);
     return null;
@@ -2481,9 +2481,28 @@ const readStoredProgress = () => {
 
 const storeProgressAndReload = (progress, triggerElement) => {
   try {
-    const storage = window.localStorage;
-    if (storage) {
-      storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
+    const existingSave =
+      typeof readSaveState === 'function' ? readSaveState() : {};
+    const experienceSource =
+      progress?.experience ?? progress?.progress?.experience ?? null;
+    const experience = normalizeExperienceMap(experienceSource);
+    const experienceTotal = readTotalExperience(experience);
+    const resolvedExperienceTotal =
+      experienceTotal ||
+      (Number.isFinite(existingSave?.xpTotal) ? existingSave.xpTotal : 0);
+    const normalizedLevel = normalizeCurrentLevel(
+      progress?.currentLevel ?? progress?.level
+    );
+
+    if (typeof writeSaveState === 'function') {
+      writeSaveState({
+        xpTotal: resolvedExperienceTotal,
+        spriteTier: computeExperienceTier(resolvedExperienceTotal),
+        difficulty:
+          Number.isFinite(normalizedLevel) && normalizedLevel > 0
+            ? Math.round(normalizedLevel)
+            : existingSave?.difficulty,
+      });
     }
   } catch (error) {
     console.warn('Unable to store progress update.', error);
@@ -3118,10 +3137,6 @@ const preloadLandingAssets = async () => {
       remotePlayerData = null;
     }
 
-    if (remotePlayerData) {
-      syncRemoteCurrentLevel(remotePlayerData);
-    }
-
     const fallbackPlayer = extractPlayerData(fallbackPlayerData);
     const remotePlayer = extractPlayerData(remotePlayerData);
     const storedPlayer = extractPlayerData(storedPlayerProfile);
@@ -3331,10 +3346,6 @@ const initLandingInteractions = async (preloadedData = {}) => {
         } catch (error) {
           console.warn('Unable to load remote player data.', error);
           rawPlayerData = null;
-        }
-
-        if (rawPlayerData) {
-          syncRemoteCurrentLevel(rawPlayerData);
         }
 
         if (!rawPlayerData) {

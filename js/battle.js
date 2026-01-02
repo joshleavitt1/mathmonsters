@@ -1,6 +1,5 @@
 const LANDING_VISITED_KEY = 'mathmonstersVisitedLanding';
 const VISITED_VALUE = 'true';
-const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 
@@ -32,7 +31,6 @@ const REGISTER_PAGE_URL = '../index.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const BATTLES_PER_LEVEL = 4;
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
-const DIFFICULTY_STATE_STORAGE_KEY = 'mathmonstersDifficultyState';
 const GLOBAL_REWARD_MILESTONE = 5;
 const GLOBAL_PROGRESS_REVEAL_DELAY_MS = 1000;
 const EXPERIENCE_PER_BATTLE = 1;
@@ -47,9 +45,9 @@ const DEFAULT_DIFFICULTY_STATE = {
 const progressUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
 
-const playerProfileUtils =
-  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
-  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
+const saveStateUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersSaveState) ||
+  (typeof window !== 'undefined' ? window.mathMonstersSaveState : null);
 
 const questionGenerator =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersQuestionGenerator) ||
@@ -66,6 +64,10 @@ if (!progressUtils) {
   throw new Error('Progress utilities are not available.');
 }
 
+if (!saveStateUtils) {
+  throw new Error('Save state utilities are not available.');
+}
+
 const {
   isPlainObject,
   normalizeExperienceMap,
@@ -76,6 +78,8 @@ const {
   computeExperienceMilestoneProgress,
   computeExperienceProgress,
 } = progressUtils;
+
+const { readSaveState, writeSaveState } = saveStateUtils;
 
 const readVisitedFlag = (storage, label) => {
   if (!storage) {
@@ -152,17 +156,9 @@ const sanitizeDifficultyState = (state) => {
 };
 
 const readDifficultyState = () => {
-  if (typeof sessionStorage === 'undefined') {
-    return sanitizeDifficultyState(null);
-  }
-
   try {
-    const raw = sessionStorage.getItem(DIFFICULTY_STATE_STORAGE_KEY);
-    if (!raw) {
-      return sanitizeDifficultyState(null);
-    }
-    const parsed = JSON.parse(raw);
-    return sanitizeDifficultyState(parsed);
+    const saveState = readSaveState();
+    return sanitizeDifficultyState(saveState);
   } catch (error) {
     console.warn('Unable to read stored difficulty state.', error);
     return sanitizeDifficultyState(null);
@@ -176,15 +172,12 @@ const persistDifficultyState = (state) => {
     window.mathMonstersDifficultyState = sanitized;
   }
 
-  if (typeof sessionStorage === 'undefined') {
-    return sanitized;
-  }
-
   try {
-    sessionStorage.setItem(
-      DIFFICULTY_STATE_STORAGE_KEY,
-      JSON.stringify(sanitized)
-    );
+    writeSaveState({
+      difficulty: sanitized.difficulty,
+      correctStreak: sanitized.correctStreak,
+      incorrectStreak: sanitized.incorrectStreak,
+    });
   } catch (error) {
     console.warn('Unable to write difficulty state.', error);
   }
@@ -1633,6 +1626,16 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const readCurrentGemTotal = () => {
+    try {
+      const saveState = readSaveState();
+      const savedGems = Number(saveState?.gems);
+      if (Number.isFinite(savedGems)) {
+        return Math.max(0, Math.round(savedGems));
+      }
+    } catch (error) {
+      console.warn('Stored progress unavailable.', error);
+    }
+
     const playerGemValue = Number(window.preloadedData?.player?.gems);
     if (Number.isFinite(playerGemValue)) {
       return Math.max(0, Math.round(playerGemValue));
@@ -1644,32 +1647,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (Number.isFinite(progressGemValue)) {
         return Math.max(0, Math.round(progressGemValue));
       }
-    }
-
-    try {
-      const storage = window.localStorage;
-      if (storage) {
-        const raw = storage.getItem(PROGRESS_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') {
-            const storedGemValue = Number(parsed.gems);
-            if (Number.isFinite(storedGemValue)) {
-              return Math.max(0, Math.round(storedGemValue));
-            }
-
-            const nestedProgress = parsed.progress;
-            if (nestedProgress && typeof nestedProgress === 'object') {
-              const nestedGemValue = Number(nestedProgress.gems);
-              if (Number.isFinite(nestedGemValue)) {
-                return Math.max(0, Math.round(nestedGemValue));
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('Stored progress unavailable.', error);
     }
 
     return 0;
@@ -4235,12 +4212,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const previousLevelRaw = getResolvedCurrentDifficulty();
-    const previousLevelValue = Number.isFinite(previousLevelRaw)
-      ? Math.max(1, Math.floor(previousLevelRaw))
-      : null;
-    let leveledUp = false;
-
     const mirroredProgressUpdate = createMirroredProgressUpdate(update);
     const updatePayload = mirroredProgressUpdate
       ? {
@@ -4257,7 +4228,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.preloadedData.progress,
         updatePayload
       );
-      window.preloadedData.progress = mergedProgress;
+        window.preloadedData.progress = mergedProgress;
 
       const mergedLevel = Number(
         mergedProgress?.currentLevel ??
@@ -4265,12 +4236,6 @@ document.addEventListener('DOMContentLoaded', () => {
       );
       if (Number.isFinite(mergedLevel)) {
         const normalizedMergedLevel = Math.max(1, Math.floor(mergedLevel));
-        if (
-          Number.isFinite(previousLevelValue) &&
-          normalizedMergedLevel > previousLevelValue
-        ) {
-          leveledUp = true;
-        }
         currentDifficulty = clampDifficulty(normalizedMergedLevel);
         difficultyState = persistDifficultyState({
           ...difficultyState,
@@ -4318,46 +4283,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const storage = window.localStorage;
-      if (!storage) {
-        return;
-      }
-      const raw = storage.getItem(PROGRESS_STORAGE_KEY);
-      let storedProgress = {};
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') {
-            storedProgress = parsed;
-          }
-        } catch (error) {
-          storedProgress = {};
+      const savePayload = {
+        xpTotal: totalExperience,
+        spriteTier: experienceTier,
+        difficulty: difficultyState?.difficulty,
+        correctStreak: difficultyState?.correctStreak,
+        incorrectStreak: difficultyState?.incorrectStreak,
+      };
+
+      if (Object.prototype.hasOwnProperty.call(updatePayload, 'gems')) {
+        const gemValue = Number(updatePayload.gems);
+        if (Number.isFinite(gemValue)) {
+          savePayload.gems = Math.max(0, Math.round(gemValue));
+        }
+      } else {
+        const currentGems = Number(readCurrentGemTotal());
+        if (Number.isFinite(currentGems)) {
+          savePayload.gems = Math.max(0, Math.round(currentGems));
         }
       }
-      const mergedProgress = applyProgressUpdate(storedProgress, updatePayload);
-      storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(mergedProgress));
+
+      writeSaveState(savePayload);
     } catch (error) {
       console.warn('Unable to save progress.', error);
-    }
-
-    if (leveledUp) {
-      const syncFn = playerProfileUtils?.syncPlayerDataWithSupabase;
-      if (typeof syncFn === 'function') {
-        try {
-          const syncResult = syncFn(
-            window.preloadedData?.player ?? null,
-            window.preloadedData?.progress ?? null
-          );
-
-          if (syncResult && typeof syncResult.then === 'function') {
-            syncResult.catch((error) => {
-              console.warn('Failed to sync level progress with Supabase.', error);
-            });
-          }
-        } catch (error) {
-          console.warn('Failed to sync level progress with Supabase.', error);
-        }
-      }
     }
   }
 
