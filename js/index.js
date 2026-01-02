@@ -3572,6 +3572,7 @@ const initLandingInteractions = async (preloadedData = {}) => {
   setupDevSignOut();
   setupDevResetTool();
 
+  applyLandingBodyClasses(isLevelOneLanding);
   updateIntroTimingForLanding({ isLevelOneLanding });
 
   const loadBattlePreview = async () => {
