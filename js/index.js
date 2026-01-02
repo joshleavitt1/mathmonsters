@@ -3127,6 +3127,21 @@ const markLandingVisited = () => {
   setVisitedFlag(localStorage, 'Local');
 };
 
+const hasIntroProgress = () => {
+  if (typeof readSaveState !== 'function') {
+    return false;
+  }
+
+  try {
+    const saveState = readSaveState();
+    const xpTotal = Number(saveState?.xpTotal);
+    return Number.isFinite(xpTotal) && xpTotal > 0;
+  } catch (error) {
+    console.warn('Unable to read intro progress.', error);
+    return false;
+  }
+};
+
 const hasVisitedLanding = () => {
   if (typeof window === 'undefined') {
     return true;
@@ -3197,7 +3212,8 @@ const resetLandingSaveState = () => {
 };
 
 const resolveLandingEntryState = async () => {
-  const landingVisited = hasVisitedLanding();
+  let landingVisited = hasVisitedLanding();
+  const hasIntroProgressFlag = hasIntroProgress();
   const guestSessionState = readGuestSessionState();
   const hasGuestSession =
     isGuestModeActive(guestSessionState) ||
@@ -3213,11 +3229,16 @@ const resolveLandingEntryState = async () => {
 
   const hasUserSession = hasSupabaseSession || hasGuestSession;
 
+  if (!landingVisited && hasIntroProgressFlag) {
+    markLandingVisited();
+    landingVisited = true;
+  }
+
   if (!landingVisited && !hasUserSession) {
     resetLandingSaveState();
   }
 
-  return { landingVisited, hasUserSession };
+  return { landingVisited, hasUserSession, hasIntroProgress: hasIntroProgressFlag };
 };
 
 const preloadLandingAssets = async (landingEntryState = {}) => {
@@ -3225,7 +3246,8 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     typeof landingEntryState?.landingVisited === 'boolean'
       ? landingEntryState.landingVisited
       : hasVisitedLanding();
-  const forceLevelOneLanding = !landingVisited;
+  const hasIntroProgressFlag = Boolean(landingEntryState?.hasIntroProgress);
+  const forceLevelOneLanding = !landingVisited && !hasIntroProgressFlag;
   const hasUserSession = Boolean(landingEntryState?.hasUserSession);
 
   const results = {
@@ -3235,6 +3257,7 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     landingVisited,
     forceLevelOneLanding,
     hasUserSession,
+    hasIntroProgress: hasIntroProgressFlag,
   };
   const imageAssets = new Set([
     '../images/background/background.png',
