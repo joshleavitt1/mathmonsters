@@ -28,7 +28,12 @@
 
 html {
   height: 100%;
-  background-color: #001b41;
+  background-color: #0026ac;
+  background-image: linear-gradient(
+    180deg,
+    #2675ff 0%,
+    #0026ac 100%
+  );
 }
 
 body {
@@ -37,7 +42,12 @@ body {
   min-height: 100dvh;
   font-family: var(--font-family-rounded);
   color: #272b34;
-  background-color: #001b41;
+  background-color: #0026ac;
+  background-image: linear-gradient(
+    180deg,
+    #2675ff 0%,
+    #0026ac 100%
+  );
   padding: 0;
   box-sizing: border-box;
 }
