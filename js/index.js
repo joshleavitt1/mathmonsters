@@ -3533,16 +3533,16 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
   return results;
 };
 
-const applyLandingBodyClasses = (isLevelOneLanding) => {
-  const landingRoot = typeof document !== 'undefined' ? document.body : null;
-
+const updateLandingModeClasses = (isLevelOneLanding) => {
+  const landingRoot = document.body;
   if (!landingRoot) {
     return;
   }
 
-  const isLevelOne = Boolean(isLevelOneLanding);
-  landingRoot.classList.toggle('is-level-one-landing', isLevelOne);
-  landingRoot.classList.toggle('is-standard-landing', !isLevelOne);
+  const shouldShowLevelOneLanding = Boolean(isLevelOneLanding);
+
+  landingRoot.classList.toggle('is-level-one-landing', shouldShowLevelOneLanding);
+  landingRoot.classList.toggle('is-standard-landing', !shouldShowLevelOneLanding);
 };
 
 const initLandingInteractions = async (preloadedData = {}) => {
@@ -3564,6 +3564,9 @@ const initLandingInteractions = async (preloadedData = {}) => {
   const heroInfoElement = document.querySelector('.landing__hero-info');
   let isLevelOneLanding = forceLevelOneLanding || detectLevelOneLandingState();
   let fallbackPlayerData = preloadedData?.fallbackPlayerData ?? null;
+  const applyLandingModeClasses = () => updateLandingModeClasses(isLevelOneLanding);
+
+  applyLandingModeClasses();
 
   setupSettingsLogout();
   setupDevSignOut();
@@ -3679,19 +3682,23 @@ const initLandingInteractions = async (preloadedData = {}) => {
         applyBattlePreview(previewData, resolvedLevels);
         isLevelOneLanding = detectLevelOneLandingState();
         battleButton = getActiveBattleButton();
-        applyLandingBodyClasses(isLevelOneLanding);
+        applyLandingModeClasses();
       }
 
       persistPlayerProfile(playerData);
     } catch (error) {
       console.error('Failed to load battle preview', error);
+      applyLandingModeClasses();
     }
   };
 
-  await loadBattlePreview();
-  isLevelOneLanding = detectLevelOneLandingState();
-  battleButton = getActiveBattleButton();
-  applyLandingBodyClasses(isLevelOneLanding);
+  try {
+    await loadBattlePreview();
+  } finally {
+    isLevelOneLanding = detectLevelOneLandingState();
+    applyLandingModeClasses();
+    battleButton = getActiveBattleButton();
+  }
 
   if (isLevelOneLanding) {
     if (actionsElement) {
