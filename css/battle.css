@@ -1037,7 +1037,8 @@ body.is-reward-active .reward-overlay {
 .battle-complete-card__meter-title,
 .battle-complete-card__meter-count {
   margin: 0;
-  color: #272b34;
+  color: #272b3498;
+  font-size: 16px;
 }
 
 .battle-complete-card__meter-count {
