@@ -109,6 +109,34 @@
     }
   };
 
+  const resolveHostPrototype = () => {
+    if (globalScope && typeof globalScope === 'object') {
+      const candidate =
+        globalScope.localStorage && typeof globalScope.localStorage === 'object'
+          ? Object.getPrototypeOf(globalScope.localStorage)
+          : Object.getPrototypeOf(globalScope);
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    return Object.prototype;
+  };
+
+  const alignPrototype = (value, prototypeHint = resolveHostPrototype()) => {
+    if (!isPlainObject(value)) {
+      return value;
+    }
+
+    const normalized = Object.create(prototypeHint || Object.prototype);
+
+    Object.entries(value).forEach(([key, entry]) => {
+      normalized[key] = alignPrototype(entry, prototypeHint);
+    });
+
+    return normalized;
+  };
+
   const sanitizeAccountEntry = (entry) => {
     const email = normalizeAccountEmail(entry?.email);
     if (!email) {
@@ -252,18 +280,53 @@
     writeCachedProfile(null);
   };
 
+  const mergeProgressPayload = (baseProgress, overrideProgress) => {
+    const base =
+      clonePlainObject(baseProgress) ??
+      (isPlainObject(baseProgress) ? { ...baseProgress } : {});
+    const override =
+      clonePlainObject(overrideProgress) ??
+      (isPlainObject(overrideProgress) ? { ...overrideProgress } : null);
+
+    if (!override) {
+      return Object.keys(base).length > 0 ? base : null;
+    }
+
+    const mergeIntoTarget = (target, source) => {
+      Object.entries(source).forEach(([key, value]) => {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          const existing =
+            target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])
+              ? target[key]
+              : {};
+          target[key] = mergeIntoTarget({ ...existing }, value);
+          return;
+        }
+
+        target[key] = value;
+      });
+
+      return target;
+    };
+
+    const merged = mergeIntoTarget({ ...base }, override);
+    return Object.keys(merged).length > 0 ? merged : null;
+  };
+
   const buildPlayerDataPayload = (playerData, progressData) => {
     const playerClone = clonePlainObject(playerData);
-    const progressClone = clonePlainObject(progressData);
+    const payload = playerClone ?? {};
 
-    if (!playerClone && !progressClone) {
+    const mergedProgress = mergeProgressPayload(payload.progress, progressData);
+
+    if (!playerClone && !mergedProgress) {
       return null;
     }
 
-    const payload = playerClone ?? {};
-
-    if (progressClone) {
-      payload.progress = progressClone;
+    if (mergedProgress) {
+      payload.progress = mergedProgress;
+    } else if (payload.progress) {
+      delete payload.progress;
     }
 
     return payload;
@@ -273,7 +336,7 @@
     const cached = readCachedProfile();
     if (cached) {
       const cloned = clonePlainObject(cached);
-      return cloned || cached;
+      return alignPrototype(cloned || cached);
     }
 
     const activeAccount = getActiveAccount();
@@ -282,7 +345,9 @@
     }
 
     const account = findAccountByEmail(readStoredAccounts(), activeAccount.email);
-    const playerData = clonePlainObject(account?.playerData);
+    const playerData = alignPrototype(
+      clonePlainObject(account?.playerData) || account?.playerData
+    );
     if (playerData) {
       writeCachedProfile(playerData);
       return playerData;
