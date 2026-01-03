@@ -344,8 +344,11 @@ body:not(.is-preloading) main.landing {
 
 .landing__actions {
   margin-top: auto;
-  padding-top: 20px;
-  padding-bottom: 32px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 0;
 }
 
 .landing__battle-button {
@@ -850,19 +853,18 @@ body.home-page {
 
 .home__content {
   box-sizing: border-box;
-  width: 420px;
-  /* ✅ key changes */
+  width: min(420px, 100%);
   height: auto;
-  min-height: 0;
+  min-height: calc(100dvh - (var(--page-pad, 0px) * 2));
   flex: 1 1 auto;
-
-  /* keep your spacing, but don’t use margin-top that adds extra height */
   margin: 0;
-  padding-top: 32px;
-
+  padding: 32px 12px;
+  padding-top: calc(32px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
+  gap: 24px;
 }
 
 .home__identity {
@@ -872,6 +874,8 @@ body.home-page {
   justify-content: center;
   gap: 24px;
   text-align: center;
+  flex: 0 0 auto;
+  width: 100%;
 }
 
 .home__hero-name {
@@ -966,18 +970,22 @@ body.home-page {
 .home__hero {
   flex: 1 1 auto;
   min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .home__hero-sprite {
   display: block;
   width: min(300px, 80vw);
   height: auto;
-  max-height: min(300px, 45vh);
+  max-height: min(340px, 55vh);
   object-fit: contain;
   margin: 0;
   padding: 0;
   margin: 0 auto;
-  transform: translateY(-22px);
+  transform: translate3d(0, 0, 0);
   animation: home-hero-swim 4.5s ease-in-out infinite;
   will-change: transform;
   pointer-events: none;
@@ -1006,15 +1014,15 @@ body.home-page {
 
 @keyframes home-hero-swim {
   0% {
-    transform: translate3d(0, -22px, 0);
-  }
-
-  50% {
     transform: translate3d(0, -10px, 0);
   }
 
+  50% {
+    transform: translate3d(0, 10px, 0);
+  }
+
   100% {
-    transform: translate3d(0, -22px, 0);
+    transform: translate3d(0, -10px, 0);
   }
 }
 
