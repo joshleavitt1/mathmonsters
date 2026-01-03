@@ -627,6 +627,7 @@ body:not(.is-level-one-landing) .level-one-intro {
   font-size: var(--text-size-medium);
   line-height: 1.4;
   text-align: left;
+  word-spacing: -2px;
 }
 
 @keyframes level-one-egg-pop {
