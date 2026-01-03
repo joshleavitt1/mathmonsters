@@ -3542,7 +3542,7 @@ const resolveLandingEntryState = async () => {
     landingVisited = true;
   }
 
-  if (!landingVisited && !hasUserSession) {
+  if (!landingVisited && !hasUserSession && !hasIntroProgressFlag) {
     resetLandingSaveState();
   }
 
