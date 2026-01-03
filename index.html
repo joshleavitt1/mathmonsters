@@ -87,8 +87,10 @@
   <div
     class="preloader app-safe-area"
     data-preloader
+    data-paused="true"
     role="status"
     aria-live="polite"
+    aria-hidden="true"
   >
     <img
       class="preloader__logo"
@@ -99,6 +101,37 @@
     />
     <p class="preloader__text text-large text-white">Loading</p>
     <div class="preloader__spinner" aria-hidden="true"></div>
+  </div>
+  <div
+    class="scenario-launcher app-safe-area"
+    data-scenario-launcher
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="scenario-launcher-title"
+  >
+    <div class="scenario-launcher__card">
+      <p class="scenario-launcher__eyebrow">Test scenarios</p>
+      <h1 class="scenario-launcher__title text-white" id="scenario-launcher-title">
+        Choose a starting state
+      </h1>
+      <p class="scenario-launcher__description text-white-50">
+        Pick the profile to load before entering MathMonsters.
+      </p>
+      <div class="scenario-launcher__buttons">
+        <button type="button" data-scenario-option="skip">
+          Skip (Keeps local)
+        </button>
+        <button type="button" data-scenario-option="new-user">
+          New User (Overrides local)
+        </button>
+        <button type="button" data-scenario-option="level-1-xp-3">
+          User Level 1 XP 3 (Overrides local)
+        </button>
+        <button type="button" data-scenario-option="level-2-xp-5">
+          User Level 2 XP 5 (Overrides local)
+        </button>
+      </div>
+    </div>
   </div>
   <main class="landing">
     <div class="bubbles" aria-hidden="true">
