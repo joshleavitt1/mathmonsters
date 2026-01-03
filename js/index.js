@@ -3351,6 +3351,7 @@ const applyScenarioSaveState = (scenarioId) => {
 
 const setupScenarioLauncher = () => {
   const launcher = document.querySelector('[data-scenario-launcher]');
+  const closeButton = launcher?.querySelector('[data-scenario-close]');
   const buttons = launcher
     ? Array.from(launcher.querySelectorAll('[data-scenario-option]'))
     : [];
@@ -3360,7 +3361,7 @@ const setupScenarioLauncher = () => {
     return Promise.resolve({ scenarioId: 'skip' });
   }
 
-  setPreloaderPaused(true);
+  setPreloaderPaused(false);
   launcher.removeAttribute('hidden');
   launcher.setAttribute('aria-hidden', 'false');
 
@@ -3388,6 +3389,9 @@ const setupScenarioLauncher = () => {
       }
 
       buttons.forEach((button) => setInteractiveDisabled(button, true));
+      if (closeButton) {
+        setInteractiveDisabled(closeButton, true);
+      }
       let appliedState = { scenarioId };
       try {
         appliedState = applyScenarioSaveState(scenarioId);
@@ -3406,6 +3410,11 @@ const setupScenarioLauncher = () => {
       setInteractiveDisabled(button, false);
       button.addEventListener('click', (event) => finishSelection(scenarioId, event));
     });
+
+    if (closeButton) {
+      setInteractiveDisabled(closeButton, false);
+      closeButton.addEventListener('click', (event) => finishSelection('skip', event));
+    }
   });
 };
 
