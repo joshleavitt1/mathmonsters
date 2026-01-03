@@ -29,49 +29,12 @@ body.home-page {
   align-items: stretch;
 }
 
-.home__gem-box {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(4px);
-  color: #ffffff;
-  font-weight: 400;
-  align-self: center;
-}
-
-.home__gem-icon {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-
-.home__gem-text {
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font-size: 20px;
-}
-
-.home__gem-value {
-  font-size: 20px;
-  font-weight: 400;
-  display: inline-block;
-}
-
-.home__gem-label {
-  font-size: 20px;
-}
-
 .home__identity {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 24px;
   padding-top: 24px;
   text-align: center;
 }
@@ -87,10 +50,10 @@ body.home-page {
 
 .home__hero-level {
   margin: 0;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  background-color: #ffffff05;
   padding: 6px 14px;
   border-radius: 999px;
   display: inline-block;
@@ -186,53 +149,6 @@ body.home-page {
 
   to {
     transform: scaleX(1);
-  }
-}
-
-.home__gem-box--pulse {
-  animation: home-gem-box-pulse 0.9s ease-out;
-}
-
-.home__gem-value--pulse {
-  animation: home-gem-value-flare 0.9s ease-out;
-}
-
-@keyframes home-gem-box-pulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(43, 245, 66, 0.4);
-  }
-
-  35% {
-    transform: scale(1.08);
-    box-shadow: 0 0 22px rgba(43, 245, 66, 0.6);
-  }
-
-  60% {
-    transform: scale(0.97);
-    box-shadow: 0 0 14px rgba(43, 245, 66, 0.35);
-  }
-
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(43, 245, 66, 0.2);
-  }
-}
-
-@keyframes home-gem-value-flare {
-  0% {
-    transform: scale(1);
-    text-shadow: none;
-  }
-
-  40% {
-    transform: scale(1.35);
-    text-shadow: 0 0 18px rgba(255, 255, 255, 0.75);
-  }
-
-  100% {
-    transform: scale(1);
-    text-shadow: none;
   }
 }
 
