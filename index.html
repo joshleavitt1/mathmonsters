@@ -108,8 +108,18 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="scenario-launcher-title"
+    aria-hidden="true"
+    hidden
   >
     <div class="scenario-launcher__card">
+      <button
+        type="button"
+        class="scenario-launcher__close"
+        data-scenario-close
+        aria-label="Close test scenarios"
+      >
+        <span aria-hidden="true">&times;</span>
+      </button>
       <p class="scenario-launcher__eyebrow">Test scenarios</p>
       <h1 class="scenario-launcher__title text-white" id="scenario-launcher-title">
         Choose a starting state

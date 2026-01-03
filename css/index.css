@@ -1028,11 +1028,12 @@ body.is-battle-transition .bubbles {
   z-index: 20;
   background: radial-gradient(
       circle at 20% 20%,
-      rgba(0, 191, 255, 0.2),
+      rgba(0, 191, 255, 0.18),
       transparent 35%
     ),
-    radial-gradient(circle at 80% 10%, rgba(0, 106, 255, 0.18), transparent 35%),
-    linear-gradient(180deg, rgba(0, 38, 172, 0.9), rgba(0, 27, 65, 0.95));
+    radial-gradient(circle at 80% 10%, rgba(0, 106, 255, 0.15), transparent 35%),
+    rgba(0, 12, 35, 0.7);
+  backdrop-filter: blur(8px);
 }
 
 .scenario-launcher[hidden] {
@@ -1040,6 +1041,7 @@ body.is-battle-transition .bubbles {
 }
 
 .scenario-launcher__card {
+  position: relative;
   width: min(560px, 100%);
   margin: auto;
   padding: 24px;
@@ -1080,6 +1082,31 @@ body.is-battle-transition .bubbles {
 
 .scenario-launcher__buttons button {
   width: 100%;
+}
+
+.scenario-launcher__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.scenario-launcher__close:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
+}
+
+.scenario-launcher__close:active {
+  transform: scale(0.98);
 }
 
 /* ------------------------------------------------------------------------- */
