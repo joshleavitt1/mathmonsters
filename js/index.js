@@ -4280,7 +4280,7 @@ const bootstrapLanding = async () => {
 
   try {
     const preloadedData = await preloadLandingAssets(landingEntryState);
-    const mergedLandingData = { ...preloadedData, ...landingEntryState };
+    const mergedLandingData = { ...landingEntryState, ...preloadedData };
     const deferPreloaderFinish = Boolean(
       mergedLandingData.forceLevelOneLanding || mergedLandingData.requiresLevelOneIntro
     );
