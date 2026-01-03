@@ -272,20 +272,9 @@
     >
       <section class="card card--home card--pop battle-complete-card">
         <h2 id="battle-complete-title" class="battle-complete-card__title battle-title">
-          Monster Defeated!
+          Great Job!
         </h2>
         <div class="battle-complete-card__sprite-surface" data-battle-complete-sprite-surface>
-          <div class="battle-complete-card__sprite-frame">
-            <img
-              class="monster-image battle-complete-card__monster"
-              src="../images/complete/chest.png"
-              alt="Treasure chest reward"
-              width="120"
-              height="120"
-              data-static-sprite="true"
-              data-static-alt="Treasure chest reward"
-            />
-          </div>
           <div class="battle-complete-card__reward-group">
             <p
               class="battle-complete-card__reward-heading text-small text-dark"
@@ -322,7 +311,26 @@
             </div>
           </div>
         </div>
-        <button type="button" class="btn-primary next-mission-btn" data-action="next">Return Home</button>
+        <div class="battle-complete-card__meter">
+          <div class="battle-complete-card__meter-header">
+            <p class="battle-complete-card__meter-title text-small text-dark">XP Progress</p>
+            <p class="battle-complete-card__meter-count text-small text-dark" data-level-progress-count>
+              0/0
+            </p>
+          </div>
+          <div
+            class="progress meter__progress battle-complete-card__meter-progress"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="0"
+            aria-valuenow="0"
+            aria-label="XP progress toward next level"
+            aria-valuetext="0 of 0 experience"
+          >
+            <span class="progress__fill" aria-hidden="true"></span>
+          </div>
+        </div>
+        <button type="button" class="btn-primary next-mission-btn" data-action="next">Back Home</button>
       </section>
     </div>
     <div class="reward-overlay" data-reward-overlay aria-hidden="true">

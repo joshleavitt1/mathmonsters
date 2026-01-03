@@ -253,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelProgressMeter = completeMessage?.querySelector(
     '.battle-complete-card__meter .meter__progress'
   );
+  const levelProgressText = completeMessage?.querySelector('[data-level-progress-count]');
   const levelProgressFill = levelProgressMeter?.querySelector('.progress__fill');
   const rewardOverlay = document.querySelector('[data-reward-overlay]');
   const rewardSprite = rewardOverlay?.querySelector('[data-reward-sprite]');
@@ -885,14 +886,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (completeMonsterImg) {
     completeMonsterImg.src = COMPLETE_MONSTER_REWARD_SRC_RESOLVED;
-    completeMonsterImg.alt = COMPLETE_MONSTER_REWARD_ALT;
+    completeMonsterImg.alt = '';
 
     if (completeMonsterImg.dataset) {
       completeMonsterImg.dataset.staticSprite = 'true';
-      completeMonsterImg.dataset.staticAlt = COMPLETE_MONSTER_REWARD_ALT;
+      completeMonsterImg.dataset.staticAlt = '';
     } else {
       completeMonsterImg.setAttribute('data-static-sprite', 'true');
-      completeMonsterImg.setAttribute('data-static-alt', COMPLETE_MONSTER_REWARD_ALT);
+      completeMonsterImg.setAttribute('data-static-alt', '');
     }
   }
 
@@ -3092,6 +3093,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const clampedRatio = Math.max(0, Math.min(1, Number(progress.ratio) || 0));
     const targetWidth = `${clampedRatio * 100}%`;
+    const progressText = `${progress.earnedDisplay}/${progress.totalDisplay}`;
 
     if (levelProgressMeter) {
       levelProgressMeter.setAttribute('aria-valuemin', '0');
@@ -3101,6 +3103,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'aria-valuetext',
         `${progress.text} experience`
       );
+    }
+    if (levelProgressText) {
+      levelProgressText.textContent = progressText;
     }
 
     const requestProgressFrame =
@@ -4647,7 +4652,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (completeMonsterImg) {
       completeMonsterImg.hidden = true;
       completeMonsterImg.setAttribute('aria-hidden', 'true');
-      completeMonsterImg.alt = COMPLETE_MONSTER_REWARD_ALT;
+      completeMonsterImg.alt = '';
     }
 
     const initialQuestions = generateQuestionSetForDifficulty(
@@ -5486,26 +5491,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (spriteSurface) {
       if (win) {
-        spriteSurface.hidden = false;
         spriteSurface.classList.remove(SPRITE_SURFACE_HIDDEN_CLASS);
-        spriteSurface.setAttribute('aria-hidden', 'false');
       } else {
-        spriteSurface.hidden = true;
         spriteSurface.classList.add(SPRITE_SURFACE_HIDDEN_CLASS);
-        spriteSurface.setAttribute('aria-hidden', 'true');
       }
+      setElementVisibility(spriteSurface, win);
     }
 
     if (completeMonsterImg) {
-      if (win) {
-        completeMonsterImg.hidden = false;
-        completeMonsterImg.setAttribute('aria-hidden', 'false');
-      } else {
-        completeMonsterImg.hidden = true;
-        completeMonsterImg.setAttribute('aria-hidden', 'true');
-      }
+      completeMonsterImg.hidden = true;
+      completeMonsterImg.setAttribute('aria-hidden', 'true');
       completeMonsterImg.src = COMPLETE_MONSTER_REWARD_SRC_RESOLVED;
-      completeMonsterImg.alt = COMPLETE_MONSTER_REWARD_ALT;
+      completeMonsterImg.alt = '';
     }
 
     const goalsAchieved = win;
@@ -5515,7 +5512,7 @@ document.addEventListener('DOMContentLoaded', () => {
     awardExperiencePoints({ scheduleProgressUpdate: false });
 
     if (win) {
-      setBattleCompleteTitleLines('Monster Defeated!');
+      setBattleCompleteTitleLines('Great Job!');
     } else {
       setBattleCompleteTitleLines('Keep Practicing!');
       latestGlobalRewardDisplay = null;
@@ -5713,11 +5710,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     resetMonsterDefeatAnimation();
     resetRewardOverlay();
-    setBattleCompleteTitleLines('Monster Defeated!');
+    setBattleCompleteTitleLines('Great Job!');
     if (spriteSurface) {
       spriteSurface.hidden = false;
       spriteSurface.classList.remove(SPRITE_SURFACE_HIDDEN_CLASS);
-      spriteSurface.setAttribute('aria-hidden', 'false');
+      spriteSurface.removeAttribute('aria-hidden');
     }
     if (monsterImg) {
       monsterImg.hidden = true;
@@ -5728,7 +5725,7 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMonsterImg.hidden = true;
       completeMonsterImg.setAttribute('aria-hidden', 'true');
       completeMonsterImg.src = COMPLETE_MONSTER_REWARD_SRC_RESOLVED;
-      completeMonsterImg.alt = COMPLETE_MONSTER_REWARD_ALT;
+      completeMonsterImg.alt = '';
     }
     hideGlobalProgressDisplay();
     resetGlobalProgressText();

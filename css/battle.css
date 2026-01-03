@@ -1016,6 +1016,42 @@ body.is-reward-active .reward-overlay {
   margin: 0;
 }
 
+.battle-complete-card__meter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: #f4f6fa;
+  box-sizing: border-box;
+}
+
+.battle-complete-card__meter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.battle-complete-card__meter-title,
+.battle-complete-card__meter-count {
+  margin: 0;
+  color: #272b34;
+}
+
+.battle-complete-card__meter-count {
+  font-weight: 600;
+}
+
+.battle-complete-card__meter-progress {
+  height: 14px;
+}
+
+.battle-complete-card__meter-progress .progress__fill {
+  height: 100%;
+}
+
 .battle-complete-card__title {
   margin: 0;
   text-align: center;
@@ -1078,20 +1114,4 @@ body.is-reward-active .reward-overlay {
 
 .battle-complete-card__reward-progress--dim {
   opacity: 0.5;
-}
-
-.battle-complete-card__sprite-frame {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.battle-complete-card .monster-image {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  transition: none;
 }
