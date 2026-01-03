@@ -4278,16 +4278,33 @@ const bootstrapLanding = async () => {
     landingEntryState = {};
   }
 
+  let preloaderReadyResolve;
+  let preloaderReadyReject;
+  const preloaderReadyPromise = new Promise((resolve, reject) => {
+    preloaderReadyResolve = resolve;
+    preloaderReadyReject = reject;
+  });
+  let preloaderFinishPromise = null;
+  const ensurePreloaderFinished = () => {
+    if (!preloaderFinishPromise) {
+      preloaderFinishPromise = finishPreloader();
+      preloaderFinishPromise.then(preloaderReadyResolve).catch((error) => {
+        console.warn('Preloader did not finish cleanly.', error);
+        preloaderReadyReject(error);
+      });
+    }
+    return preloaderFinishPromise;
+  };
+
   try {
     const preloadedData = await preloadLandingAssets(landingEntryState);
     const mergedLandingData = { ...landingEntryState, ...preloadedData };
     const deferPreloaderFinish = Boolean(
       mergedLandingData.forceLevelOneLanding || mergedLandingData.requiresLevelOneIntro
     );
-    const preloaderReadyPromise = finishPreloader();
 
-    if (!deferPreloaderFinish) {
-      await preloaderReadyPromise;
+    if (deferPreloaderFinish) {
+      ensurePreloaderFinished();
     }
 
     try {
@@ -4301,12 +4318,16 @@ const bootstrapLanding = async () => {
       }
     }
 
-    await preloaderReadyPromise;
+    await ensurePreloaderFinished();
   } catch (error) {
     console.error('Failed to preload landing assets.', error);
-    const preloaderReadyPromise = finishPreloader();
-    await preloaderReadyPromise;
-    await initLandingInteractions({ ...landingEntryState }, { preloaderReadyPromise });
+    try {
+      await initLandingInteractions({ ...landingEntryState }, { preloaderReadyPromise });
+    } catch (fallbackError) {
+      console.error('Fallback landing initialization failed.', fallbackError);
+    } finally {
+      await ensurePreloaderFinished();
+    }
   }
 };
 
