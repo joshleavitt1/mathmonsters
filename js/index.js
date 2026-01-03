@@ -511,15 +511,21 @@ const setupDevSignOut = () => {
   });
 };
 
+const isRegistrationFlowPaused = () => {
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.mathMonstersRegistrationPaused === 'boolean'
+  ) {
+    return Boolean(window.mathMonstersRegistrationPaused);
+  }
+
+  return false;
+};
+
 const ensureAuthenticated = async () => {
-  const isRegistrationFlowPaused = true;
+  const registrationFlowPaused = isRegistrationFlowPaused();
 
   const supabaseSession = await readAuthSession();
-
-  if (isRegistrationFlowPaused) {
-    console.info('Registration flow is paused; allowing access without auth.');
-    return true;
-  }
 
   let guestSessionState = readGuestSessionState();
 
@@ -532,12 +538,21 @@ const ensureAuthenticated = async () => {
     guestSessionState = GUEST_SESSION_ACTIVE_VALUE;
   }
 
-  if (isGuestModeActive(guestSessionState)) {
+  const isGuestSessionActive = isGuestModeActive(guestSessionState);
+
+  if (supabaseSession) {
+    clearGuestMode();
+  }
+
+  if (registrationFlowPaused && (isGuestSessionActive || supabaseSession)) {
+    return true;
+  }
+
+  if (isGuestSessionActive) {
     return true;
   }
 
   if (supabaseSession) {
-    clearGuestMode();
     return true;
   }
 
@@ -4000,17 +4015,115 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
   };
 
   const loadBattlePreview = async () => {
+    const storedProgress = readStoredProgress();
+    let storedSaveState = null;
     try {
-      let levelsData = preloadedData?.levelsData ?? null;
-      let playerData = preloadedData?.playerData ?? null;
-      if (!playerData) {
-        playerData = readStoredPlayerProfile();
-      }
-      let previewData = preloadedData?.previewData ?? null;
-      let resolvedLevels = Array.isArray(preloadedData?.levelsData?.levels)
-        ? preloadedData.levelsData.levels
-        : [];
+      storedSaveState =
+        typeof readSaveState === 'function' ? readSaveState() : null;
+    } catch (error) {
+      console.warn('Unable to read save state for preview fallback.', error);
+      storedSaveState = null;
+    }
 
+    let levelsData = preloadedData?.levelsData ?? null;
+    let playerData = preloadedData?.playerData ?? null;
+    if (!playerData) {
+      playerData = readStoredPlayerProfile();
+    }
+    let previewData = preloadedData?.previewData ?? null;
+    let resolvedLevels = Array.isArray(preloadedData?.levelsData?.levels)
+      ? preloadedData.levelsData.levels
+      : [];
+
+    const resolveStoredHeroSprite = (experienceTier) => {
+      const normalizedTier = Number.isFinite(experienceTier)
+        ? Math.max(1, Math.round(experienceTier))
+        : null;
+      const tierSprite =
+        normalizedTier !== null
+          ? `images/hero/shellfin_evolution_${Math.min(normalizedTier, 4)}.png`
+          : null;
+      const heroSpriteCandidates = [
+        sanitizeAssetPath(playerData?.hero?.sprite) || playerData?.hero?.sprite,
+        sanitizeAssetPath(fallbackPlayerData?.hero?.sprite) ||
+          fallbackPlayerData?.hero?.sprite,
+        typeof storedSaveState?.hero?.sprite === 'string'
+          ? storedSaveState.hero.sprite
+          : null,
+        tierSprite,
+        getActiveHeroElement()?.getAttribute('src'),
+      ];
+
+      return heroSpriteCandidates.find(
+        (candidate) => typeof candidate === 'string' && candidate.trim()
+      );
+    };
+
+    const buildStoredPreviewFallback = (experienceTotalOverride = null) => {
+      const storedExperienceTotal =
+        experienceTotalOverride ?? resolveStoredExperienceTotal();
+      const normalizedExperienceTotal = Number.isFinite(storedExperienceTotal)
+        ? Math.max(0, Math.round(storedExperienceTotal))
+        : 0;
+      const milestoneProgress = computeExperienceMilestoneProgress(
+        normalizedExperienceTotal
+      );
+      const experienceTierCandidates = [
+        storedProgress?.experienceTier,
+        storedSaveState?.spriteTier,
+        computeExperienceTier(normalizedExperienceTotal),
+      ];
+      const experienceTier =
+        experienceTierCandidates.find(
+          (candidate) => Number.isFinite(candidate) && candidate > 0
+        ) ?? computeExperienceTier(normalizedExperienceTotal);
+      const storedLevel =
+        normalizeCurrentLevel(storedProgress?.currentLevel) ??
+        normalizeCurrentLevel(storedSaveState?.difficulty);
+      const heroSprite = resolveStoredHeroSprite(experienceTier);
+
+      const fallbackPreview = {
+        currentLevel: storedLevel,
+        heroLevelLabel: `XP Tier ${experienceTier}`,
+        progressExperience: milestoneProgress.ratio,
+        progressExperienceEarned: milestoneProgress.earned,
+        progressExperienceTotal: milestoneProgress.total,
+        progressExperienceText: milestoneProgress.text,
+      };
+
+      if (heroSprite) {
+        fallbackPreview.hero = { ...(previewData?.hero ?? {}), sprite: heroSprite };
+      }
+
+      return fallbackPreview;
+    };
+
+    const applyResolvedPreview = (previewToApply) => {
+      if (!previewToApply) {
+        return;
+      }
+
+      const landingState = applyBattlePreview(previewToApply, resolvedLevels, {
+        requiresLevelOneIntro,
+        forceLevelOneLanding: shouldForceLevelOneLanding,
+        hasIntroProgress: hasIntroProgressFlag,
+      });
+      if (landingState && typeof landingState === 'object') {
+        resolvedCurrentLevel = landingState.resolvedCurrentLevel ?? resolvedCurrentLevel;
+        isLevelOneLanding = landingState.isLevelOneLanding ?? isLevelOneLanding;
+      } else {
+        isLevelOneLanding = resolveIsLevelOneLanding({
+          requiresLevelOneIntro,
+          forceLevelOneLanding: shouldForceLevelOneLanding,
+          hasIntroProgress: hasIntroProgressFlag,
+          resolvedCurrentLevel,
+        });
+      }
+      battleButton = getActiveBattleButton();
+      applyLandingBodyClasses(isLevelOneLanding);
+    };
+
+    try {
       if (!levelsData) {
         const levelsRes = await fetch('data/levels.json');
         if (!levelsRes.ok) {
@@ -4089,7 +4202,11 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
         resolvedLevels = levelsData.levels;
       }
 
-      const resolvedExperienceTotal = readPlayerExperienceTotal(playerData);
+      const storedExperienceTotal = resolveStoredExperienceTotal();
+      const resolvedExperienceTotal =
+        readPlayerExperienceTotal(playerData) ||
+        readPlayerExperienceTotal(fallbackPlayerData) ||
+        storedExperienceTotal;
       if (Number.isFinite(resolvedExperienceTotal)) {
         hasIntroProgressFlag = resolvedExperienceTotal > 0;
         requiresLevelOneIntro = resolvedExperienceTotal <= 0;
@@ -4115,30 +4232,13 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
         preloadedData.landingVisited = landingVisited;
       }
 
-      if (previewData) {
-        const landingState = applyBattlePreview(previewData, resolvedLevels, {
-          requiresLevelOneIntro,
-          forceLevelOneLanding: shouldForceLevelOneLanding,
-          hasIntroProgress: hasIntroProgressFlag,
-        });
-        if (landingState && typeof landingState === 'object') {
-          resolvedCurrentLevel = landingState.resolvedCurrentLevel ?? resolvedCurrentLevel;
-          isLevelOneLanding = landingState.isLevelOneLanding ?? isLevelOneLanding;
-        } else {
-          isLevelOneLanding = resolveIsLevelOneLanding({
-            requiresLevelOneIntro,
-            forceLevelOneLanding: shouldForceLevelOneLanding,
-            hasIntroProgress: hasIntroProgressFlag,
-            resolvedCurrentLevel,
-          });
-        }
-        battleButton = getActiveBattleButton();
-        applyLandingBodyClasses(isLevelOneLanding);
-      }
+      const previewToApply = previewData ?? buildStoredPreviewFallback(resolvedExperienceTotal);
+      applyResolvedPreview(previewToApply);
 
       persistPlayerProfile(playerData);
     } catch (error) {
       console.error('Failed to load battle preview', error);
+      applyResolvedPreview(buildStoredPreviewFallback());
     }
   };
 
