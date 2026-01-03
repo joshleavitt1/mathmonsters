@@ -8,6 +8,10 @@
       ? self
       : {};
 
+  const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+  const ACCOUNTS_STORAGE_KEY = 'mathmonstersAccounts';
+  const ACTIVE_ACCOUNT_STORAGE_KEY = 'mathmonstersActiveAccount';
+
   const isPlainObject = (value) =>
     Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -19,7 +23,7 @@
     try {
       return JSON.parse(JSON.stringify(value));
     } catch (error) {
-      console.warn('Failed to clone player data for Supabase sync.', error);
+      console.warn('Failed to clone player data for storage.', error);
       return null;
     }
   };
@@ -52,6 +56,283 @@
     return intValue > 0 ? intValue : null;
   };
 
+  const normalizeAccountEmail = (value) => {
+    if (typeof value !== 'string') {
+      return null;
+    }
+    const trimmed = value.trim().toLowerCase();
+    return trimmed || null;
+  };
+
+  const sanitizeAccountLevel = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return null;
+    }
+    const level = Math.max(1, Math.round(numeric));
+    return Number.isFinite(level) ? level : null;
+  };
+
+  const readCachedProfile = () => {
+    try {
+      const storage = globalScope?.sessionStorage;
+      if (!storage) {
+        return null;
+      }
+      const raw = storage.getItem(PLAYER_PROFILE_STORAGE_KEY);
+      if (!raw) {
+        return null;
+      }
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (error) {
+      console.warn('Unable to read cached player profile.', error);
+      return null;
+    }
+  };
+
+  const writeCachedProfile = (profile) => {
+    try {
+      const storage = globalScope?.sessionStorage;
+      if (!storage) {
+        return;
+      }
+
+      if (!profile || typeof profile !== 'object') {
+        storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+        return;
+      }
+
+      storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    } catch (error) {
+      console.warn('Unable to cache player profile.', error);
+    }
+  };
+
+  const sanitizeAccountEntry = (entry) => {
+    const email = normalizeAccountEmail(entry?.email);
+    if (!email) {
+      return null;
+    }
+
+    const password =
+      typeof entry?.password === 'string' ? entry.password : '';
+    const accountLevel = sanitizeAccountLevel(entry?.accountLevel);
+    const playerData = isPlainObject(entry?.playerData)
+      ? entry.playerData
+      : null;
+
+    return {
+      email,
+      password,
+      accountLevel,
+      playerData,
+    };
+  };
+
+  const readStoredAccounts = () => {
+    try {
+      const storage = globalScope?.localStorage;
+      if (!storage) {
+        return [];
+      }
+
+      const raw = storage.getItem(ACCOUNTS_STORAGE_KEY);
+      if (!raw) {
+        return [];
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed.map(sanitizeAccountEntry).filter(Boolean);
+    } catch (error) {
+      console.warn('Unable to read stored accounts.', error);
+      return [];
+    }
+  };
+
+  const writeStoredAccounts = (accounts = []) => {
+    try {
+      const storage = globalScope?.localStorage;
+      if (!storage) {
+        return [];
+      }
+
+      const sanitized = Array.isArray(accounts)
+        ? accounts.map(sanitizeAccountEntry).filter(Boolean)
+        : [];
+
+      storage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(sanitized));
+      return sanitized;
+    } catch (error) {
+      console.warn('Unable to persist stored accounts.', error);
+      return Array.isArray(accounts) ? accounts : [];
+    }
+  };
+
+  const findAccountByEmail = (accounts, email) => {
+    const normalized = normalizeAccountEmail(email);
+    if (!normalized) {
+      return null;
+    }
+
+    const source = Array.isArray(accounts) ? accounts : readStoredAccounts();
+    return (
+      source.find(
+        (account) => account && normalizeAccountEmail(account.email) === normalized
+      ) || null
+    );
+  };
+
+  const getActiveAccount = () => {
+    try {
+      const storage = globalScope?.localStorage;
+      if (!storage) {
+        return null;
+      }
+
+      const raw = storage.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw);
+      const email = normalizeAccountEmail(parsed?.email);
+      if (!email) {
+        return null;
+      }
+
+      return {
+        email,
+        accountLevel: sanitizeAccountLevel(parsed?.accountLevel),
+        updatedAt: parsed?.updatedAt ?? null,
+      };
+    } catch (error) {
+      console.warn('Unable to read active account session.', error);
+      return null;
+    }
+  };
+
+  const setActiveAccount = (account) => {
+    try {
+      const storage = globalScope?.localStorage;
+      if (!storage) {
+        return null;
+      }
+
+      const email = normalizeAccountEmail(account?.email ?? account);
+      if (!email) {
+        return null;
+      }
+
+      const payload = {
+        email,
+        accountLevel: sanitizeAccountLevel(account?.accountLevel),
+        updatedAt: Date.now(),
+      };
+
+      storage.setItem(ACTIVE_ACCOUNT_STORAGE_KEY, JSON.stringify(payload));
+      return payload;
+    } catch (error) {
+      console.warn('Unable to persist active account session.', error);
+      return null;
+    }
+  };
+
+  const clearActiveAccount = () => {
+    try {
+      globalScope?.localStorage?.removeItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+    } catch (error) {
+      console.warn('Unable to clear active account session.', error);
+    }
+
+    writeCachedProfile(null);
+  };
+
+  const buildPlayerDataPayload = (playerData, progressData) => {
+    const playerClone = clonePlainObject(playerData);
+    const progressClone = clonePlainObject(progressData);
+
+    if (!playerClone && !progressClone) {
+      return null;
+    }
+
+    const payload = playerClone ?? {};
+
+    if (progressClone) {
+      payload.progress = progressClone;
+    }
+
+    return payload;
+  };
+
+  const fetchPlayerProfile = async () => {
+    const cached = readCachedProfile();
+    if (cached) {
+      const cloned = clonePlainObject(cached);
+      return cloned || cached;
+    }
+
+    const activeAccount = getActiveAccount();
+    if (!activeAccount?.email) {
+      return null;
+    }
+
+    const account = findAccountByEmail(readStoredAccounts(), activeAccount.email);
+    const playerData = clonePlainObject(account?.playerData);
+    if (playerData) {
+      writeCachedProfile(playerData);
+      return playerData;
+    }
+
+    return null;
+  };
+
+  const persistPlayerProfile = async (playerData, progressData, options = {}) => {
+    const payload = buildPlayerDataPayload(playerData, progressData);
+    const hasPayload = payload && typeof payload === 'object';
+
+    if (hasPayload) {
+      writeCachedProfile(payload);
+    } else {
+      writeCachedProfile(null);
+    }
+
+    const activeAccount = getActiveAccount();
+    if (!activeAccount?.email || !hasPayload) {
+      return Boolean(hasPayload);
+    }
+
+    const accounts = readStoredAccounts();
+    const existing = findAccountByEmail(accounts, activeAccount.email);
+    const accountLevel =
+      sanitizeAccountLevel(options?.accountLevel) ??
+      activeAccount.accountLevel ??
+      null;
+
+    if (existing) {
+      existing.playerData = payload;
+      if (accountLevel !== null) {
+        existing.accountLevel = accountLevel;
+      }
+    } else {
+      accounts.push({
+        email: activeAccount.email,
+        password: '',
+        accountLevel,
+        playerData: payload,
+      });
+    }
+
+    writeStoredAccounts(accounts);
+    setActiveAccount({ email: activeAccount.email, accountLevel });
+
+    return true;
+  };
+
   const syncCurrentLevelToStorage = (playerData, storageKey) => {
     if (!playerData || typeof storageKey !== 'string' || !storageKey) {
       return;
@@ -80,18 +361,18 @@
         toNumericCurrentLevel(nextValue.currentLevel)
       );
 
-      const supabaseLevel = clampToPositiveInteger(
+      const storedPlayerLevel = clampToPositiveInteger(
         toNumericCurrentLevel(playerData?.progress?.currentLevel)
       );
 
       let levelToPersist = null;
-      if (storedLevel !== null || supabaseLevel !== null) {
+      if (storedLevel !== null || storedPlayerLevel !== null) {
         if (storedLevel === null) {
-          levelToPersist = supabaseLevel;
-        } else if (supabaseLevel === null) {
+          levelToPersist = storedPlayerLevel;
+        } else if (storedPlayerLevel === null) {
           levelToPersist = storedLevel;
         } else {
-          levelToPersist = Math.max(storedLevel, supabaseLevel);
+          levelToPersist = Math.max(storedLevel, storedPlayerLevel);
         }
       }
 
@@ -116,120 +397,20 @@
     }
   };
 
-  const resolveSupabaseUserId = async (supabase) => {
-    if (!supabase?.auth) {
-      return null;
-    }
-
-    try {
-      if (typeof supabase.auth.getUser === 'function') {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) {
-          console.warn('Supabase user lookup failed.', error);
-        }
-        return data?.user?.id ?? null;
-      }
-
-      if (typeof supabase.auth.getSession === 'function') {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.warn('Supabase session lookup failed.', error);
-        }
-        return data?.session?.user?.id ?? null;
-      }
-    } catch (error) {
-      console.warn('Failed to obtain Supabase user.', error);
-    }
-
-    return null;
-  };
-
-  const buildPlayerDataPayload = (playerData, progressData) => {
-    const playerClone = clonePlainObject(playerData);
-    const progressClone = clonePlainObject(progressData);
-
-    if (!playerClone && !progressClone) {
-      return null;
-    }
-
-    const payload = playerClone ?? {};
-
-    if (progressClone) {
-      payload.progress = progressClone;
-    }
-
-    return payload;
-  };
-
-  const fetchPlayerProfile = async () => {
-    const supabase = globalScope?.supabaseClient;
-    if (!supabase?.auth) {
-      return null;
-    }
-
-    const userId = await resolveSupabaseUserId(supabase);
-    if (!userId || typeof supabase.from !== 'function') {
-      return null;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('player_profiles')
-        .select('player_data')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.warn('Supabase player profile lookup failed.', error);
-        return null;
-      }
-
-      const playerData = data?.player_data;
-      return playerData && typeof playerData === 'object' ? playerData : null;
-    } catch (error) {
-      console.warn('Failed to fetch player profile from Supabase.', error);
-      return null;
-    }
-  };
-
-  const syncPlayerDataWithSupabase = async (playerData, progressData) => {
-    const supabase = globalScope?.supabaseClient;
-    if (!supabase?.from) {
-      return false;
-    }
-
-    const userId = await resolveSupabaseUserId(supabase);
-    if (!userId) {
-      return false;
-    }
-
-    const payload = buildPlayerDataPayload(playerData, progressData);
-    if (!payload) {
-      return false;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('player_profiles')
-        .upsert({ id: userId, player_data: payload }, { onConflict: 'id' });
-
-      if (error) {
-        console.warn('Supabase rejected the request to persist player data.', error);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.warn('Unable to sync player data with Supabase.', error);
-      return false;
-    }
-  };
-
   const namespace =
     (globalScope.mathMonstersPlayerProfile =
       globalScope.mathMonstersPlayerProfile || {});
 
+  namespace.normalizeAccountEmail = normalizeAccountEmail;
+  namespace.readStoredAccounts = readStoredAccounts;
+  namespace.writeStoredAccounts = writeStoredAccounts;
+  namespace.findAccountByEmail = findAccountByEmail;
+  namespace.getActiveAccount = getActiveAccount;
+  namespace.setActiveAccount = setActiveAccount;
+  namespace.clearActiveAccount = clearActiveAccount;
+  namespace.readCachedProfile = readCachedProfile;
+  namespace.writeCachedProfile = writeCachedProfile;
   namespace.fetchPlayerProfile = fetchPlayerProfile;
+  namespace.persistPlayerProfile = persistPlayerProfile;
   namespace.syncCurrentLevelToStorage = syncCurrentLevelToStorage;
-  namespace.syncPlayerDataWithSupabase = syncPlayerDataWithSupabase;
 })();

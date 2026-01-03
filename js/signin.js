@@ -1,4 +1,10 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
+const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+const ACCOUNTS_STORAGE_KEY = 'mathmonstersAccounts';
+const ACTIVE_ACCOUNT_STORAGE_KEY = 'mathmonstersActiveAccount';
+const playerProfileUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
+  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
 
 const clearGuestSessionFlag = () => {
   try {
@@ -25,6 +31,120 @@ const setFieldState = (field, isDisabled) => {
 const readTrimmedValue = (value) =>
   typeof value === 'string' ? value.trim() : '';
 
+const normalizeEmail = (value) => {
+  if (typeof playerProfileUtils?.normalizeAccountEmail === 'function') {
+    return playerProfileUtils.normalizeAccountEmail(value) || '';
+  }
+
+  const trimmed = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return trimmed;
+};
+
+const readStoredAccounts = () => {
+  if (typeof playerProfileUtils?.readStoredAccounts === 'function') {
+    return playerProfileUtils.readStoredAccounts() || [];
+  }
+
+  try {
+    const raw = window.localStorage?.getItem(ACCOUNTS_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Unable to read stored accounts.', error);
+    return [];
+  }
+};
+
+const findAccountByEmail = (email) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized) {
+    return null;
+  }
+
+  const accounts = readStoredAccounts();
+  if (typeof playerProfileUtils?.findAccountByEmail === 'function') {
+    return (
+      playerProfileUtils.findAccountByEmail(accounts, normalized) || null
+    );
+  }
+
+  return (
+    accounts.find(
+      (account) => normalizeEmail(account?.email) === normalized
+    ) || null
+  );
+};
+
+const writeCachedProfile = (profile) => {
+  if (typeof playerProfileUtils?.writeCachedProfile === 'function') {
+    playerProfileUtils.writeCachedProfile(profile);
+    return;
+  }
+
+  try {
+    const storage = window.sessionStorage;
+    if (!storage) {
+      return;
+    }
+
+    if (!profile || typeof profile !== 'object') {
+      storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+      return;
+    }
+
+    storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+  } catch (error) {
+    console.warn('Unable to cache player profile.', error);
+  }
+};
+
+const persistActiveAccount = (account) => {
+  const email = normalizeEmail(account?.email ?? account);
+  if (!email) {
+    return null;
+  }
+
+  if (typeof playerProfileUtils?.setActiveAccount === 'function') {
+    return playerProfileUtils.setActiveAccount(account);
+  }
+
+  try {
+    window.localStorage?.setItem(
+      ACTIVE_ACCOUNT_STORAGE_KEY,
+      JSON.stringify({
+        email,
+        updatedAt: Date.now(),
+      })
+    );
+  } catch (error) {
+    console.warn('Unable to persist active account.', error);
+  }
+
+  return { email };
+};
+
+const readActiveAccount = () => {
+  if (typeof playerProfileUtils?.getActiveAccount === 'function') {
+    return playerProfileUtils.getActiveAccount();
+  }
+
+  try {
+    const raw = window.localStorage?.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    const email = normalizeEmail(parsed?.email);
+    return email ? { email } : null;
+  } catch (error) {
+    console.warn('Unable to read active account session.', error);
+    return null;
+  }
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
   const form = document.querySelector('.preloader__form');
   const emailField = document.getElementById('signin-email');
@@ -35,7 +155,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   );
   const errorContainer = document.querySelector('[data-signin-errors]');
   const errorList = document.querySelector('[data-signin-error-list]');
-  const supabase = window.supabaseClient;
 
   const renderErrors = (messages) => {
     if (!errorContainer || !errorList) {
@@ -77,23 +196,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  if (!supabase) {
-    renderErrors('Authentication service is unavailable. Please try again later.');
+  const existingAccount = readActiveAccount();
+  if (existingAccount?.email) {
+    clearGuestSessionFlag();
+    window.location.replace('../index.html');
     return;
-  }
-
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.warn('Failed to fetch existing session', error);
-    }
-    if (data?.session) {
-      clearGuestSessionFlag();
-      window.location.replace('../index.html');
-      return;
-    }
-  } catch (error) {
-    console.warn('Session lookup failed', error);
   }
 
   form.addEventListener('submit', async (event) => {
@@ -123,17 +230,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        renderErrors(error.message || 'Unable to sign in. Please try again.');
+      const account = findAccountByEmail(email);
+      if (!account) {
+        renderErrors(
+          'No account found for that email. Please register to get started.'
+        );
         setLoading(false);
         return;
       }
 
+      const storedPassword =
+        typeof account.password === 'string' ? account.password : '';
+
+      if (storedPassword !== password) {
+        renderErrors('Incorrect email or password.');
+        setLoading(false);
+        return;
+      }
+
+      persistActiveAccount({
+        email: account.email,
+        accountLevel: account.accountLevel,
+      });
+      writeCachedProfile(
+        account.playerData && typeof account.playerData === 'object'
+          ? account.playerData
+          : null
+      );
       clearGuestSessionFlag();
       window.location.replace('../index.html');
     } catch (error) {
