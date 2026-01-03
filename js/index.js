@@ -2210,7 +2210,7 @@ const determineBattlePreview = (levelsData, playerData) => {
   const totalExperience = readPlayerExperienceTotal(player);
   const experienceTier = computeExperienceTier(totalExperience);
   const milestoneProgress = computeExperienceMilestoneProgress(totalExperience);
-  const heroLevelLabel = `XP Tier ${experienceTier}`;
+  const heroLevelLabel = `Level ${experienceTier}`;
   const progressText = milestoneProgress.text;
   const playerGems = readPlayerGemCount(player);
 
@@ -4104,7 +4104,7 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
 
       const fallbackPreview = {
         currentLevel: storedLevel,
-        heroLevelLabel: `XP Tier ${experienceTier}`,
+        heroLevelLabel: `Level ${experienceTier}`,
         progressExperience: milestoneProgress.ratio,
         progressExperienceEarned: milestoneProgress.earned,
         progressExperienceTotal: milestoneProgress.total,
