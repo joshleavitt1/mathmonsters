@@ -322,6 +322,25 @@
             </div>
           </div>
         </div>
+        <div class="battle-complete-card__meter">
+          <div class="battle-complete-card__meter-header">
+            <p class="battle-complete-card__meter-title text-small text-dark">XP Progress</p>
+            <p class="battle-complete-card__meter-count text-small text-dark" data-level-progress-count>
+              0/0
+            </p>
+          </div>
+          <div
+            class="progress meter__progress battle-complete-card__meter-progress"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="0"
+            aria-valuenow="0"
+            aria-label="XP progress toward next level"
+            aria-valuetext="0 of 0 experience"
+          >
+            <span class="progress__fill" aria-hidden="true"></span>
+          </div>
+        </div>
         <button type="button" class="btn-primary next-mission-btn" data-action="next">Back Home</button>
       </section>
     </div>
