@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const CACHE_NAME = `mathmonsters-cache-${CACHE_VERSION}`;
 const OFFLINE_ASSETS = [
   './',
@@ -18,8 +18,12 @@ const OFFLINE_ASSETS = [
   './js/question.js',
   './js/signin.js',
   './js/welcome.js',
-  './js/supabaseClient.js',
+  './js/register.js',
   './js/loader.js',
+  './js/utils/progress.js',
+  './js/utils/saveState.js',
+  './js/utils/playerProfile.js',
+  './js/utils/questionGenerator.js',
   'images/brand/logo.png',
   'images/hero/shellfin_evolution_1.png',
   'images/hero/shellfin_evolution_2.png',

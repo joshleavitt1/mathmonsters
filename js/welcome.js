@@ -22,6 +22,9 @@ const SESSION_STORAGE_KEYS_TO_CLEAR = Object.freeze([
 ]);
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const REGISTER_PAGE_URL = '../index.html';
+const playerProfileUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
+  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
 
 const clearLandingVisitState = (localStorageRef) => {
   try {
@@ -154,7 +157,6 @@ const isRegistrationRequiredForGuest = () => {
 
 document.addEventListener('DOMContentLoaded', async () => {
   const newGameButton = document.querySelector('[data-new-game]');
-  const supabase = window.supabaseClient;
 
   const setButtonsState = (isDisabled) => {
     const buttons = [newGameButton];
@@ -167,20 +169,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   };
 
-  if (supabase?.auth?.getSession) {
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.warn('Unable to check existing session.', error);
-      }
-      if (data?.session) {
-        clearGuestSessionFlag();
-        window.location.replace('../index.html');
-        return;
-      }
-    } catch (error) {
-      console.warn('Unexpected session lookup error.', error);
-    }
+  const readActiveAccount = () =>
+    typeof playerProfileUtils?.getActiveAccount === 'function'
+      ? playerProfileUtils.getActiveAccount()
+      : null;
+
+  const activeAccount = readActiveAccount();
+  if (activeAccount?.email) {
+    clearGuestSessionFlag();
+    window.location.replace('../index.html');
+    return;
   }
 
   if (isRegistrationRequiredForGuest()) {
@@ -190,6 +188,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const startGuestSession = () => {
     setButtonsState(true);
+    if (typeof playerProfileUtils?.clearActiveAccount === 'function') {
+      playerProfileUtils.clearActiveAccount();
+    }
     const success = persistGuestSession();
     if (!success) {
       setButtonsState(false);

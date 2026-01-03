@@ -6,6 +6,8 @@ const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const GUEST_SESSION_ACTIVE_VALUE = 'true';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
+const ACCOUNTS_STORAGE_KEY = 'mathmonstersAccounts';
+const ACTIVE_ACCOUNT_STORAGE_KEY = 'mathmonstersActiveAccount';
 const MIN_PRELOAD_DURATION_MS = 2000;
 
 const DEV_RESET_TARGET_MATH_KEY = 'addition';
@@ -185,6 +187,15 @@ const saveStateUtils =
 
 const { readSaveState, writeSaveState } = saveStateUtils || {};
 
+const normalizeAccountEmail = (value) => {
+  if (typeof playerProfileUtils?.normalizeAccountEmail === 'function') {
+    return playerProfileUtils.normalizeAccountEmail(value) || '';
+  }
+
+  const trimmed = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return trimmed;
+};
+
 const redirectToBattle = () => {
   window.location.href = BATTLE_PAGE_URL;
 };
@@ -288,24 +299,31 @@ const readAuthSession = async () => {
     return cachedAuthSession;
   }
 
-  const supabase = window.supabaseClient;
-  if (!supabase || typeof supabase.auth?.getSession !== 'function') {
-    authSessionResolved = true;
-    cachedAuthSession = null;
-    return cachedAuthSession;
-  }
-
+  authSessionResolved = true;
   try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.warn('Authentication session lookup failed', error);
+    if (typeof playerProfileUtils?.getActiveAccount === 'function') {
+      cachedAuthSession = playerProfileUtils.getActiveAccount();
+      return cachedAuthSession;
     }
-    cachedAuthSession = data?.session ?? null;
+
+    const storage = window.localStorage;
+    if (!storage) {
+      cachedAuthSession = null;
+      return cachedAuthSession;
+    }
+
+    const raw = storage.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+    if (!raw) {
+      cachedAuthSession = null;
+      return cachedAuthSession;
+    }
+
+    const parsed = JSON.parse(raw);
+    const email = normalizeAccountEmail(parsed?.email);
+    cachedAuthSession = email ? { email } : null;
   } catch (error) {
     console.warn('Authentication session lookup failed', error);
     cachedAuthSession = null;
-  } finally {
-    authSessionResolved = true;
   }
 
   return cachedAuthSession;
@@ -446,18 +464,23 @@ const attachInteractiveHandler = (element, handler) => {
 };
 
 const logoutAndRedirect = async () => {
-  const supabase = window.supabaseClient;
-  if (supabase?.auth?.signOut) {
+  if (typeof playerProfileUtils?.clearActiveAccount === 'function') {
+    playerProfileUtils.clearActiveAccount();
+  } else {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.warn('Failed to sign out user.', error);
-      }
+      window.localStorage?.removeItem(ACTIVE_ACCOUNT_STORAGE_KEY);
     } catch (error) {
-      console.warn('Unexpected error while signing out.', error);
+      console.warn('Unable to clear stored account session.', error);
+    }
+    try {
+      window.sessionStorage?.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+    } catch (error) {
+      console.warn('Unable to clear cached player profile.', error);
     }
   }
 
+  cachedAuthSession = null;
+  authSessionResolved = false;
   clearGuestMode();
   redirectToWelcome();
 };
@@ -525,7 +548,7 @@ const isRegistrationFlowPaused = () => {
 const ensureAuthenticated = async () => {
   const registrationFlowPaused = isRegistrationFlowPaused();
 
-  const supabaseSession = await readAuthSession();
+  const activeAccountSession = await readAuthSession();
 
   let guestSessionState = readGuestSessionState();
 
@@ -540,11 +563,11 @@ const ensureAuthenticated = async () => {
 
   const isGuestSessionActive = isGuestModeActive(guestSessionState);
 
-  if (supabaseSession) {
+  if (activeAccountSession?.email) {
     clearGuestMode();
   }
 
-  if (registrationFlowPaused && (isGuestSessionActive || supabaseSession)) {
+  if (registrationFlowPaused && (isGuestSessionActive || activeAccountSession)) {
     return true;
   }
 
@@ -552,14 +575,8 @@ const ensureAuthenticated = async () => {
     return true;
   }
 
-  if (supabaseSession) {
+  if (activeAccountSession?.email) {
     return true;
-  }
-
-  const supabase = window.supabaseClient;
-  if (!supabase) {
-    redirectToWelcome();
-    return false;
   }
 
   redirectToWelcome();
@@ -3545,15 +3562,18 @@ const resolveLandingEntryState = async () => {
     isGuestModeActive(guestSessionState) ||
     isRegistrationRequiredForGuest(guestSessionState);
 
-  let hasSupabaseSession = false;
+  let hasAccountSession = false;
   try {
-    hasSupabaseSession = Boolean(await readAuthSession());
+    const accountSession = await readAuthSession();
+    hasAccountSession = Boolean(
+      accountSession && (accountSession.email || accountSession)
+    );
   } catch (error) {
     console.warn('Unable to determine authentication session state.', error);
-    hasSupabaseSession = false;
+    hasAccountSession = false;
   }
 
-  const hasUserSession = hasSupabaseSession || hasGuestSession;
+  const hasUserSession = hasAccountSession || hasGuestSession;
 
   if (!hasIntroProgressFlag && landingVisited) {
     clearLandingVisitedFlag();
