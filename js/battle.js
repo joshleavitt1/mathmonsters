@@ -253,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelProgressMeter = completeMessage?.querySelector(
     '.battle-complete-card__meter .meter__progress'
   );
+  const levelProgressText = completeMessage?.querySelector('[data-level-progress-count]');
   const levelProgressFill = levelProgressMeter?.querySelector('.progress__fill');
   const rewardOverlay = document.querySelector('[data-reward-overlay]');
   const rewardSprite = rewardOverlay?.querySelector('[data-reward-sprite]');
@@ -3076,6 +3077,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const clampedRatio = Math.max(0, Math.min(1, Number(progress.ratio) || 0));
     const targetWidth = `${clampedRatio * 100}%`;
+    const progressText = `${progress.earnedDisplay}/${progress.totalDisplay}`;
 
     if (levelProgressMeter) {
       levelProgressMeter.setAttribute('aria-valuemin', '0');
@@ -3085,6 +3087,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'aria-valuetext',
         `${progress.text} experience`
       );
+    }
+    if (levelProgressText) {
+      levelProgressText.textContent = progressText;
     }
 
     const requestProgressFrame =
