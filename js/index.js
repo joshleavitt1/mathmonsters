@@ -2398,6 +2398,17 @@ const applyBattlePreview = (
   const gemCountElements = document.querySelectorAll('[data-hero-gems]');
   const heroInfoElement = document.querySelector('.landing__hero-info');
   const actionsElement = document.querySelector('.landing__actions');
+  const homeExperienceContainer = document.querySelector(
+    '[data-standard-landing] [data-home-experience]'
+  );
+  const homeExperienceProgress = document.querySelector(
+    '[data-standard-landing] [data-home-xp-progress]'
+  );
+  const homeExperienceProgressFill =
+    homeExperienceProgress?.querySelector('.progress__fill') ?? null;
+  const homeExperienceCount = document.querySelector(
+    '[data-standard-landing] [data-home-xp-count]'
+  );
   const landingRoot = document.body;
 
   heroImageElements.forEach((heroImage) => {
@@ -2505,6 +2516,52 @@ const applyBattlePreview = (
     element.textContent = `${resolvedGemCount}`;
   });
 
+  const updateHomeExperienceProgress = () => {
+    if (
+      !homeExperienceContainer &&
+      !homeExperienceProgress &&
+      !homeExperienceProgressFill &&
+      !homeExperienceCount
+    ) {
+      return;
+    }
+
+    const rawEarned = Number(previewData?.progressExperienceEarned);
+    const rawTotal = Number(previewData?.progressExperienceTotal);
+    const earned = Number.isFinite(rawEarned) ? Math.max(0, Math.round(rawEarned)) : 0;
+    const total = Number.isFinite(rawTotal) ? Math.max(0, Math.round(rawTotal)) : 0;
+    const clampedEarned = total > 0 ? Math.min(earned, total) : earned;
+    const ratio = total > 0 ? Math.min(1, clampedEarned / total) : 0;
+    const progressText =
+      typeof previewData?.progressExperienceText === 'string'
+        ? previewData.progressExperienceText.trim()
+        : '';
+    const ariaText = progressText
+      ? `${progressText} experience`
+      : `${clampedEarned} of ${total} experience`;
+
+    if (homeExperienceContainer) {
+      homeExperienceContainer.hidden = false;
+      homeExperienceContainer.removeAttribute('aria-hidden');
+    }
+
+    if (homeExperienceCount) {
+      homeExperienceCount.textContent = `${clampedEarned}/${total}`;
+    }
+
+    if (homeExperienceProgress) {
+      homeExperienceProgress.setAttribute('aria-valuemin', '0');
+      homeExperienceProgress.setAttribute('aria-valuemax', `${total}`);
+      homeExperienceProgress.setAttribute('aria-valuenow', `${clampedEarned}`);
+      homeExperienceProgress.setAttribute('aria-valuetext', ariaText);
+      homeExperienceProgress.style.setProperty('--progress-value', `${ratio}`);
+    }
+
+    if (homeExperienceProgressFill) {
+      homeExperienceProgressFill.style.width = `${ratio * 100}%`;
+    }
+  };
+
   progressElements.forEach((progressElement) => {
     if (!progressElement) {
       return;
@@ -2544,6 +2601,7 @@ const applyBattlePreview = (
     const ariaText = resolvedProgressLabel || normalizedProgressText || 'Battles Won';
     progressElement.setAttribute('aria-valuetext', ariaText);
   });
+  updateHomeExperienceProgress();
 
   const resolvedCurrentLevel = (() => {
     const fromPreview = normalizeCurrentLevel(previewData?.currentLevel);
