@@ -3817,17 +3817,50 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     .querySelectorAll('img[src]')
     .forEach((img) => addImageAsset(img.getAttribute('src')));
 
-  const loadJson = async (url) => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to preload ${url}`);
+  const loadJson = async (url, { timeoutMs = 4000 } = {}) => {
+    const controller = typeof AbortController !== 'undefined'
+      ? new AbortController()
+      : null;
+    const normalizedTimeout = Math.max(0, Number(timeoutMs) || 0);
+
+    let timeoutId = null;
+    const timeoutPromise = new Promise((resolve) => {
+      if (normalizedTimeout <= 0) {
+        resolve(null);
+        return;
       }
-      return await response.json();
-    } catch (error) {
-      console.error(error);
-      return null;
+
+      timeoutId = window.setTimeout(() => {
+        if (controller) {
+          controller.abort();
+        }
+        resolve(null);
+      }, normalizedTimeout);
+    });
+
+    const fetchPromise = (async () => {
+      try {
+        const response = await fetch(url, controller ? { signal: controller.signal } : undefined);
+        if (!response.ok) {
+          throw new Error(`Failed to preload ${url}`);
+        }
+        return await response.json();
+      } catch (error) {
+        const isAbortError = error && (error.name === 'AbortError' || error.code === 'ABORT_ERR');
+        if (isAbortError) {
+          console.warn(`Preload for ${url} timed out after ${normalizedTimeout}ms.`);
+        } else {
+          console.error(error);
+        }
+        return null;
+      }
+    })();
+
+    const result = await Promise.race([fetchPromise, timeoutPromise]);
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
     }
+    return result;
   };
 
   try {
