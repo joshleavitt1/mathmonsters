@@ -3437,7 +3437,7 @@ const setPreloaderPaused = (paused) => {
 const SCENARIO_SAVE_STATES = {
   'new-user': { xpTotal: 0, difficulty: 1 },
   'level-1-xp-3': { xpTotal: 3, difficulty: 1 },
-  'level-2-xp-5': { xpTotal: 5, difficulty: 2 },
+  'level-2-xp-15': { xpTotal: 15, difficulty: 2 },
 };
 
 const applyScenarioSaveState = (scenarioId) => {
