@@ -2163,8 +2163,7 @@ const determineBattlePreview = (levelsData, playerData) => {
     (typeof activeLevel?.currentLevel === 'number'
       ? `Battle ${activeLevel.currentLevel}`
       : 'Upcoming Battle');
-  const experienceMap = normalizeExperienceMap(player?.progress?.experience);
-  const totalExperience = readTotalExperience(experienceMap);
+  const totalExperience = readPlayerExperienceTotal(player);
   const experienceTier = computeExperienceTier(totalExperience);
   const milestoneProgress = computeExperienceMilestoneProgress(totalExperience);
   const heroLevelLabel = `XP Tier ${experienceTier}`;
