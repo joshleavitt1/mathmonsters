@@ -2742,7 +2742,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recordHomeGemAnimation();
         resetRewardOverlay();
         resolve();
-        window.location.href = '../index.html';
+        redirectHomeFromBattle();
       };
 
       if (!rewardOverlay || !rewardSprite || !rewardCard || !rewardCardButton) {
@@ -2835,7 +2835,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recordHomeGemAnimation();
         resetRewardOverlay();
         finish();
-        window.location.href = '../index.html';
+        redirectHomeFromBattle();
       };
 
       const handleDevSkipClick = (event) => {
@@ -3012,7 +3012,7 @@ document.addEventListener('DOMContentLoaded', () => {
       advanceCurrentLevel();
     }
     resetRewardOverlay();
-    window.location.href = '../index.html';
+    redirectHomeFromBattle();
   };
 
   const isGemMilestoneReward = (reward) => {
@@ -3041,6 +3041,22 @@ document.addEventListener('DOMContentLoaded', () => {
     return (normalizedLevel - 6) % milestoneSize === 0;
   };
 
+  const markLandingVisitedForExperiencedPlayers = () => {
+    const normalizedExperience = normalizeExperienceValue(totalExperience);
+
+    if (!Number.isFinite(normalizedExperience) || normalizedExperience <= 0) {
+      return;
+    }
+
+    setVisitedFlag(sessionStorage, 'Session');
+    setVisitedFlag(localStorage, 'Local');
+  };
+
+  const redirectHomeFromBattle = () => {
+    markLandingVisitedForExperiencedPlayers();
+    window.location.href = '../index.html';
+  };
+
   const updateNextMissionButton = (win = true) => {
     if (!nextMissionBtn) {
       return;
@@ -3062,7 +3078,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    nextMissionBtn.textContent = 'Back Home';
+    nextMissionBtn.textContent = 'Return Home';
     nextMissionBtn.dataset.action = 'next';
   };
 
@@ -5661,7 +5677,7 @@ document.addEventListener('DOMContentLoaded', () => {
         advanceCurrentLevel();
       }
       resetRewardOverlay();
-      window.location.href = '../index.html';
+      redirectHomeFromBattle();
     });
   }
 
