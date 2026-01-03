@@ -18,8 +18,8 @@ body.is-level-one-landing {
 }
 
 body.is-standard-landing {
-  margin: 0;
-  padding: 16px;
+  --page-pad: 16px;
+  padding: var(--page-pad);
   overflow: hidden;
 }
 
@@ -27,10 +27,8 @@ body.is-standard-landing main.landing {
   display: flex;
   align-items: stretch;
   justify-content: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-  height: 100vh;
-  height: 100dvh;
+  min-height: calc(100dvh - (var(--page-pad) * 2));
+  height: auto;
 }
 
 body.is-standard-landing .landing__standard {
@@ -345,18 +343,9 @@ body:not(.is-preloading) main.landing {
 }
 
 .landing__actions {
-  position: absolute;
-  left: 50%;
-  bottom: calc(24px + var(--viewport-bottom-offset, 0px));
-  bottom: calc(
-    24px + var(--viewport-bottom-offset, 0px) + constant(safe-area-inset-bottom)
-  );
-  bottom: calc(
-    24px + var(--viewport-bottom-offset, 0px) + env(safe-area-inset-bottom, 0px)
-  );
-  transform: translateX(-50%);
-  width: min(360px, calc(100vw - 32px));
-  z-index: 3;
+  margin-top: auto;
+  padding-top: 20px;
+  padding-bottom: 32px;
 }
 
 .landing__battle-button {
@@ -861,10 +850,16 @@ body.home-page {
 
 .home__content {
   box-sizing: border-box;
-  margin: 32px 0 auto;
   width: 420px;
-  height: 100%;
-  min-height: 100%;
+  /* ✅ key changes */
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+
+  /* keep your spacing, but don’t use margin-top that adds extra height */
+  margin: 0;
+  padding-top: 32px;
+
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -970,10 +965,7 @@ body.home-page {
 
 .home__hero {
   flex: 1 1 auto;
-  display: grid;
-  place-items: center;
-  width: 100%;
-  min-height: 0; /* prevents weird overflow in flex columns */
+  min-height: 0;
 }
 
 .home__hero-sprite {
