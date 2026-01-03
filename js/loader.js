@@ -1,5 +1,6 @@
 (() => {
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+const PROGRESS_STORAGE_KEY = 'mathmonstersProgress';
 const FALLBACK_ASSET_BASE = '/mathmonsters';
 const PRELOADED_SPRITES_STORAGE_KEY = 'mathmonstersPreloadedSprites';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
@@ -389,6 +390,30 @@ const readStoredPlayerProfile = () => {
     return parsed && typeof parsed === 'object' ? parsed : null;
   } catch (error) {
     console.warn('Stored player profile unavailable in loader.', error);
+    return null;
+  }
+};
+
+const readStoredProgress = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const storage = window.localStorage;
+    if (!storage) {
+      return null;
+    }
+
+    const raw = storage.getItem(PROGRESS_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (error) {
+    console.warn('Stored progress unavailable in loader.', error);
     return null;
   }
 };
@@ -1719,6 +1744,7 @@ const fetchPlayerProfile = async () => {
       playerJson && typeof playerJson === 'object' ? playerJson : {};
 
     const storedPlayerProfile = readStoredPlayerProfile();
+    const storedProgress = readStoredProgress();
 
     let basePlayer = extractPlayerData(localPlayerData);
     basePlayer = mergePlayerWithStoredProfile(basePlayer, storedPlayerProfile);
@@ -1762,7 +1788,7 @@ const fetchPlayerProfile = async () => {
       basePlayer && typeof basePlayer.battleVariables === 'object'
         ? basePlayer.battleVariables
         : {};
-    const progress = mergeProgressState(baseProgress, {});
+    const progress = mergeProgressState(baseProgress, storedProgress);
     const battleVariables = { ...baseBattleVariables };
     let difficultyState = writeStoredDifficultyState({
       difficulty: saveState?.difficulty,
@@ -1835,7 +1861,10 @@ const fetchPlayerProfile = async () => {
 
     const savedDifficultyLevel = normalizeCurrentLevel(difficultyState?.difficulty);
     if (savedDifficultyLevel !== null) {
-      progress.currentLevel = savedDifficultyLevel;
+      const existingLevel = normalizeCurrentLevel(progress?.currentLevel);
+      if (existingLevel === null || savedDifficultyLevel > existingLevel) {
+        progress.currentLevel = savedDifficultyLevel;
+      }
     }
 
     const isPositiveLevelNumber = (value) =>
