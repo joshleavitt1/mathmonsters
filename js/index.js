@@ -2357,7 +2357,7 @@ const updateHomeTutorialHighlights = ({ currentLevel } = {}) => {
   }
 };
 
-const applyBattlePreview = (previewData = {}, levels = []) => {
+const applyBattlePreview = (previewData = {}, levels = [], landingOptions = {}) => {
   const heroImageElements = document.querySelectorAll('[data-hero-sprite]');
   const monsterImage = document.querySelector('[data-monster]');
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
@@ -2538,7 +2538,12 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
     return null;
   })();
 
-  const isLevelOneLanding = resolvedCurrentLevel !== null ? resolvedCurrentLevel <= 1 : true;
+  const landingPreferences =
+    landingOptions && typeof landingOptions === 'object' ? landingOptions : {};
+  const prefersLevelOneLanding = Boolean(
+    landingPreferences.forceLevelOneLanding || landingPreferences.requiresLevelOneIntro
+  );
+  const isLevelOneLanding = prefersLevelOneLanding;
 
   if (landingRoot) {
     landingRoot.classList.toggle('is-level-one-landing', isLevelOneLanding);
@@ -2567,6 +2572,8 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
 
   updateHeroFloat();
   updateIntroTimingForLanding({ isLevelOneLanding });
+
+  return isLevelOneLanding;
 };
 
 const preloaderElement = document.querySelector('[data-preloader]');
@@ -3806,7 +3813,10 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     storePreloadedSprites(successfullyLoaded);
 
     if (normalizedPreview) {
-      applyBattlePreview(normalizedPreview, levels);
+      applyBattlePreview(normalizedPreview, levels, {
+        forceLevelOneLanding,
+        requiresLevelOneIntro,
+      });
     }
   } catch (error) {
     console.error('Failed to preload landing assets.', error);
@@ -3998,8 +4008,14 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
       }
 
       if (previewData) {
-        applyBattlePreview(previewData, resolvedLevels);
-        isLevelOneLanding = shouldForceLevelOneLanding || detectLevelOneLandingState();
+        const landingPreference = applyBattlePreview(previewData, resolvedLevels, {
+          forceLevelOneLanding: shouldForceLevelOneLanding,
+          requiresLevelOneIntro,
+        });
+        isLevelOneLanding =
+          typeof landingPreference === 'boolean'
+            ? landingPreference
+            : shouldForceLevelOneLanding || detectLevelOneLandingState();
         battleButton = getActiveBattleButton();
         applyLandingBodyClasses(isLevelOneLanding);
       }
