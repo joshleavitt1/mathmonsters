@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE_NAME = `mathmonsters-cache-${CACHE_VERSION}`;
 const OFFLINE_ASSETS = [
   './',
@@ -31,6 +31,8 @@ const OFFLINE_ASSETS = [
   'images/hero/shellfin_attack_2.png',
   'images/monster/monster_sprite_1.png',
   'images/monster/monster_attack_1.png',
+  'images/intro/egg.png',
+  'images/intro/doctor.png',
   'images/complete/gem.png',
   './data/levels.json',
   './data/player.json',
