@@ -52,6 +52,10 @@ body {
   box-sizing: border-box;
 }
 
+p {
+  word-spacing: -2px;
+}
+
 @supports (-webkit-touch-callout: none) {
   body {
     min-height: -webkit-fill-available;
