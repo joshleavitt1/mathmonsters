@@ -2529,16 +2529,11 @@ const applyBattlePreview = (
     const totalFallback = 10;
     const rawEarned = Number(previewData?.progressExperienceEarned);
     const rawTotal = Number(previewData?.progressExperienceTotal);
-    const earnedCandidate = Number.isFinite(rawEarned)
-      ? Math.max(0, Math.round(rawEarned))
-      : 0;
-    const resolvedTotal =
-      Number.isFinite(rawTotal) && rawTotal > 0
-        ? Math.max(1, Math.round(rawTotal))
-        : totalFallback;
-    const displayTotal = resolvedTotal || totalFallback;
-    const clampedEarned = Math.min(Math.max(earnedCandidate, 0), 10);
-    const normalizedEarned = Math.min(clampedEarned, displayTotal);
+    const hasEarned = Number.isFinite(rawEarned);
+    const hasTotal = Number.isFinite(rawTotal) && rawTotal > 0;
+    const displayTotal = hasTotal ? Math.max(1, Math.round(rawTotal)) : totalFallback;
+    const displayEarned = hasEarned ? Math.max(0, Math.round(rawEarned)) : 0;
+    const normalizedEarned = Math.min(displayEarned, displayTotal);
     const ratio = displayTotal > 0 ? Math.min(1, normalizedEarned / displayTotal) : 0;
     const ariaText = `${normalizedEarned} of ${displayTotal} experience`;
 
