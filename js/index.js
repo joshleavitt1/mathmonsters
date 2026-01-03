@@ -2526,19 +2526,21 @@ const applyBattlePreview = (
       return;
     }
 
+    const totalFallback = 10;
     const rawEarned = Number(previewData?.progressExperienceEarned);
     const rawTotal = Number(previewData?.progressExperienceTotal);
-    const earned = Number.isFinite(rawEarned) ? Math.max(0, Math.round(rawEarned)) : 0;
-    const total = Number.isFinite(rawTotal) ? Math.max(0, Math.round(rawTotal)) : 0;
-    const clampedEarned = total > 0 ? Math.min(earned, total) : earned;
-    const ratio = total > 0 ? Math.min(1, clampedEarned / total) : 0;
-    const progressText =
-      typeof previewData?.progressExperienceText === 'string'
-        ? previewData.progressExperienceText.trim()
-        : '';
-    const ariaText = progressText
-      ? `${progressText} experience`
-      : `${clampedEarned} of ${total} experience`;
+    const earnedCandidate = Number.isFinite(rawEarned)
+      ? Math.max(0, Math.round(rawEarned))
+      : 0;
+    const resolvedTotal =
+      Number.isFinite(rawTotal) && rawTotal > 0
+        ? Math.max(1, Math.round(rawTotal))
+        : totalFallback;
+    const displayTotal = resolvedTotal || totalFallback;
+    const clampedEarned = Math.min(Math.max(earnedCandidate, 0), 10);
+    const normalizedEarned = Math.min(clampedEarned, displayTotal);
+    const ratio = displayTotal > 0 ? Math.min(1, normalizedEarned / displayTotal) : 0;
+    const ariaText = `${normalizedEarned} of ${displayTotal} experience`;
 
     if (homeExperienceContainer) {
       homeExperienceContainer.hidden = false;
@@ -2546,13 +2548,13 @@ const applyBattlePreview = (
     }
 
     if (homeExperienceCount) {
-      homeExperienceCount.textContent = `${clampedEarned}/${total}`;
+      homeExperienceCount.textContent = `${normalizedEarned}/${displayTotal}`;
     }
 
     if (homeExperienceProgress) {
       homeExperienceProgress.setAttribute('aria-valuemin', '0');
-      homeExperienceProgress.setAttribute('aria-valuemax', `${total}`);
-      homeExperienceProgress.setAttribute('aria-valuenow', `${clampedEarned}`);
+      homeExperienceProgress.setAttribute('aria-valuemax', `${displayTotal}`);
+      homeExperienceProgress.setAttribute('aria-valuenow', `${normalizedEarned}`);
       homeExperienceProgress.setAttribute('aria-valuetext', ariaText);
       homeExperienceProgress.style.setProperty('--progress-value', `${ratio}`);
     }
