@@ -18,3 +18,21 @@ This scenario verifies that stored progress using a string current level still l
    ```
 
 This protects against regressions where string-based current level progress prevented level-specific sprites from loading.
+
+## Level 1 Landing Routing With Experience
+
+This scenario ensures Level 1 players only see the intro when they have zero experience.
+
+1. Clear stored progress: `localStorage.clear();` then refresh. Confirm the Level 1 intro/egg experience appears.
+2. Seed a Level 1 profile with experience and reload:
+   ```js
+   localStorage.setItem('mathmonstersPlayerProfile', JSON.stringify({
+     progress: { experienceTotal: 1, currentLevel: 1 },
+   }));
+   ```
+   Refresh the homepage and confirm the standard landing (actions and battle button visible) is shown instead of the intro.
+3. Clear the seeded profile after verification:
+   ```js
+   localStorage.removeItem('mathmonstersPlayerProfile');
+   localStorage.removeItem('mathmonstersProgress');
+   ```
