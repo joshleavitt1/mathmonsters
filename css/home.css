@@ -90,7 +90,7 @@ body.home-page {
   --progress-gradient-start: #33aaff;
   --progress-gradient-end: #1a73ff;
 
-  width: 220px;
+  width: 100%;
   margin: 0 auto;
   background-color: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.25);
