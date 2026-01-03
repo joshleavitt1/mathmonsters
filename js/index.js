@@ -1182,13 +1182,6 @@ const setupLevelOneIntro = ({
   })();
 };
 
-(async () => {
-  const isAuthenticated = await ensureAuthenticated();
-  if (isAuthenticated) {
-    startLandingExperience();
-  }
-})();
-
 const getNow = () =>
   typeof performance !== 'undefined' && typeof performance.now === 'function'
     ? performance.now()
@@ -4493,5 +4486,22 @@ const bootstrapLanding = async () => {
     await initLandingInteractions({ ...landingEntryState }, { preloaderReadyPromise });
   }
 };
+
+const initializeLanding = async () => {
+  try {
+    const isAuthenticated = await ensureAuthenticated();
+    if (isAuthenticated) {
+      startLandingExperience();
+      return;
+    }
+
+    await finishPreloader();
+  } catch (error) {
+    console.error('Failed to initialize landing experience.', error);
+    await finishPreloader();
+  }
+};
+
+initializeLanding();
 
 initializeDevOverlay();
