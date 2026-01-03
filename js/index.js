@@ -158,12 +158,142 @@ const CSS_VIEWPORT_OFFSET_VAR = '--viewport-bottom-offset';
 
 const REGISTER_PAGE_URL = 'index.html';
 
-const progressUtils =
-  (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
+const PROGRESS_UTILS_SCRIPT_NAME = 'js/utils/progress.js';
 
-if (!progressUtils) {
-  throw new Error('Progress utilities are not available.');
-}
+const { progressUtils, progressUtilitiesAvailable } = (() => {
+  const existing =
+    (typeof globalThis !== 'undefined' && globalThis.mathMonstersProgress) || null;
+
+  if (existing) {
+    return { progressUtils: existing, progressUtilitiesAvailable: true };
+  }
+
+  const fallbackIsPlainObject = (value) =>
+    Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+  const fallbackNormalizeExperienceValue = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return null;
+    }
+    return Math.max(0, Math.round(numericValue));
+  };
+
+  const fallbackNormalizeExperienceMap = (source) => {
+    const normalized = {};
+
+    if (Number.isFinite(Number(source))) {
+      const normalizedValue = fallbackNormalizeExperienceValue(source);
+      if (normalizedValue !== null) {
+        normalized.total = normalizedValue;
+      }
+      return normalized;
+    }
+
+    if (!fallbackIsPlainObject(source)) {
+      return {};
+    }
+
+    Object.entries(source).forEach(([key, value]) => {
+      const levelKey = String(key).trim();
+      const normalizedValue = fallbackNormalizeExperienceValue(value);
+      if (!levelKey || normalizedValue === null) {
+        return;
+      }
+      normalized[levelKey] = normalizedValue;
+    });
+    return normalized;
+  };
+
+  const fallbackMergeExperienceMaps = (base, extra) => {
+    const merged = { ...fallbackNormalizeExperienceMap(base) };
+    const additional = fallbackNormalizeExperienceMap(extra);
+
+    Object.entries(additional).forEach(([key, value]) => {
+      merged[key] = value;
+    });
+
+    return merged;
+  };
+
+  const fallbackReadTotalExperience = (experienceMap) => {
+    const normalized = fallbackNormalizeExperienceMap(experienceMap);
+    if (!normalized || typeof normalized !== 'object') {
+      return 0;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(normalized, 'total')) {
+      const direct = fallbackNormalizeExperienceValue(normalized.total);
+      if (direct !== null) {
+        return direct;
+      }
+    }
+
+    let hasValue = false;
+    let sum = 0;
+
+    Object.values(normalized).forEach((value) => {
+      const normalizedValue = fallbackNormalizeExperienceValue(value);
+      if (normalizedValue === null) {
+        return;
+      }
+      sum += normalizedValue;
+      hasValue = true;
+    });
+
+    return hasValue ? sum : 0;
+  };
+
+  const fallbackComputeExperienceProgress = (earned, requirement) => {
+    const safeEarned = Number.isFinite(earned) ? Math.max(0, Math.round(earned)) : 0;
+    const safeRequirement = Number.isFinite(requirement)
+      ? Math.max(0, Math.round(requirement))
+      : 0;
+
+    const totalDisplay = safeRequirement;
+    const earnedDisplay = Math.min(totalDisplay, safeEarned);
+    const ratio = totalDisplay > 0 ? Math.min(1, earnedDisplay / totalDisplay) : 0;
+
+    return {
+      ratio,
+      text: `${earnedDisplay} of ${totalDisplay}`,
+      earned: earnedDisplay,
+      total: totalDisplay,
+      earnedDisplay,
+      totalDisplay,
+    };
+  };
+
+  const fallbackComputeExperienceTier = (totalExperience, tierSize = 10) => {
+    const milestoneSize = Number.isFinite(tierSize) && tierSize > 0 ? tierSize : 10;
+    const normalizedTotal = fallbackNormalizeExperienceValue(totalExperience) ?? 0;
+    return Math.floor(normalizedTotal / milestoneSize) + 1;
+  };
+
+  const fallbackComputeExperienceMilestoneProgress = (totalExperience, tierSize = 10) => {
+    const milestoneSize = Number.isFinite(tierSize) && tierSize > 0 ? tierSize : 10;
+    const normalizedTotal = fallbackNormalizeExperienceValue(totalExperience) ?? 0;
+    const earnedTowardTier = normalizedTotal % milestoneSize;
+
+    return fallbackComputeExperienceProgress(earnedTowardTier, milestoneSize);
+  };
+
+  console.warn(
+    `Progress utilities are not available; using no-op fallbacks. Ensure ${PROGRESS_UTILS_SCRIPT_NAME} is loaded before js/index.js.`
+  );
+
+  return {
+    progressUtils: {
+      isPlainObject: fallbackIsPlainObject,
+      normalizeExperienceMap: fallbackNormalizeExperienceMap,
+      mergeExperienceMaps: fallbackMergeExperienceMaps,
+      readTotalExperience: fallbackReadTotalExperience,
+      computeExperienceTier: fallbackComputeExperienceTier,
+      computeExperienceMilestoneProgress: fallbackComputeExperienceMilestoneProgress,
+    },
+    progressUtilitiesAvailable: false,
+  };
+})();
 
 const {
   isPlainObject,
@@ -3056,6 +3186,14 @@ const collectDevOverlayPlayerData = () => {
       ? window.mathMonstersBattleSnapshot
       : null;
 
+  const progressUtilsStatus = {
+    available: progressUtilitiesAvailable,
+    expectedScript: PROGRESS_UTILS_SCRIPT_NAME,
+    message: progressUtilitiesAvailable
+      ? 'Progress utilities available.'
+      : `Progress utilities unavailable; ensure ${PROGRESS_UTILS_SCRIPT_NAME} is loaded.`,
+  };
+
   return {
     timestamp: new Date().toISOString(),
     preloadedData: preloaded,
@@ -3072,6 +3210,7 @@ const collectDevOverlayPlayerData = () => {
         : preloaded?.previewData ?? null,
     storedProfile,
     battleSnapshot,
+    progressUtilsStatus,
   };
 };
 
