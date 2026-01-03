@@ -1192,10 +1192,15 @@ const mergePlayerWithProgress = (rawPlayerData) => {
   const existingExperience = normalizeExperienceMap(player?.progress?.experience);
   const baseExperience = normalizeExperienceMap(baseProgress?.experience);
   const storedExperience = normalizeExperienceMap(storedProgress?.experience);
-  const combinedExperience = mergeExperienceMaps(
-    mergeExperienceMaps(baseExperience, existingExperience),
-    storedExperience
-  );
+  const remoteExperience = mergeExperienceMaps(baseExperience, existingExperience);
+  const remoteExperienceTotal = readTotalExperience(remoteExperience);
+  const storedExperienceTotal = readTotalExperience(storedExperience);
+
+  let combinedExperience = remoteExperience;
+
+  if (storedExperienceTotal > remoteExperienceTotal) {
+    combinedExperience = mergeExperienceMaps(remoteExperience, storedExperience);
+  }
 
   if (Object.keys(combinedExperience).length > 0) {
     mergedProgress.experience = combinedExperience;
@@ -1209,8 +1214,15 @@ const mergePlayerWithProgress = (rawPlayerData) => {
       : { ...baseBattleVariables };
 
   if (storedProgress && typeof storedProgress === 'object') {
-    if (typeof storedProgress.currentLevel === 'number') {
-      mergedProgress.currentLevel = storedProgress.currentLevel;
+    const storedCurrentLevel = normalizeCurrentLevel(storedProgress.currentLevel);
+    const existingCurrentLevel = normalizeCurrentLevel(mergedProgress.currentLevel);
+    const resolvedCurrentLevel = Math.max(
+      Number.isFinite(existingCurrentLevel) ? existingCurrentLevel : -Infinity,
+      Number.isFinite(storedCurrentLevel) ? storedCurrentLevel : -Infinity
+    );
+
+    if (Number.isFinite(resolvedCurrentLevel)) {
+      mergedProgress.currentLevel = resolvedCurrentLevel;
     }
 
     if (typeof storedProgress.timeRemainingSeconds === 'number') {
