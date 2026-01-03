@@ -31,7 +31,14 @@ body.is-standard-landing main.landing {
   height: auto;
 }
 
+body.is-standard-landing .bubbles {
+  z-index: 0;
+  bottom: var(--page-pad);  /* respects the 16px padding */
+}
+
 body.is-standard-landing .landing__standard {
+  position: relative;
+  z-index: 2;
   flex: 0 1 auto;
   height: 100%;
   min-height: 100%;
