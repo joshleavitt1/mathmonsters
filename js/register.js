@@ -1,5 +1,7 @@
 const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
 const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+const ACCOUNTS_STORAGE_KEY = 'mathmonstersAccounts';
+const ACTIVE_ACCOUNT_STORAGE_KEY = 'mathmonstersActiveAccount';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 const STARTING_LEVEL = 2;
 const STARTING_GEMS = 0;
@@ -35,6 +37,9 @@ const saveStateUtils =
   (typeof window !== 'undefined' ? window.mathMonstersSaveState : null);
 
 const { resetSaveState, writeSaveState } = saveStateUtils || {};
+const playerProfileUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
+  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
 
 const isPlainObject = (value) =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -48,6 +53,138 @@ const clonePlainObject = (value) => {
     return JSON.parse(JSON.stringify(value));
   } catch (error) {
     console.warn('Unable to clone player data object.', error);
+    return null;
+  }
+};
+
+const normalizeEmail = (value) => {
+  if (typeof playerProfileUtils?.normalizeAccountEmail === 'function') {
+    return playerProfileUtils.normalizeAccountEmail(value) || '';
+  }
+
+  const trimmed = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return trimmed;
+};
+
+const readStoredAccounts = () => {
+  if (typeof playerProfileUtils?.readStoredAccounts === 'function') {
+    return playerProfileUtils.readStoredAccounts() || [];
+  }
+
+  try {
+    const raw = window.localStorage?.getItem(ACCOUNTS_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Unable to read stored accounts.', error);
+    return [];
+  }
+};
+
+const writeStoredAccounts = (accounts) => {
+  if (typeof playerProfileUtils?.writeStoredAccounts === 'function') {
+    return playerProfileUtils.writeStoredAccounts(accounts) || [];
+  }
+
+  const sanitized = Array.isArray(accounts) ? accounts : [];
+  try {
+    window.localStorage?.setItem(
+      ACCOUNTS_STORAGE_KEY,
+      JSON.stringify(sanitized)
+    );
+  } catch (error) {
+    console.warn('Unable to persist stored accounts.', error);
+  }
+
+  return sanitized;
+};
+
+const findAccountByEmail = (email) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized) {
+    return null;
+  }
+
+  const accounts = readStoredAccounts();
+  if (typeof playerProfileUtils?.findAccountByEmail === 'function') {
+    return playerProfileUtils.findAccountByEmail(accounts, normalized) || null;
+  }
+
+  return (
+    accounts.find(
+      (account) => normalizeEmail(account?.email) === normalized
+    ) || null
+  );
+};
+
+const writeCachedProfile = (profile) => {
+  if (typeof playerProfileUtils?.writeCachedProfile === 'function') {
+    playerProfileUtils.writeCachedProfile(profile);
+    return;
+  }
+
+  try {
+    const storage = window.sessionStorage;
+    if (!storage) {
+      return;
+    }
+
+    if (!profile || typeof profile !== 'object') {
+      storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+      return;
+    }
+
+    storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+  } catch (error) {
+    console.warn('Unable to cache player profile.', error);
+  }
+};
+
+const persistActiveAccount = (account) => {
+  const email = normalizeEmail(account?.email ?? account);
+  if (!email) {
+    return null;
+  }
+
+  if (typeof playerProfileUtils?.setActiveAccount === 'function') {
+    return playerProfileUtils.setActiveAccount(account);
+  }
+
+  try {
+    window.localStorage?.setItem(
+      ACTIVE_ACCOUNT_STORAGE_KEY,
+      JSON.stringify({
+        email,
+        accountLevel: account?.accountLevel,
+        updatedAt: Date.now(),
+      })
+    );
+  } catch (error) {
+    console.warn('Unable to persist active account session.', error);
+  }
+
+  return { email, accountLevel: account?.accountLevel ?? null };
+};
+
+const readActiveAccount = () => {
+  if (typeof playerProfileUtils?.getActiveAccount === 'function') {
+    return playerProfileUtils.getActiveAccount();
+  }
+
+  try {
+    const raw = window.localStorage?.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    const email = normalizeEmail(parsed?.email);
+    return email ? { email, accountLevel: parsed?.accountLevel ?? null } : null;
+  } catch (error) {
+    console.warn('Unable to read active account session.', error);
     return null;
   }
 };
@@ -276,46 +413,11 @@ const loadDefaultPlayerData = async () => {
   }
 };
 
-const storePlayerDataForAccount = async (supabase, userId, playerData) => {
-  if (!supabase?.from || !userId || !isPlainObject(playerData)) {
-    return false;
-  }
-
-  const payload = clonePlainObject(playerData);
-  if (!payload) {
-    return false;
-  }
-
-  try {
-    const { error } = await supabase
-      .from('player_profiles')
-      .upsert({ id: userId, player_data: payload }, { onConflict: 'id' });
-
-    if (error) {
-      console.warn('Supabase rejected the request to persist player data.', error);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.warn('Unable to persist player data for the new account.', error);
-    return false;
-  }
-};
-
 const clearGuestSessionFlag = () => {
   try {
     window.localStorage?.removeItem(GUEST_SESSION_KEY);
   } catch (error) {
     console.warn('Unable to clear guest session flag.', error);
-  }
-};
-
-const clearStoredPlayerProfile = () => {
-  try {
-    window.sessionStorage?.removeItem(PLAYER_PROFILE_STORAGE_KEY);
-  } catch (error) {
-    console.warn('Unable to clear stored player profile cache.', error);
   }
 };
 
@@ -346,7 +448,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   );
   const errorContainer = document.querySelector('[data-register-errors]');
   const errorList = document.querySelector('[data-register-error-list]');
-  const supabase = window.supabaseClient;
 
   const renderErrors = (messages) => {
     if (!errorContainer || !errorList) {
@@ -388,23 +489,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  if (!supabase) {
-    renderErrors('Registration service is unavailable. Please try again later.');
+  const existingAccount = readActiveAccount();
+  if (existingAccount?.email) {
+    clearGuestSessionFlag();
+    window.location.replace(HOME_PAGE_PATH);
     return;
-  }
-
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.warn('Failed to fetch existing session', error);
-    }
-    if (data?.session) {
-      clearGuestSessionFlag();
-      window.location.replace(HOME_PAGE_PATH);
-      return;
-    }
-  } catch (error) {
-    console.warn('Session lookup failed', error);
   }
 
   form.addEventListener('submit', async (event) => {
@@ -437,96 +526,63 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       const defaultPlayerData = await loadDefaultPlayerData();
-      const startingPlayerData = applyStartingCurrentLevel(defaultPlayerData);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            accountLevel: STARTING_LEVEL,
-            playerData: startingPlayerData,
-          },
-        },
-      });
+      const startingPlayerData =
+        applyStartingCurrentLevel(defaultPlayerData) || {};
 
-      if (error) {
-        renderErrors(error.message || 'Unable to register. Please try again.');
+      const normalizedEmail = normalizeEmail(email);
+      if (!normalizedEmail) {
+        renderErrors('Enter a valid email address.');
         setLoading(false);
         return;
       }
 
-      let latestUser = data?.user ?? null;
-      const persistStartingPlayerData = startingPlayerData;
-
-      const completeRegistration = async (sessionUser) => {
-        const user = sessionUser ?? latestUser;
-        if (user?.id && persistStartingPlayerData) {
-          await storePlayerDataForAccount(
-            supabase,
-            user.id,
-            persistStartingPlayerData
-          );
-        }
-        try {
-          await supabase.auth.updateUser({
-            data: { accountLevel: STARTING_LEVEL },
-          });
-        } catch (error) {
-          console.warn(
-            'Unable to update the account level metadata for the new player.',
-            error
-          );
-        }
-        try {
-          const saveStatePayload = {
-            difficulty: STARTING_LEVEL,
-            correctStreak: 0,
-            incorrectStreak: 0,
-            xpTotal: 0,
-            spriteTier: 1,
-            gems: STARTING_GEMS,
-            lastSeenDifficulty: STARTING_LEVEL,
-            lastSeenSpriteTier: 1,
-          };
-
-          if (typeof resetSaveState === 'function') {
-            resetSaveState(saveStatePayload);
-          } else if (typeof writeSaveState === 'function') {
-            writeSaveState(saveStatePayload);
-          }
-        } catch (error) {
-          console.warn('Unable to reset saved progress for the new player.', error);
-        }
-        clearStoredPlayerProfile();
-        clearGuestSessionFlag();
-        window.location.replace(HOME_PAGE_PATH);
-      };
-
-      if (data?.session) {
-        await completeRegistration(data.user ?? null);
-        return;
-      }
-
-      const { data: signInData, error: signInError } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-      if (signInData?.user) {
-        latestUser = signInData.user;
-      }
-
-      if (signInError || !signInData?.session) {
+      if (findAccountByEmail(normalizedEmail)) {
         renderErrors(
-          signInError?.message ||
-            'Registration was successful, but we could not start your session automatically. Please sign in to continue.'
+          'An account already exists for this email. Please sign in instead.'
         );
         setLoading(false);
         return;
       }
 
-      await completeRegistration(signInData.user ?? null);
+      const newAccount = {
+        email: normalizedEmail,
+        password,
+        accountLevel: STARTING_LEVEL,
+        playerData: clonePlainObject(startingPlayerData) || {},
+      };
+
+      const accounts = readStoredAccounts().filter(Boolean);
+      accounts.push(newAccount);
+      writeStoredAccounts(accounts);
+
+      try {
+        const saveStatePayload = {
+          difficulty: STARTING_LEVEL,
+          correctStreak: 0,
+          incorrectStreak: 0,
+          xpTotal: 0,
+          spriteTier: 1,
+          gems: STARTING_GEMS,
+          lastSeenDifficulty: STARTING_LEVEL,
+          lastSeenSpriteTier: 1,
+        };
+
+        if (typeof resetSaveState === 'function') {
+          resetSaveState(saveStatePayload);
+        } else if (typeof writeSaveState === 'function') {
+          writeSaveState(saveStatePayload);
+        }
+      } catch (error) {
+        console.warn('Unable to reset saved progress for the new player.', error);
+      }
+
+      persistActiveAccount({
+        email: newAccount.email,
+        accountLevel: newAccount.accountLevel,
+      });
+      writeCachedProfile(newAccount.playerData);
+      clearGuestSessionFlag();
+      window.location.replace(HOME_PAGE_PATH);
     } catch (error) {
       console.error('Unexpected error during registration', error);
       renderErrors('An unexpected error occurred. Please try again.');
