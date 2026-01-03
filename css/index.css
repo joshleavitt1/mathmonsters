@@ -861,11 +861,12 @@ body.home-page {
 
 .home__content {
   box-sizing: border-box;
+  margin: 32px 0 auto;
   width: 420px;
   height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
   align-items: stretch;
 }
 
@@ -875,7 +876,6 @@ body.home-page {
   align-items: center;
   justify-content: center;
   gap: 24px;
-  padding-top: 24px;
   text-align: center;
 }
 
@@ -890,11 +890,11 @@ body.home-page {
 
 .home__hero-level {
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #ffffff;
-  background-color: #ffffff05;
-  padding: 6px 14px;
+  background-color: #ffffff24;
+  padding: 8px 16px;
   border-radius: 999px;
   display: inline-block;
 }
@@ -968,18 +968,27 @@ body.home-page {
   }
 }
 
-.home__hero-sprite {
+.home__hero {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
   width: 100%;
-  max-width: 300px;
+  min-height: 0; /* prevents weird overflow in flex columns */
+}
+
+.home__hero-sprite {
+  display: block;
+  width: min(300px, 80vw);
   height: auto;
-  max-height: 300px;
+  max-height: min(300px, 45vh);
   object-fit: contain;
+  margin: 0;
+  padding: 0;
   margin: 0 auto;
-  transform: translate3d(0, -22px, 0);
+  transform: translateY(-22px);
   animation: home-hero-swim 4.5s ease-in-out infinite;
   will-change: transform;
   pointer-events: none;
-  padding-top: 24px;
 }
 
 @keyframes home-progress-fill-slide {

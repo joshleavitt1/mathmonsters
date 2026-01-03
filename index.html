@@ -105,46 +105,61 @@
     </div>
 
     <div
-      class="landing__standard home app-safe-area"
-      data-standard-landing
-      aria-live="polite"
-    >
-      <section class="home__content" aria-live="polite">
-        <div class="home__identity">
-          <p class="home__hero-level" data-hero-level>Level 1</p>
-          <p class="home__hero-name" data-hero-name>Shellfin</p>
-          <div class="home__experience" data-home-experience>
-            <div class="home__experience-header">
-              <p class="home__experience-label text-white-50">XP Progress</p>
-              <p class="home__experience-value text-white" data-home-xp-count>0/0</p>
-            </div>
-            <div
-              class="progress home__progress"
-              role="progressbar"
-              aria-label="XP progress toward next tier"
-              aria-valuemin="0"
-              aria-valuemax="0"
-              aria-valuenow="0"
-              aria-valuetext="0 of 0 experience"
-              data-home-xp-progress
-            >
-              <span class="progress__fill home__progress-fill" aria-hidden="true"></span>
-            </div>
-          </div>
+  class="landing__standard home app-safe-area"
+  data-standard-landing
+  aria-live="polite"
+>
+  <section class="home__content" aria-live="polite">
+    <div class="home__identity">
+      <p class="home__hero-level" data-hero-level>Level 1</p>
+      <p class="home__hero-name" data-hero-name>Shellfin</p>
+
+      <div class="home__experience" data-home-experience>
+        <div class="home__experience-header">
+          <p class="home__experience-label text-white-50">XP Progress</p>
+          <p class="home__experience-value text-white" data-home-xp-count>0/0</p>
         </div>
-        <img
-          class="home__hero-sprite"
-          src="./images/hero/shellfin_evolution_1.png"
-          alt="Shellfin ready for battle"
-          data-hero-sprite
-        />
-        <div class="landing__actions">
-          <button class="landing__battle-button" type="button" data-battle-button>
-            Battle
-          </button>
+
+        <div
+          class="progress home__progress"
+          role="progressbar"
+          aria-label="XP progress toward next tier"
+          aria-valuemin="0"
+          aria-valuemax="0"
+          aria-valuenow="0"
+          aria-valuetext="0 of 0 experience"
+          data-home-xp-progress
+        >
+          <span
+            class="progress__fill home__progress-fill"
+            aria-hidden="true"
+          ></span>
         </div>
-      </section>
+      </div>
     </div>
+
+    <!-- NEW HERO WRAPPER -->
+    <div class="home__hero">
+      <img
+        class="home__hero-sprite"
+        src="./images/hero/shellfin_evolution_1.png"
+        alt="Shellfin ready for battle"
+        data-hero-sprite
+      />
+    </div>
+
+    <div class="landing__actions">
+      <button
+        class="landing__battle-button"
+        type="button"
+        data-battle-button
+      >
+        Battle
+      </button>
+    </div>
+  </section>
+</div>
+
 
   </main>
   <div class="level-one-intro" data-level-one-intro aria-hidden="true">
