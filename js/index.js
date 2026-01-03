@@ -903,13 +903,6 @@ const setupLevelOneIntro = ({
   })();
 };
 
-(async () => {
-  const isAuthenticated = await ensureAuthenticated();
-  if (isAuthenticated) {
-    startLandingExperience();
-  }
-})();
-
 const getNow = () =>
   typeof performance !== 'undefined' && typeof performance.now === 'function'
     ? performance.now()
@@ -3289,6 +3282,133 @@ const resetLandingSaveState = () => {
   }
 };
 
+const setPreloaderPaused = (paused) => {
+  if (!preloaderElement) {
+    return;
+  }
+
+  if (paused) {
+    preloaderElement.setAttribute('data-paused', 'true');
+    preloaderElement.setAttribute('aria-hidden', 'true');
+    return;
+  }
+
+  preloaderElement.removeAttribute('data-paused');
+  preloaderElement.removeAttribute('aria-hidden');
+  preloaderElement.removeAttribute('hidden');
+  preloaderElement.classList.remove('preloader--hidden');
+};
+
+const SCENARIO_SAVE_STATES = {
+  'new-user': { xpTotal: 0, difficulty: 1 },
+  'level-1-xp-3': { xpTotal: 3, difficulty: 1 },
+  'level-2-xp-5': { xpTotal: 5, difficulty: 2 },
+};
+
+const applyScenarioSaveState = (scenarioId) => {
+  if (!scenarioId || scenarioId === 'skip') {
+    return { scenarioId: 'skip' };
+  }
+
+  const targetState = SCENARIO_SAVE_STATES[scenarioId];
+  if (!targetState) {
+    return { scenarioId: 'skip' };
+  }
+
+  try {
+    clearLandingVisitedFlag();
+    resetLandingSaveState();
+  } catch (error) {
+    console.warn('Unable to fully clear landing state for scenario selection.', error);
+  }
+
+  if (typeof writeSaveState !== 'function') {
+    return { scenarioId: 'skip' };
+  }
+
+  const xpTotal = Math.max(0, Number(targetState.xpTotal) || 0);
+  const normalizedLevel =
+    normalizeCurrentLevel(targetState.difficulty ?? targetState.currentLevel) || 1;
+  const spriteTier = computeExperienceTier(xpTotal);
+
+  try {
+    writeSaveState({
+      xpTotal,
+      difficulty: normalizedLevel,
+      spriteTier,
+      lastSeenDifficulty: normalizedLevel,
+      lastSeenSpriteTier: spriteTier,
+      correctStreak: 0,
+      incorrectStreak: 0,
+      gems: 0,
+    });
+  } catch (error) {
+    console.warn('Unable to apply scenario save state.', error);
+  }
+
+  return { scenarioId, xpTotal, difficulty: normalizedLevel, spriteTier };
+};
+
+const setupScenarioLauncher = () => {
+  const launcher = document.querySelector('[data-scenario-launcher]');
+  const buttons = launcher
+    ? Array.from(launcher.querySelectorAll('[data-scenario-option]'))
+    : [];
+
+  if (!launcher || !buttons.length) {
+    setPreloaderPaused(false);
+    return Promise.resolve({ scenarioId: 'skip' });
+  }
+
+  setPreloaderPaused(true);
+  launcher.removeAttribute('hidden');
+  launcher.setAttribute('aria-hidden', 'false');
+
+  let resolved = false;
+
+  const resolveSelection = (result, resolve) => {
+    if (resolved) {
+      return;
+    }
+    resolved = true;
+    setPreloaderPaused(false);
+    launcher.setAttribute('hidden', 'true');
+    launcher.setAttribute('aria-hidden', 'true');
+    resolve(result);
+  };
+
+  return new Promise((resolve) => {
+    const finishSelection = (scenarioId, event) => {
+      if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+      }
+
+      if (resolved) {
+        return;
+      }
+
+      buttons.forEach((button) => setInteractiveDisabled(button, true));
+      let appliedState = { scenarioId };
+      try {
+        appliedState = applyScenarioSaveState(scenarioId);
+      } catch (error) {
+        console.warn('Unable to apply selected scenario.', error);
+      }
+      resolveSelection(appliedState, resolve);
+    };
+
+    buttons.forEach((button) => {
+      const scenarioId = button?.dataset?.scenarioOption;
+      if (!scenarioId) {
+        return;
+      }
+
+      setInteractiveDisabled(button, false);
+      button.addEventListener('click', (event) => finishSelection(scenarioId, event));
+    });
+  });
+};
+
 const resolveLandingEntryState = async () => {
   let landingVisited = hasVisitedLanding();
   const storedExperienceTotal = resolveStoredExperienceTotal();
@@ -4111,3 +4231,21 @@ const bootstrapLanding = async () => {
 };
 
 initializeDevOverlay();
+
+const scenarioSelectionPromise = setupScenarioLauncher();
+
+const startApp = async () => {
+  try {
+    await scenarioSelectionPromise;
+  } catch (error) {
+    console.warn('Scenario selection failed; continuing with defaults.', error);
+    setPreloaderPaused(false);
+  }
+
+  const isAuthenticated = await ensureAuthenticated();
+  if (isAuthenticated) {
+    startLandingExperience();
+  }
+};
+
+startApp();
