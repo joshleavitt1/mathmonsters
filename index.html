@@ -18,72 +18,6 @@
   <link rel="stylesheet" href="css/home.css" />
 </head>
 <body class="is-preloading">
-  <button
-    type="button"
-    class="dev-overlay__trigger"
-    data-dev-overlay-trigger
-    aria-label="Toggle player data developer overlay"
-    aria-controls="player-data-dev-overlay"
-    aria-expanded="false"
-    aria-haspopup="dialog"
-  ></button>
-  <div
-    class="dev-overlay"
-    id="player-data-dev-overlay"
-    data-dev-overlay
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="player-data-dev-overlay-title"
-    aria-hidden="true"
-    hidden
-  >
-    <div class="dev-overlay__backdrop" data-dev-overlay-backdrop></div>
-    <div class="dev-overlay__dialog" data-dev-overlay-panel tabindex="-1">
-      <header class="dev-overlay__header">
-        <h2 class="dev-overlay__title" id="player-data-dev-overlay-title">
-          Player Data
-        </h2>
-        <button
-          type="button"
-          class="dev-overlay__close"
-          data-dev-overlay-close
-          aria-label="Close player data overlay"
-        >
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </header>
-      <pre class="dev-overlay__body" data-dev-overlay-body>Loading player data…</pre>
-      <div class="dev-overlay__controls" data-dev-overlay-controls>
-        <div class="dev-overlay__field">
-          <label for="dev-overlay-level-select">Set player level</label>
-          <select
-            id="dev-overlay-level-select"
-            class="dev-overlay__select"
-            data-dev-level-select
-          >
-            <option value="1">Level 1</option>
-            <option value="2">Level 2</option>
-            <option value="3">Level 3</option>
-            <option value="4">Level 4</option>
-            <option value="5">Level 5</option>
-          </select>
-        </div>
-        <button
-          type="button"
-          class="dev-overlay__apply"
-          data-dev-level-apply
-        >
-          Apply
-        </button>
-        <p
-          class="dev-overlay__feedback"
-          data-dev-level-feedback
-          role="status"
-          aria-live="polite"
-        ></p>
-      </div>
-    </div>
-  </div>
   <div
     class="preloader app-safe-area"
     data-preloader
@@ -112,8 +46,6 @@
     hidden
   >
     <div class="scenario-launcher__card">
-        <span aria-hidden="true">&times;</span>
-      </button>
       <p class="scenario-launcher__eyebrow">Test scenarios</p>
       <h1 class="scenario-launcher__title text-white" id="scenario-launcher-title">
         Choose a starting state
