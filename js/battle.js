@@ -3041,19 +3041,26 @@ document.addEventListener('DOMContentLoaded', () => {
     return (normalizedLevel - 6) % milestoneSize === 0;
   };
 
-  const markLandingVisitedForExperiencedPlayers = () => {
-    const normalizedExperience = normalizeExperienceValue(totalExperience);
-
-    if (!Number.isFinite(normalizedExperience) || normalizedExperience <= 0) {
-      return;
-    }
-
+  const markLandingVisited = () => {
     setVisitedFlag(sessionStorage, 'Session');
     setVisitedFlag(localStorage, 'Local');
   };
 
+  const markLandingVisitedForExperiencedPlayers = ({ force = false } = {}) => {
+    const normalizedExperience = normalizeExperienceValue(totalExperience);
+
+    if (!Number.isFinite(normalizedExperience) || normalizedExperience <= 0) {
+      if (force) {
+        markLandingVisited();
+      }
+      return;
+    }
+
+    markLandingVisited();
+  };
+
   const redirectHomeFromBattle = () => {
-    markLandingVisitedForExperiencedPlayers();
+    markLandingVisitedForExperiencedPlayers({ force: true });
     window.location.href = '../index.html';
   };
 
@@ -5510,6 +5517,9 @@ document.addEventListener('DOMContentLoaded', () => {
     hideGlobalProgressDisplay();
 
     awardExperiencePoints({ scheduleProgressUpdate: false });
+    if (win) {
+      markLandingVisitedForExperiencedPlayers({ force: true });
+    }
 
     if (win) {
       setBattleCompleteTitleLines('Great Job!');
