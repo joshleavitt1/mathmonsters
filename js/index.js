@@ -2293,6 +2293,28 @@ const normalizeBattleIndex = (value) => {
   return rounded > 0 ? rounded : null;
 };
 
+const resolveIsLevelOneLanding = ({
+  requiresLevelOneIntro,
+  forceLevelOneLanding,
+  hasIntroProgress,
+  resolvedCurrentLevel,
+} = {}) => {
+  if (requiresLevelOneIntro || forceLevelOneLanding) {
+    return true;
+  }
+
+  if (hasIntroProgress) {
+    return false;
+  }
+
+  const normalizedLevel = normalizeBattleIndex(resolvedCurrentLevel);
+  if (normalizedLevel !== null) {
+    return normalizedLevel <= 1;
+  }
+
+  return !hasIntroProgress;
+};
+
 const HOME_ACTION_GLOW_CLASSES = [
   'home__action--glow',
   'home__action--glow-sword',
@@ -2357,7 +2379,15 @@ const updateHomeTutorialHighlights = ({ currentLevel } = {}) => {
   }
 };
 
-const applyBattlePreview = (previewData = {}, levels = []) => {
+const applyBattlePreview = (
+  previewData = {},
+  levels = [],
+  {
+    requiresLevelOneIntro = false,
+    forceLevelOneLanding = false,
+    hasIntroProgress = false,
+  } = {}
+) => {
   const heroImageElements = document.querySelectorAll('[data-hero-sprite]');
   const monsterImage = document.querySelector('[data-monster]');
   const battleMathElements = document.querySelectorAll('[data-battle-math]');
@@ -2538,7 +2568,12 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
     return null;
   })();
 
-  const isLevelOneLanding = resolvedCurrentLevel !== null ? resolvedCurrentLevel <= 1 : true;
+  const isLevelOneLanding = resolveIsLevelOneLanding({
+    requiresLevelOneIntro,
+    forceLevelOneLanding,
+    hasIntroProgress,
+    resolvedCurrentLevel,
+  });
 
   if (landingRoot) {
     landingRoot.classList.toggle('is-level-one-landing', isLevelOneLanding);
@@ -2567,6 +2602,8 @@ const applyBattlePreview = (previewData = {}, levels = []) => {
 
   updateHeroFloat();
   updateIntroTimingForLanding({ isLevelOneLanding });
+
+  return { isLevelOneLanding, resolvedCurrentLevel };
 };
 
 const preloaderElement = document.querySelector('[data-preloader]');
@@ -3806,7 +3843,11 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     storePreloadedSprites(successfullyLoaded);
 
     if (normalizedPreview) {
-      applyBattlePreview(normalizedPreview, levels);
+      applyBattlePreview(normalizedPreview, levels, {
+        requiresLevelOneIntro,
+        forceLevelOneLanding: shouldForceLevelOneLanding,
+        hasIntroProgress: hasIntroProgressFlag,
+      });
     }
   } catch (error) {
     console.error('Failed to preload landing assets.', error);
@@ -3843,6 +3884,10 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
     typeof preloadedData?.landingVisited === 'boolean'
       ? preloadedData.landingVisited
       : hasVisitedLanding();
+  const hasIntroProgressFlag =
+    typeof preloadedData?.hasIntroProgress === 'boolean'
+      ? preloadedData.hasIntroProgress
+      : hasIntroProgress();
   let requiresLevelOneIntro =
     typeof preloadedData?.requiresLevelOneIntro === 'boolean'
       ? preloadedData.requiresLevelOneIntro
@@ -3865,7 +3910,13 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
   let battleButton = getActiveBattleButton();
   const actionsElement = document.querySelector('.landing__actions');
   const heroInfoElement = document.querySelector('.landing__hero-info');
-  let isLevelOneLanding = shouldForceLevelOneLanding || detectLevelOneLandingState();
+  let resolvedCurrentLevel = null;
+  let isLevelOneLanding = resolveIsLevelOneLanding({
+    requiresLevelOneIntro,
+    forceLevelOneLanding: shouldForceLevelOneLanding,
+    hasIntroProgress: hasIntroProgressFlag,
+    resolvedCurrentLevel,
+  });
   let fallbackPlayerData = preloadedData?.fallbackPlayerData ?? null;
 
   setupSettingsLogout();
@@ -3974,6 +4025,7 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
 
       const resolvedExperienceTotal = readPlayerExperienceTotal(playerData);
       if (Number.isFinite(resolvedExperienceTotal)) {
+        hasIntroProgressFlag = resolvedExperienceTotal > 0;
         requiresLevelOneIntro = resolvedExperienceTotal <= 0;
         if (!requiresLevelOneIntro && !landingVisited) {
           markLandingVisited();
@@ -3998,8 +4050,22 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
       }
 
       if (previewData) {
-        applyBattlePreview(previewData, resolvedLevels);
-        isLevelOneLanding = shouldForceLevelOneLanding || detectLevelOneLandingState();
+        const landingState = applyBattlePreview(previewData, resolvedLevels, {
+          requiresLevelOneIntro,
+          forceLevelOneLanding: shouldForceLevelOneLanding,
+          hasIntroProgress: hasIntroProgressFlag,
+        });
+        if (landingState && typeof landingState === 'object') {
+          resolvedCurrentLevel = landingState.resolvedCurrentLevel ?? resolvedCurrentLevel;
+          isLevelOneLanding = landingState.isLevelOneLanding ?? isLevelOneLanding;
+        } else {
+          isLevelOneLanding = resolveIsLevelOneLanding({
+            requiresLevelOneIntro,
+            forceLevelOneLanding: shouldForceLevelOneLanding,
+            hasIntroProgress: hasIntroProgressFlag,
+            resolvedCurrentLevel,
+          });
+        }
         battleButton = getActiveBattleButton();
         applyLandingBodyClasses(isLevelOneLanding);
       }
@@ -4011,7 +4077,12 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
   };
 
   await loadBattlePreview();
-  isLevelOneLanding = shouldForceLevelOneLanding || detectLevelOneLandingState();
+  isLevelOneLanding = resolveIsLevelOneLanding({
+    requiresLevelOneIntro,
+    forceLevelOneLanding: shouldForceLevelOneLanding,
+    hasIntroProgress: hasIntroProgressFlag,
+    resolvedCurrentLevel,
+  });
   battleButton = getActiveBattleButton();
   applyLandingBodyClasses(isLevelOneLanding);
 
