@@ -5,9 +5,45 @@ const path = require('path');
 const projectRoot = path.resolve(__dirname, '..');
 const dataDir = path.join(projectRoot, 'data');
 const questionsDir = path.join(dataDir, 'questions');
+const QUESTION_TYPE_KEYS = [
+  'type1_multipleChoiceMath',
+  'type2_countTheBubbles',
+  'type3_fillInTheBlank',
+];
 
 const isPlainObject = (value) =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const normalizeQuestionPath = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  let cleaned = value.trim();
+  if (!cleaned) {
+    return null;
+  }
+
+  cleaned = cleaned.replace(/\\/g, '/');
+
+  if (cleaned.startsWith('/data/questions/')) {
+    cleaned = cleaned.slice('/data/questions/'.length);
+  } else if (cleaned.startsWith('data/questions/')) {
+    cleaned = cleaned.slice('data/questions/'.length);
+  } else if (cleaned.startsWith('/questions/')) {
+    cleaned = cleaned.slice('/questions/'.length);
+  } else if (cleaned.startsWith('questions/')) {
+    cleaned = cleaned.slice('questions/'.length);
+  }
+
+  cleaned = cleaned.replace(/^\/+/, '');
+
+  if (!cleaned || cleaned.includes('..')) {
+    return null;
+  }
+
+  return cleaned;
+};
 
 function loadJson(filePath) {
   const absolutePath = path.isAbsolute(filePath)
@@ -71,10 +107,114 @@ function checkAssetExists(assetPath, context, issues) {
   }
 }
 
+const validateQuestionEntry = (question, context, issues, typeKey = null) => {
+  if (!isPlainObject(question)) {
+    issues.push(`${context}: question is not an object`);
+    return;
+  }
+
+  if (typeof question.question !== 'string' || !question.question.trim()) {
+    issues.push(`${context}: missing question text`);
+  }
+
+  const choices = Array.isArray(question.choices)
+    ? question.choices
+    : Array.isArray(question.options)
+    ? question.options
+    : [];
+
+  if (!choices.length) {
+    issues.push(`${context}: choices array is missing or empty`);
+  } else if (
+    Object.prototype.hasOwnProperty.call(question, 'answer') &&
+    !choices.some((choice) => choice === question.answer)
+  ) {
+    issues.push(`${context}: answer is not one of the provided choices`);
+  }
+
+  if (typeKey === 'type2_countTheBubbles' && question.spriteCount !== undefined) {
+    const spriteCount = Number(question.spriteCount);
+    if (!Number.isFinite(spriteCount) || spriteCount <= 0) {
+      issues.push(`${context}: spriteCount should be a positive number`);
+    }
+  }
+};
+
+const validateStructuredQuestionSet = (fileLabel, data, issues) => {
+  let hasQuestions = false;
+
+  QUESTION_TYPE_KEYS.forEach((key) => {
+    const list = Array.isArray(data[key]) ? data[key] : [];
+    if (!list.length) {
+      return;
+    }
+
+    hasQuestions = true;
+    list.forEach((entry, index) =>
+      validateQuestionEntry(entry, `${fileLabel} [${key} #${index + 1}]`, issues, key)
+    );
+  });
+
+  if (!hasQuestions) {
+    issues.push(`${fileLabel}: no questions found for supported types`);
+  }
+};
+
+const validateLegacyQuestionList = (fileLabel, questions, issues) => {
+  if (!Array.isArray(questions) || questions.length === 0) {
+    issues.push(`${fileLabel}: no questions found`);
+    return;
+  }
+
+  const seenIds = new Set();
+  questions.forEach((question, index) => {
+    const prefix = `${fileLabel} [question ${index + 1}]`;
+    if (typeof question?.id === 'number') {
+      if (seenIds.has(question.id)) {
+        issues.push(`${prefix}: duplicate id ${question.id}`);
+      } else {
+        seenIds.add(question.id);
+      }
+    } else {
+      issues.push(`${prefix}: missing numeric id`);
+    }
+
+    validateQuestionEntry(question, prefix, issues);
+  });
+};
+
+const validateQuestionPayload = (payload, label, issues) => {
+  if (isPlainObject(payload)) {
+    const hasStructuredKeys = QUESTION_TYPE_KEYS.some((key) => Array.isArray(payload[key]));
+    if (hasStructuredKeys) {
+      validateStructuredQuestionSet(label, payload, issues);
+      return true;
+    }
+
+    if (Array.isArray(payload.questions)) {
+      validateLegacyQuestionList(label, payload.questions, issues);
+      return true;
+    }
+  }
+
+  if (Array.isArray(payload)) {
+    validateLegacyQuestionList(label, payload, issues);
+    return true;
+  }
+
+  return false;
+};
+
 function validateQuestionSet(fileName, issues) {
-  const absolutePath = path.join(questionsDir, fileName);
+  const normalizedName = normalizeQuestionPath(fileName);
+  if (!normalizedName) {
+    issues.push(`Question reference is invalid: ${fileName}`);
+    return;
+  }
+
+  const absolutePath = path.join(questionsDir, normalizedName);
   if (!fs.existsSync(absolutePath)) {
-    issues.push(`Question file missing: ${fileName}`);
+    issues.push(`Question file missing: ${normalizedName}`);
     return;
   }
 
@@ -83,45 +223,15 @@ function validateQuestionSet(fileName, issues) {
     const raw = fs.readFileSync(absolutePath, 'utf8');
     data = JSON.parse(raw);
   } catch (error) {
-    issues.push(`Failed to parse questions JSON (${fileName}): ${error.message}`);
+    issues.push(`Failed to parse questions JSON (${normalizedName}): ${error.message}`);
     return;
   }
 
-  const questions = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.questions)
-    ? data.questions
-    : [];
-
-  if (!questions.length) {
-    issues.push(`No questions found in ${fileName}`);
+  if (validateQuestionPayload(data, normalizedName, issues)) {
     return;
   }
 
-  const seenIds = new Set();
-  questions.forEach((question, index) => {
-    const prefix = `${fileName} [question ${index + 1}]`;
-    if (typeof question?.id !== 'number') {
-      issues.push(`${prefix}: missing numeric id`);
-    } else if (seenIds.has(question.id)) {
-      issues.push(`${prefix}: duplicate id ${question.id}`);
-    } else {
-      seenIds.add(question.id);
-    }
-
-    if (typeof question?.question !== 'string' || !question.question.trim()) {
-      issues.push(`${prefix}: missing question text`);
-    }
-
-    if (!Array.isArray(question?.options) || question.options.length === 0) {
-      issues.push(`${prefix}: options array is missing or empty`);
-    } else if (
-      typeof question.answer !== 'undefined' &&
-      !question.options.some((option) => option === question.answer)
-    ) {
-      issues.push(`${prefix}: answer is not one of the provided options`);
-    }
-  });
+  issues.push(`${normalizedName}: no recognizable questions found`);
 }
 
 const normalizeCurrentLevel = (value) => {
@@ -438,11 +548,39 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
     const context = { levelKey };
 
     const directBattle = normalizeBattle(level.battle, context);
-    const battleEntries = Array.isArray(level.battles)
-      ? level.battles
-          .map((entry) => normalizeBattle(entry, context))
-          .filter(Boolean)
-      : [];
+    const topLevelBattleConfig = (() => {
+      const source = {};
+
+      if (level && typeof level === 'object') {
+        if (level.monster !== undefined) {
+          source.monster = level.monster;
+        }
+        if (Array.isArray(level.monsters) && level.monsters.length > 0) {
+          source.monsters = level.monsters;
+        }
+        if (level.questionReference !== undefined) {
+          source.questionReference = level.questionReference;
+        }
+        if (level.questions !== undefined) {
+          source.questions = level.questions;
+        }
+      }
+
+      if (Object.keys(source).length === 0) {
+        return null;
+      }
+
+      return normalizeBattle(source, context);
+    })();
+
+    const battleEntries = [
+      topLevelBattleConfig,
+      ...(Array.isArray(level.battles)
+        ? level.battles
+            .map((entry) => normalizeBattle(entry, context))
+            .filter(Boolean)
+        : []),
+    ].filter(Boolean);
 
     const aggregatedMonsters = battleEntries
       .flatMap((entry) => {
@@ -480,6 +618,22 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
           ...chosenBattle,
           monsters: aggregatedMonsters,
         };
+      }
+
+      if (topLevelBattleConfig) {
+        if (!chosenBattle.questions && topLevelBattleConfig.questions) {
+          chosenBattle = {
+            ...chosenBattle,
+            questions: topLevelBattleConfig.questions,
+          };
+        }
+
+        if (!chosenBattle.questionReference && topLevelBattleConfig.questionReference) {
+          chosenBattle = {
+            ...chosenBattle,
+            questionReference: topLevelBattleConfig.questionReference,
+          };
+        }
       }
 
       normalizedLevel.battle = chosenBattle;
@@ -553,7 +707,7 @@ const deriveMathTypeLevels = (levelsData) => {
   return { levels: decoratedLevels };
 };
 
-function validateLevels(issues) {
+function validateLevels(issues, referencedQuestionFiles) {
   const levelsPath = path.join(dataDir, 'levels.json');
   const levelsData = loadJson(levelsPath);
   const derivedLevels = deriveMathTypeLevels(levelsData);
@@ -576,15 +730,26 @@ function validateLevels(issues) {
     }
     const monster = monsterCandidates[0] ?? {};
 
-    const questionPath =
-      typeof battle?.questionReference?.file === 'string'
-        ? battle.questionReference.file
-        : typeof battle?.questions?.path === 'string'
-        ? battle.questions.path
-        : null;
-    if (questionPath) {
-      validateQuestionSet(questionPath.replace(/^questions\//, ''), issues);
-    } else {
+    const inlineQuestionsValidated = validateQuestionPayload(battle?.questions, label, issues);
+
+    const questionPath = (() => {
+      if (typeof battle?.questionReference?.path === 'string') {
+        return battle.questionReference.path;
+      }
+      if (typeof battle?.questionReference?.file === 'string') {
+        return battle.questionReference.file;
+      }
+      if (typeof battle?.questions?.path === 'string') {
+        return battle.questions.path;
+      }
+      return null;
+    })();
+
+    const normalizedQuestionPath = normalizeQuestionPath(questionPath);
+    if (normalizedQuestionPath) {
+      referencedQuestionFiles.add(normalizedQuestionPath);
+      validateQuestionSet(normalizedQuestionPath, issues);
+    } else if (!inlineQuestionsValidated) {
       issues.push(`${label}: missing question reference`);
     }
 
@@ -626,12 +791,38 @@ function validatePlayer(issues) {
   });
 }
 
+function detectOrphanQuestionFiles(referencedQuestionFiles, issues) {
+  const entries = fs.readdirSync(questionsDir, { withFileTypes: true });
+
+  entries.forEach((entry) => {
+    if (!entry.isFile()) {
+      return;
+    }
+
+    if (!entry.name.toLowerCase().endsWith('.json')) {
+      return;
+    }
+
+    const hasReference = Array.from(referencedQuestionFiles).some(
+      (reference) =>
+        reference === entry.name ||
+        reference.endsWith(`/${entry.name}`)
+    );
+
+    if (!hasReference) {
+      issues.push(`Unreferenced question file detected: ${entry.name}`);
+    }
+  });
+}
+
 function main() {
   const issues = [];
+  const referencedQuestionFiles = new Set();
 
   try {
-    validateLevels(issues);
+    validateLevels(issues, referencedQuestionFiles);
     validatePlayer(issues);
+    detectOrphanQuestionFiles(referencedQuestionFiles, issues);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

@@ -655,6 +655,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const ensureQuestionPoolForDifficulty = async (difficulty) => {
+    if (useStructuredQuestions) {
+      return;
+    }
+
     const normalized = clampDifficulty(difficulty);
     if (currentDifficultyQuestionSource === normalized) {
       return;
@@ -4391,7 +4395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     shouldAdvanceCurrentLevel = false;
   }
 
-  function loadData() {
+  async function loadData() {
     const data = window.preloadedData ?? {};
     const battleData = data.battle ?? {};
     const heroData = data.hero ?? {};
@@ -4488,6 +4492,141 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isPlainObjectValue = (value) =>
       Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+    const QUESTION_TYPE_KEYS = QUESTION_TYPE_CONFIG.map(({ key }) => key);
+
+    const normalizeLegacyQuestionList = (questionList) => {
+      if (!Array.isArray(questionList)) {
+        return null;
+      }
+
+      const normalized = questionList
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') {
+            return null;
+          }
+
+          const prompt =
+            typeof entry.question === 'string'
+              ? entry.question.trim()
+              : typeof entry.q === 'string'
+              ? entry.q.trim()
+              : '';
+
+          if (!prompt) {
+            return null;
+          }
+
+          const choices = Array.isArray(entry.options) && entry.options.length > 0
+            ? entry.options
+            : Array.isArray(entry.choices)
+            ? entry.choices
+            : [];
+
+          if (!choices.length) {
+            return null;
+          }
+
+          return {
+            question: prompt,
+            choices,
+            answer: entry.answer,
+          };
+        })
+        .filter(Boolean);
+
+      if (!normalized.length) {
+        return null;
+      }
+
+      return { [QUESTION_TYPE_KEYS[0]]: normalized };
+    };
+
+    const normalizeQuestionPayload = (payload) => {
+      if (isPlainObjectValue(payload)) {
+        const structured = {};
+
+        QUESTION_TYPE_KEYS.forEach((key) => {
+          if (Array.isArray(payload[key])) {
+            structured[key] = payload[key];
+          }
+        });
+
+        if (Object.keys(structured).length > 0) {
+          return structured;
+        }
+
+        if (Array.isArray(payload.questions)) {
+          return normalizeLegacyQuestionList(payload.questions);
+        }
+      }
+
+      if (Array.isArray(payload)) {
+        return normalizeLegacyQuestionList(payload);
+      }
+
+      return null;
+    };
+
+    const resolveQuestionFilePath = (reference) => {
+      if (!isPlainObjectValue(reference)) {
+        return null;
+      }
+
+      const rawFile =
+        typeof reference.path === 'string'
+          ? reference.path
+          : typeof reference.file === 'string'
+          ? reference.file
+          : null;
+
+      if (!rawFile) {
+        return null;
+      }
+
+      let normalized = rawFile.trim();
+      if (!normalized) {
+        return null;
+      }
+
+      if (!/^\/?data\//i.test(normalized)) {
+        if (/^\/?questions\//i.test(normalized)) {
+          normalized = normalized.replace(/^\/+/, '');
+          normalized = `data/${normalized}`;
+        }
+      }
+
+      return resolveAssetPath(normalized);
+    };
+
+    const loadQuestionReference = async (reference) => {
+      const resolvedPath = resolveQuestionFilePath(reference);
+      if (!resolvedPath) {
+        return null;
+      }
+
+      try {
+        const response = await fetch(resolvedPath);
+        if (!response?.ok) {
+          throw new Error(`Unexpected status: ${response?.status ?? 'unknown'}`);
+        }
+
+        const payload = await response.json();
+        const normalized = normalizeQuestionPayload(payload);
+        if (!normalized) {
+          console.warn('Question payload did not match expected structure.', payload);
+          return null;
+        }
+
+        return {
+          payload: normalized,
+          sourceKey: resolvedPath,
+        };
+      } catch (error) {
+        console.warn('Unable to load referenced questions.', error);
+        return null;
+      }
+    };
 
     const normalizeAttackSprites = (...spriteSources) => {
       const allowedKeys = ['basic', 'super'];
@@ -4707,12 +4846,28 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMonsterImg.alt = '';
     }
 
-    const initialQuestions = generateQuestionSetForDifficulty(
-      getResolvedCurrentDifficulty()
+    const inlineQuestions = normalizeQuestionPayload(battleData?.questions);
+    const referencedQuestions = await loadQuestionReference(
+      battleData?.questionReference
     );
+    const questionSourceKey =
+      referencedQuestions?.sourceKey || (inlineQuestions ? 'inline' : null);
+
+    const resolvedQuestionPayload =
+      inlineQuestions ?? referencedQuestions?.payload ?? null;
+
+    const initialQuestions =
+      resolvedQuestionPayload ??
+      generateQuestionSetForDifficulty(getResolvedCurrentDifficulty());
+
     resetQuestionPool(initialQuestions);
-    questionCache.set(getResolvedCurrentDifficulty(), initialQuestions);
-    currentDifficultyQuestionSource = getResolvedCurrentDifficulty();
+    if (useStructuredQuestions) {
+      questionCache.clear();
+      currentDifficultyQuestionSource = questionSourceKey || 'structured';
+    } else {
+      questionCache.set(getResolvedCurrentDifficulty(), initialQuestions);
+      currentDifficultyQuestionSource = getResolvedCurrentDifficulty();
+    }
 
     updateHealthBars();
     updateBattleTimeDisplay();
@@ -5686,7 +5841,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function initBattle() {
+  async function initBattle() {
     battleEnded = false;
     resetSuperAttackBoost();
     questions = [];
@@ -5694,6 +5849,7 @@ document.addEventListener('DOMContentLoaded', () => {
     questionMap = new Map();
     currentQuestionId = null;
     totalQuestionCount = 0;
+    questionCache.clear();
     correctAnswers = 0;
     totalAnswers = 0;
     wrongAnswers = 0;
@@ -5742,7 +5898,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     heroSpriteEntrance?.prepareForEntrance();
     monsterSpriteEntrance?.prepareForEntrance();
-    loadData();
+    await loadData();
     heroSpriteEntrance?.playEntrance();
     monsterSpriteEntrance?.playEntrance();
     updateAccuracyDisplays();
