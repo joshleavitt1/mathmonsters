@@ -1,0 +1,564 @@
+const GUEST_SESSION_KEY = 'mathmonstersGuestSession';
+const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
+const ACCOUNTS_STORAGE_KEY = 'mathmonstersAccounts';
+const ACTIVE_ACCOUNT_STORAGE_KEY = 'mathmonstersActiveAccount';
+const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
+const STARTING_LEVEL = 2;
+const HOME_PAGE_PATH = '../index.html';
+const HERO_APPEARANCE_BY_LEVEL = [
+  Object.freeze({
+    level: 1,
+    sprite: 'images/hero/shellfin_evolution_1.png',
+    attackSprite: 'images/hero/shellfin_attack_1.png',
+  }),
+  Object.freeze({
+    level: 2,
+    sprite: 'images/hero/shellfin_evolution_2.png',
+    attackSprite: 'images/hero/shellfin_attack_2.png',
+  }),
+  Object.freeze({
+    level: 7,
+    sprite: 'images/hero/shellfin_evolution_3.png',
+    attackSprite: 'images/hero/shellfin_attack_3.png',
+  }),
+  Object.freeze({
+    level: 12,
+    sprite: 'images/hero/shellfin_evolution_4.png',
+    attackSprite: 'images/hero/shellfin_attack_4.png',
+  }),
+];
+
+const DEFAULT_HERO_SPRITE = HERO_APPEARANCE_BY_LEVEL[0].sprite;
+const DEFAULT_HERO_ATTACK_SPRITE = HERO_APPEARANCE_BY_LEVEL[0].attackSprite;
+
+const saveStateUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersSaveState) ||
+  (typeof window !== 'undefined' ? window.mathMonstersSaveState : null);
+
+const { resetSaveState, writeSaveState } = saveStateUtils || {};
+const playerProfileUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
+  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
+
+const isPlainObject = (value) =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const clonePlainObject = (value) => {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (error) {
+    console.warn('Unable to clone player data object.', error);
+    return null;
+  }
+};
+
+const normalizeEmail = (value) => {
+  if (typeof playerProfileUtils?.normalizeAccountEmail === 'function') {
+    return playerProfileUtils.normalizeAccountEmail(value) || '';
+  }
+
+  const trimmed = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return trimmed;
+};
+
+const readStoredAccounts = () => {
+  if (typeof playerProfileUtils?.readStoredAccounts === 'function') {
+    return playerProfileUtils.readStoredAccounts() || [];
+  }
+
+  try {
+    const raw = window.localStorage?.getItem(ACCOUNTS_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Unable to read stored accounts.', error);
+    return [];
+  }
+};
+
+const writeStoredAccounts = (accounts) => {
+  if (typeof playerProfileUtils?.writeStoredAccounts === 'function') {
+    return playerProfileUtils.writeStoredAccounts(accounts) || [];
+  }
+
+  const sanitized = Array.isArray(accounts) ? accounts : [];
+  try {
+    window.localStorage?.setItem(
+      ACCOUNTS_STORAGE_KEY,
+      JSON.stringify(sanitized)
+    );
+  } catch (error) {
+    console.warn('Unable to persist stored accounts.', error);
+  }
+
+  return sanitized;
+};
+
+const findAccountByEmail = (email) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized) {
+    return null;
+  }
+
+  const accounts = readStoredAccounts();
+  if (typeof playerProfileUtils?.findAccountByEmail === 'function') {
+    return playerProfileUtils.findAccountByEmail(accounts, normalized) || null;
+  }
+
+  return (
+    accounts.find(
+      (account) => normalizeEmail(account?.email) === normalized
+    ) || null
+  );
+};
+
+const writeCachedProfile = (profile) => {
+  if (typeof playerProfileUtils?.writeCachedProfile === 'function') {
+    playerProfileUtils.writeCachedProfile(profile);
+    return;
+  }
+
+  try {
+    const storage = window.sessionStorage;
+    if (!storage) {
+      return;
+    }
+
+    if (!profile || typeof profile !== 'object') {
+      storage.removeItem(PLAYER_PROFILE_STORAGE_KEY);
+      return;
+    }
+
+    storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+  } catch (error) {
+    console.warn('Unable to cache player profile.', error);
+  }
+};
+
+const persistActiveAccount = (account) => {
+  const email = normalizeEmail(account?.email ?? account);
+  if (!email) {
+    return null;
+  }
+
+  if (typeof playerProfileUtils?.setActiveAccount === 'function') {
+    return playerProfileUtils.setActiveAccount(account);
+  }
+
+  try {
+    window.localStorage?.setItem(
+      ACTIVE_ACCOUNT_STORAGE_KEY,
+      JSON.stringify({
+        email,
+        accountLevel: account?.accountLevel,
+        updatedAt: Date.now(),
+      })
+    );
+  } catch (error) {
+    console.warn('Unable to persist active account session.', error);
+  }
+
+  return { email, accountLevel: account?.accountLevel ?? null };
+};
+
+const readActiveAccount = () => {
+  if (typeof playerProfileUtils?.getActiveAccount === 'function') {
+    return playerProfileUtils.getActiveAccount();
+  }
+
+  try {
+    const raw = window.localStorage?.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    const email = normalizeEmail(parsed?.email);
+    return email ? { email, accountLevel: parsed?.accountLevel ?? null } : null;
+  } catch (error) {
+    console.warn('Unable to read active account session.', error);
+    return null;
+  }
+};
+
+const getHeroAppearanceForLevel = (level) => {
+  const numericLevel = Number(level);
+  if (!Number.isFinite(numericLevel)) {
+    return HERO_APPEARANCE_BY_LEVEL[0];
+  }
+
+  let selectedAppearance = HERO_APPEARANCE_BY_LEVEL[0];
+  for (const appearance of HERO_APPEARANCE_BY_LEVEL) {
+    if (numericLevel >= appearance.level) {
+      selectedAppearance = appearance;
+    }
+  }
+
+  return selectedAppearance;
+};
+
+const isShellfinEvolutionSprite = (value) =>
+  typeof value === 'string' &&
+  /(\/?images\/hero\/shellfin_evolution_\d+\.png)(?=[?#]|$)/i.test(value.trim());
+
+const isShellfinAttackSprite = (value) =>
+  typeof value === 'string' &&
+  /(\/?images\/hero\/shellfin_attack_\d+\.png)(?=[?#]|$)/i.test(value.trim());
+
+const selectSpriteForLevel = (currentSprite, desiredSprite, fallbackSprite) => {
+  const trimmed = typeof currentSprite === 'string' ? currentSprite.trim() : '';
+
+  if (!trimmed) {
+    return desiredSprite ?? fallbackSprite;
+  }
+
+  if (desiredSprite && trimmed !== desiredSprite && isShellfinEvolutionSprite(trimmed)) {
+    return desiredSprite;
+  }
+
+  return trimmed || fallbackSprite;
+};
+
+const selectAttackSpriteForLevel = (currentSprite, desiredSprite, fallbackSprite) => {
+  const trimmed = typeof currentSprite === 'string' ? currentSprite.trim() : '';
+
+  if (!trimmed) {
+    return desiredSprite ?? fallbackSprite;
+  }
+
+  if (desiredSprite && trimmed !== desiredSprite && isShellfinAttackSprite(trimmed)) {
+    return desiredSprite;
+  }
+
+  return trimmed || fallbackSprite;
+};
+
+const cloneHeroForLevel = (hero, level) => {
+  const clonedHero = clonePlainObject(hero) ?? {};
+  const { sprite: desiredSprite, attackSprite: desiredAttackSprite } =
+    getHeroAppearanceForLevel(level);
+
+  return {
+    ...clonedHero,
+    sprite: selectSpriteForLevel(clonedHero.sprite, desiredSprite, DEFAULT_HERO_SPRITE),
+    attackSprite: selectAttackSpriteForLevel(
+      clonedHero.attackSprite,
+      desiredAttackSprite,
+      DEFAULT_HERO_ATTACK_SPRITE,
+    ),
+  };
+};
+
+const extractPlayerData = (rawPlayerData) => {
+  if (!isPlainObject(rawPlayerData)) {
+    return null;
+  }
+
+  const nestedPlayer = rawPlayerData.player;
+  if (isPlainObject(nestedPlayer)) {
+    return nestedPlayer;
+  }
+
+  return rawPlayerData;
+};
+
+const applyStartingCurrentLevel = (playerData) => {
+  const clonedData = clonePlainObject(playerData);
+  const baseHeroSource = isPlainObject(clonedData)
+    ? clonedData.hero
+    : isPlainObject(playerData)
+    ? playerData.hero
+    : null;
+  const heroForStartingLevel = cloneHeroForLevel(baseHeroSource, STARTING_LEVEL);
+  const heroForLevelOne = cloneHeroForLevel(baseHeroSource, 1);
+
+  if (!isPlainObject(clonedData)) {
+    const startingHero = cloneHeroForLevel(heroForStartingLevel, STARTING_LEVEL);
+    const levelEntries = {
+      1: {
+        hero: cloneHeroForLevel(heroForLevelOne, 1),
+      },
+    };
+
+    if (STARTING_LEVEL !== 1) {
+      levelEntries[STARTING_LEVEL] = {
+        hero: cloneHeroForLevel(startingHero, STARTING_LEVEL),
+      };
+    }
+
+    const seededPlayer = {
+      hero: startingHero,
+      progress: {
+        currentLevel: STARTING_LEVEL,
+      },
+      battleVariables: {
+        timeRemainingSeconds: null,
+      },
+      currentLevel: levelEntries,
+    };
+
+    if (isPlainObject(seededPlayer?.progress)) {
+      seededPlayer.progress.currentLevel = STARTING_LEVEL;
+    }
+
+    return seededPlayer;
+  }
+
+  clonedData.hero = cloneHeroForLevel(heroForStartingLevel, STARTING_LEVEL);
+
+  const progressSection = isPlainObject(clonedData.progress)
+    ? clonedData.progress
+    : {};
+
+  clonedData.progress = {
+    ...progressSection,
+    currentLevel: STARTING_LEVEL,
+  };
+
+  if (!isPlainObject(clonedData.battleVariables)) {
+    clonedData.battleVariables = {
+      timeRemainingSeconds: null,
+    };
+  }
+
+  if (!isPlainObject(clonedData.currentLevel)) {
+    clonedData.currentLevel = {};
+  }
+
+  const ensureLevelHero = (levelKey, heroTemplate) => {
+    const levelEntry = isPlainObject(clonedData.currentLevel[levelKey])
+      ? clonedData.currentLevel[levelKey]
+      : (clonedData.currentLevel[levelKey] = {});
+    const numericLevel = Number(levelKey);
+    const appearanceLevel = Number.isFinite(numericLevel) ? numericLevel : undefined;
+    const heroSource = heroTemplate ??
+      (Number.isFinite(appearanceLevel) && appearanceLevel > 1
+        ? heroForStartingLevel
+        : heroForLevelOne);
+    levelEntry.hero = cloneHeroForLevel(heroSource, appearanceLevel);
+  };
+
+  ensureLevelHero(1, heroForLevelOne);
+  if (STARTING_LEVEL !== 1) {
+    ensureLevelHero(STARTING_LEVEL, heroForStartingLevel);
+  }
+
+  return clonedData;
+};
+
+const loadDefaultPlayerData = async () => {
+  const fetchFn =
+    typeof window !== 'undefined' && typeof window.fetch === 'function'
+      ? window.fetch.bind(window)
+      : typeof fetch === 'function'
+      ? fetch
+      : null;
+
+  if (!fetchFn) {
+    return null;
+  }
+
+  try {
+    const response = await fetchFn(DEFAULT_PLAYER_DATA_PATH, {
+      headers: {
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response?.ok) {
+      throw new Error(`Request failed with status ${response?.status ?? 'unknown'}`);
+    }
+
+    const data = await response.json();
+    const extracted = extractPlayerData(data);
+    return clonePlainObject(extracted ?? {});
+  } catch (error) {
+    console.warn('Unable to load default player data for the new account.', error);
+    return null;
+  }
+};
+
+const clearGuestSessionFlag = () => {
+  try {
+    window.localStorage?.removeItem(GUEST_SESSION_KEY);
+  } catch (error) {
+    console.warn('Unable to clear guest session flag.', error);
+  }
+};
+
+const setElementVisibility = (element, shouldShow) => {
+  if (!element) {
+    return;
+  }
+  element.hidden = !shouldShow;
+};
+
+const setFieldState = (field, isDisabled) => {
+  if (!field) {
+    return;
+  }
+  field.disabled = Boolean(isDisabled);
+};
+
+const readTrimmedValue = (value) =>
+  typeof value === 'string' ? value.trim() : '';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const form = document.querySelector('.preloader__form');
+  const emailField = document.getElementById('register-email');
+  const passwordField = document.getElementById('register-password');
+  const submitButton = form?.querySelector('button[type="submit"]');
+  const submitButtonLabel = submitButton?.querySelector(
+    '.preloader__button-label'
+  );
+  const errorContainer = document.querySelector('[data-register-errors]');
+  const errorList = document.querySelector('[data-register-error-list]');
+
+  const renderErrors = (messages) => {
+    if (!errorContainer || !errorList) {
+      return;
+    }
+
+    const normalizedMessages = Array.isArray(messages)
+      ? messages.filter((message) => typeof message === 'string' && message.trim())
+      : typeof messages === 'string' && messages.trim()
+      ? [messages.trim()]
+      : [];
+
+    errorList.innerHTML = '';
+
+    for (const message of normalizedMessages) {
+      const listItem = document.createElement('li');
+      listItem.textContent = message;
+      errorList.appendChild(listItem);
+    }
+
+    setElementVisibility(errorContainer, normalizedMessages.length > 0);
+  };
+
+  const setLoading = (isLoading) => {
+    setFieldState(emailField, isLoading);
+    setFieldState(passwordField, isLoading);
+    if (submitButton) {
+      submitButton.disabled = Boolean(isLoading);
+      submitButton.classList.toggle('is-loading', Boolean(isLoading));
+      submitButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+      if (submitButtonLabel) {
+        submitButtonLabel.textContent = isLoading ? '' : 'Register';
+      }
+    }
+  };
+
+  if (!form || !emailField || !passwordField) {
+    renderErrors('The registration form could not be initialized.');
+    return;
+  }
+
+  const existingAccount = readActiveAccount();
+  if (existingAccount?.email) {
+    clearGuestSessionFlag();
+    window.location.replace(HOME_PAGE_PATH);
+    return;
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    renderErrors([]);
+
+    const email = readTrimmedValue(emailField.value);
+    const password = passwordField.value;
+
+    const validationErrors = [];
+
+    if (!email) {
+      validationErrors.push('Enter your email address.');
+    } else if (!emailField.checkValidity()) {
+      validationErrors.push('Enter a valid email address.');
+    }
+
+    if (!password) {
+      validationErrors.push('Create a password.');
+    } else if (password.length < 6) {
+      validationErrors.push('Password must be at least 6 characters long.');
+    }
+
+    if (validationErrors.length > 0) {
+      renderErrors(validationErrors);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const defaultPlayerData = await loadDefaultPlayerData();
+      const startingPlayerData =
+        applyStartingCurrentLevel(defaultPlayerData) || {};
+
+      const normalizedEmail = normalizeEmail(email);
+      if (!normalizedEmail) {
+        renderErrors('Enter a valid email address.');
+        setLoading(false);
+        return;
+      }
+
+      if (findAccountByEmail(normalizedEmail)) {
+        renderErrors(
+          'An account already exists for this email. Please sign in instead.'
+        );
+        setLoading(false);
+        return;
+      }
+
+      const newAccount = {
+        email: normalizedEmail,
+        password,
+        accountLevel: STARTING_LEVEL,
+        playerData: clonePlainObject(startingPlayerData) || {},
+      };
+
+      const accounts = readStoredAccounts().filter(Boolean);
+      accounts.push(newAccount);
+      writeStoredAccounts(accounts);
+
+      try {
+        const saveStatePayload = {
+        difficulty: STARTING_LEVEL,
+        correctStreak: 0,
+        incorrectStreak: 0,
+        xpTotal: 0,
+        spriteTier: 1,
+        lastSeenDifficulty: STARTING_LEVEL,
+        lastSeenSpriteTier: 1,
+      };
+
+        if (typeof resetSaveState === 'function') {
+          resetSaveState(saveStatePayload);
+        } else if (typeof writeSaveState === 'function') {
+          writeSaveState(saveStatePayload);
+        }
+      } catch (error) {
+        console.warn('Unable to reset saved progress for the new player.', error);
+      }
+
+      persistActiveAccount({
+        email: newAccount.email,
+        accountLevel: newAccount.accountLevel,
+      });
+      writeCachedProfile(newAccount.playerData);
+      clearGuestSessionFlag();
+      window.location.replace(HOME_PAGE_PATH);
+    } catch (error) {
+      console.error('Unexpected error during registration', error);
+      renderErrors('An unexpected error occurred. Please try again.');
+      setLoading(false);
+    }
+  });
+});
