@@ -200,8 +200,14 @@ const redirectToBattle = () => {
   window.location.href = BATTLE_PAGE_URL;
 };
 
-const getLevelOneHeroElement = () =>
-  document.querySelector('[data-level-one-landing] [data-hero-sprite]');
+const getLandingRoot = () =>
+  document.querySelector('[data-standard-landing]') ||
+  document.querySelector('main.landing');
+
+const getLevelOneHeroElement = () => {
+  const landingRoot = getLandingRoot();
+  return landingRoot?.querySelector('[data-hero-sprite]') ?? null;
+};
 
 const getStandardHeroElement = () =>
   document.querySelector('[data-standard-landing] [data-hero-sprite]');
@@ -219,10 +225,8 @@ const getActiveHeroElement = () => {
 };
 
 const getActiveBattleButton = () => {
-  if (document.body.classList.contains('is-standard-landing')) {
-    return document.querySelector('[data-standard-landing] [data-battle-button]');
-  }
-  return document.querySelector('[data-level-one-landing] [data-battle-button]');
+  const landingRoot = getLandingRoot();
+  return landingRoot?.querySelector('[data-battle-button]') ?? null;
 };
 
 const detectLevelOneLandingState = () => {
