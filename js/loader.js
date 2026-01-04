@@ -1605,8 +1605,38 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
       delete normalizedLevel.battle;
     }
 
-    return normalizedLevel;
-  };
+  return normalizedLevel;
+};
+};
+
+const resolveBattleQuestionPath = (battleConfig) => {
+  if (!battleConfig || typeof battleConfig !== 'object') {
+    return null;
+  }
+
+  if (
+    battleConfig.questionReference &&
+    typeof battleConfig.questionReference === 'object' &&
+    typeof battleConfig.questionReference.file === 'string'
+  ) {
+    const trimmed = battleConfig.questionReference.file.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  if (
+    battleConfig.questions &&
+    typeof battleConfig.questions === 'object' &&
+    typeof battleConfig.questions.path === 'string'
+  ) {
+    const trimmed = battleConfig.questions.path.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return null;
 };
 
 const deriveMathTypeLevels = (levelsData, ...playerSources) => {
@@ -2354,9 +2384,23 @@ const fetchPlayerProfile = async () => {
       monster: { ...primaryMonster },
     };
 
-      if (normalizedMonsters.length > 0) {
-        battle.monsters = normalizedMonsters;
+    if (normalizedMonsters.length > 0) {
+      battle.monsters = normalizedMonsters;
+    }
+
+    let questionPayload = null;
+    const questionPath = resolveBattleQuestionPath(battle);
+    if (typeof questionPath === 'string' && questionPath.trim()) {
+      try {
+        const questionRes = await fetch(resolveDataPath(questionPath));
+        if (!questionRes.ok) {
+          throw new Error(`Failed to load questions from ${questionPath}`);
+        }
+        questionPayload = await questionRes.json();
+      } catch (error) {
+        console.warn('Unable to preload questions for battle.', error);
       }
+    }
 
     const sortedLevelsByBattle = levels
       .slice()
@@ -2451,7 +2495,8 @@ const fetchPlayerProfile = async () => {
       hero,
       monster: battle.monster,
       charactersByLevel: levelCharacters,
-      questions,
+      questions: questionPayload ?? questions,
+      questionPath: questionPath || null,
       difficultyState,
       heroSprites: heroSpritesData,
     };

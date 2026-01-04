@@ -20,72 +20,142 @@
         {
           "level": 1,
           "name": "Level 1",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_1_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         },
         {
           "level": 2,
           "name": "Level 2",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_2_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         },
         {
           "level": 3,
           "name": "Level 3",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_3_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         },
         {
           "level": 4,
           "name": "Level 4",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_4_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         },
         {
           "level": 5,
           "name": "Level 5",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_5_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         },
         {
           "level": 6,
           "name": "Level 6",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_6_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         },
         {
           "level": 7,
           "name": "Level 7",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_6_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         },
         {
           "level": 8,
           "name": "Level 8",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_6_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         },
         {
           "level": 9,
           "name": "Level 9",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_6_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         },
         {
           "level": 10,
           "name": "Level 10",
-          "monster": {
-            "spritePool": "standardPool"
-          }
+          "battles": [
+            {
+              "questions": {
+                "path": "questions/level_6_questions.json"
+              },
+              "monster": {
+                "spritePool": "standardPool"
+              }
+            }
+          ]
         }
       ]
     }

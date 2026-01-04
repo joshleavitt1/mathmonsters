@@ -438,11 +438,38 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
     const context = { levelKey };
 
     const directBattle = normalizeBattle(level.battle, context);
-    const battleEntries = Array.isArray(level.battles)
-      ? level.battles
-          .map((entry) => normalizeBattle(entry, context))
-          .filter(Boolean)
-      : [];
+
+    const topLevelBattleConfig = (() => {
+      const source = {};
+
+      if (level && typeof level === 'object') {
+        if (level.monster !== undefined) {
+          source.monster = level.monster;
+        }
+        if (Array.isArray(level.monsters) && level.monsters.length > 0) {
+          source.monsters = level.monsters;
+        }
+        if (level.questionReference !== undefined) {
+          source.questionReference = level.questionReference;
+        }
+        if (level.questions !== undefined) {
+          source.questions = level.questions;
+        }
+      }
+
+      if (Object.keys(source).length === 0) {
+        return null;
+      }
+
+      return normalizeBattle(source, context);
+    })();
+
+    const battleEntries = [
+      topLevelBattleConfig,
+      ...(Array.isArray(level.battles)
+        ? level.battles.map((entry) => normalizeBattle(entry, context)).filter(Boolean)
+        : []),
+    ].filter(Boolean);
 
     const aggregatedMonsters = battleEntries
       .flatMap((entry) => {
@@ -482,6 +509,24 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
         };
       }
 
+      if (topLevelBattleConfig) {
+        if (!chosenBattle.questions && topLevelBattleConfig.questions) {
+          chosenBattle = {
+            ...chosenBattle,
+            questions: topLevelBattleConfig.questions,
+          };
+        }
+
+        if (!chosenBattle.questionReference && topLevelBattleConfig.questionReference) {
+          chosenBattle = {
+            ...chosenBattle,
+            questionReference: topLevelBattleConfig.questionReference,
+          };
+        }
+      }
+    }
+
+    if (chosenBattle) {
       normalizedLevel.battle = chosenBattle;
     } else {
       delete normalizedLevel.battle;
@@ -586,6 +631,10 @@ function validateLevels(issues) {
       validateQuestionSet(questionPath.replace(/^questions\//, ''), issues);
     } else {
       issues.push(`${label}: missing question reference`);
+    }
+
+    if (!isPlainObject(level?.battle)) {
+      issues.push(`${label}: missing battle configuration`);
     }
 
     if (!monsterCandidates.length) {
