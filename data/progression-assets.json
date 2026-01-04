@@ -4,50 +4,50 @@
   "milestones": [
     {
       "level": 7,
-      "heroSprite": "",
-      "attackSprite": "",
+      "heroSprite": "images/hero/shellfin_evolution_2.png",
+      "attackSprite": "images/hero/shellfin_attack_2.png",
       "notes": "First milestone after the intro sequence."
     },
     {
       "level": 12,
-      "heroSprite": "",
-      "attackSprite": "",
+      "heroSprite": "images/hero/shellfin_evolution_3.png",
+      "attackSprite": "images/hero/shellfin_attack_3.png",
       "notes": "Second milestone – unlock a fresh look or attack."
     },
     {
       "level": 17,
-      "heroSprite": "",
-      "attackSprite": "",
+      "heroSprite": "images/hero/shellfin_evolution_3.png",
+      "attackSprite": "images/hero/shellfin_attack_2.png",
       "notes": "Third milestone to introduce another upgrade."
     },
     {
       "level": 22,
-      "heroSprite": "",
-      "attackSprite": "",
+      "heroSprite": "images/hero/shellfin_evolution_2.png",
+      "attackSprite": "images/hero/shellfin_attack_3.png",
       "notes": "Fourth milestone for a new sprite option."
     },
     {
       "level": 27,
-      "heroSprite": "",
-      "attackSprite": "",
+      "heroSprite": "images/hero/shellfin_evolution_3.png",
+      "attackSprite": "images/hero/shellfin_attack_3.png",
       "notes": "Fifth milestone in the reward track."
     },
     {
       "level": 32,
-      "heroSprite": "",
-      "attackSprite": "",
+      "heroSprite": "images/hero/shellfin_evolution_3.png",
+      "attackSprite": "images/hero/shellfin_attack_3.png",
       "notes": "Sixth milestone to keep the upgrades rolling."
     },
     {
       "level": 37,
-      "heroSprite": "",
-      "attackSprite": "",
+      "heroSprite": "images/hero/shellfin_evolution_3.png",
+      "attackSprite": "images/hero/shellfin_attack_2.png",
       "notes": "Seventh milestone for late-game rewards."
     },
     {
       "level": 42,
-      "heroSprite": "",
-      "attackSprite": "",
+      "heroSprite": "images/hero/shellfin_evolution_3.png",
+      "attackSprite": "images/hero/shellfin_attack_3.png",
       "notes": "Eighth milestone – continue pattern as needed."
     }
   ]

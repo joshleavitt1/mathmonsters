@@ -25,7 +25,6 @@ const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const GLOBAL_REWARD_MILESTONE = 5;
 const GLOBAL_PROGRESS_REVEAL_DELAY_MS = 1000;
 const EXPERIENCE_PER_BATTLE = 1;
-const EXPERIENCE_MILESTONE_SIZE = 10;
 
 const DEFAULT_DIFFICULTY_STATE = {
   difficulty: 1,
@@ -72,7 +71,36 @@ const {
   computeExperienceTier,
   computeExperienceMilestoneProgress,
   computeExperienceProgress,
+  normalizeProgressionConfig,
+  getProgressionConfig,
+  setProgressionConfig,
 } = progressUtils;
+
+const DEFAULT_PROGRESSION_CONFIG = normalizeProgressionConfig();
+
+const resolveProgressionConfig = () => {
+  if (typeof getProgressionConfig === 'function') {
+    const progression = getProgressionConfig();
+    if (progression && typeof progression === 'object') {
+      return progression;
+    }
+  }
+
+  if (typeof setProgressionConfig === 'function') {
+    return setProgressionConfig(DEFAULT_PROGRESSION_CONFIG);
+  }
+
+  return DEFAULT_PROGRESSION_CONFIG;
+};
+
+const getExperienceMilestoneSize = () => {
+  const progression = resolveProgressionConfig();
+  const value = Number(progression?.milestoneInterval);
+  if (Number.isFinite(value) && value > 0) {
+    return Math.max(1, Math.round(value));
+  }
+  return DEFAULT_PROGRESSION_CONFIG.milestoneInterval;
+};
 
 const { readSaveState, writeSaveState } = saveStateUtils;
 
@@ -2621,12 +2649,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const updateLevelProgressDisplay = () => {
+    const milestoneSize = getExperienceMilestoneSize();
     const milestoneProgress = computeExperienceMilestoneProgress(
       totalExperience,
-      levelExperienceRequirement || EXPERIENCE_MILESTONE_SIZE
+      milestoneSize
     );
     levelExperienceEarned = milestoneProgress.earnedDisplay;
-    levelExperienceRequirement = milestoneProgress.totalDisplay;
+    levelExperienceRequirement =
+      milestoneProgress.totalDisplay || milestoneSize;
     const progress = milestoneProgress;
 
     const clampedRatio = Math.max(0, Math.min(1, Number(progress.ratio) || 0));
@@ -2776,15 +2806,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const previousTotal = normalizeExperienceValue(totalExperience) ?? 0;
     const nextTotal = previousTotal + EXPERIENCE_PER_BATTLE;
-    const previousTier = computeExperienceTier(
-      previousTotal,
-      EXPERIENCE_MILESTONE_SIZE
-    );
-    const nextTier = computeExperienceTier(nextTotal, EXPERIENCE_MILESTONE_SIZE);
+    const progression = resolveProgressionConfig();
+    const previousTier = computeExperienceTier(previousTotal, progression);
+    const nextTier = computeExperienceTier(nextTotal, progression);
+    const milestoneSize = getExperienceMilestoneSize();
 
     totalExperience = nextTotal;
     experienceTier = nextTier;
-    levelExperienceEarned = nextTotal % EXPERIENCE_MILESTONE_SIZE;
+    levelExperienceEarned = nextTotal % milestoneSize;
 
     persistProgress({ experience: { total: nextTotal } });
     maybeScheduleProgressUpdate();
@@ -4181,12 +4210,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     totalExperience = readTotalExperience(progressData?.experience);
-    experienceTier = computeExperienceTier(
-      totalExperience,
-      EXPERIENCE_MILESTONE_SIZE
-    );
-    levelExperienceRequirement = EXPERIENCE_MILESTONE_SIZE;
-    levelExperienceEarned = totalExperience % EXPERIENCE_MILESTONE_SIZE;
+    const progression = resolveProgressionConfig();
+    experienceTier = computeExperienceTier(totalExperience, progression);
+    levelExperienceRequirement = getExperienceMilestoneSize();
+    levelExperienceEarned = totalExperience % levelExperienceRequirement;
 
     accuracyGoal =
       typeof battleData.accuracyGoal === 'number' &&
@@ -5298,8 +5325,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initialTimeRemaining = 0;
     currentLevelAdvanced = false;
     battleGoalsMet = false;
-    levelExperienceRequirement = EXPERIENCE_MILESTONE_SIZE;
-    levelExperienceEarned = totalExperience % EXPERIENCE_MILESTONE_SIZE;
+    levelExperienceRequirement = getExperienceMilestoneSize();
+    levelExperienceEarned = totalExperience % levelExperienceRequirement;
     cancelScheduledLevelProgressDisplayUpdate();
     clearRewardAnimation();
     updateLevelProgressDisplay();

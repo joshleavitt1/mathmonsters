@@ -20,6 +20,130 @@
     return Math.max(0, Math.round(numericValue));
   };
 
+  const DEFAULT_MILESTONE_INTERVAL = 10;
+  const DEFAULT_STARTING_LEVEL = 1;
+
+  const normalizeNonEmptyString = (value) => {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  };
+
+  const normalizeProgressionMilestone = (value) => {
+    if (!isPlainObject(value)) {
+      return null;
+    }
+
+    const normalizedLevel = Number(value.level);
+    if (!Number.isFinite(normalizedLevel) || normalizedLevel <= 0) {
+      return null;
+    }
+
+    const normalized = {
+      level: Math.max(1, Math.round(normalizedLevel)),
+    };
+
+    const heroSprite = normalizeNonEmptyString(value.heroSprite);
+    if (heroSprite) {
+      normalized.heroSprite = heroSprite;
+    }
+
+    const attackSprite = normalizeNonEmptyString(value.attackSprite);
+    if (attackSprite) {
+      normalized.attackSprite = attackSprite;
+    }
+
+    const notes = normalizeNonEmptyString(value.notes);
+    if (notes) {
+      normalized.notes = notes;
+    }
+
+    return normalized;
+  };
+
+  const normalizeProgressionConfig = (config) => {
+    const defaults = {
+      milestoneInterval: DEFAULT_MILESTONE_INTERVAL,
+      startingLevel: DEFAULT_STARTING_LEVEL,
+      milestones: [],
+    };
+
+    if (Number.isFinite(config)) {
+      const numericInterval = Math.max(1, Math.round(config));
+      return { ...defaults, milestoneInterval: numericInterval };
+    }
+
+    if (!isPlainObject(config)) {
+      return { ...defaults };
+    }
+
+    const normalized = { ...defaults };
+
+    if (Number.isFinite(config.milestoneInterval) && config.milestoneInterval > 0) {
+      normalized.milestoneInterval = Math.max(1, Math.round(config.milestoneInterval));
+    }
+
+    if (Number.isFinite(config.startingLevel) && config.startingLevel > 0) {
+      normalized.startingLevel = Math.max(1, Math.round(config.startingLevel));
+    }
+
+    const milestones = Array.isArray(config.milestones) ? config.milestones : [];
+    const normalizedMilestones = [];
+    const seenLevels = new Set();
+
+    milestones.forEach((entry) => {
+      const normalizedEntry = normalizeProgressionMilestone(entry);
+      if (!normalizedEntry) {
+        return;
+      }
+
+      const levelKey = normalizedEntry.level;
+      if (seenLevels.has(levelKey)) {
+        return;
+      }
+
+      seenLevels.add(levelKey);
+      normalizedMilestones.push(normalizedEntry);
+    });
+
+    normalized.milestones = normalizedMilestones.sort((a, b) => a.level - b.level);
+
+    return normalized;
+  };
+
+  let progressionConfig = normalizeProgressionConfig(
+    existing.progressionConfig || existing.progression || null
+  );
+
+  const getProgressionConfig = () => ({
+    ...progressionConfig,
+    milestones: progressionConfig.milestones.slice(),
+  });
+
+  const setProgressionConfig = (config) => {
+    progressionConfig = normalizeProgressionConfig(config ?? progressionConfig);
+    return getProgressionConfig();
+  };
+
+  const resolveProgressionConfig = (config) => {
+    if (config === undefined || config === null) {
+      return getProgressionConfig();
+    }
+
+    if (Number.isFinite(config)) {
+      return normalizeProgressionConfig({
+        milestoneInterval: config,
+        startingLevel: progressionConfig.startingLevel,
+        milestones: progressionConfig.milestones,
+      });
+    }
+
+    return normalizeProgressionConfig(config);
+  };
+
   const existing =
     (globalScope && typeof globalScope.mathMonstersProgress === 'object'
       ? globalScope.mathMonstersProgress
@@ -131,14 +255,23 @@
     };
   };
 
-  const computeExperienceTier = (totalExperience, tierSize = 10) => {
-    const milestoneSize = Number.isFinite(tierSize) && tierSize > 0 ? tierSize : 10;
+  const computeExperienceTier = (totalExperience, config) => {
+    const progression = resolveProgressionConfig(config);
+    const milestoneSize = Number.isFinite(progression.milestoneInterval)
+      ? Math.max(1, Math.round(progression.milestoneInterval))
+      : DEFAULT_MILESTONE_INTERVAL;
     const normalizedTotal = normalizeExperienceValue(totalExperience) ?? 0;
-    return Math.floor(normalizedTotal / milestoneSize) + 1;
+    const startingLevel = Number.isFinite(progression.startingLevel)
+      ? Math.max(1, Math.round(progression.startingLevel))
+      : DEFAULT_STARTING_LEVEL;
+    return Math.floor(normalizedTotal / milestoneSize) + startingLevel;
   };
 
-  const computeExperienceMilestoneProgress = (totalExperience, tierSize = 10) => {
-    const milestoneSize = Number.isFinite(tierSize) && tierSize > 0 ? tierSize : 10;
+  const computeExperienceMilestoneProgress = (totalExperience, config) => {
+    const progression = resolveProgressionConfig(config);
+    const milestoneSize = Number.isFinite(progression.milestoneInterval)
+      ? Math.max(1, Math.round(progression.milestoneInterval))
+      : DEFAULT_MILESTONE_INTERVAL;
     const normalizedTotal = normalizeExperienceValue(totalExperience) ?? 0;
     const earnedTowardTier = normalizedTotal % milestoneSize;
 
@@ -153,6 +286,9 @@
     mergeExperienceMaps,
     readExperienceForLevel,
     readTotalExperience,
+    normalizeProgressionConfig,
+    getProgressionConfig,
+    setProgressionConfig,
     computeExperienceTier,
     computeExperienceMilestoneProgress,
     computeExperienceProgress,

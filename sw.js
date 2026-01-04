@@ -35,6 +35,7 @@ const OFFLINE_ASSETS = [
   'images/intro/doctor.png',
   'images/complete/gem.png',
   './data/levels.json',
+  './data/progression-assets.json',
   './data/player.json',
   './data/questions/questions.json'
 ];

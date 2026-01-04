@@ -795,26 +795,91 @@ function validatePlayer(issues) {
   });
 }
 
-function detectOrphanQuestionFiles(referencedQuestionFiles, issues) {
-  const entries = fs.readdirSync(questionsDir, { withFileTypes: true });
+function validateProgressionAssets(issues) {
+  const progressionPath = path.join(dataDir, 'progression-assets.json');
 
-  entries.forEach((entry) => {
-    if (!entry.isFile()) {
-      return;
-    }
+  if (!fs.existsSync(progressionPath)) {
+    issues.push('Progression assets file missing: progression-assets.json');
+    return;
+  }
 
-    if (!entry.name.toLowerCase().endsWith('.json')) {
-      return;
-    }
-
-    const hasReference = Array.from(referencedQuestionFiles).some(
-      (reference) =>
-        reference === entry.name ||
-        reference.endsWith(`/${entry.name}`)
+  let data;
+  try {
+    const raw = fs.readFileSync(progressionPath, 'utf8');
+    data = JSON.parse(raw);
+  } catch (error) {
+    issues.push(
+      `Failed to parse progression-assets.json: ${error.message}`
     );
+    return;
+  }
 
-    if (!hasReference) {
-      issues.push(`Unreferenced question file detected: ${entry.name}`);
+  if (!isPlainObject(data)) {
+    issues.push('progression-assets.json is not an object');
+    return;
+  }
+
+  const interval = Number(data.milestoneInterval);
+  if (!Number.isFinite(interval) || interval <= 0) {
+    issues.push('progression-assets.json: milestoneInterval must be a positive number');
+  }
+
+  const startingLevel = Number(data.startingLevel);
+  if (!Number.isFinite(startingLevel) || startingLevel <= 0) {
+    issues.push('progression-assets.json: startingLevel must be a positive number');
+  }
+
+  const milestones = Array.isArray(data.milestones) ? data.milestones : null;
+  if (!milestones) {
+    issues.push('progression-assets.json: milestones must be an array');
+    return;
+  }
+
+  if (milestones.length === 0) {
+    issues.push('progression-assets.json: no milestones configured');
+  }
+
+  const seenLevels = new Set();
+  let previousLevel = 0;
+
+  milestones.forEach((milestone, index) => {
+    const label = `progression-assets.json milestones[${index}]`;
+
+    if (!isPlainObject(milestone)) {
+      issues.push(`${label}: entry must be an object`);
+      return;
+    }
+
+    const level = Number(milestone.level);
+    if (!Number.isFinite(level) || level <= 0) {
+      issues.push(`${label}: level must be a positive number`);
+    } else {
+      const normalizedLevel = Math.round(level);
+      if (seenLevels.has(normalizedLevel)) {
+        issues.push(`${label}: duplicate level ${normalizedLevel}`);
+      }
+      if (normalizedLevel <= previousLevel) {
+        issues.push(`${label}: level must be greater than previous milestone`);
+      }
+      seenLevels.add(normalizedLevel);
+      previousLevel = normalizedLevel;
+    }
+
+    const heroSprite =
+      typeof milestone.heroSprite === 'string' ? milestone.heroSprite.trim() : '';
+    const attackSprite =
+      typeof milestone.attackSprite === 'string' ? milestone.attackSprite.trim() : '';
+
+    if (!heroSprite) {
+      issues.push(`${label}: heroSprite is missing or empty`);
+    } else {
+      checkAssetExists(heroSprite, `${label} heroSprite`, issues);
+    }
+
+    if (!attackSprite) {
+      issues.push(`${label}: attackSprite is missing or empty`);
+    } else {
+      checkAssetExists(attackSprite, `${label} attackSprite`, issues);
     }
   });
 }
@@ -826,7 +891,7 @@ function main() {
   try {
     validateLevels(issues, referencedQuestionFiles);
     validatePlayer(issues);
-    detectOrphanQuestionFiles(referencedQuestionFiles, issues);
+    validateProgressionAssets(issues);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;
