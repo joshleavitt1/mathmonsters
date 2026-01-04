@@ -175,7 +175,58 @@ const {
   readTotalExperience,
   computeExperienceTier,
   computeExperienceMilestoneProgress,
+  normalizeProgressionConfig,
+  setProgressionConfig,
+  getProgressionConfig,
 } = progressUtils;
+
+const DEFAULT_PROGRESSION_CONFIG = normalizeProgressionConfig();
+
+const resolveProgressionConfig = (fallbackConfig) => {
+  if (typeof getProgressionConfig === 'function') {
+    const resolved = getProgressionConfig();
+    if (resolved && typeof resolved === 'object') {
+      return resolved;
+    }
+  }
+
+  return normalizeProgressionConfig(fallbackConfig ?? DEFAULT_PROGRESSION_CONFIG);
+};
+
+const applyProgressionConfig = (config) => {
+  if (typeof setProgressionConfig === 'function') {
+    return setProgressionConfig(config ?? resolveProgressionConfig());
+  }
+  return resolveProgressionConfig(config);
+};
+
+const loadProgressionConfig = (() => {
+  let progressionPromise = null;
+
+  return async () => {
+    if (progressionPromise) {
+      return progressionPromise;
+    }
+
+    progressionPromise = (async () => {
+      try {
+        const response = await fetch('data/progression-assets.json');
+        if (!response?.ok) {
+          return resolveProgressionConfig();
+        }
+        const data = await response.json();
+        return applyProgressionConfig(data);
+      } catch (error) {
+        console.warn('Unable to preload progression assets.', error);
+        return resolveProgressionConfig();
+      }
+    })();
+
+    return progressionPromise;
+  };
+})();
+
+loadProgressionConfig().catch(() => {});
 
 const playerProfileUtils =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
@@ -3796,6 +3847,7 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
     levelsData: null,
     playerData: null,
     previewData: null,
+    progressionConfig: resolveProgressionConfig(),
     landingVisited: forceLevelOneLanding ? false : landingVisited,
     forceLevelOneLanding,
     hasUserSession,
@@ -3909,10 +3961,14 @@ const preloadLandingAssets = async (landingEntryState = {}) => {
   };
 
   try {
-    const [levelsData, fallbackPlayerData] = await Promise.all([
+    const [levelsData, fallbackPlayerData, progressionConfig] = await Promise.all([
       loadJson('data/levels.json'),
       loadJson('data/player.json'),
+      loadJson('data/progression-assets.json'),
     ]);
+
+    const appliedProgressionConfig = applyProgressionConfig(progressionConfig);
+    results.progressionConfig = appliedProgressionConfig;
 
     let remotePlayerData = null;
     const storedPlayerProfile = readStoredPlayerProfile();

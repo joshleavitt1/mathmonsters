@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE_NAME = `mathmonsters-cache-${CACHE_VERSION}`;
 const OFFLINE_ASSETS = [
   './',
@@ -35,6 +35,7 @@ const OFFLINE_ASSETS = [
   'images/intro/doctor.png',
   'images/complete/gem.png',
   './data/levels.json',
+  './data/progression-assets.json',
   './data/player.json',
   './data/questions/level_1_questions.json',
   './data/questions/level_2_questions.json',
