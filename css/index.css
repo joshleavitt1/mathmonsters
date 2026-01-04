@@ -474,19 +474,22 @@ body.is-level-one-landing .monster {
   display: none;
 }
 
-body.is-level-one-landing .hero {
+body.is-level-one-landing .hero,
+body.is-level-one-landing .home__hero-sprite {
   opacity: 0;
   visibility: hidden;
   animation: none;
   transition: opacity 0.4s ease;
 }
 
-body.is-level-one-landing .hero.is-revealed {
+body.is-level-one-landing .hero.is-revealed,
+body.is-level-one-landing .home__hero-sprite.is-revealed {
   opacity: 1;
   visibility: visible;
 }
 
-body.is-level-one-landing .hero.is-exiting {
+body.is-level-one-landing .hero.is-exiting,
+body.is-level-one-landing .home__hero-sprite.is-exiting {
   visibility: visible;
   animation: hero-intro-exit 0.55s cubic-bezier(0.36, 0, 0.66, 1) forwards;
 }
