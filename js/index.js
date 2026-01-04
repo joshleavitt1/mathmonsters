@@ -2877,6 +2877,17 @@ const setupDevResetTool = () => {
 };
 
 const readStoredPlayerProfile = () => {
+  if (typeof playerProfileUtils?.readCachedProfile === 'function') {
+    try {
+      const cached = playerProfileUtils.readCachedProfile();
+      if (cached && typeof cached === 'object') {
+        return cached;
+      }
+    } catch (error) {
+      console.warn('Stored player profile unavailable.', error);
+    }
+  }
+
   if (typeof window === 'undefined') {
     return null;
   }
@@ -2900,7 +2911,28 @@ const readStoredPlayerProfile = () => {
   }
 };
 
-const persistPlayerProfile = (player) => {
+const persistPlayerProfile = (player, options = {}) => {
+  const progressData =
+    (options && isPlainObject(options.progress) ? options.progress : null) ||
+    (player && typeof player === 'object' && isPlainObject(player.progress)
+      ? player.progress
+      : null);
+
+  const persistFn = playerProfileUtils?.persistPlayerProfile;
+  if (typeof persistFn === 'function') {
+    try {
+      const persistResult = persistFn(player, progressData);
+      if (persistResult && typeof persistResult.then === 'function') {
+        persistResult.catch((error) => {
+          console.warn('Unable to persist player profile.', error);
+        });
+      }
+      return;
+    } catch (error) {
+      console.warn('Unable to persist player profile.', error);
+    }
+  }
+
   if (typeof window === 'undefined') {
     return;
   }
@@ -2916,7 +2948,12 @@ const persistPlayerProfile = (player) => {
       return;
     }
 
-    const serialized = JSON.stringify(player);
+    const payload =
+      typeof progressData === 'object' && progressData !== null
+        ? { ...player, progress: progressData }
+        : player;
+
+    const serialized = JSON.stringify(payload);
     storage.setItem(PLAYER_PROFILE_STORAGE_KEY, serialized);
   } catch (error) {
     console.warn('Unable to persist player profile.', error);
