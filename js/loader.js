@@ -371,6 +371,17 @@ const {
 } = progressUtils;
 
 const readStoredPlayerProfile = () => {
+  if (typeof playerProfileUtils?.readCachedProfile === 'function') {
+    try {
+      const cached = playerProfileUtils.readCachedProfile();
+      if (cached && typeof cached === 'object') {
+        return cached;
+      }
+    } catch (error) {
+      console.warn('Stored player profile unavailable in loader.', error);
+    }
+  }
+
   if (typeof window === 'undefined') {
     return null;
   }
