@@ -13,6 +13,12 @@ const PLAYER_PROFILE_UTILS_PATH = path.join(
   'utils',
   'playerProfile.js'
 );
+const SAVE_STATE_UTILS_PATH = path.join(
+  PROJECT_ROOT,
+  'js',
+  'utils',
+  'saveState.js'
+);
 
 const LOADER_SOURCE = fs.readFileSync(LOADER_PATH, 'utf8');
 const PROGRESS_SOURCE = fs.readFileSync(PROGRESS_UTILS_PATH, 'utf8');
@@ -20,9 +26,14 @@ const PLAYER_PROFILE_SOURCE = fs.readFileSync(
   PLAYER_PROFILE_UTILS_PATH,
   'utf8'
 );
+const SAVE_STATE_UTILS_SOURCE = fs.readFileSync(
+  SAVE_STATE_UTILS_PATH,
+  'utf8'
+);
 
 const STORAGE_KEY_PROGRESS = 'mathmonstersProgress';
 const NEXT_BATTLE_SNAPSHOT_STORAGE_KEY = 'mathmonstersNextBattleSnapshot';
+const SAVE_STATE_STORAGE_KEY = 'mathMonstersSave_v1';
 
 const deepClone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -50,12 +61,17 @@ const createLoaderSandbox = ({
   playerData,
   levelsData,
   heroSpritesData = {},
+  saveState,
 }) => {
   const sessionStorage = createStorage();
   const localStorage = createStorage();
 
   if (storedProgress) {
     localStorage.setItem(STORAGE_KEY_PROGRESS, JSON.stringify(storedProgress));
+  }
+
+  if (saveState) {
+    localStorage.setItem(SAVE_STATE_STORAGE_KEY, JSON.stringify(saveState));
   }
 
   const createResponse = (data) => ({
@@ -191,7 +207,7 @@ const createLoaderSandbox = ({
 
   sandbox.globalThis = sandbox;
 
-  return { sandbox, dataLoadedPromise, sessionStorage };
+  return { sandbox, dataLoadedPromise, sessionStorage, localStorage };
 };
 
 test('loader promotes nested math progress level to root state', async () => {
@@ -459,5 +475,84 @@ test('loader keeps stored current level when remote profile reports a lower one'
     preloadedData.progress.currentLevel,
     11,
     'preloaded progress should use the higher stored level'
+  );
+});
+
+test('loader preserves v1 save-state experience when merging player data', async () => {
+  const saveState = {
+    xpTotal: 12,
+    difficulty: 3,
+    spriteTier: 2,
+    gems: 4,
+    correctStreak: 2,
+    incorrectStreak: 1,
+  };
+
+  const playerData = {
+    hero: {
+      name: 'Shellfin',
+      sprite: 'images/shellfin_level_1.png',
+    },
+    progress: {
+      experience: { total: 0 },
+      gems: 0,
+    },
+  };
+
+  const levelsData = {
+    mathTypes: {
+      addition: {
+        name: 'Addition',
+        levels: [
+          {
+            id: 'addition-1',
+            currentLevel: 1,
+            battle: {
+              hero: {
+                name: 'Shellfin',
+                sprite: 'images/shellfin_level_1.png',
+              },
+              monster: {
+                name: 'Crabbo',
+                sprite: 'images/monster-crabbo.png',
+              },
+            },
+          },
+        ],
+      },
+    },
+  };
+
+  const { sandbox, dataLoadedPromise } = createLoaderSandbox({
+    saveState,
+    playerData,
+    levelsData,
+  });
+
+  vm.runInNewContext(PROGRESS_SOURCE, sandbox, {
+    filename: PROGRESS_UTILS_PATH,
+  });
+
+  vm.runInNewContext(SAVE_STATE_UTILS_SOURCE, sandbox, {
+    filename: SAVE_STATE_UTILS_PATH,
+  });
+
+  vm.runInNewContext(LOADER_SOURCE, sandbox, {
+    filename: LOADER_PATH,
+  });
+
+  await dataLoadedPromise;
+
+  const preloadedData = sandbox.window.preloadedData;
+  assert.ok(preloadedData, 'preloaded data should exist after loading');
+  assert.strictEqual(
+    preloadedData.progress.experience.total,
+    saveState.xpTotal,
+    'progress experience should reflect the v1 save-state total'
+  );
+  assert.strictEqual(
+    preloadedData.player.progress.experience.total,
+    saveState.xpTotal,
+    'player data experience should be merged from the v1 save-state value'
   );
 });
