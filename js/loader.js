@@ -11,7 +11,11 @@ const DEFAULT_DIFFICULTY_STATE = {
   incorrectStreak: 0,
 };
 
-const EXPERIENCE_MILESTONE_SIZE = 10;
+const DEFAULT_PROGRESSION_CONFIG = {
+  milestoneInterval: 10,
+  startingLevel: 1,
+  milestones: [],
+};
 
 const clampDifficulty = (value) => {
   const numeric = Number(value);
@@ -368,7 +372,21 @@ const {
   mergeExperienceMaps,
   readTotalExperience,
   computeExperienceTier,
+  normalizeProgressionConfig,
+  setProgressionConfig,
+  getProgressionConfig,
 } = progressUtils;
+
+const resolveProgressionConfig = (fallbackConfig) => {
+  if (typeof getProgressionConfig === 'function') {
+    const resolved = getProgressionConfig();
+    if (resolved && typeof resolved === 'object') {
+      return resolved;
+    }
+  }
+
+  return normalizeProgressionConfig(fallbackConfig ?? DEFAULT_PROGRESSION_CONFIG);
+};
 
 const readStoredPlayerProfile = () => {
   if (typeof playerProfileUtils?.readCachedProfile === 'function') {
@@ -879,10 +897,7 @@ const applyHeroTierAssets = (
     return;
   }
 
-  const experienceTier = computeExperienceTier(
-    totalExperience,
-    EXPERIENCE_MILESTONE_SIZE
-  );
+  const experienceTier = computeExperienceTier(totalExperience);
 
   if (isPlainObject(player.hero)) {
     applyHeroTierSprites(player.hero, heroSprites, experienceTier, resolveAssetPath);
@@ -1605,8 +1620,38 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
       delete normalizedLevel.battle;
     }
 
-    return normalizedLevel;
-  };
+  return normalizedLevel;
+};
+};
+
+const resolveBattleQuestionPath = (battleConfig) => {
+  if (!battleConfig || typeof battleConfig !== 'object') {
+    return null;
+  }
+
+  if (
+    battleConfig.questionReference &&
+    typeof battleConfig.questionReference === 'object' &&
+    typeof battleConfig.questionReference.file === 'string'
+  ) {
+    const trimmed = battleConfig.questionReference.file.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  if (
+    battleConfig.questions &&
+    typeof battleConfig.questions === 'object' &&
+    typeof battleConfig.questions.path === 'string'
+  ) {
+    const trimmed = battleConfig.questions.path.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return null;
 };
 
 const deriveMathTypeLevels = (levelsData, ...playerSources) => {
@@ -1735,11 +1780,27 @@ const fetchPlayerProfile = async () => {
 
 (async function () {
   try {
-    const [playerRes, levelsRes, heroSpritesRes] = await Promise.all([
-      fetch(resolveDataPath('player.json')),
-      fetch(resolveDataPath('levels.json')),
-      fetch(resolveDataPath('hero-sprites.json')),
-    ]);
+    const loadProgressionAssets = async () => {
+      try {
+        const response = await fetch(resolveDataPath('progression-assets.json'));
+        if (!response?.ok) {
+          return null;
+        }
+        const data = await response.json();
+        return normalizeProgressionConfig(data);
+      } catch (error) {
+        console.warn('Unable to load progression assets.', error);
+        return null;
+      }
+    };
+
+    const [playerRes, levelsRes, heroSpritesRes, progressionConfig] =
+      await Promise.all([
+        fetch(resolveDataPath('player.json')),
+        fetch(resolveDataPath('levels.json')),
+        fetch(resolveDataPath('hero-sprites.json')),
+        loadProgressionAssets(),
+      ]);
 
     if (!playerRes.ok || !levelsRes.ok) {
       throw new Error('Failed to fetch required configuration data.');
@@ -1750,6 +1811,10 @@ const fetchPlayerProfile = async () => {
       levelsRes.json(),
       heroSpritesRes?.ok ? heroSpritesRes.json() : {},
     ]);
+
+    const appliedProgressionConfig =
+      setProgressionConfig(progressionConfig ?? resolveProgressionConfig()) ??
+      resolveProgressionConfig(progressionConfig);
 
     const localPlayerData =
       playerJson && typeof playerJson === 'object' ? playerJson : {};
@@ -1817,7 +1882,7 @@ const fetchPlayerProfile = async () => {
     const experienceTier =
       Number.isFinite(savedSpriteTier) && savedSpriteTier > 0
         ? Math.max(1, Math.round(savedSpriteTier))
-        : computeExperienceTier(totalExperience, EXPERIENCE_MILESTONE_SIZE);
+        : computeExperienceTier(totalExperience, appliedProgressionConfig);
 
     if (Object.keys(normalizedExperience).length > 0) {
       progress.experience = normalizedExperience;
@@ -2314,9 +2379,23 @@ const fetchPlayerProfile = async () => {
       monster: { ...primaryMonster },
     };
 
-      if (normalizedMonsters.length > 0) {
-        battle.monsters = normalizedMonsters;
+    if (normalizedMonsters.length > 0) {
+      battle.monsters = normalizedMonsters;
+    }
+
+    let questionPayload = null;
+    const questionPath = resolveBattleQuestionPath(battle);
+    if (typeof questionPath === 'string' && questionPath.trim()) {
+      try {
+        const questionRes = await fetch(resolveDataPath(questionPath));
+        if (!questionRes.ok) {
+          throw new Error(`Failed to load questions from ${questionPath}`);
+        }
+        questionPayload = await questionRes.json();
+      } catch (error) {
+        console.warn('Unable to preload questions for battle.', error);
       }
+    }
 
     const sortedLevelsByBattle = levels
       .slice()
@@ -2411,9 +2490,11 @@ const fetchPlayerProfile = async () => {
       hero,
       monster: battle.monster,
       charactersByLevel: levelCharacters,
-      questions,
+      questions: questionPayload ?? questions,
+      questionPath: questionPath || null,
       difficultyState,
       heroSprites: heroSpritesData,
+      progressionConfig: appliedProgressionConfig,
     };
 
     if (typeof document !== 'undefined') {

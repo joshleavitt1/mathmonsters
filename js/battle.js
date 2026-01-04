@@ -25,7 +25,6 @@ const PLAYER_PROFILE_STORAGE_KEY = 'mathmonstersPlayerProfile';
 const GLOBAL_REWARD_MILESTONE = 5;
 const GLOBAL_PROGRESS_REVEAL_DELAY_MS = 1000;
 const EXPERIENCE_PER_BATTLE = 1;
-const EXPERIENCE_MILESTONE_SIZE = 10;
 
 const DEFAULT_DIFFICULTY_STATE = {
   difficulty: 1,
@@ -72,7 +71,36 @@ const {
   computeExperienceTier,
   computeExperienceMilestoneProgress,
   computeExperienceProgress,
+  normalizeProgressionConfig,
+  getProgressionConfig,
+  setProgressionConfig,
 } = progressUtils;
+
+const DEFAULT_PROGRESSION_CONFIG = normalizeProgressionConfig();
+
+const resolveProgressionConfig = () => {
+  if (typeof getProgressionConfig === 'function') {
+    const progression = getProgressionConfig();
+    if (progression && typeof progression === 'object') {
+      return progression;
+    }
+  }
+
+  if (typeof setProgressionConfig === 'function') {
+    return setProgressionConfig(DEFAULT_PROGRESSION_CONFIG);
+  }
+
+  return DEFAULT_PROGRESSION_CONFIG;
+};
+
+const getExperienceMilestoneSize = () => {
+  const progression = resolveProgressionConfig();
+  const value = Number(progression?.milestoneInterval);
+  if (Number.isFinite(value) && value > 0) {
+    return Math.max(1, Math.round(value));
+  }
+  return DEFAULT_PROGRESSION_CONFIG.milestoneInterval;
+};
 
 const { readSaveState, writeSaveState } = saveStateUtils;
 
@@ -656,6 +684,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const ensureQuestionPoolForDifficulty = async (difficulty) => {
+    if (useStructuredQuestions) {
+      return;
+    }
+
     const normalized = clampDifficulty(difficulty);
     if (currentDifficultyQuestionSource === normalized) {
       return;
@@ -698,6 +730,9 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   let currentDifficulty = difficultyState.difficulty;
   let currentDifficultyQuestionSource = currentDifficulty;
+  let preferPreloadedQuestions = false;
+  let preloadedQuestionPath = null;
+  let preloadedQuestionPayload = null;
 
   const getResolvedCurrentDifficulty = () => clampDifficulty(currentDifficulty);
 
@@ -2614,12 +2649,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const updateLevelProgressDisplay = () => {
+    const milestoneSize = getExperienceMilestoneSize();
     const milestoneProgress = computeExperienceMilestoneProgress(
       totalExperience,
-      levelExperienceRequirement || EXPERIENCE_MILESTONE_SIZE
+      milestoneSize
     );
     levelExperienceEarned = milestoneProgress.earnedDisplay;
-    levelExperienceRequirement = milestoneProgress.totalDisplay;
+    levelExperienceRequirement =
+      milestoneProgress.totalDisplay || milestoneSize;
     const progress = milestoneProgress;
 
     const clampedRatio = Math.max(0, Math.min(1, Number(progress.ratio) || 0));
@@ -2769,15 +2806,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const previousTotal = normalizeExperienceValue(totalExperience) ?? 0;
     const nextTotal = previousTotal + EXPERIENCE_PER_BATTLE;
-    const previousTier = computeExperienceTier(
-      previousTotal,
-      EXPERIENCE_MILESTONE_SIZE
-    );
-    const nextTier = computeExperienceTier(nextTotal, EXPERIENCE_MILESTONE_SIZE);
+    const progression = resolveProgressionConfig();
+    const previousTier = computeExperienceTier(previousTotal, progression);
+    const nextTier = computeExperienceTier(nextTotal, progression);
+    const milestoneSize = getExperienceMilestoneSize();
 
     totalExperience = nextTotal;
     experienceTier = nextTier;
-    levelExperienceEarned = nextTotal % EXPERIENCE_MILESTONE_SIZE;
+    levelExperienceEarned = nextTotal % milestoneSize;
 
     persistProgress({ experience: { total: nextTotal } });
     maybeScheduleProgressUpdate();
@@ -3839,11 +3875,39 @@ document.addEventListener('DOMContentLoaded', () => {
     shouldAdvanceCurrentLevel = false;
   }
 
-  function loadData() {
+  async function loadData() {
     const data = window.preloadedData ?? {};
     const battleData = data.battle ?? {};
     const heroData = data.hero ?? {};
     const monsterData = data.monster ?? {};
+    const rawQuestionSource = data.questions ?? null;
+    preloadedQuestionPath =
+      typeof data.questionPath === 'string' && data.questionPath.trim()
+        ? data.questionPath.trim()
+        : null;
+    const normalizePreloadedQuestions = (source) => {
+      if (!source) {
+        return null;
+      }
+
+      if (Array.isArray(source.questions) && source.questions.length > 0) {
+        return source.questions;
+      }
+
+      if (Array.isArray(source) && source.length > 0) {
+        return source;
+      }
+
+      if (typeof source === 'object' && Object.keys(source).length > 0) {
+        return source;
+      }
+
+      return null;
+    };
+
+    preloadedQuestionPayload = normalizePreloadedQuestions(rawQuestionSource);
+    preferPreloadedQuestions = Boolean(preloadedQuestionPayload);
+    questionCache.clear();
     const progressData = data.progress ?? data.player?.progress ?? {};
     const experienceMap = normalizeExperienceMap(progressData?.experience);
     if (isPlainObject(data.progress)) {
@@ -3936,6 +4000,141 @@ document.addEventListener('DOMContentLoaded', () => {
     const isPlainObjectValue = (value) =>
       Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
+    const QUESTION_TYPE_KEYS = QUESTION_TYPE_CONFIG.map(({ key }) => key);
+
+    const normalizeLegacyQuestionList = (questionList) => {
+      if (!Array.isArray(questionList)) {
+        return null;
+      }
+
+      const normalized = questionList
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') {
+            return null;
+          }
+
+          const prompt =
+            typeof entry.question === 'string'
+              ? entry.question.trim()
+              : typeof entry.q === 'string'
+              ? entry.q.trim()
+              : '';
+
+          if (!prompt) {
+            return null;
+          }
+
+          const choices = Array.isArray(entry.options) && entry.options.length > 0
+            ? entry.options
+            : Array.isArray(entry.choices)
+            ? entry.choices
+            : [];
+
+          if (!choices.length) {
+            return null;
+          }
+
+          return {
+            question: prompt,
+            choices,
+            answer: entry.answer,
+          };
+        })
+        .filter(Boolean);
+
+      if (!normalized.length) {
+        return null;
+      }
+
+      return { [QUESTION_TYPE_KEYS[0]]: normalized };
+    };
+
+    const normalizeQuestionPayload = (payload) => {
+      if (isPlainObjectValue(payload)) {
+        const structured = {};
+
+        QUESTION_TYPE_KEYS.forEach((key) => {
+          if (Array.isArray(payload[key])) {
+            structured[key] = payload[key];
+          }
+        });
+
+        if (Object.keys(structured).length > 0) {
+          return structured;
+        }
+
+        if (Array.isArray(payload.questions)) {
+          return normalizeLegacyQuestionList(payload.questions);
+        }
+      }
+
+      if (Array.isArray(payload)) {
+        return normalizeLegacyQuestionList(payload);
+      }
+
+      return null;
+    };
+
+    const resolveQuestionFilePath = (reference) => {
+      if (!isPlainObjectValue(reference)) {
+        return null;
+      }
+
+      const rawFile =
+        typeof reference.path === 'string'
+          ? reference.path
+          : typeof reference.file === 'string'
+          ? reference.file
+          : null;
+
+      if (!rawFile) {
+        return null;
+      }
+
+      let normalized = rawFile.trim();
+      if (!normalized) {
+        return null;
+      }
+
+      if (!/^\/?data\//i.test(normalized)) {
+        if (/^\/?questions\//i.test(normalized)) {
+          normalized = normalized.replace(/^\/+/, '');
+          normalized = `data/${normalized}`;
+        }
+      }
+
+      return resolveAssetPath(normalized);
+    };
+
+    const loadQuestionReference = async (reference) => {
+      const resolvedPath = resolveQuestionFilePath(reference);
+      if (!resolvedPath) {
+        return null;
+      }
+
+      try {
+        const response = await fetch(resolvedPath);
+        if (!response?.ok) {
+          throw new Error(`Unexpected status: ${response?.status ?? 'unknown'}`);
+        }
+
+        const payload = await response.json();
+        const normalized = normalizeQuestionPayload(payload);
+        if (!normalized) {
+          console.warn('Question payload did not match expected structure.', payload);
+          return null;
+        }
+
+        return {
+          payload: normalized,
+          sourceKey: resolvedPath,
+        };
+      } catch (error) {
+        console.warn('Unable to load referenced questions.', error);
+        return null;
+      }
+    };
+
     const normalizeAttackSprites = (...spriteSources) => {
       const allowedKeys = ['basic', 'super'];
       const result = {};
@@ -4011,12 +4210,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     totalExperience = readTotalExperience(progressData?.experience);
-    experienceTier = computeExperienceTier(
-      totalExperience,
-      EXPERIENCE_MILESTONE_SIZE
-    );
-    levelExperienceRequirement = EXPERIENCE_MILESTONE_SIZE;
-    levelExperienceEarned = totalExperience % EXPERIENCE_MILESTONE_SIZE;
+    const progression = resolveProgressionConfig();
+    experienceTier = computeExperienceTier(totalExperience, progression);
+    levelExperienceRequirement = getExperienceMilestoneSize();
+    levelExperienceEarned = totalExperience % levelExperienceRequirement;
 
     accuracyGoal =
       typeof battleData.accuracyGoal === 'number' &&
@@ -4154,12 +4351,28 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMonsterImg.alt = '';
     }
 
-    const initialQuestions = generateQuestionSetForDifficulty(
-      getResolvedCurrentDifficulty()
+    const inlineQuestions = normalizeQuestionPayload(battleData?.questions);
+    const referencedQuestions = await loadQuestionReference(
+      battleData?.questionReference
     );
+    const questionSourceKey =
+      referencedQuestions?.sourceKey || (inlineQuestions ? 'inline' : null);
+
+    const resolvedQuestionPayload =
+      inlineQuestions ?? referencedQuestions?.payload ?? null;
+
+    const initialQuestions =
+      resolvedQuestionPayload ??
+      generateQuestionSetForDifficulty(getResolvedCurrentDifficulty());
+
     resetQuestionPool(initialQuestions);
-    questionCache.set(getResolvedCurrentDifficulty(), initialQuestions);
-    currentDifficultyQuestionSource = getResolvedCurrentDifficulty();
+    if (useStructuredQuestions) {
+      questionCache.clear();
+      currentDifficultyQuestionSource = questionSourceKey || 'structured';
+    } else {
+      questionCache.set(getResolvedCurrentDifficulty(), initialQuestions);
+      currentDifficultyQuestionSource = getResolvedCurrentDifficulty();
+    }
 
     updateHealthBars();
     updateBattleTimeDisplay();
@@ -5096,7 +5309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function initBattle() {
+  async function initBattle() {
     battleEnded = false;
     resetSuperAttackBoost();
     questions = [];
@@ -5104,6 +5317,7 @@ document.addEventListener('DOMContentLoaded', () => {
     questionMap = new Map();
     currentQuestionId = null;
     totalQuestionCount = 0;
+    questionCache.clear();
     correctAnswers = 0;
     totalAnswers = 0;
     wrongAnswers = 0;
@@ -5111,8 +5325,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initialTimeRemaining = 0;
     currentLevelAdvanced = false;
     battleGoalsMet = false;
-    levelExperienceRequirement = EXPERIENCE_MILESTONE_SIZE;
-    levelExperienceEarned = totalExperience % EXPERIENCE_MILESTONE_SIZE;
+    levelExperienceRequirement = getExperienceMilestoneSize();
+    levelExperienceEarned = totalExperience % levelExperienceRequirement;
     cancelScheduledLevelProgressDisplayUpdate();
     clearRewardAnimation();
     updateLevelProgressDisplay();
@@ -5152,7 +5366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     heroSpriteEntrance?.prepareForEntrance();
     monsterSpriteEntrance?.prepareForEntrance();
-    loadData();
+    await loadData();
     heroSpriteEntrance?.playEntrance();
     monsterSpriteEntrance?.playEntrance();
     updateAccuracyDisplays();

@@ -18,13 +18,26 @@
       Boolean(value) && typeof value === 'object' && !Array.isArray(value),
     readTotalExperience = () => 0,
     computeExperienceTier = () => 1,
+    normalizeProgressionConfig = () => ({
+      milestoneInterval: 10,
+      startingLevel: 1,
+      milestones: [],
+    }),
+    getProgressionConfig = null,
   } = progressUtils;
 
   const STORAGE_KEY = 'mathMonstersSave_v1';
   const LEGACY_PROGRESS_KEY = 'mathmonstersProgress';
   const LEGACY_HOME_PROGRESS_KEY = 'mathmonstersHomeProgressState';
   const LEGACY_DIFFICULTY_KEY = 'mathmonstersDifficultyState';
-  const EXPERIENCE_MILESTONE_SIZE = 10;
+  const DEFAULT_PROGRESSION_CONFIG = normalizeProgressionConfig();
+
+  const readProgressionConfig = () => {
+    if (typeof getProgressionConfig === 'function') {
+      return getProgressionConfig();
+    }
+    return DEFAULT_PROGRESSION_CONFIG;
+  };
 
   const clampDifficulty = (value) => {
     const numeric = Number(value);
@@ -66,9 +79,9 @@
     }
 
     const xpTotal = clampNonNegativeInteger(state.xpTotal);
+    const progression = readProgressionConfig();
     const spriteTier =
-      clampTier(state.spriteTier) ||
-      computeExperienceTier(xpTotal, EXPERIENCE_MILESTONE_SIZE);
+      clampTier(state.spriteTier) || computeExperienceTier(xpTotal, progression);
 
     const difficulty = clampDifficulty(state.difficulty);
     const lastSeenDifficulty = clampDifficulty(
@@ -143,7 +156,7 @@
               derived.xpTotal = xpTotal;
               derived.spriteTier = computeExperienceTier(
                 xpTotal,
-                EXPERIENCE_MILESTONE_SIZE
+                readProgressionConfig()
               );
             }
 
@@ -200,7 +213,7 @@
     const resolvedXp = clampNonNegativeInteger(derived.xpTotal);
     const resolvedTier =
       clampTier(derived.spriteTier) ||
-      computeExperienceTier(resolvedXp, EXPERIENCE_MILESTONE_SIZE);
+      computeExperienceTier(resolvedXp, readProgressionConfig());
 
     return {
       ...derived,

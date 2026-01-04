@@ -22,6 +22,9 @@
           "name": "Level 1",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         },
         {
@@ -29,6 +32,9 @@
           "name": "Level 2",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         },
         {
@@ -36,6 +42,9 @@
           "name": "Level 3",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         },
         {
@@ -43,6 +52,9 @@
           "name": "Level 4",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         },
         {
@@ -50,6 +62,9 @@
           "name": "Level 5",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         },
         {
@@ -57,6 +72,9 @@
           "name": "Level 6",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         },
         {
@@ -64,6 +82,9 @@
           "name": "Level 7",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         },
         {
@@ -71,6 +92,9 @@
           "name": "Level 8",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         },
         {
@@ -78,6 +102,9 @@
           "name": "Level 9",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         },
         {
@@ -85,6 +112,9 @@
           "name": "Level 10",
           "monster": {
             "spritePool": "standardPool"
+          },
+          "questionReference": {
+            "file": "questions/questions.json"
           }
         }
       ]
