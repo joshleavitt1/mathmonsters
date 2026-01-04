@@ -468,59 +468,5 @@ document.addEventListener('DOMContentLoaded', () => {
     revealQuestionCard();
   });
 
-  document.addEventListener('streak-meter-update', (event) => {
-    if (isSuperAttackHidden) {
-      hideMeter();
-      return;
-    }
-
-    if (!meter || !meterProgress || !meterFill) {
-      return;
-    }
-
-    const detail = event?.detail ?? {};
-    resetMeterAnimation();
-    if (isMeterDisabled) {
-      hideMeter();
-      return;
-    }
-    if (!detail.correct) {
-      hideMeter();
-      return;
-    }
-
-    const rawGoal = Number(detail.streakGoal);
-    const rawStreak = Number(detail.streak);
-
-    if (!Number.isFinite(rawGoal) || rawGoal <= 0) {
-      hideMeter();
-      return;
-    }
-
-    const goal = Math.max(1, Math.round(rawGoal));
-    const streak = Math.max(0, Math.min(Math.round(rawStreak), goal));
-    const percent = Math.min(1, streak / goal) * 100;
-
-    meterProgress.setAttribute('aria-valuemax', `${goal}`);
-    meterProgress.setAttribute('aria-valuenow', `${streak}`);
-    meterProgress.setAttribute('aria-valuetext', `${streak} of ${goal}`);
-
-    if (meterHeading) {
-      meterHeading.textContent = 'Super Attack';
-    }
-
-    meterFill.style.transition = 'none';
-    meterFill.style.width = '0%';
-    showMeter();
-    pendingMeterFrame = requestFrame(() => {
-      meterFill.style.transition = '';
-      pendingMeterFrame = null;
-      pendingMeterFillFrame = requestFrame(() => {
-        meterFill.style.width = `${percent}%`;
-        pendingMeterFillFrame = null;
-      });
-    });
-  });
-
   hideMeter();
 });
