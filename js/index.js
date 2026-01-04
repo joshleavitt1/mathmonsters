@@ -1173,6 +1173,40 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     sourceData && typeof sourceData === 'object' ? { ...sourceData } : {};
 
   const storedProgress = readStoredProgress();
+  let saveStateProgress = null;
+  try {
+    const saveState =
+      typeof readSaveState === 'function' ? readSaveState() : null;
+    if (saveState && typeof saveState === 'object') {
+      const saveStateExperience = normalizeExperienceMap(
+        saveState?.xpTotal ?? saveState?.experience
+      );
+      const saveStateExperienceTotal = readTotalExperience(saveStateExperience);
+      const saveStateSpriteTier = Number(saveState?.spriteTier);
+      const resolveStreakValue = (value) => {
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue) || numericValue < 0) {
+          return null;
+        }
+        return Math.round(numericValue);
+      };
+      saveStateProgress = {
+        experience: saveStateExperience,
+        experienceTotal: saveStateExperienceTotal,
+        experienceTier:
+          Number.isFinite(saveStateSpriteTier) && saveStateSpriteTier > 0
+            ? Math.max(1, Math.round(saveStateSpriteTier))
+            : computeExperienceTier(saveStateExperienceTotal),
+        currentLevel: normalizeCurrentLevel(saveState?.difficulty),
+        gems: saveState?.gems,
+        correctStreak: resolveStreakValue(saveState?.correctStreak),
+        incorrectStreak: resolveStreakValue(saveState?.incorrectStreak),
+      };
+    }
+  } catch (error) {
+    console.warn('Unable to read v1 save state for progress merge.', error);
+    saveStateProgress = null;
+  }
 
   const sanitizeGemCount = (value) => {
     const numericValue = Number(value);
@@ -1214,6 +1248,7 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     sanitizeGemCount(player?.progress?.gems),
     sanitizeGemCount(sourceData?.gems),
     sanitizeGemCount(baseProgress?.gems),
+    sanitizeGemCount(saveStateProgress?.gems),
   ];
   const baseGemCount = baseGemCandidates.find((value) => value !== null) ?? null;
   const baseBattleVariables =
@@ -1227,12 +1262,31 @@ const mergePlayerWithProgress = (rawPlayerData) => {
   const remoteExperience = mergeExperienceMaps(baseExperience, existingExperience);
   const remoteExperienceTotal = readTotalExperience(remoteExperience);
   const storedExperienceTotal = readTotalExperience(storedExperience);
+  const saveStateExperience = normalizeExperienceMap(
+    saveStateProgress?.experience
+  );
+  const saveStateExperienceTotal = readTotalExperience(saveStateExperience);
 
   let combinedExperience = remoteExperience;
+  let combinedExperienceTotal = remoteExperienceTotal;
 
-  if (storedExperienceTotal > remoteExperienceTotal) {
-    combinedExperience = mergeExperienceMaps(remoteExperience, storedExperience);
-  }
+  const mergeExperienceIfNewer = (candidateMap, candidateTotal) => {
+    if (!candidateMap || typeof candidateMap !== 'object') {
+      return;
+    }
+    const resolvedMap = normalizeExperienceMap(candidateMap);
+    const resolvedTotal =
+      Number.isFinite(candidateTotal) && candidateTotal >= 0
+        ? Math.round(candidateTotal)
+        : readTotalExperience(resolvedMap);
+    if (resolvedTotal > combinedExperienceTotal) {
+      combinedExperience = mergeExperienceMaps(combinedExperience, resolvedMap);
+      combinedExperienceTotal = resolvedTotal;
+    }
+  };
+
+  mergeExperienceIfNewer(storedExperience, storedExperienceTotal);
+  mergeExperienceIfNewer(saveStateExperience, saveStateExperienceTotal);
 
   if (Object.keys(combinedExperience).length > 0) {
     mergedProgress.experience = combinedExperience;
@@ -1248,9 +1302,13 @@ const mergePlayerWithProgress = (rawPlayerData) => {
   if (storedProgress && typeof storedProgress === 'object') {
     const storedCurrentLevel = normalizeCurrentLevel(storedProgress.currentLevel);
     const existingCurrentLevel = normalizeCurrentLevel(mergedProgress.currentLevel);
+    const saveStateCurrentLevel = normalizeCurrentLevel(
+      saveStateProgress?.currentLevel
+    );
     const resolvedCurrentLevel = Math.max(
       Number.isFinite(existingCurrentLevel) ? existingCurrentLevel : -Infinity,
-      Number.isFinite(storedCurrentLevel) ? storedCurrentLevel : -Infinity
+      Number.isFinite(storedCurrentLevel) ? storedCurrentLevel : -Infinity,
+      Number.isFinite(saveStateCurrentLevel) ? saveStateCurrentLevel : -Infinity
     );
 
     if (Number.isFinite(resolvedCurrentLevel)) {
@@ -1284,23 +1342,30 @@ const mergePlayerWithProgress = (rawPlayerData) => {
 
     const storedGemTotal = sanitizeGemCount(storedProgress.gems);
     const storedGemAwarded = sanitizeGemCount(storedProgress.gemsAwarded);
+    const saveStateGemTotal = sanitizeGemCount(saveStateProgress?.gems);
 
     let resolvedGemCount = baseGemCount;
 
-    if (storedGemTotal !== null) {
-      if (baseGemCount !== null && storedGemTotal < baseGemCount) {
-        const combinedTotal = baseGemCount + storedGemTotal;
+    const applyGemTotal = (gemTotal) => {
+      if (gemTotal === null) {
+        return;
+      }
+      if (baseGemCount !== null && gemTotal < baseGemCount) {
+        const combinedTotal = baseGemCount + gemTotal;
         resolvedGemCount =
           resolvedGemCount !== null
             ? Math.max(resolvedGemCount, combinedTotal)
             : combinedTotal;
-      } else {
-        resolvedGemCount =
-          resolvedGemCount !== null
-            ? Math.max(resolvedGemCount, storedGemTotal)
-            : storedGemTotal;
+        return;
       }
-    }
+      resolvedGemCount =
+        resolvedGemCount !== null
+          ? Math.max(resolvedGemCount, gemTotal)
+          : gemTotal;
+    };
+
+    applyGemTotal(storedGemTotal);
+    applyGemTotal(saveStateGemTotal);
 
     if (storedGemAwarded !== null && storedGemTotal === null) {
       const baseForAward = baseGemCount !== null ? baseGemCount : 0;
@@ -1314,6 +1379,21 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     if (resolvedGemCount !== null) {
       applyGemCountToPlayer(resolvedGemCount);
     }
+
+    const applyStreakValue = (key, sourceValue) => {
+      const numericValue = Number(sourceValue);
+      if (!Number.isFinite(numericValue) || numericValue < 0) {
+        return;
+      }
+      const normalized = Math.round(numericValue);
+      const existing = Number(mergedProgress[key]);
+      if (!Number.isFinite(existing) || normalized >= existing) {
+        mergedProgress[key] = normalized;
+      }
+    };
+
+    applyStreakValue('correctStreak', storedProgress.correctStreak);
+    applyStreakValue('incorrectStreak', storedProgress.incorrectStreak);
   }
 
   if (!Object.prototype.hasOwnProperty.call(mergedProgress, 'gems')) {
@@ -1338,6 +1418,55 @@ const mergePlayerWithProgress = (rawPlayerData) => {
         ...normalizedExisting,
         ...mergedProgress.experience,
       };
+    }
+  }
+
+  if (saveStateProgress && typeof saveStateProgress === 'object') {
+    const applyStreakValue = (key, sourceValue) => {
+      const numericValue = Number(sourceValue);
+      if (!Number.isFinite(numericValue) || numericValue < 0) {
+        return;
+      }
+      const normalized = Math.round(numericValue);
+      const existing = Number(player.progress?.[key]);
+      if (!Number.isFinite(existing) || normalized >= existing) {
+        player.progress[key] = normalized;
+      }
+    };
+
+    if (
+      Number.isFinite(saveStateExperienceTotal) &&
+      saveStateExperienceTotal > combinedExperienceTotal
+    ) {
+      player.progress.experience = normalizeExperienceMap(
+        saveStateProgress.experience
+      );
+      if (saveStateProgress.experienceTier) {
+        player.progress.experienceTier = saveStateProgress.experienceTier;
+      }
+    } else if (saveStateProgress.experienceTier && !player.progress.experienceTier) {
+      player.progress.experienceTier = saveStateProgress.experienceTier;
+    }
+
+    const saveStateLevel = normalizeCurrentLevel(saveStateProgress.currentLevel);
+    const existingLevel = normalizeCurrentLevel(player.progress.currentLevel);
+    if (
+      Number.isFinite(saveStateLevel) &&
+      (!Number.isFinite(existingLevel) || saveStateLevel >= existingLevel)
+    ) {
+      player.progress.currentLevel = saveStateLevel;
+    }
+
+    applyStreakValue('correctStreak', saveStateProgress.correctStreak);
+    applyStreakValue('incorrectStreak', saveStateProgress.incorrectStreak);
+
+    const saveStateGems = sanitizeGemCount(saveStateProgress.gems);
+    if (saveStateGems !== null) {
+      applyGemCountToPlayer(
+        player.progress?.gems !== undefined
+          ? Math.max(player.progress.gems, saveStateGems)
+          : saveStateGems
+      );
     }
   }
 
