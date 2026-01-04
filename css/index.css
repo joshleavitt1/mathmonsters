@@ -331,8 +331,8 @@ body:not(.is-preloading) main.landing {
 }
 
 .landing__hero-progress {
-  --progress-gradient-start: #36dc36;
-  --progress-gradient-end: #00b600;
+  --progress-gradient-start: #5de75d;
+  --progress-gradient-end: #00c853;
 
   height: 18px;
   width: 100%;
@@ -932,8 +932,8 @@ body.home-page {
 }
 
 .home__progress {
-  --progress-gradient-start: #33aaff;
-  --progress-gradient-end: #1a73ff;
+  --progress-gradient-start: #5de75d;
+  --progress-gradient-end: #00c853;
 
   width: 100%;
   margin: 0 auto;
