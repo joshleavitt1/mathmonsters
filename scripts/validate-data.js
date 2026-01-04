@@ -753,6 +753,10 @@ function validateLevels(issues, referencedQuestionFiles) {
       issues.push(`${label}: missing question reference`);
     }
 
+    if (!isPlainObject(level?.battle)) {
+      issues.push(`${label}: missing battle configuration`);
+    }
+
     if (!monsterCandidates.length) {
       issues.push(`${label}: no monster data found`);
     }

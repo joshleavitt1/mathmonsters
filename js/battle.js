@@ -702,6 +702,9 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   let currentDifficulty = difficultyState.difficulty;
   let currentDifficultyQuestionSource = currentDifficulty;
+  let preferPreloadedQuestions = false;
+  let preloadedQuestionPath = null;
+  let preloadedQuestionPayload = null;
 
   const getResolvedCurrentDifficulty = () => clampDifficulty(currentDifficulty);
 
@@ -3848,6 +3851,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const battleData = data.battle ?? {};
     const heroData = data.hero ?? {};
     const monsterData = data.monster ?? {};
+    const rawQuestionSource = data.questions ?? null;
+    preloadedQuestionPath =
+      typeof data.questionPath === 'string' && data.questionPath.trim()
+        ? data.questionPath.trim()
+        : null;
+    const normalizePreloadedQuestions = (source) => {
+      if (!source) {
+        return null;
+      }
+
+      if (Array.isArray(source.questions) && source.questions.length > 0) {
+        return source.questions;
+      }
+
+      if (Array.isArray(source) && source.length > 0) {
+        return source;
+      }
+
+      if (typeof source === 'object' && Object.keys(source).length > 0) {
+        return source;
+      }
+
+      return null;
+    };
+
+    preloadedQuestionPayload = normalizePreloadedQuestions(rawQuestionSource);
+    preferPreloadedQuestions = Boolean(preloadedQuestionPayload);
+    questionCache.clear();
     const progressData = data.progress ?? data.player?.progress ?? {};
     const experienceMap = normalizeExperienceMap(progressData?.experience);
     if (isPlainObject(data.progress)) {
