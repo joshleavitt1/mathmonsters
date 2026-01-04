@@ -1836,48 +1836,9 @@ const fetchPlayerProfile = async () => {
       correctStreak: saveState?.correctStreak,
       incorrectStreak: saveState?.incorrectStreak,
     });
-    const sanitizeGemValue = (value) => {
-      const numericValue = Number(value);
-      if (!Number.isFinite(numericValue)) {
-        return null;
-      }
-      return Math.max(0, Math.round(numericValue));
-    };
-
     let experienceMap = normalizeExperienceMap(
       typeof saveState?.xpTotal === 'number' ? saveState.xpTotal : progress?.experience
     );
-
-    const gemCandidates = [
-      sanitizeGemValue(progress?.gems),
-      sanitizeGemValue(saveState?.gems),
-      sanitizeGemValue(basePlayer?.gems),
-    ].filter((value) => value !== null);
-
-    if (gemCandidates.length > 0) {
-      const resolvedGemTotal = Math.max(...gemCandidates);
-      progress.gems = resolvedGemTotal;
-      if (isPlainObject(basePlayer)) {
-        basePlayer.gems = resolvedGemTotal;
-      }
-    } else if (Object.prototype.hasOwnProperty.call(progress, 'gems')) {
-      delete progress.gems;
-    }
-
-    const gemsAwardedCandidates = [
-      sanitizeGemValue(progress?.gemsAwarded),
-    ].filter((value) => value !== null);
-
-    if (gemsAwardedCandidates.length > 0) {
-      const resolvedAwarded = Math.max(...gemsAwardedCandidates);
-      if (resolvedAwarded > 0) {
-        progress.gemsAwarded = resolvedAwarded;
-      } else if (Object.prototype.hasOwnProperty.call(progress, 'gemsAwarded')) {
-        delete progress.gemsAwarded;
-      }
-    } else if (Object.prototype.hasOwnProperty.call(progress, 'gemsAwarded')) {
-      delete progress.gemsAwarded;
-    }
 
     experienceMap = normalizeExperienceMap(experienceMap);
     const totalExperience = readTotalExperience(experienceMap);
@@ -2374,7 +2335,6 @@ const fetchPlayerProfile = async () => {
         difficulty: difficultyState.difficulty,
         correctStreak: difficultyState.correctStreak,
         incorrectStreak: difficultyState.incorrectStreak,
-        gems: progress?.gems ?? 0,
       });
     }
 

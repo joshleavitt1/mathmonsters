@@ -56,7 +56,6 @@
     incorrectStreak: 0,
     xpTotal: 0,
     spriteTier: 1,
-    gems: 0,
     lastSeenDifficulty: 1,
     lastSeenSpriteTier: 1,
   });
@@ -85,7 +84,6 @@
       incorrectStreak: clampNonNegativeInteger(state.incorrectStreak),
       xpTotal,
       spriteTier,
-      gems: clampNonNegativeInteger(state.gems),
       lastSeenDifficulty,
       lastSeenSpriteTier,
     };
@@ -147,11 +145,6 @@
                 xpTotal,
                 EXPERIENCE_MILESTONE_SIZE
               );
-            }
-
-            const legacyGems = Number(progressRoot.gems ?? parsed?.gems);
-            if (Number.isFinite(legacyGems)) {
-              derived.gems = clampNonNegativeInteger(legacyGems);
             }
 
             const levelCandidates = [
