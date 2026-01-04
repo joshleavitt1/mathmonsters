@@ -1,0 +1,19 @@
+{
+  "id": "player-001",
+  "hero": {
+    "id": "shellfin",
+    "name": "Shellfin",
+    "sprite": "images/hero/shellfin_evolution_1.png",
+    "attackSprite": "images/hero/shellfin_attack_1.png",
+    "attack": 1,
+    "health": 5,
+    "damage": 0
+  },
+  "currentMathType": "addition",
+  "gems": 0,
+  "progress": {
+    "addition": {
+      "currentLevel": 1
+    }
+  }
+}
