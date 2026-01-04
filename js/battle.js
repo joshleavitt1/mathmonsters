@@ -53,6 +53,10 @@ const questionGenerator =
   (typeof globalThis !== 'undefined' && globalThis.mathMonstersQuestionGenerator) ||
   (typeof window !== 'undefined' ? window.mathMonstersQuestionGenerator : null);
 
+const playerProfileUtils =
+  (typeof globalThis !== 'undefined' && globalThis.mathMonstersPlayerProfile) ||
+  (typeof window !== 'undefined' ? window.mathMonstersPlayerProfile : null);
+
 const INTRO_QUESTION_LEVELS = new Set([1]);
 
 const MEDAL_DISPLAY_DURATION_MS = 3000;
@@ -930,6 +934,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const HERO_EVOLUTION_ATTACK_VALUE = 3;
 
   const readStoredPlayerProfile = () => {
+    if (typeof playerProfileUtils?.readCachedProfile === 'function') {
+      try {
+        const cached = playerProfileUtils.readCachedProfile();
+        if (cached && typeof cached === 'object') {
+          return cached;
+        }
+      } catch (error) {
+        console.warn('Unable to read stored player profile during evolution.', error);
+      }
+    }
+
     if (typeof window === 'undefined') {
       return null;
     }
@@ -953,7 +968,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const persistPlayerProfile = (player) => {
+  const persistPlayerProfile = (player, options = {}) => {
+    const progressData =
+      (options && isPlainObject(options.progress) ? options.progress : null) ||
+      (player && typeof player === 'object' && isPlainObject(player.progress)
+        ? player.progress
+        : null);
+
+    const persistFn = playerProfileUtils?.persistPlayerProfile;
+    if (typeof persistFn === 'function') {
+      try {
+        const persistResult = persistFn(player, progressData);
+        if (persistResult && typeof persistResult.then === 'function') {
+          persistResult.catch((error) => {
+            console.warn('Unable to persist evolved player profile.', error);
+          });
+        }
+        return;
+      } catch (error) {
+        console.warn('Unable to persist evolved player profile.', error);
+      }
+    }
+
     if (typeof window === 'undefined') {
       return;
     }
@@ -969,9 +1005,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(player));
+      const payload =
+        typeof progressData === 'object' && progressData !== null
+          ? { ...player, progress: progressData }
+          : player;
+
+      storage.setItem(PLAYER_PROFILE_STORAGE_KEY, JSON.stringify(payload));
     } catch (error) {
       console.warn('Unable to persist evolved player profile.', error);
+    }
+  };
+
+  const fetchPlayerProfile = async () => {
+    const fetchFn = playerProfileUtils?.fetchPlayerProfile;
+    if (typeof fetchFn !== 'function') {
+      return null;
+    }
+
+    try {
+      const profile = await fetchFn();
+      return profile && typeof profile === 'object' ? profile : null;
+    } catch (error) {
+      console.warn('Failed to fetch player profile for battle.', error);
+      return null;
     }
   };
 
