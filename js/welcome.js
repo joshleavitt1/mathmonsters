@@ -100,7 +100,6 @@ const persistGuestSession = () => {
         incorrectStreak: 0,
         xpTotal: 0,
         spriteTier: 1,
-        gems: 0,
         lastSeenDifficulty: 1,
         lastSeenSpriteTier: 1,
       });
