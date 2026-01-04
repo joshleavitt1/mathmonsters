@@ -1202,7 +1202,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
             ? Math.max(1, Math.round(saveStateSpriteTier))
             : computeExperienceTier(saveStateExperienceTotal),
         currentLevel: normalizeCurrentLevel(saveState?.difficulty),
-        gems: saveState?.gems,
         correctStreak: resolveStreakValue(saveState?.correctStreak),
         incorrectStreak: resolveStreakValue(saveState?.incorrectStreak),
       };
@@ -1212,49 +1211,11 @@ const mergePlayerWithProgress = (rawPlayerData) => {
     saveStateProgress = null;
   }
 
-  const sanitizeGemCount = (value) => {
-    const numericValue = Number(value);
-    if (!Number.isFinite(numericValue)) {
-      return null;
-    }
-    return Math.max(0, Math.round(numericValue));
-  };
-
-  const applyGemCountToPlayer = (gemCount) => {
-    if (gemCount === null) {
-      return;
-    }
-
-    mergedProgress.gems = gemCount;
-
-    const assignIfObject = (container, key) => {
-      if (container && typeof container === 'object') {
-        container[key] = gemCount;
-      }
-    };
-
-    player.gems = gemCount;
-    assignIfObject(player.progress, 'gems');
-    assignIfObject(player.currency, 'gems');
-    assignIfObject(player.currencies, 'gems');
-    assignIfObject(player.wallet, 'gems');
-    assignIfObject(player.inventory, 'gems');
-  };
-
   const baseProgress =
     sourceData && typeof sourceData.progress === 'object'
       ? sourceData.progress
       : {};
   const mergedProgress = { ...baseProgress };
-
-  const baseGemCandidates = [
-    sanitizeGemCount(player?.gems),
-    sanitizeGemCount(player?.progress?.gems),
-    sanitizeGemCount(sourceData?.gems),
-    sanitizeGemCount(baseProgress?.gems),
-    sanitizeGemCount(saveStateProgress?.gems),
-  ];
-  const baseGemCount = baseGemCandidates.find((value) => value !== null) ?? null;
   const baseBattleVariables =
     sourceData && typeof sourceData.battleVariables === 'object'
       ? sourceData.battleVariables
@@ -1329,8 +1290,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
         key === 'experience' ||
         key === 'currentLevel' ||
         key === 'timeRemainingSeconds' ||
-        key === 'gems' ||
-        key === 'gemsAwarded' ||
         key === 'progress'
       ) {
         return;
@@ -1343,46 +1302,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
         mergedProgress[key] = { ...baseEntry, ...value };
       }
     });
-
-    const storedGemTotal = sanitizeGemCount(storedProgress.gems);
-    const storedGemAwarded = sanitizeGemCount(storedProgress.gemsAwarded);
-    const saveStateGemTotal = sanitizeGemCount(saveStateProgress?.gems);
-
-    let resolvedGemCount = baseGemCount;
-
-    const applyGemTotal = (gemTotal) => {
-      if (gemTotal === null) {
-        return;
-      }
-      if (baseGemCount !== null && gemTotal < baseGemCount) {
-        const combinedTotal = baseGemCount + gemTotal;
-        resolvedGemCount =
-          resolvedGemCount !== null
-            ? Math.max(resolvedGemCount, combinedTotal)
-            : combinedTotal;
-        return;
-      }
-      resolvedGemCount =
-        resolvedGemCount !== null
-          ? Math.max(resolvedGemCount, gemTotal)
-          : gemTotal;
-    };
-
-    applyGemTotal(storedGemTotal);
-    applyGemTotal(saveStateGemTotal);
-
-    if (storedGemAwarded !== null && storedGemTotal === null) {
-      const baseForAward = baseGemCount !== null ? baseGemCount : 0;
-      const awardedTotal = baseForAward + storedGemAwarded;
-      resolvedGemCount =
-        resolvedGemCount !== null
-          ? Math.max(resolvedGemCount, awardedTotal)
-          : awardedTotal;
-    }
-
-    if (resolvedGemCount !== null) {
-      applyGemCountToPlayer(resolvedGemCount);
-    }
 
     const applyStreakValue = (key, sourceValue) => {
       const numericValue = Number(sourceValue);
@@ -1398,18 +1317,6 @@ const mergePlayerWithProgress = (rawPlayerData) => {
 
     applyStreakValue('correctStreak', storedProgress.correctStreak);
     applyStreakValue('incorrectStreak', storedProgress.incorrectStreak);
-  }
-
-  if (!Object.prototype.hasOwnProperty.call(mergedProgress, 'gems')) {
-    const fallbackGemCount =
-      baseGemCount ??
-      sanitizeGemCount(player?.progress?.gems) ??
-      sanitizeGemCount(sourceData?.gems) ??
-      sanitizeGemCount(baseProgress?.gems);
-
-    if (fallbackGemCount !== null) {
-      applyGemCountToPlayer(fallbackGemCount);
-    }
   }
 
   if (!player.progress || typeof player.progress !== 'object') {
@@ -1463,63 +1370,9 @@ const mergePlayerWithProgress = (rawPlayerData) => {
 
     applyStreakValue('correctStreak', saveStateProgress.correctStreak);
     applyStreakValue('incorrectStreak', saveStateProgress.incorrectStreak);
-
-    const saveStateGems = sanitizeGemCount(saveStateProgress.gems);
-    if (saveStateGems !== null) {
-      applyGemCountToPlayer(
-        player.progress?.gems !== undefined
-          ? Math.max(player.progress.gems, saveStateGems)
-          : saveStateGems
-      );
-    }
   }
 
   return player;
-};
-
-const readPlayerGemCount = (player) => {
-  if (!player || typeof player !== 'object') {
-    return 0;
-  }
-
-  const sanitizeGemCount = (value) => {
-    const numericValue = Number(value);
-    if (!Number.isFinite(numericValue)) {
-      return null;
-    }
-    return Math.max(0, Math.round(numericValue));
-  };
-
-  const candidateValues = [
-    player.gems,
-    player?.currency?.gems,
-    player?.currencies?.gems,
-    player?.wallet?.gems,
-    player?.inventory?.gems,
-    player?.progress?.gems,
-  ];
-
-  const sanitizedCandidates = candidateValues
-    .map((value) => sanitizeGemCount(value))
-    .filter((value) => value !== null);
-
-  let resolvedGemCount =
-    sanitizedCandidates.length > 0
-      ? Math.max(...sanitizedCandidates)
-      : null;
-
-  if (resolvedGemCount === null) {
-    const awardCandidates = [
-      sanitizeGemCount(player?.gemsAwarded),
-      sanitizeGemCount(player?.progress?.gemsAwarded),
-    ].filter((value) => value !== null);
-
-    if (awardCandidates.length > 0) {
-      resolvedGemCount = Math.max(...awardCandidates);
-    }
-  }
-
-  return resolvedGemCount ?? 0;
 };
 
 const readPlayerExperienceTotal = (player) => {
@@ -2345,7 +2198,6 @@ const determineBattlePreview = (levelsData, playerData) => {
   const milestoneProgress = computeExperienceMilestoneProgress(totalExperience);
   const heroLevelLabel = `Level ${experienceTier}`;
   const progressText = milestoneProgress.text;
-  const playerGems = readPlayerGemCount(player);
 
   const { key: mathProgressKey, entry: mathProgressEntry } = findMathProgressEntry(
     player?.progress,
@@ -2371,7 +2223,6 @@ const determineBattlePreview = (levelsData, playerData) => {
       progressExperienceEarned: milestoneProgress.earned,
       progressExperienceTotal: milestoneProgress.total,
       progressExperienceText: progressText,
-      playerGems,
     },
   };
 };
@@ -2571,7 +2422,6 @@ const applyBattlePreview = (
   const progressElements = document.querySelectorAll('[data-battle-progress]');
   const heroNameElements = document.querySelectorAll('[data-hero-name]');
   const heroLevelElements = document.querySelectorAll('[data-hero-level]');
-  const gemCountElements = document.querySelectorAll('[data-hero-gems]');
   const heroInfoElement = document.querySelector('.landing__hero-info');
   const actionsElement = document.querySelector('.landing__actions');
   const homeExperienceContainer = document.querySelector(
@@ -2671,25 +2521,6 @@ const applyBattlePreview = (
       return;
     }
     element.textContent = resolvedLevelLabel;
-  });
-
-  const resolvedGemCount = (() => {
-    const fromPreview = Number(previewData?.playerGems);
-    if (Number.isFinite(fromPreview)) {
-      return Math.max(0, Math.round(fromPreview));
-    }
-    const fromHero = Number(previewData?.hero?.gems);
-    if (Number.isFinite(fromHero)) {
-      return Math.max(0, Math.round(fromHero));
-    }
-    return 0;
-  })();
-
-  gemCountElements.forEach((element) => {
-    if (!element) {
-      return;
-    }
-    element.textContent = `${resolvedGemCount}`;
   });
 
   const updateHomeExperienceProgress = () => {
@@ -3645,7 +3476,6 @@ const applyScenarioSaveState = (scenarioId) => {
       lastSeenSpriteTier: spriteTier,
       correctStreak: 0,
       incorrectStreak: 0,
-      gems: 0,
     });
   } catch (error) {
     console.warn('Unable to apply scenario save state.', error);

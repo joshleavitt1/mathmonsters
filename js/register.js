@@ -4,7 +4,6 @@ const ACCOUNTS_STORAGE_KEY = 'mathmonstersAccounts';
 const ACTIVE_ACCOUNT_STORAGE_KEY = 'mathmonstersActiveAccount';
 const DEFAULT_PLAYER_DATA_PATH = '../data/player.json';
 const STARTING_LEVEL = 2;
-const STARTING_GEMS = 0;
 const HOME_PAGE_PATH = '../index.html';
 const HERO_APPEARANCE_BY_LEVEL = [
   Object.freeze({
@@ -257,30 +256,6 @@ const cloneHeroForLevel = (hero, level) => {
   };
 };
 
-const applyStartingGems = (playerData) => {
-  if (!isPlainObject(playerData)) {
-    return playerData;
-  }
-
-  if (Object.prototype.hasOwnProperty.call(playerData, 'gemsAwarded')) {
-    delete playerData.gemsAwarded;
-  }
-
-  playerData.gems = STARTING_GEMS;
-
-  const progressSection = isPlainObject(playerData.progress)
-    ? playerData.progress
-    : (playerData.progress = {});
-
-  if (Object.prototype.hasOwnProperty.call(progressSection, 'gemsAwarded')) {
-    delete progressSection.gemsAwarded;
-  }
-
-  progressSection.gems = STARTING_GEMS;
-
-  return playerData;
-};
-
 const extractPlayerData = (rawPlayerData) => {
   if (!isPlainObject(rawPlayerData)) {
     return null;
@@ -318,7 +293,7 @@ const applyStartingCurrentLevel = (playerData) => {
       };
     }
 
-    const seededPlayer = applyStartingGems({
+    const seededPlayer = {
       hero: startingHero,
       progress: {
         currentLevel: STARTING_LEVEL,
@@ -327,7 +302,7 @@ const applyStartingCurrentLevel = (playerData) => {
         timeRemainingSeconds: null,
       },
       currentLevel: levelEntries,
-    });
+    };
 
     if (isPlainObject(seededPlayer?.progress)) {
       seededPlayer.progress.currentLevel = STARTING_LEVEL;
@@ -346,8 +321,6 @@ const applyStartingCurrentLevel = (playerData) => {
     ...progressSection,
     currentLevel: STARTING_LEVEL,
   };
-
-  applyStartingGems(clonedData);
 
   if (!isPlainObject(clonedData.battleVariables)) {
     clonedData.battleVariables = {
@@ -557,15 +530,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       try {
         const saveStatePayload = {
-          difficulty: STARTING_LEVEL,
-          correctStreak: 0,
-          incorrectStreak: 0,
-          xpTotal: 0,
-          spriteTier: 1,
-          gems: STARTING_GEMS,
-          lastSeenDifficulty: STARTING_LEVEL,
-          lastSeenSpriteTier: 1,
-        };
+        difficulty: STARTING_LEVEL,
+        correctStreak: 0,
+        incorrectStreak: 0,
+        xpTotal: 0,
+        spriteTier: 1,
+        lastSeenDifficulty: STARTING_LEVEL,
+        lastSeenSpriteTier: 1,
+      };
 
         if (typeof resetSaveState === 'function') {
           resetSaveState(saveStatePayload);
