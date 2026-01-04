@@ -4172,6 +4172,7 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
   }
   const levelOneHeroImage = getLevelOneHeroElement();
   const standardHeroImage = getStandardHeroElement();
+  const introHeroImage = levelOneHeroImage || standardHeroImage;
   const heroImages = [levelOneHeroImage, standardHeroImage].filter(Boolean);
   const monsterImage = document.querySelector('[data-monster]');
   let battleButton = getActiveBattleButton();
@@ -4580,7 +4581,7 @@ const initLandingInteractions = async (preloadedData = {}, options = {}) => {
 
   if (isLevelOneLanding) {
     setupLevelOneIntro({
-      heroImage: levelOneHeroImage,
+      heroImage: introHeroImage,
       beginBattle,
       onBeforeBattleStart: markLevelOneLandingVisit,
       awaitIntroReady: awaitPreloaderReady,
