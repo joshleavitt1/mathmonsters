@@ -226,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const bannerTimeValue = document.querySelector('[data-banner-time]');
   const heroAttackVal = heroStats.querySelector('.attack .value');
   const heroHealthVal = heroStats.querySelector('.health .value');
-  const heroAttackInc = heroStats.querySelector('.attack .increase');
   const monsterAttackVal = monsterStats.querySelector('.attack .value');
   const monsterHealthVal = monsterStats.querySelector('.health .value');
 
@@ -543,14 +542,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (summaryAccuracyText) summaryAccuracyText.textContent = '100%';
   if (summaryTimeText) summaryTimeText.textContent = '0s';
 
-  const MIN_STREAK_GOAL = 1;
-  const MAX_STREAK_GOAL = 5;
-  const DEFAULT_STREAK_GOAL = 3;
-  const STREAK_GOAL = Math.min(
-    Math.max(DEFAULT_STREAK_GOAL, MIN_STREAK_GOAL),
-    MAX_STREAK_GOAL
-  );
-
   const QUESTION_TYPE_CONFIG = [
     { type: 'type1', key: 'type1_multipleChoiceMath' },
     { type: 'type2', key: 'type2_countTheBubbles' },
@@ -563,8 +554,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let questionMap = new Map();
   let currentQuestionId = null;
   let totalQuestionCount = 0;
-  let streak = 0;
-  let streakMaxed = false;
   let useIntroQuestionOrder = false;
   let introQuestionIds = [];
   let nextIntroQuestionIndex = 0;
@@ -5035,29 +5024,6 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
-  function dispatchStreakMeterUpdate(correct) {
-    document.dispatchEvent(
-      new CustomEvent('streak-meter-update', {
-        detail: {
-          correct: Boolean(correct),
-          streak,
-          streakGoal: STREAK_GOAL,
-        },
-      })
-    );
-  }
-
-  function showIncrease(el, text) {
-    if (!el) return;
-    el.classList.remove('show');
-    el.textContent = text;
-    void el.offsetWidth;
-    el.classList.add('show');
-    setTimeout(() => {
-      el.classList.remove('show');
-    }, 2000);
-  }
-
   const applyShake = (targetImg) => {
     if (!targetImg || ATTACK_SHAKE_DURATION_MS <= 0) {
       return () => {};
@@ -5073,7 +5039,6 @@ document.addEventListener('DOMContentLoaded', () => {
       resetSuperAttackBoost();
       return;
     }
-    const useSuperAttack = streakMaxed;
     let activeShakeCleanup = null;
 
     const ensureShake = () => {
@@ -5105,7 +5070,6 @@ document.addEventListener('DOMContentLoaded', () => {
       effectStartDeadline = null;
       releaseEffect =
         playAttackEffect(monsterImg, monsterAttackEffect, hero.attackSprites, {
-          superAttack: useSuperAttack,
           holdVisible: ATTACK_EFFECT_HOLD_MS > 0,
         }) || (() => {});
       ensureShake();
@@ -5183,10 +5147,6 @@ document.addEventListener('DOMContentLoaded', () => {
           );
           monster.damage = updatedDamage;
           updateHealthBars();
-          if (useSuperAttack) {
-            streak = 0;
-            streakMaxed = false;
-          }
           resetSuperAttackBoost();
 
           if (ATTACK_SHAKE_DURATION_MS > 0) {
@@ -5460,33 +5420,12 @@ document.addEventListener('DOMContentLoaded', () => {
     updateAccuracyDisplays();
     if (correct) {
       maybeShowFirstCorrectMedal(resolvedLevel, correctAnswers);
-      let incEl = null;
-      let incText = '';
-      if (!streakMaxed) {
-        streak++;
-        if (streak >= STREAK_GOAL) {
-          streak = STREAK_GOAL;
-          streakMaxed = true;
-          applySuperAttackBoost();
-          incEl = heroAttackInc;
-          incText = 'x2';
-        }
-      }
-
-      dispatchStreakMeterUpdate(true);
-
       await updateDifficultyForAnswer(true);
 
       scheduleQuestionClose(() => {
-        if (incEl && incText) {
-          showIncrease(incEl, incText);
-        }
         scheduleAttack(heroAttack);
       });
     } else {
-      streak = 0;
-      streakMaxed = false;
-      dispatchStreakMeterUpdate(false);
       await updateDifficultyForAnswer(false);
       scheduleQuestionClose(() => {
         scheduleAttack(monsterAttack);
@@ -5749,8 +5688,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initBattle() {
     battleEnded = false;
-    streak = 0;
-    streakMaxed = false;
     resetSuperAttackBoost();
     questions = [];
     questionIds = [];
