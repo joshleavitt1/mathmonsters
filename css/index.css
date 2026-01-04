@@ -84,10 +84,6 @@ body.is-standard-landing [data-standard-landing] {
   display: flex;
 }
 
-body.is-standard-landing [data-level-one-landing] {
-  display: none;
-}
-
 main.landing.is-battle-transition {
   animation: landing-battle-shift var(--landing-battle-shift-duration, 0.6s)
     cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -331,8 +327,8 @@ body:not(.is-preloading) main.landing {
 }
 
 .landing__hero-progress {
-  --progress-gradient-start: #36dc36;
-  --progress-gradient-end: #00b600;
+  --progress-gradient-start: #5de75d;
+  --progress-gradient-end: #00c853;
 
   height: 18px;
   width: 100%;
@@ -474,19 +470,22 @@ body.is-level-one-landing .monster {
   display: none;
 }
 
-body.is-level-one-landing .hero {
+body.is-level-one-landing .hero,
+body.is-level-one-landing .home__hero-sprite {
   opacity: 0;
   visibility: hidden;
   animation: none;
   transition: opacity 0.4s ease;
 }
 
-body.is-level-one-landing .hero.is-revealed {
+body.is-level-one-landing .hero.is-revealed,
+body.is-level-one-landing .home__hero-sprite.is-revealed {
   opacity: 1;
   visibility: visible;
 }
 
-body.is-level-one-landing .hero.is-exiting {
+body.is-level-one-landing .hero.is-exiting,
+body.is-level-one-landing .home__hero-sprite.is-exiting {
   visibility: visible;
   animation: hero-intro-exit 0.55s cubic-bezier(0.36, 0, 0.66, 1) forwards;
 }
@@ -932,8 +931,8 @@ body.home-page {
 }
 
 .home__progress {
-  --progress-gradient-start: #33aaff;
-  --progress-gradient-end: #1a73ff;
+  --progress-gradient-start: #5de75d;
+  --progress-gradient-end: #00c853;
 
   width: 100%;
   margin: 0 auto;

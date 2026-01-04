@@ -1620,8 +1620,38 @@ const createLevelBattleNormalizer = (mathTypeConfig) => {
       delete normalizedLevel.battle;
     }
 
-    return normalizedLevel;
-  };
+  return normalizedLevel;
+};
+};
+
+const resolveBattleQuestionPath = (battleConfig) => {
+  if (!battleConfig || typeof battleConfig !== 'object') {
+    return null;
+  }
+
+  if (
+    battleConfig.questionReference &&
+    typeof battleConfig.questionReference === 'object' &&
+    typeof battleConfig.questionReference.file === 'string'
+  ) {
+    const trimmed = battleConfig.questionReference.file.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  if (
+    battleConfig.questions &&
+    typeof battleConfig.questions === 'object' &&
+    typeof battleConfig.questions.path === 'string'
+  ) {
+    const trimmed = battleConfig.questions.path.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return null;
 };
 
 const deriveMathTypeLevels = (levelsData, ...playerSources) => {
@@ -1841,48 +1871,9 @@ const fetchPlayerProfile = async () => {
       correctStreak: saveState?.correctStreak,
       incorrectStreak: saveState?.incorrectStreak,
     });
-    const sanitizeGemValue = (value) => {
-      const numericValue = Number(value);
-      if (!Number.isFinite(numericValue)) {
-        return null;
-      }
-      return Math.max(0, Math.round(numericValue));
-    };
-
     let experienceMap = normalizeExperienceMap(
       typeof saveState?.xpTotal === 'number' ? saveState.xpTotal : progress?.experience
     );
-
-    const gemCandidates = [
-      sanitizeGemValue(progress?.gems),
-      sanitizeGemValue(saveState?.gems),
-      sanitizeGemValue(basePlayer?.gems),
-    ].filter((value) => value !== null);
-
-    if (gemCandidates.length > 0) {
-      const resolvedGemTotal = Math.max(...gemCandidates);
-      progress.gems = resolvedGemTotal;
-      if (isPlainObject(basePlayer)) {
-        basePlayer.gems = resolvedGemTotal;
-      }
-    } else if (Object.prototype.hasOwnProperty.call(progress, 'gems')) {
-      delete progress.gems;
-    }
-
-    const gemsAwardedCandidates = [
-      sanitizeGemValue(progress?.gemsAwarded),
-    ].filter((value) => value !== null);
-
-    if (gemsAwardedCandidates.length > 0) {
-      const resolvedAwarded = Math.max(...gemsAwardedCandidates);
-      if (resolvedAwarded > 0) {
-        progress.gemsAwarded = resolvedAwarded;
-      } else if (Object.prototype.hasOwnProperty.call(progress, 'gemsAwarded')) {
-        delete progress.gemsAwarded;
-      }
-    } else if (Object.prototype.hasOwnProperty.call(progress, 'gemsAwarded')) {
-      delete progress.gemsAwarded;
-    }
 
     experienceMap = normalizeExperienceMap(experienceMap);
     const totalExperience = readTotalExperience(experienceMap);
@@ -2379,7 +2370,6 @@ const fetchPlayerProfile = async () => {
         difficulty: difficultyState.difficulty,
         correctStreak: difficultyState.correctStreak,
         incorrectStreak: difficultyState.incorrectStreak,
-        gems: progress?.gems ?? 0,
       });
     }
 
@@ -2389,9 +2379,23 @@ const fetchPlayerProfile = async () => {
       monster: { ...primaryMonster },
     };
 
-      if (normalizedMonsters.length > 0) {
-        battle.monsters = normalizedMonsters;
+    if (normalizedMonsters.length > 0) {
+      battle.monsters = normalizedMonsters;
+    }
+
+    let questionPayload = null;
+    const questionPath = resolveBattleQuestionPath(battle);
+    if (typeof questionPath === 'string' && questionPath.trim()) {
+      try {
+        const questionRes = await fetch(resolveDataPath(questionPath));
+        if (!questionRes.ok) {
+          throw new Error(`Failed to load questions from ${questionPath}`);
+        }
+        questionPayload = await questionRes.json();
+      } catch (error) {
+        console.warn('Unable to preload questions for battle.', error);
       }
+    }
 
     const sortedLevelsByBattle = levels
       .slice()
@@ -2486,7 +2490,8 @@ const fetchPlayerProfile = async () => {
       hero,
       monster: battle.monster,
       charactersByLevel: levelCharacters,
-      questions,
+      questions: questionPayload ?? questions,
+      questionPath: questionPath || null,
       difficultyState,
       heroSprites: heroSpritesData,
       progressionConfig: appliedProgressionConfig,

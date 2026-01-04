@@ -37,12 +37,7 @@ const OFFLINE_ASSETS = [
   './data/levels.json',
   './data/progression-assets.json',
   './data/player.json',
-  './data/questions/level_1_questions.json',
-  './data/questions/level_2_questions.json',
-  './data/questions/level_3_questions.json',
-  './data/questions/level_4_questions.json',
-  './data/questions/level_5_questions.json',
-  './data/questions/level_6_questions.json'
+  './data/questions/questions.json'
 ];
 
 self.addEventListener('install', (event) => {

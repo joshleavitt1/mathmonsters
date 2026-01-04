@@ -18,15 +18,6 @@ const REWARD_CARD_CLOSE_DURATION_MS = 1000;
 const REWARD_SPRITE_SWAP_DURATION_MS = 400;
 const REWARD_SPRITE_HOLD_DURATION_MS = 1000;
 const SPRITE_ENTRANCE_READY_DELAY_MS = 1400;
-const GEM_REWARD_WIN_AMOUNT = 5;
-const GEM_REWARD_LOSS_AMOUNT = 1;
-const GEM_REWARD_INITIAL_PAUSE_MS = 500;
-const GEM_REWARD_CARD_DELAY_MS = 400;
-const GEM_REWARD_PULSE_DURATION_MS = 2100;
-const GEM_REWARD_PULSE_COUNT = 1;
-const GEM_REWARD_CHEST_SRC = '../images/complete/chest.png';
-const GEM_REWARD_GEM_SRC = '../images/complete/gem.png';
-const GEM_REWARD_HOME_ANIMATION_KEY = 'mathmonstersGemRewardAnimation';
 const REGISTER_PAGE_URL = '../index.html';
 const GUEST_SESSION_REGISTRATION_REQUIRED_VALUE = 'register-required';
 const BATTLES_PER_LEVEL = 4;
@@ -175,6 +166,16 @@ const clampStreakValue = (value) => {
   return Math.round(numeric);
 };
 
+const normalizePositiveInteger = (value) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+
+  const rounded = Math.round(numericValue);
+  return rounded > 0 ? rounded : null;
+};
+
 const sanitizeDifficultyState = (state) => {
   if (!state || typeof state !== 'object') {
     return { ...DEFAULT_DIFFICULTY_STATE };
@@ -273,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const GLOBAL_PROGRESS_DIM_CLASS = 'battle-complete-card__reward-progress--dim';
   const GLOBAL_PROGRESS_HEADING_TEXT = 'Reward Meter';
   const completeMonsterImg = completeMessage?.querySelector('.monster-image');
-  const COMPLETE_MONSTER_REWARD_SRC = GEM_REWARD_CHEST_SRC;
+  const COMPLETE_MONSTER_REWARD_SRC = '../images/complete/chest.png';
   const COMPLETE_MONSTER_REWARD_ALT = 'Treasure chest reward';
   const monsterDefeatOverlay = completeMessage?.querySelector('[data-monster-defeat-overlay]');
   const summaryAccuracyStat = completeMessage?.querySelector('[data-goal="accuracy"]');
@@ -683,6 +684,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const ensureQuestionPoolForDifficulty = async (difficulty) => {
+    if (useStructuredQuestions) {
+      return;
+    }
+
     const normalized = clampDifficulty(difficulty);
     if (currentDifficultyQuestionSource === normalized) {
       return;
@@ -725,6 +730,9 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   let currentDifficulty = difficultyState.difficulty;
   let currentDifficultyQuestionSource = currentDifficulty;
+  let preferPreloadedQuestions = false;
+  let preloadedQuestionPath = null;
+  let preloadedQuestionPayload = null;
 
   const getResolvedCurrentDifficulty = () => clampDifficulty(currentDifficulty);
 
@@ -760,9 +768,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let totalExperience = 0;
   let experienceTier = 1;
   let levelExperienceEarned = 0;
-  let levelExperienceRequirement = getExperienceMilestoneSize();
-  let pendingGemReward = null;
-  let gemRewardIntroShown = false;
+  let levelExperienceRequirement = EXPERIENCE_MILESTONE_SIZE;
   let shouldAdvanceCurrentLevel = false;
   let nextMissionProcessing = false;
   let levelProgressUpdateTimeout = null;
@@ -822,7 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
     '--pulsating-glow-blur',
   ];
 
-  const REWARD_GEM_SRC = GEM_REWARD_GEM_SRC;
+  const REWARD_GEM_SRC = '../images/complete/gem.png';
   const HERO_LEVEL_1_SRC = '../images/hero/shellfin_evolution_1.png';
   const HERO_LEVEL_2_SRC = '../images/hero/shellfin_evolution_2.png';
 
@@ -894,7 +900,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const rewardSpriteSources = {
     gem: resolveRewardSpriteSource(REWARD_GEM_SRC) || REWARD_GEM_SRC,
-    chest: resolveRewardSpriteSource(GEM_REWARD_CHEST_SRC) || GEM_REWARD_CHEST_SRC,
+    chest:
+      resolveRewardSpriteSource('../images/complete/chest.png') ||
+      '../images/complete/chest.png',
   };
 
   Object.values(rewardSpriteSources).forEach((source) => {
@@ -1697,210 +1705,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     return update;
-  };
-
-  const readCurrentGemTotal = () => {
-    try {
-      const saveState = readSaveState();
-      const savedGems = Number(saveState?.gems);
-      if (Number.isFinite(savedGems)) {
-        return Math.max(0, Math.round(savedGems));
-      }
-    } catch (error) {
-      console.warn('Stored progress unavailable.', error);
-    }
-
-    const playerGemValue = Number(window.preloadedData?.player?.gems);
-    if (Number.isFinite(playerGemValue)) {
-      return Math.max(0, Math.round(playerGemValue));
-    }
-
-    const progressRoot = resolveProgressRoot();
-    if (progressRoot && typeof progressRoot.gems !== 'undefined') {
-      const progressGemValue = Number(progressRoot.gems);
-      if (Number.isFinite(progressGemValue)) {
-        return Math.max(0, Math.round(progressGemValue));
-      }
-    }
-
-    return 0;
-  };
-
-  const persistGemTotal = (total) => {
-    const safeTotal = Math.max(0, Math.round(Number(total) || 0));
-    const previousTotal = readCurrentGemTotal();
-    const normalizedPrevious = Math.max(0, Math.round(Number(previousTotal) || 0));
-    const rawIncrement = safeTotal - normalizedPrevious;
-    const sanitizedIncrement = rawIncrement > 0 ? rawIncrement : 0;
-
-    persistProgress({
-      gems: safeTotal,
-      gemsAwarded: sanitizedIncrement,
-    });
-
-    const sanitizeGemValue = (value) => {
-      const numericValue = Number(value);
-      return Number.isFinite(numericValue)
-        ? Math.max(0, Math.round(numericValue))
-        : 0;
-    };
-
-    if (window.preloadedData) {
-      if (
-        window.preloadedData.progress &&
-        typeof window.preloadedData.progress === 'object'
-      ) {
-        const existingAwarded = sanitizeGemValue(
-          window.preloadedData.progress.gemsAwarded
-        );
-        const updatedAwarded = existingAwarded + sanitizedIncrement;
-        window.preloadedData.progress.gems = safeTotal;
-        if (updatedAwarded > 0) {
-          window.preloadedData.progress.gemsAwarded = updatedAwarded;
-        } else {
-          delete window.preloadedData.progress.gemsAwarded;
-        }
-      }
-      if (
-        window.preloadedData.player &&
-        typeof window.preloadedData.player === 'object'
-      ) {
-        const playerData = window.preloadedData.player;
-        const existingPlayerAwarded = sanitizeGemValue(playerData.gemsAwarded);
-        const updatedPlayerAwarded =
-          existingPlayerAwarded + sanitizedIncrement;
-        playerData.gems = safeTotal;
-        if (updatedPlayerAwarded > 0) {
-          playerData.gemsAwarded = updatedPlayerAwarded;
-        } else {
-          delete playerData.gemsAwarded;
-        }
-        if (
-          playerData.progress &&
-          typeof playerData.progress === 'object'
-        ) {
-          const existingProgressAwarded = sanitizeGemValue(
-            playerData.progress.gemsAwarded
-          );
-          const updatedProgressAwarded =
-            existingProgressAwarded + sanitizedIncrement;
-          playerData.progress.gems = safeTotal;
-          if (updatedProgressAwarded > 0) {
-            playerData.progress.gemsAwarded = updatedProgressAwarded;
-          } else {
-            delete playerData.progress.gemsAwarded;
-          }
-        }
-      }
-    }
-
-    return safeTotal;
-  };
-
-  const awardGemReward = (amount) => {
-    const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      return readCurrentGemTotal();
-    }
-
-    const currentTotal = readCurrentGemTotal();
-    return currentTotal + Math.max(0, Math.round(numericAmount));
-  };
-
-  const markGemRewardIntroSeen = () => {
-    if (gemRewardIntroShown) {
-      return;
-    }
-    gemRewardIntroShown = true;
-    persistProgress({ gemRewardIntroShown: true });
-  };
-
-  const normalizePositiveInteger = (value) => {
-    const numericValue = Number(value);
-    if (!Number.isFinite(numericValue)) {
-      return null;
-    }
-
-    const rounded = Math.round(numericValue);
-    return rounded > 0 ? rounded : null;
-  };
-
-  const normalizeNonNegativeInteger = (value) => {
-    const numericValue = Number(value);
-    if (!Number.isFinite(numericValue)) {
-      return null;
-    }
-
-    const rounded = Math.round(numericValue);
-    return rounded >= 0 ? rounded : null;
-  };
-
-  const storeGemRewardHomeAnimation = ({
-    start,
-    end,
-    amount,
-    duration,
-  } = {}) => {
-    if (typeof sessionStorage === 'undefined') {
-      return;
-    }
-
-    const normalizedEnd = normalizeNonNegativeInteger(end);
-    if (normalizedEnd === null) {
-      return;
-    }
-
-    const payload = {
-      end: normalizedEnd,
-      timestamp: Date.now(),
-    };
-
-    const normalizedStart = normalizeNonNegativeInteger(start);
-    if (normalizedStart !== null) {
-      payload.start = normalizedStart;
-    }
-
-    const normalizedAmount = normalizeNonNegativeInteger(amount);
-    if (normalizedAmount !== null) {
-      payload.amount = normalizedAmount;
-    }
-
-    const normalizedDuration = normalizeNonNegativeInteger(duration);
-    if (normalizedDuration !== null && normalizedDuration > 0) {
-      payload.duration = normalizedDuration;
-    }
-
-    try {
-      sessionStorage.setItem(
-        GEM_REWARD_HOME_ANIMATION_KEY,
-        JSON.stringify(payload)
-      );
-    } catch (error) {
-      console.warn('Unable to store gem reward animation state.', error);
-    }
-  };
-
-  const formatGemRewardMessage = ({
-    amount,
-    isWin,
-    includeShopPrompt: _includeShopPrompt,
-  } = {}) => {
-    const normalizedAmount = Math.max(0, Math.round(Number(amount) || 0));
-    const gemLabel = normalizedAmount
-      ? `${normalizedAmount} Gem${normalizedAmount === 1 ? '' : 's'}`
-      : null;
-    const buttonText = gemLabel
-      ? `Claim ${gemLabel}`
-      : isWin
-      ? 'Swim Home!'
-      : 'Try Again!';
-
-    return {
-      text: isWin ? 'Great Job!' : 'Keep Practicing!',
-      buttonText,
-      imageSrc: rewardSpriteSources.gem,
-      imageAlt: normalizedAmount === 1 ? 'Gem reward' : 'Gem rewards',
-    };
   };
 
   const resolveAbsoluteSpritePath = (path) => {
@@ -2806,314 +2610,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   disableRewardSpriteInteraction();
 
-  const playGemRewardAnimation = (rewardConfig = {}) =>
-    new Promise((resolve) => {
-      const fallbackNavigateHome = () => {
-        if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
-          advanceCurrentLevel();
-        }
-        recordHomeGemAnimation();
-        resetRewardOverlay();
-        resolve();
-        redirectHomeFromBattle();
-      };
-
-      if (!rewardOverlay || !rewardSprite || !rewardCard || !rewardCardButton) {
-        fallbackNavigateHome();
-        return;
-      }
-
-      clearRewardCardDisplayTimeout();
-      clearRewardAnimation();
-      hideRewardCard();
-
-      rewardOverlay.classList.add('reward-overlay--visible');
-      rewardOverlay.setAttribute('aria-hidden', 'false');
-      document.body?.classList.add('is-reward-active');
-      disableRewardSpriteInteraction();
-
-      const rewardAmountRaw = Number(rewardConfig?.amount);
-      const rewardAmount = Number.isFinite(rewardAmountRaw)
-        ? Math.max(0, Math.round(rewardAmountRaw))
-        : GEM_REWARD_WIN_AMOUNT;
-      const rewardTotalAfter = normalizeNonNegativeInteger(
-        rewardConfig?.totalAfter
-      );
-      const rewardStartTotal =
-        rewardTotalAfter !== null && Number.isFinite(rewardAmount)
-          ? Math.max(0, rewardTotalAfter - rewardAmount)
-          : null;
-      let homeAnimationStored = false;
-      const recordHomeGemAnimation = () => {
-        if (homeAnimationStored || rewardTotalAfter === null) {
-          return;
-        }
-
-        storeGemRewardHomeAnimation({
-          start: rewardStartTotal,
-          end: rewardTotalAfter,
-          amount: rewardAmount,
-          duration: 900,
-        });
-        homeAnimationStored = true;
-      };
-      const isFirstGemReward = rewardConfig?.isFirstGemReward === true;
-      const rewardCurrentLevel = normalizePositiveInteger(
-        rewardConfig?.currentLevel
-      );
-      const rewardBattleIndex = normalizePositiveInteger(
-        rewardConfig?.currentBattle
-      );
-      const rewardIsWin = rewardConfig?.win !== false;
-      const includeShopPrompt =
-        rewardCurrentLevel === 2 && rewardBattleIndex === 1;
-
-      pendingGemReward = null;
-      updateNextMissionButton(true);
-
-      let gemRevealed = false;
-      let cardDisplayed = false;
-      let fallbackTimeout = null;
-      let devSkipHandler = null;
-
-      const cleanup = () => {
-        rewardSprite.removeEventListener('animationend', handleChestPopEnd);
-        rewardSprite.removeEventListener('animationend', handlePulseEnd);
-        rewardSprite.removeEventListener('animationend', handleGemPopEnd);
-        rewardSprite.removeEventListener('animationiteration', handlePulseIteration);
-        if (rewardDevSkipButton && devSkipHandler) {
-          rewardDevSkipButton.removeEventListener('click', devSkipHandler);
-        }
-        if (fallbackTimeout !== null) {
-          window.clearTimeout(fallbackTimeout);
-          fallbackTimeout = null;
-        }
-      };
-
-      const finish = () => {
-        cleanup();
-        resolve();
-      };
-
-      const navigateHome = () => {
-        if (isFirstGemReward) {
-          markGemRewardIntroSeen();
-        }
-        if (document.body) {
-          document.body.classList.add('is-reward-transitioning');
-        }
-        if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
-          advanceCurrentLevel();
-        }
-        recordHomeGemAnimation();
-        resetRewardOverlay();
-        finish();
-        redirectHomeFromBattle();
-      };
-
-      const handleDevSkipClick = (event) => {
-        event.preventDefault();
-        navigateHome();
-      };
-
-      if (rewardDevSkipButton) {
-        devSkipHandler = handleDevSkipClick;
-        rewardDevSkipButton.addEventListener('click', devSkipHandler);
-      }
-
-      const displayRewardCopy = () => {
-        if (cardDisplayed) {
-          return;
-        }
-        cardDisplayed = true;
-        const cardContent = formatGemRewardMessage({
-          amount: rewardAmount,
-          isWin: rewardIsWin,
-          includeShopPrompt,
-        });
-        const displayed = displayRewardCard({
-          text: cardContent?.text,
-          buttonText: cardContent?.buttonText,
-          imageSrc: cardContent?.imageSrc,
-          imageAlt: cardContent?.imageAlt,
-          onClick: navigateHome,
-        });
-        if (!displayed) {
-          navigateHome();
-        }
-      };
-
-      const showRewardCard = () => {
-        window.setTimeout(displayRewardCopy, GEM_REWARD_CARD_DELAY_MS);
-      };
-
-      const handleGemPopEnd = (event) => {
-        if (!event || event.animationName !== 'reward-overlay-egg-pop') {
-          return;
-        }
-        rewardSprite.removeEventListener('animationend', handleGemPopEnd);
-        showRewardCard();
-      };
-
-      const revealGem = () => {
-        if (gemRevealed) {
-          return;
-        }
-        gemRevealed = true;
-        if (fallbackTimeout !== null) {
-          window.clearTimeout(fallbackTimeout);
-          fallbackTimeout = null;
-        }
-        rewardSprite.classList.remove('reward-overlay__image--chest-pulse');
-        rewardSprite.style.removeProperty('--reward-chest-pulse-duration');
-        rewardSprite.style.removeProperty('--reward-chest-pulse-count');
-        rewardSprite.src = rewardSpriteSources.gem;
-        rewardSprite.alt = 'Gem reward';
-        setRewardStage('gem');
-        void rewardSprite.offsetWidth;
-        rewardSprite.classList.add('reward-overlay__image--gem-pop');
-        rewardSprite.addEventListener('animationend', handleGemPopEnd, { once: true });
-      };
-
-      const handlePulseEnd = (event) => {
-        if (!event || event.animationName !== 'reward-overlay-chest-pulse') {
-          return;
-        }
-        rewardSprite.removeEventListener('animationend', handlePulseEnd);
-        revealGem();
-      };
-
-      const handlePulseIteration = () => {};
-
-      const startPulses = () => {
-        rewardSprite.classList.remove('reward-overlay__image--chest-pop');
-        void rewardSprite.offsetWidth;
-        rewardSprite.style.setProperty(
-          '--reward-chest-pulse-duration',
-          `${GEM_REWARD_PULSE_DURATION_MS}ms`
-        );
-        rewardSprite.style.setProperty(
-          '--reward-chest-pulse-count',
-          `${GEM_REWARD_PULSE_COUNT}`
-        );
-        rewardSprite.classList.add('reward-overlay__image--chest-pulse');
-        rewardSprite.addEventListener('animationend', handlePulseEnd);
-        rewardSprite.addEventListener('animationiteration', handlePulseIteration);
-      };
-
-      const handleChestPopEnd = (event) => {
-        if (!event || event.animationName !== 'reward-overlay-egg-pop') {
-          return;
-        }
-        rewardSprite.removeEventListener('animationend', handleChestPopEnd);
-        window.setTimeout(startPulses, GEM_REWARD_INITIAL_PAUSE_MS);
-      };
-
-      const triggerFallback = () => {
-        revealGem();
-        window.setTimeout(displayRewardCopy, GEM_REWARD_CARD_DELAY_MS);
-      };
-
-      rewardSprite.style.removeProperty('--reward-chest-pulse-duration');
-      rewardSprite.style.removeProperty('--reward-chest-pulse-count');
-      rewardSprite.classList.remove('reward-overlay__image--visible');
-      rewardSprite.classList.remove('reward-overlay__image--chest-pop');
-      rewardSprite.classList.remove('reward-overlay__image--chest-pulse');
-      rewardSprite.classList.remove('reward-overlay__image--gem-pop');
-
-      const beginAnimation = () => {
-        rewardSprite.src = rewardSpriteSources.chest;
-        rewardSprite.alt = 'Treasure chest reward';
-        setRewardStage('chest');
-        void rewardSprite.offsetWidth;
-        rewardSprite.classList.add('reward-overlay__image--visible');
-        rewardSprite.classList.add('reward-overlay__image--chest-pop');
-        rewardSprite.addEventListener('animationend', handleChestPopEnd, { once: true });
-      };
-
-      let animationStarted = false;
-      const startAnimationOnce = () => {
-        if (animationStarted || gemRevealed) {
-          return;
-        }
-        animationStarted = true;
-        beginAnimation();
-      };
-
-      preloadRewardSpriteSource(rewardSpriteSources.gem).catch(() => {});
-      preloadRewardSpriteSource(rewardSpriteSources.chest)
-        .catch(() => {})
-        .finally(startAnimationOnce);
-
-      const totalFallbackDuration =
-        GEM_REWARD_INITIAL_PAUSE_MS + GEM_REWARD_PULSE_DURATION_MS * GEM_REWARD_PULSE_COUNT + 1200;
-      fallbackTimeout = window.setTimeout(() => {
-        cleanup();
-        triggerFallback();
-      }, totalFallbackDuration);
-    });
-
-  const handleGemRewardWithoutAnimation = () => {
-    nextMissionProcessing = true;
-    if (nextMissionBtn) {
-      nextMissionBtn.setAttribute('aria-busy', 'true');
-    }
-
-    const rewardTotal = normalizeNonNegativeInteger(pendingGemReward?.totalAfter);
-    const rewardAmount = normalizeNonNegativeInteger(pendingGemReward?.amount);
-    const startTotal =
-      rewardTotal !== null && rewardAmount !== null
-        ? Math.max(0, rewardTotal - rewardAmount)
-        : null;
-
-    if (pendingGemReward?.isFirstGemReward) {
-      markGemRewardIntroSeen();
-    }
-
-    if (rewardTotal !== null) {
-      storeGemRewardHomeAnimation({
-        start: startTotal,
-        end: rewardTotal,
-        amount: rewardAmount,
-        duration: 900,
-      });
-    }
-
-    pendingGemReward = null;
-
-    if (battleGoalsMet && shouldAdvanceCurrentLevel && !currentLevelAdvanced) {
-      advanceCurrentLevel();
-    }
-    resetRewardOverlay();
-    redirectHomeFromBattle();
-  };
-
-  const isGemMilestoneReward = (reward) => {
-    if (!reward || reward.win !== true) {
-      return false;
-    }
-
-    const rawLevel = Number(reward.currentLevel);
-
-    if (!Number.isFinite(rawLevel)) {
-      return false;
-    }
-
-    const normalizedLevel = Math.max(1, Math.round(rawLevel));
-
-    if (normalizedLevel < 6) {
-      return false;
-    }
-
-    const milestoneSize = Math.max(1, Math.round(GLOBAL_REWARD_MILESTONE));
-
-    if (milestoneSize <= 0) {
-      return false;
-    }
-
-    return (normalizedLevel - 6) % milestoneSize === 0;
-  };
-
   const markLandingVisited = () => {
     setVisitedFlag(sessionStorage, 'Session');
     setVisitedFlag(localStorage, 'Local');
@@ -3139,16 +2635,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const updateNextMissionButton = (win = true) => {
     if (!nextMissionBtn) {
-      return;
-    }
-
-    const hasPendingReward = Boolean(pendingGemReward);
-    const isMilestoneReward =
-      hasPendingReward && isGemMilestoneReward(pendingGemReward);
-
-    if (win && isMilestoneReward) {
-      nextMissionBtn.textContent = 'Claim Reward';
-      nextMissionBtn.dataset.action = 'next';
       return;
     }
 
@@ -3286,25 +2772,6 @@ document.addEventListener('DOMContentLoaded', () => {
           result.experience = mergedExperience;
         } else {
           delete result.experience;
-        }
-        return;
-      }
-
-      if (key === 'gemsAwarded') {
-        const currentAwarded = Number(result.gemsAwarded);
-        const normalizedCurrent = Number.isFinite(currentAwarded)
-          ? Math.max(0, Math.round(currentAwarded))
-          : 0;
-        const addition = Number(value);
-        const normalizedAddition = Number.isFinite(addition)
-          ? Math.max(0, Math.round(addition))
-          : 0;
-
-        const updatedAwarded = normalizedCurrent + normalizedAddition;
-        if (updatedAwarded > 0) {
-          result.gemsAwarded = updatedAwarded;
-        } else {
-          delete result.gemsAwarded;
         }
         return;
       }
@@ -4393,18 +3860,6 @@ document.addEventListener('DOMContentLoaded', () => {
         incorrectStreak: difficultyState?.incorrectStreak,
       };
 
-      if (Object.prototype.hasOwnProperty.call(updatePayload, 'gems')) {
-        const gemValue = Number(updatePayload.gems);
-        if (Number.isFinite(gemValue)) {
-          savePayload.gems = Math.max(0, Math.round(gemValue));
-        }
-      } else {
-        const currentGems = Number(readCurrentGemTotal());
-        if (Number.isFinite(currentGems)) {
-          savePayload.gems = Math.max(0, Math.round(currentGems));
-        }
-      }
-
       writeSaveState(savePayload);
     } catch (error) {
       console.warn('Unable to save progress.', error);
@@ -4420,13 +3875,40 @@ document.addEventListener('DOMContentLoaded', () => {
     shouldAdvanceCurrentLevel = false;
   }
 
-  function loadData() {
+  async function loadData() {
     const data = window.preloadedData ?? {};
     const battleData = data.battle ?? {};
     const heroData = data.hero ?? {};
     const monsterData = data.monster ?? {};
+    const rawQuestionSource = data.questions ?? null;
+    preloadedQuestionPath =
+      typeof data.questionPath === 'string' && data.questionPath.trim()
+        ? data.questionPath.trim()
+        : null;
+    const normalizePreloadedQuestions = (source) => {
+      if (!source) {
+        return null;
+      }
+
+      if (Array.isArray(source.questions) && source.questions.length > 0) {
+        return source.questions;
+      }
+
+      if (Array.isArray(source) && source.length > 0) {
+        return source;
+      }
+
+      if (typeof source === 'object' && Object.keys(source).length > 0) {
+        return source;
+      }
+
+      return null;
+    };
+
+    preloadedQuestionPayload = normalizePreloadedQuestions(rawQuestionSource);
+    preferPreloadedQuestions = Boolean(preloadedQuestionPayload);
+    questionCache.clear();
     const progressData = data.progress ?? data.player?.progress ?? {};
-    gemRewardIntroShown = Boolean(progressData?.gemRewardIntroShown);
     const experienceMap = normalizeExperienceMap(progressData?.experience);
     if (isPlainObject(data.progress)) {
       if (Object.keys(experienceMap).length > 0) {
@@ -4517,6 +3999,141 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isPlainObjectValue = (value) =>
       Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+    const QUESTION_TYPE_KEYS = QUESTION_TYPE_CONFIG.map(({ key }) => key);
+
+    const normalizeLegacyQuestionList = (questionList) => {
+      if (!Array.isArray(questionList)) {
+        return null;
+      }
+
+      const normalized = questionList
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') {
+            return null;
+          }
+
+          const prompt =
+            typeof entry.question === 'string'
+              ? entry.question.trim()
+              : typeof entry.q === 'string'
+              ? entry.q.trim()
+              : '';
+
+          if (!prompt) {
+            return null;
+          }
+
+          const choices = Array.isArray(entry.options) && entry.options.length > 0
+            ? entry.options
+            : Array.isArray(entry.choices)
+            ? entry.choices
+            : [];
+
+          if (!choices.length) {
+            return null;
+          }
+
+          return {
+            question: prompt,
+            choices,
+            answer: entry.answer,
+          };
+        })
+        .filter(Boolean);
+
+      if (!normalized.length) {
+        return null;
+      }
+
+      return { [QUESTION_TYPE_KEYS[0]]: normalized };
+    };
+
+    const normalizeQuestionPayload = (payload) => {
+      if (isPlainObjectValue(payload)) {
+        const structured = {};
+
+        QUESTION_TYPE_KEYS.forEach((key) => {
+          if (Array.isArray(payload[key])) {
+            structured[key] = payload[key];
+          }
+        });
+
+        if (Object.keys(structured).length > 0) {
+          return structured;
+        }
+
+        if (Array.isArray(payload.questions)) {
+          return normalizeLegacyQuestionList(payload.questions);
+        }
+      }
+
+      if (Array.isArray(payload)) {
+        return normalizeLegacyQuestionList(payload);
+      }
+
+      return null;
+    };
+
+    const resolveQuestionFilePath = (reference) => {
+      if (!isPlainObjectValue(reference)) {
+        return null;
+      }
+
+      const rawFile =
+        typeof reference.path === 'string'
+          ? reference.path
+          : typeof reference.file === 'string'
+          ? reference.file
+          : null;
+
+      if (!rawFile) {
+        return null;
+      }
+
+      let normalized = rawFile.trim();
+      if (!normalized) {
+        return null;
+      }
+
+      if (!/^\/?data\//i.test(normalized)) {
+        if (/^\/?questions\//i.test(normalized)) {
+          normalized = normalized.replace(/^\/+/, '');
+          normalized = `data/${normalized}`;
+        }
+      }
+
+      return resolveAssetPath(normalized);
+    };
+
+    const loadQuestionReference = async (reference) => {
+      const resolvedPath = resolveQuestionFilePath(reference);
+      if (!resolvedPath) {
+        return null;
+      }
+
+      try {
+        const response = await fetch(resolvedPath);
+        if (!response?.ok) {
+          throw new Error(`Unexpected status: ${response?.status ?? 'unknown'}`);
+        }
+
+        const payload = await response.json();
+        const normalized = normalizeQuestionPayload(payload);
+        if (!normalized) {
+          console.warn('Question payload did not match expected structure.', payload);
+          return null;
+        }
+
+        return {
+          payload: normalized,
+          sourceKey: resolvedPath,
+        };
+      } catch (error) {
+        console.warn('Unable to load referenced questions.', error);
+        return null;
+      }
+    };
 
     const normalizeAttackSprites = (...spriteSources) => {
       const allowedKeys = ['basic', 'super'];
@@ -4734,12 +4351,28 @@ document.addEventListener('DOMContentLoaded', () => {
       completeMonsterImg.alt = '';
     }
 
-    const initialQuestions = generateQuestionSetForDifficulty(
-      getResolvedCurrentDifficulty()
+    const inlineQuestions = normalizeQuestionPayload(battleData?.questions);
+    const referencedQuestions = await loadQuestionReference(
+      battleData?.questionReference
     );
+    const questionSourceKey =
+      referencedQuestions?.sourceKey || (inlineQuestions ? 'inline' : null);
+
+    const resolvedQuestionPayload =
+      inlineQuestions ?? referencedQuestions?.payload ?? null;
+
+    const initialQuestions =
+      resolvedQuestionPayload ??
+      generateQuestionSetForDifficulty(getResolvedCurrentDifficulty());
+
     resetQuestionPool(initialQuestions);
-    questionCache.set(getResolvedCurrentDifficulty(), initialQuestions);
-    currentDifficultyQuestionSource = getResolvedCurrentDifficulty();
+    if (useStructuredQuestions) {
+      questionCache.clear();
+      currentDifficultyQuestionSource = questionSourceKey || 'structured';
+    } else {
+      questionCache.set(getResolvedCurrentDifficulty(), initialQuestions);
+      currentDifficultyQuestionSource = getResolvedCurrentDifficulty();
+    }
 
     updateHealthBars();
     updateBattleTimeDisplay();
@@ -5552,16 +5185,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     battleGoalsMet = goalsAchieved;
 
-    let gemRewardAmount = 0;
-    let updatedGemTotal = null;
-    const shouldAwardGemReward = win || !isLevelOneBattle;
-
-    if (shouldAwardGemReward) {
-      gemRewardAmount = win ? GEM_REWARD_WIN_AMOUNT : GEM_REWARD_LOSS_AMOUNT;
-      updatedGemTotal = awardGemReward(gemRewardAmount);
-      persistGemTotal(updatedGemTotal);
-    }
-
     if (win) {
       const mathProgressUpdate = computeNextMathProgressOnWin();
       shouldAdvanceCurrentLevel = Boolean(mathProgressUpdate?.advanceLevel);
@@ -5621,28 +5244,6 @@ document.addEventListener('DOMContentLoaded', () => {
       setGlobalProgressTextVisibility(true);
     }
 
-    if (win) {
-      pendingGemReward = {
-        amount: gemRewardAmount,
-        totalAfter: updatedGemTotal,
-        isFirstGemReward: !gemRewardIntroShown,
-        currentLevel: rewardCurrentLevel,
-        currentBattle: rewardBattleIndex,
-        win: true,
-      };
-    } else if (shouldAwardGemReward) {
-      pendingGemReward = {
-        amount: gemRewardAmount,
-        totalAfter: updatedGemTotal,
-        isFirstGemReward: false,
-        currentLevel: rewardCurrentLevel,
-        currentBattle: rewardBattleIndex,
-        win: false,
-      };
-    } else {
-      pendingGemReward = null;
-    }
-
     updateNextMissionButton(win);
 
     if (!win) {
@@ -5694,11 +5295,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (pendingGemReward) {
-        handleGemRewardWithoutAnimation();
-        return;
-      }
-
       const action = nextMissionBtn.dataset.action;
       if (action === 'retry') {
         window.location.reload();
@@ -5713,7 +5309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function initBattle() {
+  async function initBattle() {
     battleEnded = false;
     resetSuperAttackBoost();
     questions = [];
@@ -5721,6 +5317,7 @@ document.addEventListener('DOMContentLoaded', () => {
     questionMap = new Map();
     currentQuestionId = null;
     totalQuestionCount = 0;
+    questionCache.clear();
     correctAnswers = 0;
     totalAnswers = 0;
     wrongAnswers = 0;
@@ -5769,7 +5366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     heroSpriteEntrance?.prepareForEntrance();
     monsterSpriteEntrance?.prepareForEntrance();
-    loadData();
+    await loadData();
     heroSpriteEntrance?.playEntrance();
     monsterSpriteEntrance?.playEntrance();
     updateAccuracyDisplays();
