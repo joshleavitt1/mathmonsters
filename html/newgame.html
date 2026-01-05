@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>New Game — Math Monsters</title>
+  <link rel="stylesheet" href="./newgame.css" />
+</head>
+<body>
+  <main class="card">
+    <h1>New Game</h1>
+
+    <form id="form" class="form">
+      <label>
+        Player Name
+        <input id="playerName" type="text" maxlength="24" placeholder="e.g., Mia" required />
+      </label>
+
+      <label>
+        Grade
+        <select id="playerGrade" required>
+          <option value="2" selected>Grade 2</option>
+          <option value="3">Grade 3</option>
+        </select>
+      </label>
+
+      <label>
+        Hero Type
+        <select id="heroType" required>
+          <option value="blue" selected>Blue</option>
+          <option value="green">Green</option>
+        </select>
+      </label>
+
+      <button class="btn" type="submit">Begin</button>
+      <button id="backBtn" class="btn secondary" type="button">Back</button>
+    </form>
+
+    <div id="error" class="error" aria-live="polite"></div>
+  </main>
+
+  <script type="module" src="./newgame.js"></script>
+</body>
+</html>
