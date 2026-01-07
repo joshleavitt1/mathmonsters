@@ -7,7 +7,7 @@
   --button-gradient-start: #0095ff;
   --button-gradient-end: #006aff;
 
-  --ink: #0D1420;
+  --ink: #272b34;
   --ink2: rgba(13,20,32,.70);
   --white: #FFFFFF;
 
@@ -155,12 +155,12 @@ body.is-loader .mm-bubbles{
 .mm-card__pad{ padding: 16px; }
 
 .mm-glass{
-  background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.12));
-  border: 1px solid rgba(255,255,255,.20);
+  background: none;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.5);
   box-shadow: var(--shadow2);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-radius: var(--r-lg);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
 }
 
 .mm-stack{ display:flex; flex-direction:column; gap: 10px; }
@@ -247,25 +247,16 @@ body.is-loader .mm-bubbles{
 ================================ */
 
 .mm-progress{
-  --progress-height: 12px;
-  --progress-bg: rgba(255,255,255,.25);
+  --progress-height: 16px;
+  --progress-bg: transparent; /* neutral default */
   --progress-border: rgba(255,255,255,.9);
-  --progress-shadow: 0 4px 24px rgba(0,0,0,.24);
-  --progress-blur: 6px;
-
-  --progress-gradient-start: #36dc36;
-  --progress-gradient-end: #00b600;
+  background: var(--progress-bg);
 
   position: relative;
   width: 100%;
-  height: var(--progress-height);
+  height: 16px;
   border-radius: 999px;
-  background: var(--progress-bg);
-  box-shadow: var(--progress-shadow);
   overflow: hidden;
-
-  backdrop-filter: blur(var(--progress-blur));
-  -webkit-backdrop-filter: blur(var(--progress-blur));
 }
 
 /* Fill */
@@ -296,24 +287,20 @@ body.is-loader .mm-bubbles{
   pointer-events:none;
 }
 
-/* Sizes (FIXED — moved OUTSIDE :root) */
-.mm-progress--sm{ --progress-height: 10px; }
-.mm-progress--md{ --progress-height: 14px; }
-.mm-progress--lg{ --progress-height: 18px; }
-
-/* Context presets */
+/* XP progress bar background */
 .mm-progress--xp{
-  --progress-gradient-start: #5de75d;
-  --progress-gradient-end: #00c853;
+  --progress-bg: #00000016; /* #0000004 */
+  --progress-gradient-start: #36dc36;
+  --progress-gradient-end: #00b600;
 }
+
+/* HP progress bar background */
 .mm-progress--hp{
-  --progress-gradient-start: #ff6b6b;
-  --progress-gradient-end: #ff2d2d;
+  --progress-bg: #FFFFFF16;
+  --progress-gradient-start: #ffbf00;
+  --progress-gradient-end: #ff6a00;
 }
-.mm-progress--mana{
-  --progress-gradient-start: #5da9ff;
-  --progress-gradient-end: #006aff;
-}
+
 
 .mm-screen{
   position:relative;
@@ -377,26 +364,41 @@ body.is-loader .mm-bubbles{
   transform: translateZ(0);
 }
 
-@keyframes mmSwim{
-  0%   { transform: translate3d(0px,   0px, 0) rotate(-2deg); }
-  12%  { transform: translate3d(18px, -10px, 0) rotate(-0.8deg); }
-  33%  { transform: translate3d(6px,  -44px, 0) rotate(2.8deg); }
-  58%  { transform: translate3d(-26px,-28px, 0) rotate(1.1deg); }
-  79%  { transform: translate3d(-10px, -8px, 0) rotate(-1.6deg); }
-  100% { transform: translate3d(0px,   0px, 0) rotate(-2deg); }
+/* Home hero pop-in */
+@keyframes mmHeroPopIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0) scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(0, -4px, 0) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
-body.is-home .mm-homeSwim{
-  animation: mmSwim 10.5s cubic-bezier(.38,0,.22,1) infinite;
-  will-change: transform;
-  transform-origin: 50% 65%;
+/* Home sprite: gentle up/down drift */
+@keyframes mmDriftY{
+  0%   { transform: translate3d(0, 0px, 0); }
+  50%  { transform: translate3d(0, -14px, 0); }
+  100% { transform: translate3d(0, 0px, 0); }
 }
 
+body.is-home .mm-art img {
+  opacity: 0;
+  animation:
+    mmHeroPopIn 1400ms var(--spring) 200ms forwards,
+    mmDriftY 3.4s ease-in-out infinite 1650ms;
+  will-change: transform, opacity;
+}
 
 .mm-battleStage{
   position: relative;
   flex: 1 1 auto;
-  overflow:hidden;
+  overflow:visible;
 }
 
 .mm-sprite{
@@ -404,7 +406,7 @@ body.is-home .mm-homeSwim{
   width: var(--hero-size);
   height: var(--hero-size);
   object-fit: contain;
-  filter: drop-shadow(0 16px 18px rgba(0,0,0,.25));
+  filter: drop-shadow(0 16px 18px rgba(0,0,0,.16));
   opacity: 0;
   transform: translate3d(0,18px,0) scale(.98);
 }
@@ -413,28 +415,38 @@ body.is-home .mm-homeSwim{
   transition: transform var(--med) var(--spring), opacity var(--med) var(--spring);
 }
 .mm-sprite.hero{ left: 10px; bottom: 10px; }
-.mm-sprite.monster{ right: 10px; top: 10px; width: var(--monster-size); height: var(--monster-size); }
+.mm-sprite.monster{ right: 10px; top: 10px; }
 
 .mm-stat{
   position:absolute;
-  width: min(220px, 46vw);
-  padding: 10px 10px;
-  border-radius: 18px;
+  width: 160px;
+  padding: 16px;
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
 }
-.mm-stat.hero{ left: 14px; bottom: calc(10px + var(--hero-size) * .42); }
-.mm-stat.monster{ right: 14px; top: calc(10px + var(--monster-size) * .42); }
+
+
+.mm-stat.hero{ left: 250px; bottom: calc(10px + var(--hero-size) * .42); }
+.mm-stat.monster{ right: 250px; top: calc(10px + var(--monster-size) * .42); }
 
 .mm-stat__name{
-  font-weight: 950;
-  color: rgba(255,255,255,.92);
-  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255);
+  font-size: 20px;
   letter-spacing: .2px;
 }
-.mm-stat .mm-progress{ height: 10px; background: rgba(255,255,255,.20); border: 1px solid rgba(255,255,255,.18); }
 
-/* ✅ FIX: your markup uses .mm-progress__fill (not i) */
-.mm-stat .mm-progress > .mm-progress__fill{
-  background: linear-gradient(180deg, rgba(108,255,184,.95), rgba(47,209,255,.95));
+/* Battle stat context */
+.mm-stat .mm-progress{
+  --progress-height: 16px;
+  --progress-bg: rgba(255,255,255,.20);
+  --progress-border: rgba(255,255,255,.18);
+  box-shadow: none;
 }
 
 .mm-attackFx{
@@ -473,13 +485,13 @@ body.is-home .mm-homeSwim{
 
 .mm-qCard{
   position:absolute;
+  padding: 24px;
+  border-radius: var(--r-md);
   left: 12px; right: 12px;
   bottom: 12px;
-  border-radius: 26px;
-  background: rgba(255,255,255,.92);
+  background: rgba(255,255,255);
   color: var(--ink);
   box-shadow: var(--shadow);
-  border: 1px solid rgba(255,255,255,.55);
   transform: translate3d(0, 24px, 0);
   opacity: 0;
 }
@@ -488,35 +500,40 @@ body.is-home .mm-homeSwim{
   transform: translate3d(0,0,0);
   transition: transform var(--med) var(--spring), opacity var(--med) var(--spring);
 }
-.mm-qCard__pad{ padding: 14px; }
 
 .mm-question{
-  font-weight: 950;
-  font-size: 20px;
+  font-weight: 500;
+  font-size: 28px;
+  width: 100%;
   letter-spacing: -.2px;
+  text-align: center;
+  padding: 8px 0px 8px 0px;
 }
 
 .mm-answers{
-  margin-top: 12px;
+  margin-top: 16px;
+  margin-bottom: 16px;
   display:grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 16px;
 }
 .mm-answer{
-  border-radius: 18px;
-  border: 1px solid rgba(13,20,32,.10);
-  background: rgba(255,255,255,.96);
-  padding: 14px 12px;
-  font-weight: 950;
-  font-size: 18px;
+  border-radius: 12px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  background: white;
+  height: 64px;
+  font-weight: 500;
+  font-size: 24px;
   text-align:center;
   transition: transform var(--fast) var(--spring), box-shadow var(--fast) var(--spring), border-color var(--fast) var(--spring);
 }
 .mm-answer:active{ transform: translate3d(0,2px,0) scale(.99); }
 .mm-answer.is-selected{
-  border-color: rgba(47,209,255,.55);
-  box-shadow: 0 0 0 4px rgba(47,209,255,.18);
+  background: #EBF3FF;
+  border-color: #006AFF;
+  box-shadow: none;
 }
+
 
 .mm-qActions{ margin-top: 12px; display:flex; gap: 10px; }
 .mm-qActions .mm-btn{ padding: 12px 14px; border-radius: 18px; font-size: 15px; }

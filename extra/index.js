@@ -333,36 +333,37 @@
     appEl.innerHTML = shell({ bodyHtml: body });
 
     appEl
-      .querySelector("[data-act='continue']")
-      ?.addEventListener("click", () => go("home"));
+  .querySelector("[data-act='continue']")
+  ?.addEventListener("click", () => go("loader", { next: "home" }));
 
-    appEl.querySelector("[data-act='newGame']")?.addEventListener("click", async () => {
-      await loadStaticData();
-      makeDefaultProfile();
-      ensureMonsterForCurrentHero();
-      saveLocal();
-      go("home");
-    });
+appEl.querySelector("[data-act='newGame']")?.addEventListener("click", async () => {
+  await loadStaticData();
+  makeDefaultProfile();
+  ensureMonsterForCurrentHero();
+  saveLocal();
+  go("loader", { next: "home" });
+});
 
-    appEl.querySelector("[data-act='level2']")?.addEventListener("click", async () => {
-      await loadStaticData();
-      if (!hasSave()) makeDefaultProfile();
-      state.profile.xp = 17;
-      applyHeroProgressionFromXP();
-      ensureMonsterForCurrentHero();
-      saveLocal();
-      go("home");
-    });
+appEl.querySelector("[data-act='level2']")?.addEventListener("click", async () => {
+  await loadStaticData();
+  if (!hasSave()) makeDefaultProfile();
+  state.profile.xp = 17;
+  applyHeroProgressionFromXP();
+  ensureMonsterForCurrentHero();
+  saveLocal();
+  go("loader", { next: "home" });
+});
 
-    appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () => {
-      await loadStaticData();
-      if (!hasSave()) makeDefaultProfile();
-      state.profile.xp = 24;
-      applyHeroProgressionFromXP();
-      ensureMonsterForCurrentHero();
-      saveLocal();
-      go("home");
-    });
+appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () => {
+  await loadStaticData();
+  if (!hasSave()) makeDefaultProfile();
+  state.profile.xp = 24;
+  applyHeroProgressionFromXP();
+  ensureMonsterForCurrentHero();
+  saveLocal();
+  go("loader", { next: "home" });
+});
+
   }
 
   function makeDefaultProfile() {
@@ -398,6 +399,8 @@
         </div>
       </section>
     `;
+
+    const ASSET_LOGO = "images/brand/logo.png";
 
     const urls = [];
     if (state.profile) urls.push(state.profile.heroSprite, state.profile.attackSprite);
@@ -492,16 +495,15 @@
 
         <div class="mm-qCard" data-qcard>
           <div class="mm-qCard__pad">
-            <div class="mm-row mm-row--between">
-              <div class="mm-question" data-qtext></div>
-              <div style="font-weight:950; color: rgba(13,20,32,.55); font-size: 12px;">D${state.profile.difficulty}</div>
+            <div class="mm-row">
+                <div class="mm-question" data-qtext></div>
             </div>
+
 
             <div class="mm-answers" data-answers></div>
 
             <div class="mm-qActions">
-              <button class="mm-btn mm-btn--primary" data-act="submit">Submit</button>
-              <button class="mm-btn mm-btn--ghost" data-act="home">Home</button>
+            <button class="button button--primary" data-act="submit">Submit</button>
             </div>
           </div>
         </div>

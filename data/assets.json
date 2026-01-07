@@ -1,0 +1,19 @@
+{
+  "images": [
+    "images/brand/logo.png",
+    "images/hero/level1/hero_sprite_1.png",
+    "images/hero/level1/attack_sprite_1.png",
+    "images/hero/level2/hero_sprite_2.png",
+    "images/hero/level2/attack_sprite_2.png",
+    "images/hero/level3/hero_sprite_3.png",
+    "images/hero/level3/attack_sprite_3.png",
+    "images/monster/monster_sprite_A.png",
+    "images/monster/monster_attack_A.png",
+    "images/monster/monster_sprite_B.png",
+    "images/monster/monster_attack_B.png",
+    "images/monster/monster_sprite_C.png",
+    "images/monster/monster_attack_C.png",
+    "images/questions/correct.svg",
+    "images/questions/incorrect.svg"
+  ]
+}
