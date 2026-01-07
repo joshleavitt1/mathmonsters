@@ -1,69 +1,47 @@
 {
-    "blue": {
-      "levels": {
-        "1": {
-          "heroName": "Shellfin",
-          "heroSprite": "../images/hero/blue/level1/hero_sprite_1.png",
-          "attackSprite": "../images/hero/blue/level1/attack_sprite_1.png",
-          "attack": 1,
-          "health": 5,
-          "damage": 0
-        },
-        "2": {
-          "heroName": "Shellfin+",
-          "heroSprite": "../images/hero/blue/level2/hero_sprite_2.png",
-          "attackSprite": "../images/hero/blue/level2/attack_sprite_2.png",
-          "attack": 1,
-          "health": 6,
-          "damage": 0
-        },
-        "3": {
-          "heroName": "Shellfin MAX",
-          "heroSprite": "../images/hero/blue/level3/hero_sprite_3.png",
-          "attackSprite": "../images/hero/blue/level3/attack_sprite_3.png",
-          "attack": 1,
-          "health": 7,
-          "damage": 0
-        }
+  "hero": {
+    "levels": {
+      "1": {
+        "heroName": "Shellfin",
+        "heroSprite": "images/hero/level1/hero_sprite_1.png",
+        "attackSprite": "images/hero/level1/attack_sprite_1.png",
+        "attack": 1,
+        "health": 6,
+        "damage": 0
       },
-      "monsters": [
-        { "name": "Blue Imp", "sprite": "../images/monster/blue/monster_sprite_a.png", "attackSprite": "../images/monster/blue/attack_sprite_1.png" },
-        { "name": "Blue Gnasher", "sprite": "../images/monster/blue/monster_sprite_b.png", "attackSprite": "../images/monster/blue/attack_sprite_1.png" },
-        { "name": "Blue Brute", "sprite": "../images/monster/blue/monster_sprite_c.png", "attackSprite": "../images/monster/blue/attack_sprite_1.png" }
-      ]
-    },
-    "green": {
-      "levels": {
-        "1": {
-          "heroName": "Furcub",
-          "heroSprite": "../images/hero/green/level1/hero_sprite_1.png",
-          "attackSprite": "../images/hero/green/level1/attack_sprite_1.png",
-          "attack": 1,
-          "health": 5,
-          "damage": 0
-        },
-        "2": {
-          "heroName": "Furcub+",
-          "heroSprite": "../images/hero/green/level2/hero_sprite_2.png",
-          "attackSprite": "../images/hero/green/level2/attack_sprite_2.png",
-          "attack": 1,
-          "health": 6,
-          "damage": 0
-        },
-        "3": {
-          "heroName": "Furcub MAX",
-          "heroSprite": "../images/hero/green/level3/hero_sprite_3.png",
-          "attackSprite": "../images/hero/green/level3/attack_sprite_3.png",
-          "attack": 1,
-          "health": 7,
-          "damage": 0
-        }
+      "2": {
+        "heroName": "Tecturtle",
+        "heroSprite": "images/hero/level2/hero_sprite_2.png",
+        "attackSprite": "images/hero/level2/attack_sprite_2.png",
+        "attack": 1,
+        "health": 6,
+        "damage": 0
       },
-      "monsters": [
-        { "name": "Green Imp", "sprite": "../images/monster/green/monster_sprite_a.png", "attackSprite": "../images/monster/green/attack_sprite_1.png" },
-        { "name": "Green Gnasher", "sprite": "../images/monster/green/monster_sprite_b.png", "attackSprite": "../images/monster/green/attack_sprite_1.png" },
-        { "name": "Green Brute", "sprite": "../images/monster/green/monster_sprite_c.png", "attackSprite": "../images/monster/green/attack_sprite_1.png" }
-      ]
+      "3": {
+        "heroName": "Toxreef",
+        "heroSprite": "images/hero/level3/hero_sprite_3.png",
+        "attackSprite": "images/hero/level3/attack_sprite_3.png",
+        "attack": 1,
+        "health": 6,
+        "damage": 0
+      }
     }
-  }
-  
+  },
+  "monsters": [
+    {
+      "name": "Octomurk",
+      "monsterSprite": "images/monster/monster_sprite_a.png",
+      "attackSprite": "images/monster/monster_attack_a.png"
+    },
+    {
+      "name": "Octomurk",
+      "monsterSprite": "images/monster/monster_sprite_b.png",
+      "attackSprite": "images/monster/monster_attack_b.png"
+    },
+    {
+      "name": "Octomurk",
+      "monsterSprite": "images/monster/monster_sprite_c.png",
+      "attackSprite": "images/monster/monster_attack_c.png"
+    }
+  ]
+}

@@ -11,7 +11,7 @@
   --ink2: rgba(13,20,32,.70);
   --white: #FFFFFF;
 
-  --card:  rgba(255,255,255);
+  --card: rgba(255,255,255);
   --glass: rgba(255,255,255,.22);
   --glass2: rgba(255,255,255,.14);
   --stroke: rgba(255,255,255,.22);
@@ -41,8 +41,8 @@
   /* Battle pacing scale (JS also slows battle pauses). */
   --battle-scale: 1;
 
-  --hero-size: 300px;
-  --monster-size: 300px;
+  --hero-size: clamp(170px, 44vw, 240px);
+  --monster-size: clamp(170px, 44vw, 240px);
 }
 
 /* Slow animations while in battle */
@@ -250,7 +250,7 @@ body.is-loader .mm-bubbles{
   --progress-height: 12px;
   --progress-bg: rgba(255,255,255,.25);
   --progress-border: rgba(255,255,255,.9);
-  --progress-shadow: 0 4px 24px rgba(0,0,0,.24);
+  --progress-shadow: 0 10px 24px rgba(0,0,0,.25);
   --progress-blur: 6px;
 
   --progress-gradient-start: #36dc36;
@@ -262,6 +262,7 @@ body.is-loader .mm-bubbles{
   border-radius: 999px;
   background: var(--progress-bg);
   box-shadow: var(--progress-shadow);
+  border: 1px solid var(--progress-border);
   overflow: hidden;
 
   backdrop-filter: blur(var(--progress-blur));
@@ -289,8 +290,8 @@ body.is-loader .mm-bubbles{
 .mm-progress > .mm-progress__fill::after{
   content:"";
   position:absolute;
-  inset: 2px 5px 0 2px;
-  height: 5px;
+  inset: 4px 2px 0 4px;
+  height: 6px;
   border-radius: 999px;
   background: #ffffff64;
   pointer-events:none;
@@ -367,7 +368,7 @@ body.is-loader .mm-bubbles{
   width: 300px;
   height: 300px;
   aspect-ratio: 1 / 1;
-  overflow: visible;
+  overflow:hidden;
   position:relative;
 }
 .mm-art img{
@@ -396,6 +397,10 @@ body.is-home .mm-homeSwim{
 .mm-battleStage{
   position: relative;
   flex: 1 1 auto;
+  min-height: 360px;
+  border-radius: var(--r-xl);
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+  border: 1px solid rgba(255,255,255,.14);
   overflow:hidden;
 }
 
@@ -410,6 +415,7 @@ body.is-home .mm-homeSwim{
 }
 .mm-sprite.is-in{
   opacity: 1;
+  transform: translate3d(0,0,0) scale(1);
   transition: transform var(--med) var(--spring), opacity var(--med) var(--spring);
 }
 .mm-sprite.hero{ left: 10px; bottom: 10px; }
