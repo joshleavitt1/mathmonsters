@@ -475,10 +475,11 @@ body.is-home .mm-homeSwim{
   position:absolute;
   left: 12px; right: 12px;
   bottom: 12px;
-  border-radius: var(--r-md);
-  background: rgba(255,255,255);
+  border-radius: 26px;
+  background: rgba(255,255,255,.92);
   color: var(--ink);
   box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,.55);
   transform: translate3d(0, 24px, 0);
   opacity: 0;
 }
@@ -491,9 +492,8 @@ body.is-home .mm-homeSwim{
 
 .mm-question{
   font-weight: 950;
-  font-size: 28px;
+  font-size: 20px;
   letter-spacing: -.2px;
-  text-align:center;
 }
 
 .mm-answers{
