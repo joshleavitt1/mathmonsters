@@ -4,6 +4,8 @@
   const LS_PROFILE = "mm_profile";
   const LS_MONSTER = "mm_monster";
   const LS_XP_ANIM = "mm_xp_anim";
+  const LS_EVOLVE = "mm_evolve";
+
 
   const appEl = document.getElementById("app");
   const toastEl = document.getElementById("toast");
@@ -148,6 +150,63 @@ const raf2 = async () => { await raf(); await raf(); };
       return null;
     }
   }
+
+    // ---------- Evolution trigger (only for level-ups) ----------
+    function setEvolveAnim(payload){
+      try{
+        localStorage.setItem(LS_EVOLVE, JSON.stringify({ ...payload, at: Date.now() }));
+      }catch{}
+    }
+    function takeEvolveAnim(){
+      try{
+        const raw = localStorage.getItem(LS_EVOLVE);
+        if (!raw) return null;
+        localStorage.removeItem(LS_EVOLVE);
+        const obj = JSON.parse(raw);
+        if (!obj) return null;
+        // minimal validation
+        if (!obj.fromSprite || !obj.toSprite) return null;
+        if (!Number.isFinite(Number(obj.fromXp)) || !Number.isFinite(Number(obj.toXp))) return null;
+        return obj;
+      }catch{
+        return null;
+      }
+    }
+  
+    async function launchEvolutionFlow({ fromSprite, toSprite }){
+      // preload both (fail-soft)
+      await preloadImages([fromSprite, toSprite]);
+  
+      // build overlay
+      const overlay = document.createElement("div");
+      overlay.className = "mm-evolve is-show";
+      overlay.innerHTML = `
+        <div class="mm-evolve__stage">
+          <div class="mm-evolve__ring"></div>
+          <img class="mm-evolve__img mm-evolve__img--from" src="${fromSprite}" alt="Evolution from" />
+          <img class="mm-evolve__img mm-evolve__img--to"   src="${toSprite}"   alt="Evolution to" />
+        </div>
+      `;
+      document.body.appendChild(overlay);
+  
+      // small beat so it *feels* intentional
+      await sleep(520);
+  
+      // trigger morph
+      overlay.classList.add("is-morph");
+      await sleep(1180);
+  
+      // pause/hold on new sprite
+      overlay.classList.add("is-hold");
+      await sleep(1100);
+  
+      // fade out quickly, then remove
+      overlay.style.transition = "opacity 240ms ease-out";
+      overlay.style.opacity = "0";
+      await sleep(260);
+      overlay.remove();
+    }
+  
 
 
   // ---------- Data ----------
@@ -423,7 +482,7 @@ appEl.querySelector("[data-act='newGame']")?.addEventListener("click", async () 
 appEl.querySelector("[data-act='level2']")?.addEventListener("click", async () => {
   await loadStaticData();
   if (!hasSave()) makeDefaultProfile();
-  state.profile.xp = 17;
+  state.profile.xp = 19;
   applyHeroProgressionFromXP();
   ensureMonsterForCurrentHero();
   saveLocal();
@@ -501,6 +560,7 @@ appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () =
   function renderHome() {
     // One-time XP animation payload (set only when winning a battle)
     const xpAnim = takeXpAnim();
+    const evolveAnim = takeEvolveAnim();
 
     const xp = Number(state.profile.xp ?? 0);
     const xpMod = ((xp % 10) + 10) % 10;
@@ -600,6 +660,12 @@ appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () =
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         intro?.classList.add("is-in");
+        // ✨ Start hero shimmer AFTER home intro finishes
+setTimeout(() => {
+  const shimmer = document.querySelector(".mm-heroShimmer");
+  if (shimmer) shimmer.classList.add("is-shimmering");
+}, 1400); // matches hero pop-in timing
+
 
         // Home XP behavior:
         // - Normal Home load: render at pct with NO fill animation.
@@ -629,29 +695,35 @@ appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () =
           popXpReward(xpDelta);
 
           if (isLevelUpWrap) {
-            // 9/10 -> 10/10: fill to 100% then snap to 0%
+            // 9/10 -> 10/10: fill to 100% then EVOLVE, then snap to 0%
             if (xpText) xpText.textContent = `10 / 10`;
-
-            // run to 100%
+          
             fill.style.width = `100%`;
-
-            const onDone = () => {
+          
+            const onDone = async () => {
               fill.removeEventListener("transitionend", onDone);
-
-              // snap to 0 without animation
+          
+              // pause on full bar (your spec)
+              await sleep(520);
+          
+              // Evolution overlay (only if we have a payload that matches this XP event)
+              if (evolveAnim && Number(evolveAnim.toXp) === xp) {
+                await launchEvolutionFlow(evolveAnim);
+              }
+          
+              // snap to 0 without animation AFTER evolution
               bar.classList.add("is-static");
               fill.style.width = `0%`;
-
-              // restore correct label
               if (xpText) xpText.textContent = `0 / 10`;
-
+          
               // re-enable transitions for next time
               requestAnimationFrame(() => bar.classList.remove("is-static"));
             };
-
+          
             fill.addEventListener("transitionend", onDone, { once: true });
             return;
           }
+          
 
           // Standard: animate to new pct
           fill.style.width = `${pct}%`;
@@ -924,13 +996,30 @@ if (dmg > 0) {
     if (won) {
       const fromXp = Number(state.profile.xp ?? 0);
       const toXp = fromXp + 1;
-  
+    
       // store a one-time "animate XP" instruction for Home
       setXpAnim(fromXp, toXp);
-  
+    
+      // Detect level up (10,20,30...) AFTER this win
+      const fromLevel = computeLevelFromXP(fromXp);
+      const toLevel   = computeLevelFromXP(toXp);
+    
+      if (toLevel > fromLevel) {
+        // snapshot sprites for the evolution overlay
+        const fromLvl = state.progression.hero.levels[String(fromLevel)];
+        const toLvl   = state.progression.hero.levels[String(toLevel)];
+    
+        setEvolveAnim({
+          fromXp, toXp,
+          fromLevel, toLevel,
+          fromSprite: fromLvl?.heroSprite,
+          toSprite: toLvl?.heroSprite,
+        });
+      }
+    
       state.profile.xp = toXp;
       saveLocal();
-  
+    
       showEndCard({
         title: "Great Job!",
         showGem: true,
@@ -939,6 +1028,7 @@ if (dmg > 0) {
       });
       return;
     }
+    
   
     state.profile.xp = Number(state.profile.xp ?? 0) - 1;
     state.profile.difficulty = clamp(

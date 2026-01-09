@@ -519,7 +519,7 @@ body.is-battle .mm-stat .mm-progress--hp > .mm-progress__fill{
   mix-blend-mode: screen;
   filter: none; /* blur can make it feel like a big overlay */
 
-  animation: mmHeroShimmerBG 3.2s ease-in-out infinite;
+  animation: none; /* ⛔ paused until explicitly enabled */
 
   /* ✅ alpha mask from the sprite PNG */
   -webkit-mask-image: var(--mm-sprite-mask);
@@ -532,6 +532,12 @@ body.is-battle .mm-stat .mm-progress--hp > .mm-progress__fill{
   mask-position: center;
   mask-size: 100% 100%;
 }
+
+/* ✅ shimmer only after hero has fully loaded in */
+.mm-heroShimmer.is-shimmering::after{
+  animation: mmHeroShimmerBG 3.2s ease-in-out infinite;
+}
+
 
 /* animate background-position (NOT transform) */
 @keyframes mmHeroShimmerBG{
@@ -1456,4 +1462,147 @@ body.is-home .mm-screen__grow{
   background: #E20000 !important;
   border-color: transparent !important;
   color: #ffffff !important;
+}
+
+/* ================================
+   Evolution Flow (Full-screen)
+================================ */
+
+.mm-evolve{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  /* deep ocean + glow */
+  background:
+    radial-gradient(circle at 50% 35%, rgba(90,140,255,.32) 0%, rgba(0,38,172,0) 55%),
+    radial-gradient(circle at 50% 70%, rgba(108,255,184,.14) 0%, rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, #0a2a86 0%, #001b41 100%);
+}
+
+.mm-evolve.is-show{ display:flex; }
+
+.mm-evolve__stage{
+  position: relative;
+  width: min(92vw, 520px);
+  height: min(92vw, 520px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transform: translateZ(0);
+}
+
+/* subtle “rising energy” particles (no assets) */
+.mm-evolve__stage::before{
+  content:"";
+  position:absolute;
+  inset: -18%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,.70) 0 1.5px, transparent 2px) 10px 18px / 70px 70px,
+    radial-gradient(circle, rgba(47,209,255,.65) 0 2px, transparent 3px) 30px 44px / 90px 90px,
+    radial-gradient(circle, rgba(108,255,184,.55) 0 1.5px, transparent 3px) 0 0 / 80px 80px;
+  opacity: .0;
+  filter: drop-shadow(0 22px 30px rgba(0,0,0,.28));
+  transform: scale(.9);
+  pointer-events:none;
+}
+
+.mm-evolve.is-show .mm-evolve__stage::before{
+  animation: mmEvolveSpark 1200ms var(--spring) 0ms both;
+}
+@keyframes mmEvolveSpark{
+  0%{ opacity: 0; transform: scale(.86) rotate(-6deg); }
+  55%{ opacity: 1; transform: scale(1.02) rotate(6deg); }
+  100%{ opacity: 0; transform: scale(1.12) rotate(14deg); }
+}
+
+/* sprite layers */
+.mm-evolve__img{
+  position:absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 24px rgba(0,0,0,.28));
+  transform: translateZ(0);
+  will-change: transform, opacity, filter;
+}
+
+/* start state */
+.mm-evolve__img--from{
+  opacity: 1;
+  transform: scale(1);
+}
+.mm-evolve__img--to{
+  opacity: 0;
+  transform: scale(.92);
+  filter: blur(8px) drop-shadow(0 18px 24px rgba(0,0,0,.28));
+}
+
+/* morph trigger */
+.mm-evolve.is-morph .mm-evolve__img--from{
+  animation: mmEvolveFrom 1100ms cubic-bezier(.18,.92,.22,1) 0ms both;
+}
+.mm-evolve.is-morph .mm-evolve__img--to{
+  animation: mmEvolveTo 1100ms cubic-bezier(.18,.92,.22,1) 0ms both;
+}
+
+/* “energy ring” wipe */
+.mm-evolve__ring{
+  position:absolute;
+  inset: -18%;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events:none;
+
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(255,255,255,0) 56%,
+      rgba(180,240,255,.18) 60%,
+      rgba(47,209,255,.28) 64%,
+      rgba(108,255,184,.18) 68%,
+      rgba(255,255,255,0) 72%
+    );
+
+  filter: blur(1px) drop-shadow(0 0 26px rgba(120,160,255,.28));
+  transform: scale(.78) rotate(-10deg);
+}
+
+.mm-evolve.is-morph .mm-evolve__ring{
+  animation: mmEvolveRing 980ms var(--spring) 40ms both;
+}
+
+@keyframes mmEvolveRing{
+  0%   { opacity: 0; transform: scale(.72) rotate(-12deg); }
+  22%  { opacity: 1; }
+  70%  { opacity: 1; transform: scale(1.06) rotate(10deg); }
+  100% { opacity: 0; transform: scale(1.22) rotate(16deg); }
+}
+
+@keyframes mmEvolveFrom{
+  0%   { opacity: 1; transform: scale(1); filter: blur(0px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+  35%  { opacity: 1; transform: scale(1.04) rotate(-2deg); }
+  70%  { opacity: .15; transform: scale(1.10) rotate(6deg); filter: blur(10px) drop-shadow(0 24px 30px rgba(0,0,0,.30)); }
+  100% { opacity: 0; transform: scale(1.14) rotate(10deg); filter: blur(14px) drop-shadow(0 24px 30px rgba(0,0,0,.30)); }
+}
+
+@keyframes mmEvolveTo{
+  0%   { opacity: 0; transform: scale(.92); filter: blur(10px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+  40%  { opacity: .55; transform: scale(1.02); filter: blur(4px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+  70%  { opacity: 1; transform: scale(1.06); filter: blur(0px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+}
+
+/* hold on the new sprite */
+.mm-evolve.is-hold .mm-evolve__stage{
+  animation: mmEvolveHold 900ms var(--spring) 0ms both;
+}
+@keyframes mmEvolveHold{
+  0%{ transform: translate3d(0, 6px, 0) scale(.99); opacity: .98; }
+  55%{ transform: translate3d(0, -6px, 0) scale(1.01); opacity: 1; }
+  100%{ transform: translate3d(0, 0px, 0) scale(1); opacity: 1; }
 }

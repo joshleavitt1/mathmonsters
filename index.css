@@ -179,12 +179,12 @@ body.is-loader .mm-bubbles{
 
 .mm-glass{
   background: none;
-  backdrop-filter: blur(4px);
   border: 1px solid rgba(255,255,255,0.5);
   box-shadow: var(--shadow2);
   backdrop-filter: blur(9px);
   -webkit-backdrop-filter: blur(9px);
 }
+
 
 .mm-stack{ display:flex; flex-direction:column; gap: 10px; }
 .mm-row{
@@ -556,14 +556,6 @@ body.is-battle .mm-stat .mm-progress--hp > .mm-progress__fill{
   width:100%; height:100%; display:block; object-fit:contain;
 }
 
-@keyframes mmHeroShimmer{
-  0%   { transform: translateX(-120%); opacity: 0; }
-  10%  { opacity: 1; }
-  42%  { transform: translateX(120%); opacity: 1; }
-  55%  { opacity: 0; }
-  100% { transform: translateX(120%); opacity: 0; }
-}
-
 @keyframes mmHeroShimmerPulse{
   0%,100%{ filter:none; }
   38%{ filter: brightness(1.05) saturate(1.04); }
@@ -713,73 +705,6 @@ body.is-home .mm-homeSwimWrap{
   height: 100px;
   object-fit: contain;
   pointer-events: none;
-}
-
-/* ================================
-   Hero Battle Aura — COOLER PASS
-================================ */
-
-.mm-battle-aura{
-  position: absolute;
-  inset: -28px;
-  border-radius: 50%;
-  pointer-events: auto;
-  cursor: pointer;
-
-  /* cooler, deeper energy */
-  background:
-    radial-gradient(
-      circle at 50% 50%,
-      rgba(120,160,255,.28) 0%,
-      rgba(80,120,230,.20) 30%,
-      rgba(60,90,190,.14) 46%,
-      rgba(40,60,140,.08) 58%,
-      transparent 68%
-    );
-
-  filter:
-    blur(3px)
-    drop-shadow(0 0 22px rgba(90,130,255,.22));
-
-  animation:
-    mmAuraCoolPulse 4.8s ease-in-out infinite,
-    mmAuraCoolDrift 7.2s ease-in-out infinite;
-
-  z-index: 1;
-}
-
-/* slower, calmer pulse */
-@keyframes mmAuraCoolPulse{
-  0%   { transform: scale(.97); opacity: .65; }
-  50%  { transform: scale(1.03); opacity: .9; }
-  100% { transform: scale(.97); opacity: .65; }
-}
-
-/* subtle depth breathing */
-@keyframes mmAuraCoolDrift{
-  0% {
-    filter:
-      blur(3px)
-      drop-shadow(0 0 18px rgba(80,120,220,.18));
-  }
-  50% {
-    filter:
-      blur(4px)
-      drop-shadow(0 0 30px rgba(110,150,255,.32));
-  }
-  100% {
-    filter:
-      blur(3px)
-      drop-shadow(0 0 18px rgba(80,120,220,.18));
-  }
-}
-
-/* quiet but satisfying tap response */
-.mm-battle-aura:active{
-  transform: scale(1.06);
-  filter:
-    blur(4px)
-    drop-shadow(0 0 38px rgba(140,180,255,.45));
 }
 
 /* Group wrappers */
@@ -1127,21 +1052,6 @@ body.is-home .mm-screen__grow{
   animation: mmFxHitScale calc(220ms * var(--battle-scale)) cubic-bezier(.2,.9,.3,1) 1;
 }
 
-
-.mm-lunge-hero{ animation: lungeHero calc(260ms * var(--battle-scale)) var(--spring) 1; }
-.mm-lunge-monster{ animation: lungeMonster calc(260ms * var(--battle-scale)) var(--spring) 1; }
-
-@keyframes lungeHero{
-  0%{ transform: translate3d(0,0,0); }
-  60%{ transform: translate3d(68px,-8px,0) scale(1.02); }
-  100%{ transform: translate3d(0,0,0); }
-}
-@keyframes lungeMonster{
-  0%{ transform: translate3d(0,0,0); }
-  60%{ transform: translate3d(-68px,8px,0) scale(1.02); }
-  100%{ transform: translate3d(0,0,0); }
-}
-
 .mm-qCard{
   /* keep original layout + styling */
   position:absolute;
@@ -1462,4 +1372,147 @@ body.is-home .mm-screen__grow{
   background: #E20000 !important;
   border-color: transparent !important;
   color: #ffffff !important;
+}
+
+/* ================================
+   Evolution Flow (Full-screen)
+================================ */
+
+.mm-evolve{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  /* deep ocean + glow */
+  background:
+    radial-gradient(circle at 50% 35%, rgba(90,140,255,.32) 0%, rgba(0,38,172,0) 55%),
+    radial-gradient(circle at 50% 70%, rgba(108,255,184,.14) 0%, rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, #0a2a86 0%, #001b41 100%);
+}
+
+.mm-evolve.is-show{ display:flex; }
+
+.mm-evolve__stage{
+  position: relative;
+  width: min(92vw, 520px);
+  height: min(92vw, 520px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transform: translateZ(0);
+}
+
+/* subtle “rising energy” particles (no assets) */
+.mm-evolve__stage::before{
+  content:"";
+  position:absolute;
+  inset: -18%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,.70) 0 1.5px, transparent 2px) 10px 18px / 70px 70px,
+    radial-gradient(circle, rgba(47,209,255,.65) 0 2px, transparent 3px) 30px 44px / 90px 90px,
+    radial-gradient(circle, rgba(108,255,184,.55) 0 1.5px, transparent 3px) 0 0 / 80px 80px;
+  opacity: .0;
+  filter: drop-shadow(0 22px 30px rgba(0,0,0,.28));
+  transform: scale(.9);
+  pointer-events:none;
+}
+
+.mm-evolve.is-show .mm-evolve__stage::before{
+  animation: mmEvolveSpark 1200ms var(--spring) 0ms both;
+}
+@keyframes mmEvolveSpark{
+  0%{ opacity: 0; transform: scale(.86) rotate(-6deg); }
+  55%{ opacity: 1; transform: scale(1.02) rotate(6deg); }
+  100%{ opacity: 0; transform: scale(1.12) rotate(14deg); }
+}
+
+/* sprite layers */
+.mm-evolve__img{
+  position:absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 24px rgba(0,0,0,.28));
+  transform: translateZ(0);
+  will-change: transform, opacity, filter;
+}
+
+/* start state */
+.mm-evolve__img--from{
+  opacity: 1;
+  transform: scale(1);
+}
+.mm-evolve__img--to{
+  opacity: 0;
+  transform: scale(.92);
+  filter: blur(8px) drop-shadow(0 18px 24px rgba(0,0,0,.28));
+}
+
+/* morph trigger */
+.mm-evolve.is-morph .mm-evolve__img--from{
+  animation: mmEvolveFrom 1100ms cubic-bezier(.18,.92,.22,1) 0ms both;
+}
+.mm-evolve.is-morph .mm-evolve__img--to{
+  animation: mmEvolveTo 1100ms cubic-bezier(.18,.92,.22,1) 0ms both;
+}
+
+/* “energy ring” wipe */
+.mm-evolve__ring{
+  position:absolute;
+  inset: -18%;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events:none;
+
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(255,255,255,0) 56%,
+      rgba(180,240,255,.18) 60%,
+      rgba(47,209,255,.28) 64%,
+      rgba(108,255,184,.18) 68%,
+      rgba(255,255,255,0) 72%
+    );
+
+  filter: blur(1px) drop-shadow(0 0 26px rgba(120,160,255,.28));
+  transform: scale(.78) rotate(-10deg);
+}
+
+.mm-evolve.is-morph .mm-evolve__ring{
+  animation: mmEvolveRing 980ms var(--spring) 40ms both;
+}
+
+@keyframes mmEvolveRing{
+  0%   { opacity: 0; transform: scale(.72) rotate(-12deg); }
+  22%  { opacity: 1; }
+  70%  { opacity: 1; transform: scale(1.06) rotate(10deg); }
+  100% { opacity: 0; transform: scale(1.22) rotate(16deg); }
+}
+
+@keyframes mmEvolveFrom{
+  0%   { opacity: 1; transform: scale(1); filter: blur(0px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+  35%  { opacity: 1; transform: scale(1.04) rotate(-2deg); }
+  70%  { opacity: .15; transform: scale(1.10) rotate(6deg); filter: blur(10px) drop-shadow(0 24px 30px rgba(0,0,0,.30)); }
+  100% { opacity: 0; transform: scale(1.14) rotate(10deg); filter: blur(14px) drop-shadow(0 24px 30px rgba(0,0,0,.30)); }
+}
+
+@keyframes mmEvolveTo{
+  0%   { opacity: 0; transform: scale(.92); filter: blur(10px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+  40%  { opacity: .55; transform: scale(1.02); filter: blur(4px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+  70%  { opacity: 1; transform: scale(1.06); filter: blur(0px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0px) drop-shadow(0 18px 24px rgba(0,0,0,.28)); }
+}
+
+/* hold on the new sprite */
+.mm-evolve.is-hold .mm-evolve__stage{
+  animation: mmEvolveHold 900ms var(--spring) 0ms both;
+}
+@keyframes mmEvolveHold{
+  0%{ transform: translate3d(0, 6px, 0) scale(.99); opacity: .98; }
+  55%{ transform: translate3d(0, -6px, 0) scale(1.01); opacity: 1; }
+  100%{ transform: translate3d(0, 0px, 0) scale(1); opacity: 1; }
 }
