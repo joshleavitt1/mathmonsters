@@ -3,20 +3,42 @@
 (() => {
   const LS_PROFILE = "mm_profile";
   const LS_MONSTER = "mm_monster";
+  const LS_XP_ANIM = "mm_xp_anim";
 
   const appEl = document.getElementById("app");
   const toastEl = document.getElementById("toast");
   const bubblesEl = document.getElementById("bubbles");
+  const QCARD_IN_DELAY_MS = 320; // was effectively ~1800ms via battlePause()
+
 
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const raf = () => new Promise(r => requestAnimationFrame(r));
+const raf2 = async () => { await raf(); await raf(); };
+
 
   // Loader: always show for 1.5s, even if assets are already cached.
   const MIN_LOADER_MS = 1500;
 
   // Battle pacing: slow all battle pauses/steps by 50%
-  const BATTLE_TIME_SCALE = 4;
+  const BATTLE_TIME_SCALE = 3;
   const battleSleep = (ms) => sleep(ms * BATTLE_TIME_SCALE);
+
+  // Uniform battle pacing
+  const BATTLE_PAUSE_MS = 600;
+  const END_BATTLE_BEAT_MS = 360; // pause before end card appears
+  const BATTLE_ANIM_MS = 360;
+  const PRE_HP_DROP_BEAT_MS = 180; // pause after hit before HP drops
+
+
+  // New attack feel tuning
+  const ATTACK_WINDUP_MS = 90; // ⬅️ small anticipatory pause
+  const ATTACK_SLIDE_MS = 720;
+  const FX_POP_MS       = 300;
+  const FX_OUT_MS       = 280;
+  const FX_HOLD_MS = 220;
+
+  const battlePause = () => battleSleep(BATTLE_PAUSE_MS);
 
   const state = {
     screen: "landing",
@@ -107,6 +129,26 @@
   function hasSave() {
     return !!state.profile;
   }
+
+  // ---------- Home XP animation (only when returning from a win) ----------
+  function setXpAnim(fromXp, toXp){
+    try{
+      localStorage.setItem(LS_XP_ANIM, JSON.stringify({ from: Number(fromXp||0), to: Number(toXp||0), at: Date.now() }));
+    }catch{}
+  }
+  function takeXpAnim(){
+    try{
+      const raw = localStorage.getItem(LS_XP_ANIM);
+      if (!raw) return null;
+      localStorage.removeItem(LS_XP_ANIM);
+      const obj = JSON.parse(raw);
+      if (!obj || !Number.isFinite(Number(obj.from)) || !Number.isFinite(Number(obj.to))) return null;
+      return { from: Number(obj.from), to: Number(obj.to) };
+    }catch{
+      return null;
+    }
+  }
+
 
   // ---------- Data ----------
   async function loadStaticData() {
@@ -266,37 +308,71 @@
   async function playAttackFx({ who }) {
     const stage = document.querySelector("[data-battle-stage]");
     if (!stage) return;
-
+  
     const heroImg = stage.querySelector("[data-hero-sprite]");
-    const monImg = stage.querySelector("[data-monster-sprite]");
-
+    const monImg  = stage.querySelector("[data-monster-sprite]");
+  
+    const attacker = who === "hero" ? heroImg : monImg;
+    const target   = who === "hero" ? monImg  : heroImg;
+  
+    /* 1️⃣ WIND-UP BEAT */
+    await sleep(ATTACK_WINDUP_MS);
+  
+    /* 2️⃣ START ATTACK SLIDE */
+    attacker.classList.add(
+      who === "hero" ? "mm-attack-slide-hero" : "mm-attack-slide-monster"
+    );
+  
+    /* 3️⃣ WAIT UNTIL IMPACT MOMENT */
+    await sleep(ATTACK_SLIDE_MS * 0.48); // sweet spot
+  
+    /* 4️⃣ IMPACT — SHAKE + FX TOGETHER */
+    target.classList.add("mm-hit-shake");
+  
     const fx = document.createElement("img");
     fx.className = "mm-attackFx";
-    fx.alt = "";
-    fx.src = who === "hero" ? state.profile.attackSprite : state.monster.attackSprite;
-
-    const target = who === "hero" ? monImg : heroImg;
+    fx.src = who === "hero"
+      ? state.profile.attackSprite
+      : state.monster.attackSprite;
+  
     const rect = target.getBoundingClientRect();
     const srect = stage.getBoundingClientRect();
-
+  
     fx.style.left = `${rect.left - srect.left + rect.width / 2 - 90}px`;
-    fx.style.top = `${rect.top - srect.top + rect.height / 2 - 90}px`;
-
+    fx.style.top  = `${rect.top  - srect.top  + rect.height / 2 - 90}px`;
+  
     stage.appendChild(fx);
+  
+    // 🔥 SAME FRAME
+    requestAnimationFrame(() => {
+      fx.classList.add("is-pop");
+    
+      // 🔥 hit-scale pop (restart-safe)
+      fx.classList.remove("mm-fx-hit");
+      fx.offsetWidth; // force reflow so it can replay
+      fx.classList.add("mm-fx-hit");
+    });
+    
+  
+    await sleep(FX_POP_MS);
 
-    if (who === "hero") heroImg.classList.add("mm-lunge-hero");
-    else monImg.classList.add("mm-lunge-monster");
-
-    await battleSleep(60);
-    fx.classList.add("is-pop");
-    await battleSleep(220);
+    // ✅ keep it on screen longer
+    await sleep(FX_HOLD_MS);
+    
     fx.classList.add("is-out");
-    await battleSleep(220);
-
-    heroImg.classList.remove("mm-lunge-hero");
-    monImg.classList.remove("mm-lunge-monster");
+    await sleep(FX_OUT_MS);
+    
+  
+    /* 5️⃣ CLEANUP */
+    attacker.classList.remove(
+      "mm-attack-slide-hero",
+      "mm-attack-slide-monster"
+    );
+    target.classList.remove("mm-hit-shake");
     fx.remove();
   }
+  
+  
 
   // ---------- Screens ----------
   function shell({ bodyHtml, footerHtml }) {
@@ -318,7 +394,7 @@
         <div class="landing-brand">
           <img class="landing-logo" src="images/brand/logo.png" alt="Math Monsters" />
           <h1 class="landing-title">Math Monsters</h1>
-          <p class="landing-tagline">Flip homework battles into monster battles – where every lesson feels like play.</p>
+          <p class="landing-tagline">Flip homework battles into monster battles. Make every lesson feel like play.</p>
         </div>
 
         <div class="landing-actions">
@@ -421,49 +497,175 @@ appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () =
     document.body.classList.toggle("is-battle", screen === "battle");
   }
 
+  
   function renderHome() {
+    // One-time XP animation payload (set only when winning a battle)
+    const xpAnim = takeXpAnim();
+
     const xp = Number(state.profile.xp ?? 0);
     const xpMod = ((xp % 10) + 10) % 10;
     const level = state.profile.level ?? 1;
     const pct = (xpMod / 10) * 100;
 
+    // If we have an animation payload AND it matches current xp, animate.
+    const shouldAnimate = xpAnim && xpAnim.to === xp;
+
+    const fromXp = shouldAnimate ? Number(xpAnim.from) : xp;
+    const xpDelta = shouldAnimate ? Math.max(0, xp - fromXp) : 0;
+    const fromMod = ((fromXp % 10) + 10) % 10;
+    const fromPct = (fromMod / 10) * 100;
+
+    // Special case: level-up (e.g. 9 -> 10 means bar should finish to 100 then snap to 0)
+    const isLevelUpWrap = shouldAnimate && fromMod === 9 && xpMod === 0;
+
     const body = `
-      <div class="mm-hero">
+      <div class="mm-hero mm-homeIntro" data-home-intro>
         <div class="mm-homeTop">
           <div class="mm-stack" style="align-items:center;">
-            <div class="mm-pill">Level ${level}</div>
+            <div class="mm-pill" data-level-pill>Level ${level}</div>
           </div>
 
           <div class="mm-big">${state.profile.heroName}</div>
 
-          <div class="mm-card mm-card__pad" style="max-width:420px;">
-            <div class="mm-row mm-row--between" style="margin-bottom:8px;">
-              <div style="font-weight:950;">XP</div>
-              <div style="font-weight:950;">${xpMod}/10</div>
+          <div class="mm-card mm-card__pad mm-xpCard" style="max-width:420px;">
+            <div class="mm-row mm-row--between" style="margin-bottom:8px; width:100%;">
+              <div style="font-weight:950;">Gems</div>
+              <div style="font-weight:800; color: rgba(13,20,32,.65);" data-xp-text>
+                ${xpMod} / 10
+              </div>
             </div>
 
-            <div class="mm-progress mm-progress--lg mm-progress--xp">
-              <div class="mm-progress__fill" style="width:${pct}%"></div>
+            <div class="mm-progress mm-progress--lg mm-progress--xp is-static" data-xp-bar>
+              <div class="mm-progress__fill" data-xp-fill style="width:${shouldAnimate ? fromPct : pct}%"></div>
+            </div>
+
+            <!-- XP reward burst (only shown when returning from a win) -->
+            <div class="mm-xpReward" data-xp-reward aria-hidden="true">
+              <div class="mm-xpReward__label" data-xp-reward-label>+${xpDelta || 1} XP</div>
+              <div class="mm-xpReward__spark" style="--dx:-54px; --dy:-26px; --d:0ms"></div>
+              <div class="mm-xpReward__spark" style="--dx:-18px; --dy:-42px; --d:40ms"></div>
+              <div class="mm-xpReward__spark" style="--dx:22px; --dy:-44px; --d:80ms"></div>
+              <div class="mm-xpReward__spark" style="--dx:56px; --dy:-24px; --d:120ms"></div>
+              <div class="mm-xpReward__spark" style="--dx:-36px; --dy:6px; --d:60ms"></div>
+              <div class="mm-xpReward__spark" style="--dx:40px; --dy:8px; --d:100ms"></div>
             </div>
           </div>
         </div>
 
-        <div class="mm-art">
-          <img class="mm-homeSwim" src="${state.profile.heroSprite}" alt="${state.profile.heroName}" />
-        </div>
+        <div class="mm-homeSwimWrap">
+<div class="mm-heroShimmer" style="--mm-sprite-mask: url('${state.profile.heroSprite}')">
+  <img class="mm-homeSwim mm-homeHero"
+    src="${state.profile.heroSprite}"
+    alt="${state.profile.heroName}"
+    data-act="battle"
+    role="button"
+    aria-label="Start Battle" />
+</div>
 
-        <div class="mm-homeBtns">
-          <button class="button button--primary" data-act="battle">Battle</button>
-        </div>
+
+  <div class="mm-battle-aura" data-act="battle" aria-label="Start Battle"></div>
+</div>
       </div>
     `;
 
-    appEl.innerHTML = shell({ bodyHtml: `<div style="width:100%; height:100%">${body}</div>` });
+    appEl.innerHTML = shell({ bodyHtml: body });
 
-    appEl.querySelector("[data-act='battle']")?.addEventListener("click", () => {
-      go("battle");
+    appEl.querySelectorAll("[data-act='battle']").forEach((el) => {
+      el.addEventListener("click", () => {
+        go("battle");
+      });
+    });
+
+    const intro = appEl.querySelector("[data-home-intro]");
+    const bar = appEl.querySelector("[data-xp-bar]");
+    const fill = appEl.querySelector("[data-xp-fill]");
+    const xpText = appEl.querySelector("[data-xp-text]");
+    const reward = appEl.querySelector("[data-xp-reward]");
+    const rewardLabel = appEl.querySelector("[data-xp-reward-label]");
+
+
+    const popXpReward = (delta) => {
+      const d = Math.max(1, Number(delta || 1));
+      if (!reward || !rewardLabel) return;
+      rewardLabel.textContent = `+${d} Gem`;
+      reward.classList.remove("is-show");
+      // restart animation
+      void reward.offsetWidth;
+      reward.classList.add("is-show");
+      clearTimeout(popXpReward._t);
+      popXpReward._t = setTimeout(() => reward.classList.remove("is-show"), 2400);
+    };
+
+    // Always: Home intro animation (staggered)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        intro?.classList.add("is-in");
+        // ✨ Start hero shimmer AFTER home intro finishes
+setTimeout(() => {
+  const shimmer = document.querySelector(".mm-heroShimmer");
+  if (shimmer) shimmer.classList.add("is-shimmering");
+}, 1400); // matches hero pop-in timing
+
+
+        // Home XP behavior:
+        // - Normal Home load: render at pct with NO fill animation.
+        // - Return from win: animate from previous XP -> new XP.
+        if (!shouldAnimate) {
+          // Lock-in (no animation)
+          bar?.classList.add("is-static");
+          if (fill) fill.style.width = `${pct}%`;
+          return;
+        }
+
+        // Animate after a small beat so it feels connected to "Claim XP"
+        setTimeout(() => {
+          if (!bar || !fill) return;
+
+          // Enable transition for the animation run
+          bar.classList.remove("is-static");
+
+            // ✅ START GREEN SWEEP (premium reward)
+  bar.classList.add("is-rewarding");
+  clearTimeout(renderHome._xpSweepT);
+  renderHome._xpSweepT = setTimeout(() => {
+    bar.classList.remove("is-rewarding");
+  }, 1800);
+
+          // Reward burst ties to XP gain
+          popXpReward(xpDelta);
+
+          if (isLevelUpWrap) {
+            // 9/10 -> 10/10: fill to 100% then snap to 0%
+            if (xpText) xpText.textContent = `10 / 10`;
+
+            // run to 100%
+            fill.style.width = `100%`;
+
+            const onDone = () => {
+              fill.removeEventListener("transitionend", onDone);
+
+              // snap to 0 without animation
+              bar.classList.add("is-static");
+              fill.style.width = `0%`;
+
+              // restore correct label
+              if (xpText) xpText.textContent = `0 / 10`;
+
+              // re-enable transitions for next time
+              requestAnimationFrame(() => bar.classList.remove("is-static"));
+            };
+
+            fill.addEventListener("transitionend", onDone, { once: true });
+            return;
+          }
+
+          // Standard: animate to new pct
+          fill.style.width = `${pct}%`;
+        }, 340);
+      });
     });
   }
+
 
   function renderBattle() {
     resetBattleDamages();
@@ -509,46 +711,68 @@ appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () =
         </div>
       </div>
 
-      <div class="mm-overlay" data-overlay>
-        <div class="mm-sheet" data-sheet>
-          <div class="mm-sheet__pad">
-            <h2 data-end-title></h2>
-            <p data-end-sub></p>
-            <div class="mm-row mm-row--between" style="margin-bottom:8px;">
-              <div style="font-weight:950;">XP</div>
-              <div style="font-weight:950;" data-end-xp></div>
-            </div>
-            <div class="mm-progress mm-progress--md mm-progress--xp">
-              <div class="mm-progress__fill" data-end-bar></div>
-            </div>
-            <div style="height:12px;"></div>
-            <button class="mm-btn mm-btn--primary" data-end-btn></button>
+         <div class="mm-overlay" data-overlay>
+        <div class="mm-endCard mm-card mm-card__pad" data-end-card>
+          <h2 class="mm-endTitle" data-end-title></h2>
+
+          <div class="mm-gemBox" data-gem-box style="display:none;">
+            <img class="mm-gemImg" src="images/additional/gem.png" alt="Gem" />
           </div>
+
+          <button class="button button--primary" data-end-btn></button>
         </div>
       </div>
+
     `;
 
     appEl.innerHTML = shell({ bodyHtml: body });
 
     const hero = appEl.querySelector("[data-hero-sprite]");
     const mon = appEl.querySelector("[data-monster-sprite]");
+    const heroStat = appEl.querySelector("[data-hero-stat]");
+    const monStat = appEl.querySelector("[data-mon-stat]");
     const qcard = appEl.querySelector("[data-qcard]");
-    hero.classList.add("is-in");
-    mon.classList.add("is-in");
-    setTimeout(() => qcard.classList.add("is-up"), 420 * BATTLE_TIME_SCALE);
 
     bindBattleUI();
     updateBattleUI();
+
+    // Intro sequence:
+    // sprites in → stat boxes up → pause → qcard up
+    (async () => {
+      // ✅ Ensure initial styles paint BEFORE we toggle end-state classes
+      await raf2();
+    
+      // reset in case of re-entry
+hero.classList.remove("is-in","is-settle");
+mon.classList.remove("is-in","is-settle");
+
+// 1) slide in to overshoot pose
+hero.classList.add("is-in");
+mon.classList.add("is-in");
+
+// 2) let the overshoot land, then settle back (smooth, no ripple)
+await battleSleep(180); // tweak 140–220 to taste
+hero.classList.add("is-settle");
+mon.classList.add("is-settle");
+
+// keep your existing pacing
+await battleSleep(260);
+
+heroStat.classList.add("is-in");
+monStat.classList.add("is-in");
+await battleSleep(QCARD_IN_DELAY_MS);
+qcard.classList.add("is-up");
+
+    })();    
   }
 
   function bindBattleUI() {
     const answersEl = appEl.querySelector("[data-answers]");
     const submitBtn = appEl.querySelector("[data-act='submit']");
-    const homeBtn = appEl.querySelector("[data-act='home']");
+    const qcard = appEl.querySelector("[data-qcard]");
 
-    homeBtn?.addEventListener("click", () =>
-      go("loader", { next: "home" })
-    );
+    let resolving = false;
+
 
     function renderAnswers() {
       const q = state.battle.currentQ;
@@ -561,10 +785,15 @@ appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () =
 
       answersEl.querySelectorAll("[data-ans]").forEach((btn) => {
         btn.addEventListener("click", () => {
+          if (resolving) return;
           answersEl
             .querySelectorAll(".mm-answer")
-            .forEach((b) => b.classList.remove("is-selected"));
+            .forEach((b) => {
+              b.classList.remove("is-selected");
+              b.setAttribute("aria-pressed", "false");
+            });
           btn.classList.add("is-selected");
+          btn.setAttribute("aria-pressed", "true");
           state.battle.selected = Number(btn.getAttribute("data-ans"));
         });
       });
@@ -573,26 +802,68 @@ appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () =
     renderAnswers();
 
     submitBtn?.addEventListener("click", async () => {
-      const q = state.battle.currentQ;
-      if (state.battle.selected === null) {
-        toast("Pick an answer");
-        return;
-      }
+    if (resolving) return;
 
-      const answerTime = performance.now() - state.battle.qStartTs;
-      const correct = state.battle.selected === q.correct;
+    const q = state.battle.currentQ;
+    if (state.battle.selected === null) {
+      toast("Pick an answer");
+      return;
+    }
 
-      maybeIncreaseDifficulty(answerTime, correct);
+    resolving = true;
+    submitBtn.disabled = true;
 
-      if (correct) {
-        state.monster.damage += 1;
-        updateBattleUI();
-        await playAttackFx({ who: "hero" });
-      } else {
-        state.profile.damage += 1;
-        updateBattleUI();
-        await playAttackFx({ who: "monster" });
-      }
+    // Evaluate
+    const answerTime = performance.now() - state.battle.qStartTs;
+    const correct = state.battle.selected === q.correct;
+
+    maybeIncreaseDifficulty(answerTime, correct);
+
+    // Lock answers + show feedback colors
+    const ansBtns = Array.from(answersEl.querySelectorAll("[data-ans]"));
+    ansBtns.forEach((b) => {
+      b.disabled = true;
+      const val = Number(b.getAttribute("data-ans"));
+      if (val === q.correct) b.classList.add("is-correct");
+    });
+
+    const selectedBtn = ansBtns.find(
+      (b) => Number(b.getAttribute("data-ans")) === state.battle.selected
+    );
+    if (selectedBtn && !correct) selectedBtn.classList.add("is-wrong");
+
+    // Submit button feedback
+    submitBtn.classList.remove("is-correct", "is-wrong");
+    submitBtn.classList.add(correct ? "is-correct" : "is-wrong");
+    submitBtn.textContent = correct ? "Correct" : "Incorrect";
+
+    await battlePause();
+    qcard.classList.remove("is-up");
+    await battleSleep(260); // gives the fade a moment to read
+    await playAttackFx({ who: correct ? "hero" : "monster" });
+    
+    
+    // Small beat after impact so the hit “lands”
+    await battleSleep(0);
+    
+
+// Apply damage AFTER the attack so the HP drop reads clearly
+const dmg = correct
+  ? Number(state.profile.attack || 0)
+  : Number(state.monster.attack || 0);
+
+if (dmg > 0) {
+  // 🫁 small beat so impact lands before HP moves
+  await battleSleep(PRE_HP_DROP_BEAT_MS);
+
+  if (correct) state.monster.damage += dmg;
+  else state.profile.damage += dmg;
+
+  updateBattleUI();
+
+  // Let HP meter animate down
+  await battleSleep(420);
+
 
       if (didWin()) {
         endBattle({ won: true });
@@ -603,11 +874,24 @@ appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () =
         return;
       }
 
+      // Next question
       nextQuestion();
-      updateBattleUI();
-      renderAnswers();
-    });
-  }
+    } else {
+      // No damage → repeat the same question
+      state.battle.qStartTs = performance.now();
+    }
+
+    // Reset UI for (next or repeated) question
+    updateBattleUI();
+    renderAnswers();
+
+    submitBtn.disabled = false;
+    submitBtn.classList.remove("is-correct", "is-wrong");
+    submitBtn.textContent = "Submit";
+    resolving = false;
+    qcard.classList.add("is-up");
+  });
+}
 
   function updateBattleUI() {
     const heroHpEl = appEl.querySelector("[data-hero-hp]");
@@ -619,65 +903,65 @@ appEl.querySelector("[data-act='level3']")?.addEventListener("click", async () =
     qtext.textContent = state.battle.currentQ.prompt;
   }
 
-  function showEndSheet({ title, sub, btnText, onBtn, xpBefore, xpAfter }) {
+  function showEndCard({ title, showGem, btnText, onBtn }) {
     const overlay = appEl.querySelector("[data-overlay]");
-    const sheet = appEl.querySelector("[data-sheet]");
+    const card = appEl.querySelector("[data-end-card]");
     const t = appEl.querySelector("[data-end-title]");
-    const s = appEl.querySelector("[data-end-sub]");
-    const xpEl = appEl.querySelector("[data-end-xp]");
-    const bar = appEl.querySelector("[data-end-bar]");
+    const gemBox = appEl.querySelector("[data-gem-box]");
     const btn = appEl.querySelector("[data-end-btn]");
 
     t.textContent = title;
-    s.textContent = sub;
-    xpEl.textContent = `${xpAfter}`;
 
-    const beforeMod = ((xpBefore % 10) + 10) % 10;
-    const afterMod = ((xpAfter % 10) + 10) % 10;
+    if (gemBox) gemBox.style.display = showGem ? "flex" : "none";
 
     overlay.classList.add("is-show");
     requestAnimationFrame(() => {
-      sheet.classList.add("is-in");
-      bar.style.width = `${(beforeMod / 10) * 100}%`;
-      setTimeout(() => {
-        bar.style.width = `${(afterMod / 10) * 100}%`;
-      }, 140 * BATTLE_TIME_SCALE);
+      card.classList.add("is-in");
     });
 
     btn.textContent = btnText;
     btn.onclick = onBtn;
   }
 
-  function endBattle({ won }) {
-    const xpBefore = Number(state.profile.xp ?? 0);
-
+  async function endBattle({ won }) {
+    // 🫁 let the final hit + HP drain fully land
+    await battleSleep(END_BATTLE_BEAT_MS);
+  
     if (won) {
-      state.profile.xp = Number(state.profile.xp ?? 0) + 1;
+      const fromXp = Number(state.profile.xp ?? 0);
+      const toXp = fromXp + 1;
+  
+      // store a one-time "animate XP" instruction for Home
+      setXpAnim(fromXp, toXp);
+  
+      state.profile.xp = toXp;
       saveLocal();
-      showEndSheet({
+  
+      showEndCard({
         title: "Great Job!",
-        sub: "You powered up with +1 XP.",
-        btnText: "Back Home",
-        xpBefore,
-        xpAfter: state.profile.xp,
+        showGem: true,
+        btnText: "Claim Gem",
         onBtn: () => go("home"),
       });
       return;
     }
-
+  
     state.profile.xp = Number(state.profile.xp ?? 0) - 1;
-    state.profile.difficulty = clamp((state.profile.difficulty ?? 1) - 1, 1, 10);
+    state.profile.difficulty = clamp(
+      (state.profile.difficulty ?? 1) - 1,
+      1,
+      10
+    );
     saveLocal();
-
-    showEndSheet({
+  
+    showEndCard({
       title: "Sorry!",
-      sub: "Try again — difficulty eased a bit.",
+      showGem: false,
       btnText: "Try Again",
-      xpBefore,
-      xpAfter: state.profile.xp,
       onBtn: () => go("battle"),
     });
   }
+  
 
   // ---------- Router ----------
   async function go(screen, opts = {}) {
